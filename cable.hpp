@@ -1,0 +1,14 @@
+#ifndef CABLE_HPP
+#define CABLE_HPP
+
+#include <map>
+
+#include "ftdipp_mpsse.hpp"
+
+static std::map <std::string, FTDIpp_MPSSE::mpsse_bit_config > cable_list = {
+	{"digilent", {0x0403, 0x6010, 0xe8, 0xeb, 0x00, 0x60}},
+	{"ft2232",   {0x0403, 0x6010, 0x08, 0x0B, 0x08, 0x0B}},
+	{"altera",   {0xcafe, 0xbebe, 0x08, 0x0B, 0x08, 0x0B}}
+};
+
+#endif
