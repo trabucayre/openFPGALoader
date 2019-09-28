@@ -4,16 +4,18 @@
 #include "bitparser.hpp"
 #include "device.hpp"
 #include "ftdijtag.hpp"
+#include "svf_jtag.hpp"
 
 class Altera: public Device {
 	public:
-		Altera(FtdiJtag *jtag, enum prog_mode mode, std::string filename);
+		Altera(FtdiJtag *jtag, std::string filename);
 		~Altera();
 
-		void program();
+		void program(unsigned int offset = 0);
 		int idCode();
+		void reset() override;
 	private:
-		BitParser _bitfile;
+		SVF_jtag _svf;
 };
 
 #endif
