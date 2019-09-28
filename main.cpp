@@ -23,27 +23,15 @@
 #include <unistd.h>
 #include <vector>
 
+#include "altera.hpp"
 #include "board.hpp"
 #include "cable.hpp"
 #include "device.hpp"
-#include "part.hpp"
-#include "epcq.hpp"
-#include "ftdipp_mpsse.hpp"
 #include "ftdijtag.hpp"
-#include "svf_jtag.hpp"
-#include "bitparser.hpp"
+#include "part.hpp"
 #include "xilinx.hpp"
 
-#define BIT_FOR_FLASH "/usr/local/share/cycloader_prog/test_sfl.svf"
-
-enum {
-	BIT_FORMAT = 1,
-	SVF_FORMAT,
-	RPD_FORMAT
-} _file_format;
-
 using namespace std;
-
 
 struct arguments {
 	bool verbose, display, reset;
@@ -69,70 +57,14 @@ static struct argp_option options[] = {
 };
 static struct argp argp = { options, parse_opt, args_doc, doc };
 
-void reset_fpga(FtdiJtag *jtag)
-{
-	/* PULSE_NCONFIG */
-	unsigned char tx_buff[4] = {0x01, 0x00};
-	tx_buff[0] = 0x01;
-	tx_buff[1] = 0x00;
-	jtag->set_state(FtdiJtag::TEST_LOGIC_RESET);
-	jtag->shiftIR(tx_buff, NULL, 10);
-	jtag->toggleClk(1);
-	jtag->set_state(FtdiJtag::TEST_LOGIC_RESET);
-}
-
 int main(int argc, char **argv)
 {
 	FTDIpp_MPSSE::mpsse_bit_config cable;
-	bool prog_mem = false, prog_eeprom = false;
-	/* EEPROM must have reverse order
-	 * other flash (softcore binary) must have direct order
-	 */
-	bool reverse_order=true; 
-	short file_format = 0;
 
 	/* command line args. */
-	struct arguments args = {false, false, false, 0, "-", "-", "-"};
+	struct arguments args = {false, false, false, 0, "", "-", "-"};
 	/* parse arguments */
 	argp_parse(&argp, argc, argv, 0, 0, &args);
-
-	/* if a bit_file is provided check type using file extension */
-	if (args.bit_file[0] != '-') {
-		string file_extension = args.bit_file.substr(args.bit_file.find_last_of(".") + 1);
-		if(file_extension == "svf") {
-			/* svf file */
-			prog_mem = true;
-			file_format = SVF_FORMAT;
-		} else if(file_extension == "rpd") {
-			/* rdp file */
-			prog_eeprom = true;
-			args.reset = true; // FPGA must reload eeprom content
-			file_format = RPD_FORMAT;
-		} else if (file_extension == "bit") {
-			prog_mem = true;
-			file_format = BIT_FORMAT;
-		} else {
-			if (args.offset == 0) {
-				cout << args.bit_file << " not FPGA bit make no sense to flash at beginning" << endl;
-				return EXIT_FAILURE;
-			}
-			reverse_order = false;
-		}
-	}
-
-	/* To have access to eeprom, an svf file must be send to memory
-	 * so we must reset FPGA if no other bitfile is sent.
-	 */
-	if (args.display && !prog_mem)
-		args.reset = true;
-
-	printf("%s svf:%s eeprom:%s\n", args.bit_file.c_str(), (prog_mem)?"true":"false",
-		(prog_eeprom)?"true":"false");
-
-	if (args.reset && prog_mem) {
-		cerr << "Error: using both flash to RAM and reset make no sense" << endl;
-		return EXIT_FAILURE;
-	}
 
 	/* if a board name is specified try to use this to determine cable */
 	if (args.board[0] != '-' && board_list.find(args.board) != board_list.end()) {
@@ -154,29 +86,27 @@ int main(int argc, char **argv)
 		return EXIT_FAILURE;
 	}
 	cable = select_cable->second;
-	printf("%x %x\n", cable.pid, cable.vid);
 
 	/* jtag base */
 	FtdiJtag *jtag = new FtdiJtag(cable, 1, 6000000);
-	/* SVF logic */
-	SVF_jtag *svf = new SVF_jtag(jtag);
-	/* epcq */
-	EPCQ epcq(cable.vid, cable.pid, 2, 6000000);
 
-	/* chain detection:
-	 * GGM TODO: must be done before
-	 */
+	/* chain detection */
 	vector<int> listDev;
 	int found = jtag->detectChain(listDev, 5);
-	int idcode = listDev[0];
-	printf("found %d devices\n", found);
+
+	cout << "found " << std::to_string(found) << " devices" << endl;
 	if (found > 1) {
-		cerr << "currently only one device is supported" << endl;
+		cerr << "Error: currently only one device is supported" << endl;
+		return EXIT_FAILURE;
+	} else if (found < 1) {
+		cerr << "Error: no device found" << endl;
 		return EXIT_FAILURE;
 	}
-	printf("%x\n", idcode);
+
+	int idcode = listDev[0];
+
 	if (fpga_list.find(idcode) == fpga_list.end()) {
-		cout << "Error: device not supported" << endl;
+		cerr << "Error: device not supported" << endl;
 		return 1;
 	} else {
 		printf("idcode 0x%x\nfunder %s\nmodel  %s\nfamily %s\n",
@@ -187,41 +117,20 @@ int main(int argc, char **argv)
 	}
 	string fab = fpga_list[idcode].funder;
 
-	/* display fpga and eeprom */
-	if (args.display) {
-		vector<int> listDev;
-		int found = jtag->detectChain(listDev, 5);
-		printf("found %d devices\n", found);
-		for (unsigned int z=0; z < listDev.size(); z++)
-			printf("%x\n", listDev[z]);
-		printf("\n\n");
-
-		svf->parse(BIT_FOR_FLASH);
-		printf("%x\n", epcq.detect());
+	Device *fpga;
+	if (fab == "xilinx") {
+		fpga = new Xilinx(jtag, args.bit_file);
+	} else {
+		fpga = new Altera(jtag, args.bit_file);
 	}
 
-	if (prog_mem) {
-		if (file_format == SVF_FORMAT) {
-			svf->parse(args.bit_file);
-		} else {
-			printf("todo\n");
-			Xilinx xil(jtag, Device::MEM_MODE, args.bit_file);
-			printf("%x\n", xil.idCode());
-			xil.program();
-			//xil.reset();
-		}
-	} else if (prog_eeprom) {
-		svf->parse(BIT_FOR_FLASH);
-		epcq.program(args.offset, args.bit_file, reverse_order);
-	}
-	if (args.reset) {
-		if (fab == "xilinx") {
-			Xilinx xil(jtag, Device::NONE_MODE, "");
-			xil.reset();
-		} else {
-			reset_fpga(jtag);
-		}
-	}
+	fpga->program(args.offset);
+
+	if (args.reset)
+		fpga->reset();
+
+	delete(fpga);
+
 }
 
 /* arguments parser */
