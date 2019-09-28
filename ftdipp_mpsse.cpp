@@ -55,7 +55,7 @@ void FTDIpp_MPSSE::open_device(unsigned int vid, unsigned int pid,
 		throw std::exception();
 	}
 	if (ftdi_set_baudrate(_ftdi, baudrate) < 0) {
-		printf("erreur baudrate\n");
+		fprintf(stderr, "erreur baudrate\n");
 		close_device();
 		throw std::exception();
 	}
@@ -82,13 +82,13 @@ int FTDIpp_MPSSE::close_device()
 	 if (_ftdi->usb_dev != NULL) {
 		rtn = libusb_release_interface(_ftdi->usb_dev, _ftdi->interface);
 		if (rtn < 0) {
-			printf("release interface failed %d\n", rtn);
+			fprintf(stderr, "release interface failed %d\n", rtn);
 			return EXIT_FAILURE;
 		}
 		if (_ftdi->module_detach_mode == AUTO_DETACH_SIO_MODULE) {
 			rtn = libusb_attach_kernel_driver(_ftdi->usb_dev, _ftdi->interface);
 			if( rtn != 0)
-				printf("detach error %d\n",rtn);
+				fprintf(stderr, "detach error %d\n",rtn);
 		}
 	}
 	ftdi_usb_close_internal();
@@ -166,7 +166,7 @@ int FTDIpp_MPSSE::setClkFreq(uint32_t clkHZ, char use_divide_by_5)
     }
 
     if ((use_divide_by_5 && _clkHZ > 6000000) || _clkHZ > 30000000) {
-        printf("erreur: freq trop haute\n");
+        fprintf(stderr, "Error: too fast frequency\n");
         return -1;
     }
 
@@ -178,7 +178,7 @@ int FTDIpp_MPSSE::setClkFreq(uint32_t clkHZ, char use_divide_by_5)
     buffer[3] = (presc >> 8) & 0xff;
 
     if (ftdi_write_data(_ftdi, buffer, 4) != 4) {
-        printf("erreur de write pour set bit, frequency\n");
+        fprintf(stderr, "Error: write for frequency\n");
         return -1;
     }
 
@@ -244,7 +244,7 @@ int FTDIpp_MPSSE::mpsse_read(unsigned char *rx_buff, int len)
 	do {
 		n = ftdi_read_data(_ftdi, p, len);
 		if (n < 0) {
-			printf("erreur dans %s", __func__);
+			fprintf(stderr, "Error: ftdi_read_data in %s", __func__);
 			return -1;
 		}
 		if (_verbose) {
