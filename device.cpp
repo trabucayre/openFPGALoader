@@ -5,21 +5,17 @@
 
 using namespace std;
 
-Device::Device(FtdiJtag *jtag, enum prog_mode mode, string filename):
-		_filename(filename), _mode(mode)
+Device::Device(FtdiJtag *jtag, string filename):
+		_filename(filename),
+		_file_extension(filename.substr(filename.find_last_of(".") +1)),
+		_mode(NONE_MODE)
 {
 	_jtag = jtag;
+	cout << _file_extension << endl;
 }
 
-int Device::idCode()
-{
-	return 0;
-}
+Device::~Device() {}
 
-void Device::program()
-{
-	throw std::runtime_error("Not implemented");
-}
 void Device::reset()
 {
 	throw std::runtime_error("Not implemented");

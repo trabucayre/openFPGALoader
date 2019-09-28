@@ -17,13 +17,15 @@ class Device {
 			SPI_MODE,
 			MEM_MODE
 		};
-		Device(FtdiJtag *jtag, enum prog_mode, std::string filename);
-		virtual void program();
-		int  idCode();
-		void reset();
+		Device(FtdiJtag *jtag, std::string filename);
+		virtual ~Device();
+		virtual void program(unsigned int offset = 0) = 0;
+		virtual int  idCode() = 0;
+		virtual void reset();
 	protected:
 		FtdiJtag *_jtag;
 		std::string _filename;
+		std::string _file_extension;
 		enum prog_mode _mode;
 };
 
