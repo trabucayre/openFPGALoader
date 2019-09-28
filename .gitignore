@@ -32,3 +32,4 @@
 *.app
 
 cycloader
+*.swp
