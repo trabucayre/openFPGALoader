@@ -172,7 +172,7 @@ int FTDIpp_MPSSE::setClkFreq(uint32_t clkHZ, char use_divide_by_5)
 
     presc = (base_freq /(_clkHZ * 2)) -1;
     real_freq = base_freq / ((1+presc)*2);
-    printf("presc : %d input freq : %d requested freq : %d real freq : %d\n", presc,
+    display("presc : %d input freq : %d requested freq : %d real freq : %d\n", presc,
             base_freq, _clkHZ, real_freq);
     buffer[2] = presc & 0xff;
     buffer[3] = (presc >> 8) & 0xff;
