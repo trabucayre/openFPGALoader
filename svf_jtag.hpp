@@ -1,5 +1,8 @@
+#ifndef SVF_JTAG_HPP
+#define SVF_JTAG_HPP
 #include <iostream>
 #include <vector>
+#include <map>
 using namespace std;
 
 class SVF_jtag {
@@ -58,3 +61,4 @@ class SVF_jtag {
 	svf_XYR tdr;
 	svf_XYR tir;
 };
+#endif
