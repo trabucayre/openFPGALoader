@@ -17,7 +17,7 @@ using namespace std;
 #endif
 
 FTDIpp_MPSSE::FTDIpp_MPSSE(int vid, int pid, unsigned char interface,
-			   uint32_t clkHZ):_pid(pid), _interface(interface),
+			   uint32_t clkHZ):_vid(vid), _pid(pid), _interface(interface),
 _clkHZ(clkHZ), _buffer_size(2*32768), _num(0), _verbose(false)
 {
 	open_device(vid, pid, (unsigned char)interface, 115200);
