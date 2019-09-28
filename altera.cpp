@@ -5,7 +5,7 @@
 
 #define IDCODE 6
 #define IRLENGTH 10
-#define BIT_FOR_FLASH "/usr/local/share/cyc1000_prog/test_sfl.svf"
+#define BIT_FOR_FLASH "/usr/local/share/cycloader_prog/test_sfl.svf"
 
 Altera::Altera(FtdiJtag *jtag, std::string filename):Device(jtag, filename),
 	_svf(_jtag)
