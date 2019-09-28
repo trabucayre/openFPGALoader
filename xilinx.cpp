@@ -6,13 +6,10 @@
 
 #include "xilinx.hpp"
 
-Xilinx::Xilinx(FtdiJtag *jtag, enum prog_mode mode, std::string filename):Device(jtag, mode, filename),
+Xilinx::Xilinx(FtdiJtag *jtag, std::string filename):Device(jtag, filename),
 	_bitfile(filename)
 	{
-	if (_mode == Device::SPI_MODE) {
-		throw std::runtime_error("SPI flash is not supported on xilinx devices");
-	}
-	if (_mode != Device::NONE_MODE){
+	if (_filename != ""){
 		_bitfile.parse();
 	}
 }
@@ -28,6 +25,7 @@ Xilinx::~Xilinx() {}
 #define ISC_DISABLE 0x16
 #define BYPASS   0x3f
 
+#if 0
 void Xilinx::reset()
 {
 	unsigned char instr;
@@ -69,6 +67,7 @@ void Xilinx::reset()
 	_jtag->toggleClk(2000);
 	_jtag->go_test_logic_reset();
 }
+#endif
 
 int Xilinx::idCode()
 {
@@ -83,33 +82,9 @@ int Xilinx::idCode()
 		((rx_data[3] << 24) & 0xff000000));
 }
 
-void Xilinx::flow_enable()
+void Xilinx::program(unsigned int offset)
 {
-	unsigned char data;
-	data = ISC_ENABLE;
-	_jtag->shiftIR(&data, NULL, 6);
-	//data[0]=0x0;
-	//jtag->shiftDR(data,0,5);
-	//io->cycleTCK(tck_len);
-}
-
-
-void Xilinx::flow_disable()
-{
-	  unsigned char data;
-
-	data = ISC_DISABLE;
-	_jtag->shiftIR(&data, NULL, 6);
-	//io->cycleTCK(tck_len);
-	//jtag->shiftIR(&BYPASS);
-	//data[0]=0x0;
-	//jtag->shiftDR(data,0,1);
-	//io->cycleTCK(1);
-}
-
-
-void Xilinx::program()
-{
+	if (_filename == "") return;
 	std::cout << "load program" << std::endl;
 	unsigned char tx_buf, rx_buf;
 	/*            comment                                TDI   TMS TCK

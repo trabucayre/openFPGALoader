@@ -7,17 +7,13 @@
 
 class Xilinx: public Device {
 	public:
-		Xilinx(FtdiJtag *jtag, enum prog_mode mode, std::string filename);
+		Xilinx(FtdiJtag *jtag, std::string filename);
 		~Xilinx();
 
-		void program();
+		void program(unsigned int offset = 0) override;
 		int idCode();
-		void reset();
+		//void reset();
 	private:
-		void flow_enable();
-		void flow_disable();
-		//FtdiJtag *_jtag;
-		//std::string _filename;
 		BitParser _bitfile;
 };
 
