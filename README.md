@@ -1,5 +1,5 @@
 # cycloader
-tool for programming FPGA. 
+Utility for programming Intel/Altera Cyclone and Xilinx Serie 7
 
 Current support:
 * Trenz cyc1000 Cyclone 10 LP 10CL025 (memory and spi flash)
