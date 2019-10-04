@@ -15,6 +15,7 @@ class FtdiJtag : public FTDIpp_MPSSE {
 	int detectChain(std::vector<int> &devices, int max_dev);
 
 	int shiftIR(unsigned char *tdi, unsigned char *tdo, int irlen, int end_state = RUN_TEST_IDLE);
+	int shiftIR(unsigned char tdi, int irlen, int end_state = RUN_TEST_IDLE);
 	int shiftDR(unsigned char *tdi, unsigned char *tdo, int drlen, int end_state = RUN_TEST_IDLE);
 	int read_write(unsigned char *tdi, unsigned char *tdo, int len, char last);
 

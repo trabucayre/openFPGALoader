@@ -302,6 +302,15 @@ int FtdiJtag::shiftDR(unsigned char *tdi, unsigned char *tdo, int drlen, int end
 	return 0;
 }
 
+int FtdiJtag::shiftIR(unsigned char tdi, int irlen, int end_state)
+{
+	if (irlen > 8) {
+		cerr << "Error: this method this direct char don't support more than 1 byte" << endl;
+		return -1;
+	}
+	return shiftIR(&tdi, NULL, irlen, end_state);
+}
+
 int FtdiJtag::shiftIR(unsigned char *tdi, unsigned char *tdo, int irlen, int end_state)
 {
 	display("%s: avant shiftIR\n", __func__);
