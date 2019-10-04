@@ -25,49 +25,21 @@ Xilinx::~Xilinx() {}
 #define ISC_DISABLE 0x16
 #define BYPASS   0x3f
 
-#if 0
 void Xilinx::reset()
 {
-	unsigned char instr;
-	/*unsigned char reset_seq[] = {
-			0xFF, 0xFF, 0xFF, 0xFF, // dummy word
-	 		0xAA, 0x99, 0x55, 0x66, // sync word
-	 		0x20, 0x00, 0x00, 0x00, // type1 noop
-			//0x30, 0x02, 0x00, 0x01, 
-	    	//0x00, 0x00, 0x00, 0x00,
-		 	0x30, 0x00, 0x80, 0x01, // type1 write 1 word to CMD
-		  	0x00, 0x00, 0x00, 0x0F, // iprog cmd
-			0x20, 0x00, 0x00, 0x00}; // noop*/
-	unsigned char reset_seq[] = {
-			0xFF, 0xFF, 0xFF, 0xFF, // dummy word
-	 		0x55, 0x99, 0xAA, 0x66, // sync word
-	 		0x04, 0x00, 0x00, 0x00, // type1 noop
-			0x0C, 0x40, 0x00, 0x80, 
-	    	0x00, 0x00, 0x00, 0x00,
-		 	0x0C, 0x00, 0x01, 0x80, // type1 write 1 word to CMD
-		  	0x00, 0x00, 0x00, 0xf0, // iprog cmd
-			0x04, 0x00, 0x00, 0x00}; // noop*/
-	instr = JSHUTDOWN;
-	_jtag->shiftIR(&instr, NULL, 6);
-	_jtag->toggleClk(16);
-	instr = CFG_IN;
-	_jtag->shiftIR(&instr, NULL, 6);
-	for (int i =0; i < 4*8; i++) {
-		printf("%x\n", reset_seq[i]);
-	}
-	_jtag->shiftDR(reset_seq, NULL, 4*8*8, FtdiJtag::UPDATE_DR );
+	_jtag->shiftIR(JSHUTDOWN, 6);
+	_jtag->shiftIR(JPROGRAM, 6);
 	_jtag->set_state(FtdiJtag::RUN_TEST_IDLE);
-	instr = JSTART;
-	_jtag->shiftIR(&instr, NULL, 6, FtdiJtag::UPDATE_IR);
-	//_jtag->toggleClk(32);
-	//instr = BYPASS;
-	//_jtag->shiftIR(&instr, NULL, 6);
-	//_jtag->toggleClk(1);
+	_jtag->toggleClk(10000*12);
+
 	_jtag->set_state(FtdiJtag::RUN_TEST_IDLE);
 	_jtag->toggleClk(2000);
-	_jtag->go_test_logic_reset();
+
+	_jtag->shiftIR(BYPASS, 6);
+	_jtag->set_state(FtdiJtag::RUN_TEST_IDLE);
+	_jtag->toggleClk(2000);
+
 }
-#endif
 
 int Xilinx::idCode()
 {

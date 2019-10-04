@@ -12,7 +12,7 @@ class Xilinx: public Device {
 
 		void program(unsigned int offset = 0) override;
 		int idCode();
-		//void reset();
+		void reset();
 	private:
 		BitParser _bitfile;
 };
