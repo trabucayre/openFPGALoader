@@ -16,6 +16,7 @@ install:
 	cp -f cycloader /usr/local/bin
 	mkdir -p /usr/local/share/cycloader
 	cp -f test_sfl.svf /usr/local/share/cycloader
+	cp -f spiOverJtag/*.bit /usr/local/share/cycloader
 
 clean:
 	rm -rf *.o
