@@ -293,7 +293,6 @@ int FtdiJtag::shiftDR(unsigned char *tdi, unsigned char *tdo, int drlen, int end
 	// force transmit tms state
 	flushTMS(true);
 	// currently don't care about multiple device in the chain
-	printf("drlen %d\n", drlen);
 	read_write(tdi, tdo, drlen, 1);// 1 since only one device
 
 	set_state(end_state);
