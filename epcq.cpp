@@ -1,8 +1,6 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <strings.h>
-//#include <ftdi_spi.h>
-//#include <ftdi_handle.h>
 
 #include "epcq.hpp"
 
