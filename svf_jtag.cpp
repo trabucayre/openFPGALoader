@@ -6,7 +6,7 @@
 
 #include "ftdijtag.hpp"
 
-#include <svf_jtag.hpp>
+#include "svf_jtag.hpp"
 
 using namespace std;
 
