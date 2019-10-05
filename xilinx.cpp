@@ -43,10 +43,9 @@ void Xilinx::reset()
 
 int Xilinx::idCode()
 {
-	unsigned char tx_data = IDCODE;
 	unsigned char rx_data[4];
 	_jtag->go_test_logic_reset();
-	_jtag->shiftIR(&tx_data, NULL, 6);
+	_jtag->shiftIR(IDCODE, 6);
 	_jtag->shiftDR(NULL, rx_data, 32);
 	return ((rx_data[0] & 0x000000ff) |
 		((rx_data[1] << 8) & 0x0000ff00) |
@@ -78,8 +77,7 @@ void Xilinx::program(unsigned int offset)
 	 *    TCK five times. This ensures starting in        X     1   5
 	 *    the TLR (Test-Logic-Reset) state.
 	 */
-	tx_buf = JPROGRAM;
-	_jtag->shiftIR(&tx_buf, NULL, 6/*, FtdiJtag::TEST_LOGIC_RESET*/);
+	_jtag->shiftIR(JPROGRAM, 6);
 	/* test */
 	tx_buf = BYPASS;
 	do {
@@ -97,8 +95,7 @@ void Xilinx::program(unsigned int offset)
 	 *     exiting SHIFT-IR, as defined in the            0     1   1
 	 *     IEEE standard.
 	 */
-	tx_buf = CFG_IN;
-	_jtag->shiftIR(&tx_buf, NULL, 6);
+	_jtag->shiftIR(CFG_IN, 6);
 	/*
 	 * 11: Enter the SELECT-DR state.                     X     1   2
 	 */
@@ -133,8 +130,7 @@ void Xilinx::program(unsigned int offset)
 	 * 20: Load the last bit of the JSTART instruction.   0     1   1
 	 * 21: Move to the UPDATE-IR state.                   X     1   1
 	 */
-	tx_buf = JSTART;
-	_jtag->shiftIR(&tx_buf, NULL, 6, FtdiJtag::UPDATE_IR);
+	_jtag->shiftIR(JSTART, 6, FtdiJtag::UPDATE_IR);
 	/*
 	 * 22: Move to the RTI state and clock the
 	 *     startup sequence by applying a minimum         X     0   2000
