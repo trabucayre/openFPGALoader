@@ -6,8 +6,6 @@
 #include <string.h>
 #include <string>
 
-#include <ft2232_mpsse/ftdi_handle.h>
-
 #include "ftdijtag.hpp"
 #include "ftdipp_mpsse.hpp"
 
