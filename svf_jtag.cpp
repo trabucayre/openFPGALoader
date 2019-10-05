@@ -4,7 +4,7 @@
 #include <map>
 #include <vector>
 
-#include <ftdipp_mpsse/ftdijtag.hpp>
+#include "ftdijtag.hpp"
 
 #include <svf_jtag.hpp>
 
