@@ -11,10 +11,10 @@ class Xilinx: public Device {
 		~Xilinx();
 
 		void program(unsigned int offset = 0) override;
+		void program_spi(unsigned int offset = 0);
+		void program_mem(BitParser &bitfile, unsigned int offset = 0);
 		int idCode();
 		void reset();
-	private:
-		BitParser _bitfile;
 };
 
 #endif

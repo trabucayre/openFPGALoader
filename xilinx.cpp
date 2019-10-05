@@ -3,14 +3,19 @@
 
 #include "ftdijtag.hpp"
 #include "bitparser.hpp"
+#include "mcsParser.hpp"
+#include "spiFlash.hpp"
 
 #include "xilinx.hpp"
+#include "part.hpp"
 
-Xilinx::Xilinx(FtdiJtag *jtag, std::string filename):Device(jtag, filename),
-	_bitfile(filename)
+Xilinx::Xilinx(FtdiJtag *jtag, std::string filename):Device(jtag, filename)
 	{
 	if (_filename != ""){
-		_bitfile.parse();
+		if (_file_extension == "bit")
+			_mode = Device::MEM_MODE;
+		else
+			_mode = Device::SPI_MODE;
 	}
 }
 Xilinx::~Xilinx() {}
@@ -54,6 +59,41 @@ int Xilinx::idCode()
 }
 
 void Xilinx::program(unsigned int offset)
+{
+	switch (_mode) {
+		case Device::NONE_MODE:
+			return;
+			break;
+		case Device::SPI_MODE:
+			program_spi(offset);
+			reset();
+			break;
+		case Device::MEM_MODE:
+			BitParser bitfile(_filename);
+			bitfile.parse();
+			program_mem(bitfile, offset);
+			break;
+	}
+}
+
+void Xilinx::program_spi(unsigned int offset)
+{
+	std::string bitname = "/usr/local/share/cycloader/spiOverJtag_";
+	bitname += fpga_list[idCode()].family + ".bit";
+
+	/* first: load spi over jtag */
+	BitParser bitfile(bitname);
+	bitfile.parse();
+	program_mem(bitfile, offset);
+
+	/* last: read file and erase/flash spi flash */
+	McsParser mcs(_filename);
+	mcs.parse();
+	SPIFlash spiFlash(_jtag);
+	spiFlash.erase_and_prog(offset, mcs.getData(), mcs.getLength());
+}
+
+void Xilinx::program_mem(BitParser &bitfile, unsigned int offset)
 {
 	if (_filename == "") return;
 	std::cout << "load program" << std::endl;
@@ -112,7 +152,7 @@ void Xilinx::program(unsigned int offset)
 	 *     EXIT1-DR.
 	 */
 	/* GGM: TODO */
-	_jtag->shiftDR(_bitfile.getData(), NULL, 8*_bitfile.getLength());
+	_jtag->shiftDR(bitfile.getData(), NULL, 8*bitfile.getLength());
 	/*
 	 * 15: Enter UPDATE-DR state.                         X     1   1
 	 */
