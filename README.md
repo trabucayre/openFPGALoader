@@ -71,6 +71,10 @@ cycloader -b cyc1000 -r project_name_auto.rpd
 svf file used to write in flash is just a bridge between FT2232 interfaceB
 configured in SPI mode and sfl primitive used to access EPCQ SPI flash.**
 
+**Note about FT2232 interfaceB:
+This interface is used for SPI communication only when the dedicated svf is
+loaded in RAM, rest of the time, user is free to use for what he want.**
+
 ### ARTY
 
 To simplify further explanations, we consider the project is generated in the
