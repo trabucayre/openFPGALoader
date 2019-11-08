@@ -72,7 +72,7 @@ FtdiJtag::~FtdiJtag()
 		SET_BITS_HIGH, 0xff, 0x00,
 		LOOPBACK_START,
 		MPSSE_DO_READ | MPSSE_READ_NEG |
-		    MPSSE_DO_WRITE | MPSSE_WRITE_NEG | MPSSE_LSB,
+		MPSSE_DO_WRITE | MPSSE_WRITE_NEG | MPSSE_LSB,
 		0x04, 0x00,
 		0xaa, 0x55, 0x00, 0xff, 0xaa,
 		LOOPBACK_END
@@ -142,7 +142,7 @@ int FtdiJtag::flushTMS(bool flush_buffer)
 		buf[2] = 0x80;
 		for (int i = 0; i < xfer; i++, pos++) {
 			buf[2] |=
-			    (((_tms_buffer[pos >> 3] & (1 << (pos & 0x07))) ? 1 : 0) << i);
+			(((_tms_buffer[pos >> 3] & (1 << (pos & 0x07))) ? 1 : 0) << i);
 		}
 		_num_tms -= xfer;
 		mpsse_store(buf, 3);
@@ -176,8 +176,8 @@ int FtdiJtag::read_write(unsigned char *tdi, unsigned char *tdo, int len, char l
 	 *  - last bit to send  -> sent in conjunction with TMS
 	 */
 	int tx_buff_size = mpsse_get_buffer_size();
-	int real_len = (last) ? len - 1 : len; // if its a buffer in a big send send len
-	                                       // else supress last bit -> with TMS
+	int real_len = (last) ? len - 1 : len;	// if its a buffer in a big send send len
+						// else supress last bit -> with TMS
 	int nb_byte = real_len >> 3;	// number of byte to send
 	int nb_bit = (real_len & 0x07);	// residual bits
 	int xfer = tx_buff_size - 3;
@@ -185,14 +185,14 @@ int FtdiJtag::read_write(unsigned char *tdi, unsigned char *tdo, int len, char l
 	unsigned char *tx_ptr = (unsigned char *)tdi;
 	unsigned char tx_buf[3] = {(unsigned char)(MPSSE_LSB | MPSSE_WRITE_NEG |
 							   ((tdi) ? MPSSE_DO_WRITE : 0) |
-	    					   ((tdo) ? (MPSSE_DO_READ | MPSSE_READ_NEG) : 0)),
-							   ((xfer - 1) & 0xff),        // low
-							   (((xfer - 1) >> 8) & 0xff)}; // high
+							   ((tdo) ? (MPSSE_DO_READ | MPSSE_READ_NEG) : 0)),
+							   ((xfer - 1) & 0xff),		// low
+							   (((xfer - 1) >> 8) & 0xff)};	// high
 
 	flushTMS(true);
 
 	display("%s len : %d %d %d %d\n", __func__, len, real_len, nb_byte,
-	       nb_bit);
+		nb_bit);
 	while (nb_byte > xfer) {
 		mpsse_store(tx_buf, 3);
 		if (tdi) {
@@ -210,8 +210,8 @@ int FtdiJtag::read_write(unsigned char *tdi, unsigned char *tdo, int len, char l
 	/* 1/ send serie of byte */
 	if (nb_byte > 0) {
 		display("%s read/write %d byte\n", __func__, nb_byte);
-		tx_buf[1] = ((nb_byte - 1) & 0xff);        // low
-		tx_buf[2] = (((nb_byte - 1) >> 8) & 0xff); // high
+		tx_buf[1] = ((nb_byte - 1) & 0xff);		// low
+		tx_buf[2] = (((nb_byte - 1) >> 8) & 0xff);	// high
 		mpsse_store(tx_buf, 3);
 		if (tdi) {
 			mpsse_store(tx_ptr, nb_byte);
@@ -261,9 +261,9 @@ int FtdiJtag::read_write(unsigned char *tdi, unsigned char *tdo, int len, char l
 		/* write the last bit in conjunction with TMS */
 		tx_buf[0] = MPSSE_WRITE_TMS | MPSSE_LSB | MPSSE_BITMODE | MPSSE_WRITE_NEG |
 					((tdo) ? MPSSE_DO_READ | MPSSE_READ_NEG : 0);
-		tx_buf[1] = 0x0 ;	                // send 1bit
-		tx_buf[2] = ((last_bit)?0x81:0x01); // we know in TMS tdi is bit 7
-		                                    // and to move to EXIT_XR TMS = 1
+		tx_buf[1] = 0x0 ;	// send 1bit
+		tx_buf[2] = ((last_bit)?0x81:0x01);	// we know in TMS tdi is bit 7
+							// and to move to EXIT_XR TMS = 1
 		mpsse_store(tx_buf, 3);
 		mpsse_write();
 		if (tdo) {
@@ -326,7 +326,7 @@ void FtdiJtag::set_state(int newState)
 {
 	unsigned char tms;
 	while (newState != _state) {
-		display("_state : %16s(%02d) -> %s(%02d) ", 
+		display("_state : %16s(%02d) -> %s(%02d) ",
 			getStateName((tapState_t)_state),
 			_state,
 			getStateName((tapState_t)newState), newState);
