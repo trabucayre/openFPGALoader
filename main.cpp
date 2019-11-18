@@ -27,6 +27,7 @@
 #include "board.hpp"
 #include "cable.hpp"
 #include "device.hpp"
+#include "lattice.hpp"
 #include "ftdijtag.hpp"
 #include "part.hpp"
 #include "xilinx.hpp"
@@ -120,8 +121,10 @@ int main(int argc, char **argv)
 	Device *fpga;
 	if (fab == "xilinx") {
 		fpga = new Xilinx(jtag, args.bit_file);
-	} else {
+	} else if (fab == "altera") {
 		fpga = new Altera(jtag, args.bit_file);
+	} else {
+		fpga = new Lattice(jtag, args.bit_file);
 	}
 
 	fpga->program(args.offset);
