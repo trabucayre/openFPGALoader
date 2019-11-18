@@ -14,8 +14,9 @@ class Device {
 	public:
 		enum prog_mode {
 			NONE_MODE = 0,
-			SPI_MODE,
-			MEM_MODE
+			SPI_MODE = 1,
+			FLASH_MODE = 1,
+			MEM_MODE = 2
 		};
 		Device(FtdiJtag *jtag, std::string filename);
 		virtual ~Device();
