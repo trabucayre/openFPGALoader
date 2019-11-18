@@ -6,7 +6,8 @@
 static std::map <std::string, std::string > board_list = {
 	{"arty",    "digilent"},
 	{"cyc1000", "ft2232"},
-	{"de0nano", "usbblaster"}
+	{"de0nano", "usbblaster"},
+	{"machXO3SK", "ft2232"}
 };
 
 #endif
