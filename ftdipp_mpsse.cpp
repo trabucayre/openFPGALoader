@@ -81,7 +81,11 @@ void FTDIpp_MPSSE::open_device(unsigned int baudrate)
 	if (_bus == -1 or _addr == -1)
 		ret = ftdi_usb_open_desc(_ftdi, _vid, _pid, NULL, NULL);
 	else
+#if (OLD_FTDI_VERSION == 1)
+		ret = ftdi_usb_open_desc(_ftdi, _vid, _pid, _product, NULL);
+#else
 		ret = ftdi_usb_open_bus_addr(_ftdi, _bus, _addr);
+#endif
 	if (ret < 0) {
 		fprintf(stderr, "unable to open ftdi device: %d (%s)\n",
 			ret, ftdi_get_error_string(_ftdi));
