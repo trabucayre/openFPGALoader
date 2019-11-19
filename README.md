@@ -5,6 +5,7 @@ Current support:
 * Trenz cyc1000 Cyclone 10 LP 10CL025 (memory and spi flash)
 * Digilent arty Artix xc7a35ti (memory and spi flash)
 * Lattice MachXO3LF Starter Kit LCMX03LF-6900C (flash)
+* Digilent JTAG-HS3 programming cable 
 
 ## compile and install
 
