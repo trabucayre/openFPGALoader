@@ -138,6 +138,7 @@ int main(int argc, char **argv)
 		fpga->reset();
 
 	delete(fpga);
+	delete(jtag);
 
 }
 
