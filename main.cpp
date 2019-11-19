@@ -35,9 +35,10 @@
 using namespace std;
 
 struct arguments {
-	bool verbose, display, reset;
+	bool verbose, reset;
 	unsigned int offset;
 	string bit_file;
+	string device;
 	string cable;
 	string board;
 };
@@ -50,7 +51,7 @@ static error_t parse_opt(int key, char *arg, struct argp_state *state);
 static struct argp_option options[] = {
 	{"cable",   'c', "CABLE", 0, "jtag interface"},
 	{"board",   'b', "BOARD", 0, "board name, may be used instead of cable"},
-	{"display", 'd', 0, 0, "display FPGA and EEPROM model"},
+	{"device",  'd', "DEVICE", 0, "device to use (/dev/ttyUSBx)"},
 	{"offset",  'o', "OFFSET", 0, "start offset in EEPROM"},
 	{"verbose", 'v', 0, 0, "Produce verbose output"},
 	{"reset",   'r', 0, 0, "reset FPGA after operations"},
@@ -63,7 +64,7 @@ int main(int argc, char **argv)
 	FTDIpp_MPSSE::mpsse_bit_config cable;
 
 	/* command line args. */
-	struct arguments args = {false, false, false, 0, "", "-", "-"};
+	struct arguments args = {false, false, 0, "", "-", "-", "-"};
 	/* parse arguments */
 	argp_parse(&argp, argc, argv, 0, 0, &args);
 
@@ -89,7 +90,11 @@ int main(int argc, char **argv)
 	cable = select_cable->second;
 
 	/* jtag base */
-	FtdiJtag *jtag = new FtdiJtag(cable, 1, 6000000);
+	FtdiJtag *jtag;
+	if (args.device == "-")
+		jtag = new FtdiJtag(cable, 1, 6000000);
+	else
+		jtag = new FtdiJtag(cable, args.device, 1, 6000000);
 
 	/* chain detection */
 	vector<int> listDev;
@@ -147,7 +152,8 @@ static error_t parse_opt(int key, char *arg, struct argp_state *state)
 		arguments->reset = true;
 		break;
 	case 'd':
-		arguments->display = true;
+		printf("device\n");
+		arguments->device = arg;
 		break;
 	case 'v':
 		arguments->verbose = true;
