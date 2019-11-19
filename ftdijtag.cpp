@@ -42,6 +42,24 @@ using namespace std;
  *           - envoyer le dernier avec 0x4B ou 0x6B
  */
 
+FtdiJtag::FtdiJtag(FTDIpp_MPSSE::mpsse_bit_config &cable, string dev,
+			unsigned char interface, uint32_t clkHZ):
+			FTDIpp_MPSSE(dev, interface, clkHZ),
+			_state(RUN_TEST_IDLE),
+			_tms_buffer_size(128), _num_tms(0),
+			_board_name("nope"), _verbose(false)
+{
+	display("%x\n", cable.bit_low_val);
+	display("%x\n", cable.bit_low_dir);
+	display("%x\n", cable.bit_high_val);
+	display("%x\n", cable.bit_high_dir);
+	_verbose = false;
+
+	_tms_buffer = (unsigned char *)malloc(sizeof(unsigned char) * _tms_buffer_size);
+	bzero(_tms_buffer, _tms_buffer_size);
+	init(1, 0xfb, cable);
+}
+
 FtdiJtag::FtdiJtag(FTDIpp_MPSSE::mpsse_bit_config &cable,
 		   unsigned char interface, uint32_t clkHZ):
 		   FTDIpp_MPSSE(cable.vid, cable.pid, interface, clkHZ),

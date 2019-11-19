@@ -1,9 +1,11 @@
 #ifndef _FTDIPP_MPSSE_H
 #define _FTDIPP_MPSSE_H
 #include <ftdi.h>
+#include <string>
 
 class FTDIpp_MPSSE {
 	public:
+		FTDIpp_MPSSE(const std::string &dev, unsigned char interface, uint32_t clkHZ);
 		FTDIpp_MPSSE(int vid, int pid, unsigned char interface, uint32_t clkHZ);
 		~FTDIpp_MPSSE();
 
@@ -24,8 +26,7 @@ class FTDIpp_MPSSE {
 		int pid() {return _pid;}
 
 	protected:
-		void open_device(unsigned int vid, unsigned int pid,
-						unsigned char interface, unsigned int baudrate);
+		void open_device(unsigned int baudrate);
 		void ftdi_usb_close_internal();
 		int close_device();
 		int mpsse_write();
@@ -33,10 +34,15 @@ class FTDIpp_MPSSE {
 		int mpsse_store(unsigned char c);
 		int mpsse_store(unsigned char *c, int len);
 		int mpsse_get_buffer_size() {return _buffer_size;}
+		unsigned int udevstufftoint(const char *udevstring, int base);
+		bool search_with_dev(const std::string &device);
 
 	private:
 		int _vid;
 		int _pid;
+		int _bus;
+		int _addr;
+		char _product[64];
 		unsigned char _interface;
 		int _clkHZ;
 		int _buffer_size;

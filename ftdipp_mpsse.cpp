@@ -1,6 +1,13 @@
-#include <iostream>
+#include <fcntl.h>
 #include <string.h>
+#include <sys/types.h>
+#include <sys/stat.h>
+#include <termios.h>
+#include <unistd.h>
 
+#include <iostream>
+
+#include <libudev.h>
 #include <libusb.h>
 
 #include "ftdipp_mpsse.hpp"
@@ -16,11 +23,31 @@ using namespace std;
 #define display(...) do {}while(0)
 #endif
 
-FTDIpp_MPSSE::FTDIpp_MPSSE(int vid, int pid, unsigned char interface,
-			   uint32_t clkHZ):_vid(vid), _pid(pid), _interface(interface),
-_clkHZ(clkHZ), _buffer_size(2*32768), _num(0), _verbose(false)
+FTDIpp_MPSSE::FTDIpp_MPSSE(const string &dev, unsigned char interface,
+			   uint32_t clkHZ):_vid(0), _pid(0), _bus(-1), _addr(-1), _product(""),
+			    _interface(interface),
+				_clkHZ(clkHZ), _buffer_size(2*32768), _num(0), _verbose(false)
 {
-	open_device(vid, pid, (unsigned char)interface, 115200);
+	if (!search_with_dev(dev)) {
+		cerr << "No cable found" << endl;
+		throw std::exception();
+	}
+
+	open_device(115200);
+
+	_buffer = (unsigned char *)malloc(sizeof(unsigned char) * _buffer_size);
+	if (!_buffer) {
+		cout << "_buffer malloc failed" << endl;
+		throw std::exception();
+	}
+}
+
+FTDIpp_MPSSE::FTDIpp_MPSSE(int vid, int pid, unsigned char interface,
+			   uint32_t clkHZ):_vid(vid), _pid(pid), _bus(-1), _addr(-1), _product(""),
+			   _interface(interface),
+			   _clkHZ(clkHZ), _buffer_size(2*32768), _num(0), _verbose(false)
+{
+	open_device(115200);
 
 	_buffer = (unsigned char *)malloc(sizeof(unsigned char) * _buffer_size);
 	if (!_buffer) {
@@ -32,23 +59,30 @@ _clkHZ(clkHZ), _buffer_size(2*32768), _num(0), _verbose(false)
 FTDIpp_MPSSE::~FTDIpp_MPSSE()
 {
 	ftdi_set_bitmode(_ftdi, 0, BITMODE_RESET);
+
 	ftdi_usb_reset(_ftdi);
 	close_device();
 	free(_buffer);
 }
 
-void FTDIpp_MPSSE::open_device(unsigned int vid, unsigned int pid,
-		unsigned char interface, unsigned int baudrate)
+void FTDIpp_MPSSE::open_device(unsigned int baudrate)
 {
 	int ret;
+
+	printf("try to open %x %x %d %d\n", _vid, _pid, _bus, _addr);
+
 	_ftdi = ftdi_new();
 	if (_ftdi == NULL) {
 		cout << "open_device: failed to initialize ftdi" << endl;
 		throw std::exception();
 	}
 
-	ftdi_set_interface(_ftdi, (ftdi_interface)interface);
-	if ((ret = ftdi_usb_open_desc(_ftdi, vid, pid, NULL, NULL)) < 0) {
+	ftdi_set_interface(_ftdi, (ftdi_interface)_interface);
+	if (_bus == -1 or _addr == -1)
+		ret = ftdi_usb_open_desc(_ftdi, _vid, _pid, NULL, NULL);
+	else
+		ret = ftdi_usb_open_bus_addr(_ftdi, _bus, _addr);
+	if (ret < 0) {
 		fprintf(stderr, "unable to open ftdi device: %d (%s)\n",
 			ret, ftdi_get_error_string(_ftdi));
 		ftdi_free(_ftdi);
@@ -64,7 +98,7 @@ void FTDIpp_MPSSE::open_device(unsigned int vid, unsigned int pid,
 /* cf. ftdi.c same function */
 void FTDIpp_MPSSE::ftdi_usb_close_internal ()
 {
-	libusb_close (_ftdi->usb_dev);
+	libusb_close(_ftdi->usb_dev);
 	_ftdi->usb_dev = NULL;
 }
 
@@ -73,10 +107,12 @@ int FTDIpp_MPSSE::close_device()
 	int rtn;
 	if (_ftdi == NULL)
 		return EXIT_FAILURE;
+
+	/* purge FTDI */
 	ftdi_usb_purge_rx_buffer(_ftdi);
 	ftdi_usb_purge_tx_buffer(_ftdi);
 
-	/*ftdi_usb_close(h->ftdi);
+	/*
 	 * repompe de la fonction et des suivantes
 	 */
 	 if (_ftdi->usb_dev != NULL) {
@@ -258,4 +294,95 @@ int FTDIpp_MPSSE::mpsse_read(unsigned char *rx_buff, int len)
 		num_read += n;
 	} while (len > 0);
 	return num_read;
+}
+
+unsigned int FTDIpp_MPSSE::udevstufftoint(const char *udevstring, int base)
+{
+	char *endp;
+	int ret;
+	errno = 0;
+
+	if (udevstring == NULL)
+		return (-1);
+
+	ret = (unsigned int)strtol(udevstring, &endp, base);
+	if (errno) {
+		fprintf(stderr,
+			"udevstufftoint: Unable to parse number Error : %s (%d)\n",
+			strerror(errno), errno);
+		return (-2);
+	}
+	if (endp == optarg) {
+		fprintf(stderr, "udevstufftoint: No digits were found\n");
+		return (-3);
+	}
+	return (ret);
+}
+
+bool FTDIpp_MPSSE::search_with_dev(const string &device)
+{
+	struct udev *udev;
+	struct udev_device *dev, *usbdeviceparent;
+	char devtype;
+
+	struct stat statinfo;
+	if (stat(device.c_str(), &statinfo) < 0) {
+		printf("unable to stat file\n");
+		return false;
+	}
+
+	/* get device type */
+	switch (statinfo.st_mode & S_IFMT) {
+	case S_IFBLK:
+		devtype = 'b';
+		break;
+	case S_IFCHR:
+		devtype = 'c';
+		break;
+	default:
+		printf("not char or block device\n");
+		return false;
+	}
+
+	/* Create the udev object */
+	udev = udev_new();
+	if (!udev) {
+		printf("Can't create udev\n");
+		return false;
+	}
+
+	dev = udev_device_new_from_devnum(udev, devtype, statinfo.st_rdev);
+
+	if (dev == NULL) {
+		printf("no dev\n");
+		udev_device_unref(dev);
+		udev_unref(udev);
+		return false;
+	}
+
+	/* Get closest usb device parent (we need VIP/PID)  */
+	usbdeviceparent =
+	    udev_device_get_parent_with_subsystem_devtype(dev, "usb",
+							  "usb_device");
+	if (!usbdeviceparent) {
+		printf
+		    ("Unable to find parent usb device! Is this actually an USB device ?\n");
+		udev_device_unref(dev);
+		udev_unref(udev);
+		return false;
+	}
+
+	_bus = udevstufftoint(udev_device_get_sysattr_value(
+				usbdeviceparent, "busnum"), 10);
+	_addr = udevstufftoint(udev_device_get_sysattr_value(
+				usbdeviceparent, "devnum"), 10);
+	sprintf(_product, "%s", udev_device_get_sysattr_value(usbdeviceparent, "product"));
+	_vid = udevstufftoint(
+		udev_device_get_sysattr_value(usbdeviceparent, "idVendor"), 16);
+	_pid = udevstufftoint(udev_device_get_sysattr_value(
+		usbdeviceparent, "idProduct"), 16);
+
+	printf("vid %x pid %x bus %d addr %d product name : %s\n", _vid, _pid, _bus, _addr, _product);
+
+	return true;
 }
