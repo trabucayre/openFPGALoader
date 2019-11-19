@@ -11,7 +11,7 @@ Current support:
 This application uses **libftdi1**, so this library must be installed (and,
 depending of the distribution, headers too)
 ```bash
-apt-get install libftdi1-2 libftdi1-dev libftdipp1-3 libftdipp1-dev
+apt-get install libftdi1-2 libftdi1-dev libftdipp1-3 libftdipp1-dev libudev-dev
 ```
 and if not already done, install **pkg-config**, **make** and **g++**.
 
@@ -34,7 +34,7 @@ cycloader -- a program to flash cyclone10 LP FPGA
 
   -b, --board=BOARD          board name, may be used instead of cable
   -c, --cable=CABLE          jtag interface
-  -d, --display              display FPGA and EEPROM model
+  -d, --device=DEVICE        device to use (/dev/ttyUSBx)
   -o, --offset=OFFSET        start offset in EEPROM
   -r, --reset                reset FPGA after operations
   -v, --verbose              Produce verbose output
@@ -44,6 +44,43 @@ cycloader -- a program to flash cyclone10 LP FPGA
 
 ```
 To have complete help
+
+### Generic usage
+
+#### display FPGA
+
+With board name:
+```bash
+cycloader -b theBoard
+```
+
+With cable:
+```bash
+cycloader -c theCable
+```
+
+With device node:
+```bash
+cycloader -d /dev/ttyUSBX
+```
+
+**Note:** for some cable (like *digilent* adapters) signals from the converter
+are not just directly to the FPGA. For this case, the *-c* must be added.
+
+**Note:** when -d is not provided, *cycloader* will opens the first *ftdi*
+found, if more than one converter is connected to the computer,
+the *-d* option is the better solution
+
+#### Reset device
+
+```bash
+cycloader [options] -r
+```
+
+#### load bitstream device (memory or flash)
+```bash
+cycloader [options] /path/to/bitstream.ext
+```
 
 ### CYC1000
 
