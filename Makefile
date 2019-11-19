@@ -1,8 +1,8 @@
 EXEC_NAME=cycloader
 SRC= $(wildcard *.cpp) 
 OBJS= $(SRC:.cpp=.o)
-LDFLAGS=-lm -g -Wall -std=c++11 $(shell pkg-config --libs libftdipp1)
-CXXFLAGS=-g -Wall -std=c++11 $(shell pkg-config --cflags libftdipp1)
+LDFLAGS=-lm -g -Wall -std=c++11 $(shell pkg-config --libs libftdipp1 libudev)
+CXXFLAGS=-g -Wall -std=c++11 $(shell pkg-config --cflags libftdipp1 libudev)
 
 all:$(EXEC_NAME)
 
