@@ -6,6 +6,9 @@ Current support:
 * Digilent arty Artix xc7a35ti (memory and spi flash)
 * Lattice MachXO3LF Starter Kit LCMX03LF-6900C (flash)
 
+Supported cables:
+* JTAG-HS3: jtag programmer cable from digilent
+
 ## compile and install
 
 This application uses **libftdi1**, so this library must be installed (and,

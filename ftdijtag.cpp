@@ -204,8 +204,8 @@ int FtdiJtag::read_write(unsigned char *tdi, unsigned char *tdo, int len, char l
 	unsigned char tx_buf[3] = {(unsigned char)(MPSSE_LSB | MPSSE_WRITE_NEG |
 							   ((tdi) ? MPSSE_DO_WRITE : 0) |
 							   ((tdo) ? (MPSSE_DO_READ | MPSSE_READ_NEG) : 0)),
-							   ((xfer - 1) & 0xff),		// low
-							   (((xfer - 1) >> 8) & 0xff)};	// high
+							   static_cast<unsigned char>((xfer - 1) & 0xff),		// low
+							   static_cast<unsigned char>((((xfer - 1) >> 8) & 0xff))};	// high
 
 	flushTMS(true);
 
