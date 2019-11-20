@@ -53,6 +53,11 @@ using namespace std;
 #define READ_FEATURE_ROW 0xE7
 #define READ_FEABITS     0xFB
 #define READ_STATUS_REGISTER 0x3C
+#	define REG_STATUS_DONE		(1 << 8)
+#	define REG_STATUS_ISC_EN	(1 << 9)
+#	define REG_STATUS_BUSY		(1 << 12)
+#	define REG_STATUS_FAIL		(1 << 13)
+#	define REG_STATUS_EXEC_ERR	(1 << 26)
 
 Lattice::Lattice(FtdiJtag *jtag, const string filename):Device(jtag, filename)
 {
@@ -105,6 +110,12 @@ void displayFeabits(uint16_t _featbits)
 	    (((_featbits>>2)&0x01)?"Enabled" : "Disabled"));
 }
 
+bool Lattice::checkStatus(uint32_t val, uint32_t mask)
+{
+	uint32_t reg = readStatusReg();
+
+	return ((reg & mask) == val) ? true : false;
+}
 
 void Lattice::program(unsigned int offset)
 {
@@ -118,26 +129,51 @@ void Lattice::program(unsigned int offset)
 
 	/* read ID Code 0xE0 */
 	printf("IDCode : %x\n", idCode());
+
 	/* preload 0x1C */
 	uint8_t tx_buf[26];
 	memset(tx_buf, 0xff, 26);
 	wr_rd(0x1C, tx_buf, 26, NULL, 0);
+
 	/* ISC Enable 0xC6 */
-	EnableISC(0x00);
-	displayReadReg(readStatusReg());
-	/* ISC ERASE */
-	if (flashErase(0x01) == false)
+	cout << "Enable configuration: " << flush;
+	if (!EnableISC(0x00)) {
+		cerr << "FAIL" << endl;
+		displayReadReg(readStatusReg());
 		return;
-	displayReadReg(readStatusReg());
+	} else {
+		cout << "DONE" << endl;
+	}
+	/* ISC ERASE */
+	cout << "SRAM erase: " << flush;
+	if (flashErase(0x01) == false) {
+		cerr << "FAIL" << endl;
+		displayReadReg(readStatusReg());
+		return;
+	} else {
+		cout << "DONE" << endl;
+	}
+
 	/* bypass */
 	wr_rd(0xff, NULL, 0, NULL, 0);
 	/* ISC Enable 0xC6 followed by 0x08 */
-	EnableISC(0x08);
-	displayReadReg(readStatusReg());
-	/* ISC ERASE */
-	if (flashErase(0x0e) == false)
+	cout << "Enable configuration: " << flush;
+	if (!EnableISC(0x08)) {
+		cerr << "FAIL" << endl;
+		displayReadReg(readStatusReg());
 		return;
-	displayReadReg(readStatusReg());
+	} else {
+		cout << "DONE" << endl;
+	}
+	/* ISC ERASE */
+	cout << "Flash erase: " << flush;
+	if (flashErase(0x0e) == false) {
+		cerr << "FAIL" << endl;
+		return;
+	} else {
+		cout << "DONE" << endl;
+	}
+
 	/* LSC_INIT_ADDRESS */
 	wr_rd(0x46, NULL, 0, NULL, 0);
 	_jtag->set_state(FtdiJtag::RUN_TEST_IDLE);
@@ -149,38 +185,56 @@ void Lattice::program(unsigned int offset)
 	if (Verify(_jed) == false)
 		return;
 
+	/* missing usercode update */
+
 	/* LSC_INIT_ADDRESS */
 	wr_rd(0x46, NULL, 0, NULL, 0);
 	_jtag->set_state(FtdiJtag::RUN_TEST_IDLE);
 	_jtag->toggleClk(1000);
-	displayReadReg(readStatusReg());
 	/* write feature row */
-	if (writeFeaturesRow(_jed.featuresRow()) == false)
+	cout << "Program features Row: " << flush;
+	if (writeFeaturesRow(_jed.featuresRow(), true) == false) {
+		cerr << "FAIL" << endl;
 		return;
-	readFeaturesRow();
+	} else {
+		cout << "DONE" << endl;
+	}
 	/* write feabits */
-	if (writeFeabits(_jed.feabits()) == false)
+	cout << "Program feabitss: " << flush;
+	if (writeFeabits(_jed.feabits(), true) == false) {
+		cerr << "FAIL" << endl;
 		return;
-	readFeabits();
-	displayReadReg(readStatusReg());
+	} else {
+		cout << "DONE" << endl;
+	}
 	/* ISC program done 0x5E */
+	cout << "Write program Done: " << flush;
 	if (writeProgramDone() == false) {
-		cerr << "Error: writeProgramDone" << endl;
+		cerr << "FAIL" << endl;
 		return;
+	} else {
+		cout << "DONE" << endl;
 	}
 	/* bypass */
 	wr_rd(0xff, NULL, 0, NULL, 0);
-	displayReadReg(readStatusReg());
-	DisableISC();
+	/* disable configuration mode */
+	cout << "Disable configuration: " << flush;
+	if (!DisableISC()) {
+		cerr << "FAIL" << endl;
+		return;
+	} else {
+		cout << "DONE" << endl;
+	}
 	/* ISC REFRESH 0x26 */
+	cout << "Refresh: " << flush;
 	if (loadConfiguration() == false) {
-		cerr << "Error: loadConfiguration" << endl;
+		cerr << "FAIL" << endl;
 		return;
+	} else {
+		cout << "DONE" << endl;
 	}
-	displayReadReg(readStatusReg());
 	/* bypass */
 	wr_rd(0xff, NULL, 0, NULL, 0);
-	displayReadReg(readStatusReg());
 	_jtag->go_test_logic_reset();
 	return;
 }
@@ -191,7 +245,11 @@ bool Lattice::EnableISC(uint8_t flash_mode)
 
 	_jtag->set_state(FtdiJtag::RUN_TEST_IDLE);
 	_jtag->toggleClk(1000);
-	return pollBusyFlag();
+	if (!pollBusyFlag())
+		return false;
+	if (!checkStatus(REG_STATUS_ISC_EN, REG_STATUS_ISC_EN))
+		return false;
+	return true;
 }
 
 bool Lattice::DisableISC()
@@ -199,7 +257,11 @@ bool Lattice::DisableISC()
 	wr_rd(ISC_DISABLE, NULL, 0, NULL, 0);
 	_jtag->set_state(FtdiJtag::RUN_TEST_IDLE);
 	_jtag->toggleClk(1000);
-	return pollBusyFlag();
+	if (!pollBusyFlag())
+		return false;
+	if (!checkStatus(0, REG_STATUS_ISC_EN))
+		return false;
+	return true;
 }
 
 bool Lattice::EnableCfgIf()
@@ -264,7 +326,7 @@ uint32_t Lattice::readStatusReg()
 {
 	uint32_t reg;
 	uint8_t rx[4], tx[4];
-	wr_rd(0x3C, tx, 4, rx, 4, true);
+	wr_rd(0x3C, tx, 4, rx, 4);
 	_jtag->set_state(FtdiJtag::RUN_TEST_IDLE);
 	_jtag->toggleClk(1000);
 	reg = rx[3] << 24 | rx[2] << 16 | rx[1] << 8 | rx[0];
@@ -320,17 +382,17 @@ void Lattice::displayReadReg(uint32_t dev)
 		printf("\tOTP\n");
 	if (dev & 1<<7)
 		printf("\tDecrypt Enable\n");
-	if (dev & 1<<8)
+	if (dev & REG_STATUS_DONE)
 		printf("\tDone Flag\n");
-	if (dev & 1<<9)
+	if (dev & REG_STATUS_ISC_EN)
 		printf("\tISC Enable\n");
 	if (dev & 1 << 10)
 		printf("\tWrite Enable\n");
 	if (dev & 1 << 11)
 		printf("\tRead Enable\n");
-	if (dev & 1 << 12)
+	if (dev & REG_STATUS_BUSY)
 		printf("\tBusy Flag\n");
-	if (dev & 1 << 13)
+	if (dev & REG_STATUS_FAIL)
 		printf("\tFail Flag\n");
 	if (dev & 1 << 14)
 		printf("\tFFEA OTP\n");
@@ -381,7 +443,7 @@ void Lattice::displayReadReg(uint32_t dev)
 		default:
 			printf("unknown %x\n", err);
 	}
-	if (dev & 1 << 26)
+	if (dev & REG_STATUS_EXEC_ERR)
 		printf("\tEXEC Error\n");
 	if (dev & 1 << 27)
 		printf("\tDevice failed to verify\n");
@@ -420,12 +482,15 @@ bool Lattice::flashEraseAll()
 
 bool Lattice::flashErase(uint8_t mask)
 {
-	printf("flash erase\n");
 	uint8_t tx[1] = {mask};
 	wr_rd(FLASH_ERASE, tx, 1, NULL, 0);
 	_jtag->set_state(FtdiJtag::RUN_TEST_IDLE);
 	_jtag->toggleClk(1000);
-	return pollBusyFlag();
+	if (!pollBusyFlag())
+		return false;
+	if (!checkStatus(0, REG_STATUS_FAIL))
+		return false;
+	return true;
 }
 
 bool Lattice::flashProg(uint32_t start_addr, std::vector<std::string> data)
@@ -450,7 +515,6 @@ bool Lattice::Verify(JedParser &_jed, bool unlock)
 	uint8_t tx_buf[16], rx_buf[16];
 	if (unlock)
 		EnableISC(0x08);
-	displayReadReg(readStatusReg());
 
 	wr_rd(0x46, NULL, 0, NULL, 0);
 	_jtag->set_state(FtdiJtag::RUN_TEST_IDLE);
@@ -484,37 +548,33 @@ bool Lattice::Verify(JedParser &_jed, bool unlock)
 		DisableISC();
 
 	progress.done();
-	displayReadReg(readStatusReg());
 
 	return true;
 }
 
-void Lattice::readFeaturesRow()
+uint64_t Lattice::readFeaturesRow()
 {
 	uint8_t tx_buf[8];
 	uint8_t rx_buf[8];
+	uint64_t reg = 0;
 	bzero(tx_buf, 8);
 	wr_rd(READ_FEATURE_ROW, tx_buf, 8, rx_buf, 8);
-	int i;
-	for (i=7; i >= 0; i--) {
-		printf("%02x ", rx_buf[i]);
-	}
-	printf("\n");
+	for (int i = 0; i < 8; i++)
+		reg |= ((uint64_t)rx_buf[i] << (i*8));
+	return reg;
 }
 
-void Lattice::readFeabits()
+uint16_t Lattice::readFeabits()
 {
 	uint8_t rx_buf[2];
 	wr_rd(READ_FEABITS, NULL, 0, rx_buf, 2);
 	_jtag->set_state(FtdiJtag::RUN_TEST_IDLE);
 	_jtag->toggleClk(1000);
 
-	uint16_t reg = rx_buf[0] | (((uint16_t)rx_buf[1]) << 8);
-	printf("%04x\n", reg);
-	displayFeabits(reg);
+	return rx_buf[0] | (((uint16_t)rx_buf[1]) << 8);
 }
 
-bool Lattice::writeFeaturesRow(uint64_t features)
+bool Lattice::writeFeaturesRow(uint64_t features, bool verify)
 {
 	uint8_t tx_buf[8];
 	for (int i=0; i < 8; i++)
@@ -522,10 +582,14 @@ bool Lattice::writeFeaturesRow(uint64_t features)
 	wr_rd(PROG_FEATURE_ROW, tx_buf, 8, NULL, 0);
 	_jtag->set_state(FtdiJtag::RUN_TEST_IDLE);
 	_jtag->toggleClk(1000);
-	return pollBusyFlag();
+	if (!pollBusyFlag())
+		return false;
+	if (verify)
+		return (features == readFeaturesRow()) ? true : false;
+	return true;
 }
 
-bool Lattice::writeFeabits(uint16_t feabits)
+bool Lattice::writeFeabits(uint16_t feabits, bool verify)
 {
 	uint8_t tx_buf[2] = {(uint8_t)(feabits&0x00ff),
 							(uint8_t)(0x00ff & (feabits>>8))};
@@ -533,7 +597,11 @@ bool Lattice::writeFeabits(uint16_t feabits)
 	wr_rd(PROG_FEABITS, tx_buf, 2, NULL, 0);
 	_jtag->set_state(FtdiJtag::RUN_TEST_IDLE);
 	_jtag->toggleClk(1000);
-	return pollBusyFlag();
+	if (!pollBusyFlag())
+		return false;
+	if (verify)
+		return (feabits == readFeabits()) ? true : false;
+	return true;
 }
 
 bool Lattice::writeProgramDone()
@@ -541,7 +609,11 @@ bool Lattice::writeProgramDone()
 	wr_rd(PROG_DONE, NULL, 0, NULL, 0);
 	_jtag->set_state(FtdiJtag::RUN_TEST_IDLE);
 	_jtag->toggleClk(1000);
-	return pollBusyFlag();
+	if (!pollBusyFlag())
+		return false;
+	if (!checkStatus(REG_STATUS_DONE, REG_STATUS_DONE))
+		return false;
+	return true;
 }
 
 bool Lattice::loadConfiguration()
@@ -549,5 +621,9 @@ bool Lattice::loadConfiguration()
 	wr_rd(REFRESH, NULL, 0, NULL, 0);
 	_jtag->set_state(FtdiJtag::RUN_TEST_IDLE);
 	_jtag->toggleClk(1000);
-	return pollBusyFlag();
+	if (!pollBusyFlag())
+		return false;
+	if (!checkStatus(REG_STATUS_DONE, REG_STATUS_DONE))
+		return false;
+	return true;
 }

@@ -39,7 +39,6 @@ class Lattice: public Device {
 		bool wr_rd(uint8_t cmd, uint8_t *tx, int tx_len,
 				uint8_t *rx, int rx_len, bool verbose = false);
 		void unlock();
-		void displayReadReg(uint32_t dev);
 		bool EnableISC(uint8_t flash_mode);
 		bool DisableISC();
 		bool EnableCfgIf();
@@ -48,11 +47,13 @@ class Lattice: public Device {
 		bool flashEraseAll();
 		bool flashErase(uint8_t mask);
 		bool flashProg(uint32_t start_addr, std::vector<std::string> data);
+		bool checkStatus(uint32_t val, uint32_t mask);
+		void displayReadReg(uint32_t dev);
 		uint32_t readStatusReg();
-		void readFeaturesRow();
-		bool writeFeaturesRow(uint64_t features);
-		void readFeabits();
-		bool writeFeabits(uint16_t feabits);
+		uint64_t readFeaturesRow();
+		bool writeFeaturesRow(uint64_t features, bool verify);
+		uint16_t readFeabits();
+		bool writeFeabits(uint16_t feabits, bool verify);
 		bool writeProgramDone();
 		bool loadConfiguration();
 
