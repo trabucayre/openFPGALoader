@@ -121,6 +121,10 @@ bool Lattice::checkStatus(uint32_t val, uint32_t mask)
 void Lattice::program(unsigned int offset)
 {
 	(void) offset;
+	uint64_t featuresRow;
+	uint16_t feabits;
+	uint8_t eraseMode;
+	vector<string> ufm_data, cfg_data;
 
 	if (_mode != FLASH_MODE)
 		return;
@@ -139,7 +143,7 @@ void Lattice::program(unsigned int offset)
 	/* ISC Enable 0xC6 */
 	printInfo("Enable configuration: ", false);
 	if (!EnableISC(0x00)) {
-		printError("FAIL");// << endl;
+		printError("FAIL");
 		displayReadReg(readStatusReg());
 		return;
 	} else {
@@ -147,7 +151,7 @@ void Lattice::program(unsigned int offset)
 	}
 	/* ISC ERASE */
 	printInfo("SRAM erase: ", false);
-	if (flashErase(0x01) == false) {
+	if (flashErase(FLASH_ERASE_SRAM) == false) {
 		printError("FAIL");
 		displayReadReg(readStatusReg());
 		return;
@@ -166,9 +170,30 @@ void Lattice::program(unsigned int offset)
 	} else {
 		printSuccess("DONE");
 	}
+
+
+	for (size_t i = 0; i < _jed.nb_section(); i++) {
+		string note = _jed.noteForSection(i);
+		if (note == "TAG DATA") {
+			eraseMode |= FLASH_ERASE_UFM;
+			ufm_data = _jed.data_for_section(i);
+		} else if (note == "END CONFIG DATA") {
+			continue;
+		} else {
+			cfg_data = _jed.data_for_section(i);
+		}
+	}
+
+	/* check if feature area must be updated */
+	featuresRow = _jed.featuresRow();
+	feabits = _jed.feabits();
+	eraseMode = FLASH_ERASE_CFG;
+	if (featuresRow != readFeaturesRow() || feabits != readFeabits())
+		eraseMode |= FLASH_ERASE_FEATURE;
+
 	/* ISC ERASE */
 	printInfo("Flash erase: ", false);
-	if (flashErase(0x0e) == false) {
+	if (flashErase(eraseMode) == false) {
 		printError("FAIL");
 		return;
 	} else {
@@ -181,7 +206,7 @@ void Lattice::program(unsigned int offset)
 	_jtag->toggleClk(1000);
 
 	/* flash UFM */
-	if (false == flashProg(_jed.offset_for_section(0), _jed.data_for_section(0)))
+	if (false == flashProg(0, cfg_data))
 		return;
 	if (Verify(_jed) == false)
 		return;
@@ -192,22 +217,26 @@ void Lattice::program(unsigned int offset)
 	wr_rd(0x46, NULL, 0, NULL, 0);
 	_jtag->set_state(FtdiJtag::RUN_TEST_IDLE);
 	_jtag->toggleClk(1000);
-	/* write feature row */
-	printInfo("Program features Row: ", false);
-	if (writeFeaturesRow(_jed.featuresRow(), true) == false) {
-		printError("FAIL");
-		return;
-	} else {
-		printSuccess("DONE");
+
+	if ((eraseMode & FLASH_ERASE_FEATURE) != 0) {
+		/* write feature row */
+		printInfo("Program features Row: ", false);
+		if (writeFeaturesRow(_jed.featuresRow(), true) == false) {
+			printError("FAIL");
+			return;
+		} else {
+			printSuccess("DONE");
+		}
+		/* write feabits */
+		printInfo("Program feabits: ", false);
+		if (writeFeabits(_jed.feabits(), true) == false) {
+			printError("FAIL");
+			return;
+		} else {
+			printSuccess("DONE");
+		}
 	}
-	/* write feabits */
-	printInfo("Program feabitss: ", false);
-	if (writeFeabits(_jed.feabits(), true) == false) {
-		printError("FAIL");
-		return;
-	} else {
-		printSuccess("DONE");
-	}
+
 	/* ISC program done 0x5E */
 	printInfo("Write program Done: ", false);
 	if (writeProgramDone() == false) {
