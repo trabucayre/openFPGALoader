@@ -27,6 +27,7 @@
 #include "ftdijtag.hpp"
 #include "lattice.hpp"
 #include "progressBar.hpp"
+#include "display.hpp"
 
 using namespace std;
 
@@ -136,42 +137,42 @@ void Lattice::program(unsigned int offset)
 	wr_rd(0x1C, tx_buf, 26, NULL, 0);
 
 	/* ISC Enable 0xC6 */
-	cout << "Enable configuration: " << flush;
+	printInfo("Enable configuration: ", false);
 	if (!EnableISC(0x00)) {
-		cerr << "FAIL" << endl;
+		printError("FAIL");// << endl;
 		displayReadReg(readStatusReg());
 		return;
 	} else {
-		cout << "DONE" << endl;
+		printSuccess("DONE");
 	}
 	/* ISC ERASE */
-	cout << "SRAM erase: " << flush;
+	printInfo("SRAM erase: ", false);
 	if (flashErase(0x01) == false) {
-		cerr << "FAIL" << endl;
+		printError("FAIL");
 		displayReadReg(readStatusReg());
 		return;
 	} else {
-		cout << "DONE" << endl;
+		printSuccess("DONE");
 	}
 
 	/* bypass */
 	wr_rd(0xff, NULL, 0, NULL, 0);
 	/* ISC Enable 0xC6 followed by 0x08 */
-	cout << "Enable configuration: " << flush;
+	printInfo("Enable configuration: ", false);
 	if (!EnableISC(0x08)) {
-		cerr << "FAIL" << endl;
+		printError("FAIL");
 		displayReadReg(readStatusReg());
 		return;
 	} else {
-		cout << "DONE" << endl;
+		printSuccess("DONE");
 	}
 	/* ISC ERASE */
-	cout << "Flash erase: " << flush;
+	printInfo("Flash erase: ", false);
 	if (flashErase(0x0e) == false) {
-		cerr << "FAIL" << endl;
+		printError("FAIL");
 		return;
 	} else {
-		cout << "DONE" << endl;
+		printSuccess("DONE");
 	}
 
 	/* LSC_INIT_ADDRESS */
@@ -192,46 +193,46 @@ void Lattice::program(unsigned int offset)
 	_jtag->set_state(FtdiJtag::RUN_TEST_IDLE);
 	_jtag->toggleClk(1000);
 	/* write feature row */
-	cout << "Program features Row: " << flush;
+	printInfo("Program features Row: ", false);
 	if (writeFeaturesRow(_jed.featuresRow(), true) == false) {
-		cerr << "FAIL" << endl;
+		printError("FAIL");
 		return;
 	} else {
-		cout << "DONE" << endl;
+		printSuccess("DONE");
 	}
 	/* write feabits */
-	cout << "Program feabitss: " << flush;
+	printInfo("Program feabitss: ", false);
 	if (writeFeabits(_jed.feabits(), true) == false) {
-		cerr << "FAIL" << endl;
+		printError("FAIL");
 		return;
 	} else {
-		cout << "DONE" << endl;
+		printSuccess("DONE");
 	}
 	/* ISC program done 0x5E */
-	cout << "Write program Done: " << flush;
+	printInfo("Write program Done: ", false);
 	if (writeProgramDone() == false) {
-		cerr << "FAIL" << endl;
+		printError("FAIL");
 		return;
 	} else {
-		cout << "DONE" << endl;
+		printSuccess("DONE");
 	}
 	/* bypass */
 	wr_rd(0xff, NULL, 0, NULL, 0);
 	/* disable configuration mode */
-	cout << "Disable configuration: " << flush;
+	printInfo("Disable configuration: ", false);
 	if (!DisableISC()) {
-		cerr << "FAIL" << endl;
+		printError("FAIL");
 		return;
 	} else {
-		cout << "DONE" << endl;
+		printSuccess("DONE");
 	}
 	/* ISC REFRESH 0x26 */
-	cout << "Refresh: " << flush;
+	printInfo("Refresh: ", false);
 	if (loadConfiguration() == false) {
-		cerr << "FAIL" << endl;
+		printError("FAIL");
 		return;
 	} else {
-		cout << "DONE" << endl;
+		printSuccess("DONE");
 	}
 	/* bypass */
 	wr_rd(0xff, NULL, 0, NULL, 0);
