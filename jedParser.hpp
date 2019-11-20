@@ -32,6 +32,7 @@ class JedParser: public ConfigBitstreamParser {
 			int offset;
 			std::vector<std::string> data;
 			int len;
+			std::string associatedPrevNote;
 		};
 
 	public:
@@ -44,6 +45,7 @@ class JedParser: public ConfigBitstreamParser {
 		std::vector<std::string> data_for_section(int id) {
 			return _data_list[id].data;
 		}
+		std::string noteForSection(int id) {return _data_list[id].associatedPrevNote;}
 		uint32_t feabits() {return _feabits;}
 		uint64_t featuresRow() {return _featuresRow;}
 

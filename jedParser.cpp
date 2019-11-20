@@ -175,6 +175,8 @@ void JedParser::parseLField(vector<string> content)
 
 int JedParser::parse()
 {
+	string previousNote;
+
 	if (!_fd.is_open()) {
 		_fd.open(_filename);
 		if (!_fd.is_open()) {
@@ -207,6 +209,7 @@ int JedParser::parse()
 
 		switch (lines[0][0]) {
 		case 'N':  // note
+			previousNote = lines[0].substr(5);
 			break;
 		case 'Q':
 			int count;
@@ -242,6 +245,7 @@ int JedParser::parse()
 			break;
 		case 'L':  // fuse offset
 			parseLField(lines);
+			_data_list[_data_list.size()-1].associatedPrevNote = previousNote;
 			break;
 		default:
 			printf("inconnu\n");
@@ -251,7 +255,8 @@ int JedParser::parse()
 
 	int size = 0;
 	for (size_t i = 0; i < _data_list.size(); i++) {
-		printf("area[%ld] %d %d\n", i, _data_list[i].offset, _data_list[i].len);
+		printf("area[%ld] %d %d ", i, _data_list[i].offset, _data_list[i].len);
+		printf("%s\n", _data_list[i].associatedPrevNote.c_str());
 		size += _data_list[i].len;
 	}
 
