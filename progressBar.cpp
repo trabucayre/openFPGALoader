@@ -18,6 +18,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include "progressBar.hpp"
+#include "display.hpp"
 
 ProgressBar::ProgressBar(std::string mess, int maxValue, int progressLen):
 		_mess(mess), _maxValue(maxValue), _progressLen(progressLen)
@@ -29,15 +30,24 @@ void ProgressBar::display(int value)
 	float percent = ((float)value * 100.0f)/(float)_maxValue;
 	float nbEq = (percent * (float) _progressLen)/100.0f;
 
-	fprintf(stderr, "\r%s: [", _mess.c_str());
+	//fprintf(stderr, "\r%s: [", _mess.c_str());
+	printInfo("\r" + _mess + ": [", false);
 	for (int z=0; z < nbEq; z++) {
 		fputc('=', stderr);
 	}
 	fprintf(stderr, "%*s", (int)(_progressLen-nbEq), "");
-	fprintf(stderr, "] %3.2f%%", percent);
+	//fprintf(stderr, "] %3.2f%%", percent);
+	printInfo("] " + std::to_string(percent) + "%", false);
 }
 void ProgressBar::done()
 {
 	display(_maxValue);
-	fprintf(stderr, "\nDone\n");
+	//fprintf(stderr, "\nDone\n");
+	printSuccess("\nDone");
+}
+void ProgressBar::fail()
+{
+	display(_maxValue);
+	//fprintf(stderr, "\nDone\n");
+	printSuccess("\nFail");
 }

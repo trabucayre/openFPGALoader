@@ -25,6 +25,7 @@ class ProgressBar {
 		ProgressBar(std::string mess, int maxValue, int progressLen);
 		void display(int value);
 		void done();
+		void fail();
 	private:
 		std::string _mess;
 		int _maxValue;
