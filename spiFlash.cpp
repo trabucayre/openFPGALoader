@@ -72,7 +72,9 @@ static uint8_t reverseByte(uint8_t src)
 #define FLASH_WRVECR   0x61
 #define FLASH_RDVECR   0x65
 
-SPIFlash::SPIFlash(FtdiJtag *jtag):_jtag(jtag) {}
+SPIFlash::SPIFlash(FtdiJtag *jtag, bool verbose):_jtag(jtag), _verbose(verbose)
+{
+}
 
 /* 
  * jtag : jtag interface
@@ -229,10 +231,12 @@ void SPIFlash::read_id()
 	for (int i=0; i < 4; i++) {
 		d = d << 8;
 		d |= (0x00ff & (int)rx[i]);
-		printf("%x ", rx[i]);
+		if (_verbose)
+			printf("%x ", rx[i]);
 	}
 
-	printf("read %x\n", d);
+	if (_verbose)
+		printf("read %x\n", d);
 	/* read extented */
 	len += (d & 0x0ff);
 
@@ -247,16 +251,18 @@ void SPIFlash::read_id()
 	printf("EDID + CFD length : %02x\n", rx[3]);
 	printf("EDID              : %02x%02x\n", rx[5], rx[4]);
 	printf("CFD               : ");
-	for (int i = 6; i < len; i++)
-		printf("%02x ", rx[i]);
-	printf("\n");
+	if (_verbose) {
+		for (int i = 6; i < len; i++)
+			printf("%02x ", rx[i]);
+		printf("\n");
+	}
 }
 
-uint8_t SPIFlash::read_status_reg(bool display)
+uint8_t SPIFlash::read_status_reg()
 {
 	uint8_t rx;
 	jtag_write_read(FLASH_RDSR, NULL, &rx, 1);
-	if (display) {
+	if (_verbose) {
 		printf("RDSR : %02x\n", rx);
 		printf("WIP  : %d\n", rx&0x01);
 		printf("WEL  : %d\n", (rx>>1)&0x01);
@@ -277,7 +283,7 @@ void SPIFlash::power_down()
 	jtag_write_read(FLASH_POWER_DOWN, NULL, NULL, 0);
 }
 
-int SPIFlash::write_enable(bool verbose)
+int SPIFlash::write_enable()
 {
 	jtag_write_read(FLASH_WREN, NULL, NULL, 0);
 	/* wait WEL */
@@ -286,7 +292,7 @@ int SPIFlash::write_enable(bool verbose)
 		return -1;
 	}
 
-	if (verbose)
+	if (_verbose)
 		std::cout << "write en: Success" << std::endl;
 	return 0;
 }
@@ -298,7 +304,7 @@ int SPIFlash::write_disable()
 	int ret = wait(FLASH_RDSR_WEL, 0x00, 1000);
 	if (ret == -1)
 		printf("write disable: Error\n");
-	else
+	else if (_verbose)
 		printf("write disable: Success\n");
 	return ret;
 }

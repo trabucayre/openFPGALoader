@@ -22,13 +22,13 @@
 
 class SPIFlash {
 	public:
-		SPIFlash(FtdiJtag *jtag);
+		SPIFlash(FtdiJtag *jtag, bool verbose);
 		/* power */
 		void power_up();
 		void power_down();
 		void reset();
 		/* protection */
-		int write_enable(bool verbose=false);
+		int write_enable();
 		int write_disable();
 		int disable_protection();
 		/* erase */
@@ -40,13 +40,14 @@ class SPIFlash {
 		/* combo flash + erase */
 		int erase_and_prog(int base_addr, uint8_t *data, int len);
 		/* display/info */
-		uint8_t read_status_reg(bool display=false);
+		uint8_t read_status_reg();
 		void read_id();
 	private:
 		void jtag_write_read(uint8_t cmd, uint8_t *tx, uint8_t *rx, uint16_t len = 0);
 		int wait(uint8_t mask, uint8_t cond, uint32_t timeout, bool verbose=false);
 
 		FtdiJtag *_jtag;
+		bool _verbose;
 };
 
 #endif
