@@ -6,9 +6,10 @@
 
 using namespace std;
 
-ConfigBitstreamParser::ConfigBitstreamParser(string filename, int mode):
+ConfigBitstreamParser::ConfigBitstreamParser(string filename, int mode,
+			bool verbose):
 			_filename(filename), _bit_length(0),
-			_file_size(0), _fd(filename,
+			_file_size(0), _verbose(verbose), _fd(filename,
 			ifstream::in | (ios_base::openmode)mode), _bit_data()
 {
 	if (!_fd.is_open()) {
