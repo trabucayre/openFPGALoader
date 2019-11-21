@@ -127,9 +127,9 @@ int main(int argc, char **argv)
 
 	Device *fpga;
 	if (fab == "xilinx") {
-		fpga = new Xilinx(jtag, args.bit_file);
+		fpga = new Xilinx(jtag, args.bit_file, args.verbose);
 	} else if (fab == "altera") {
-		fpga = new Altera(jtag, args.bit_file);
+		fpga = new Altera(jtag, args.bit_file, args.verbose);
 	} else {
 		fpga = new Lattice(jtag, args.bit_file, args.verbose);
 	}
