@@ -22,7 +22,7 @@
 
 class McsParser: public ConfigBitstreamParser {
 	public:
-		McsParser(std::string filename);
+		McsParser(std::string filename, bool verbose);
 		int parse();
 
 	private:

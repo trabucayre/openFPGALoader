@@ -41,8 +41,9 @@ using namespace std;
 #define TYPE_BASE 7
 #define DATA_BASE 9
 
-McsParser::McsParser(string filename):
-		ConfigBitstreamParser(filename, ConfigBitstreamParser::ASCII_MODE),
+McsParser::McsParser(string filename, bool verbose):
+		ConfigBitstreamParser(filename, ConfigBitstreamParser::ASCII_MODE,
+		verbose),
 		_base_addr(0)
 {}
 
