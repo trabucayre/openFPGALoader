@@ -5,13 +5,14 @@
 
 using namespace std;
 
-Device::Device(FtdiJtag *jtag, string filename):
+Device::Device(FtdiJtag *jtag, string filename, bool verbose):
 		_filename(filename),
 		_file_extension(filename.substr(filename.find_last_of(".") +1)),
-		_mode(NONE_MODE)
+		_mode(NONE_MODE), _verbose(verbose)
 {
 	_jtag = jtag;
-	cout << _file_extension << endl;
+	if (_verbose)
+		cout << "File type : " << _file_extension << endl;
 }
 
 Device::~Device() {}

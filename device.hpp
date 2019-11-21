@@ -18,7 +18,7 @@ class Device {
 			FLASH_MODE = 1,
 			MEM_MODE = 2
 		};
-		Device(FtdiJtag *jtag, std::string filename);
+		Device(FtdiJtag *jtag, std::string filename, bool verbose = false);
 		virtual ~Device();
 		virtual void program(unsigned int offset = 0) = 0;
 		virtual int  idCode() = 0;
@@ -28,6 +28,7 @@ class Device {
 		std::string _filename;
 		std::string _file_extension;
 		enum prog_mode _mode;
+		bool _verbose;
 };
 
 #endif
