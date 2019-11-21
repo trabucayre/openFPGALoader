@@ -7,8 +7,8 @@
 #define IRLENGTH 10
 #define BIT_FOR_FLASH "/usr/local/share/cycloader/test_sfl.svf"
 
-Altera::Altera(FtdiJtag *jtag, std::string filename):Device(jtag, filename),
-	_svf(_jtag)
+Altera::Altera(FtdiJtag *jtag, std::string filename, bool verbose):
+	Device(jtag, filename, verbose), _svf(_jtag, _verbose)
 {
 	if (_filename != "") {
 		if (_file_extension == "svf")

@@ -7,7 +7,7 @@
 
 class Xilinx: public Device {
 	public:
-		Xilinx(FtdiJtag *jtag, std::string filename);
+		Xilinx(FtdiJtag *jtag, std::string filename, bool verbose);
 		~Xilinx();
 
 		void program(unsigned int offset = 0) override;

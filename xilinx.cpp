@@ -9,8 +9,9 @@
 #include "xilinx.hpp"
 #include "part.hpp"
 
-Xilinx::Xilinx(FtdiJtag *jtag, std::string filename):Device(jtag, filename)
-	{
+Xilinx::Xilinx(FtdiJtag *jtag, std::string filename, bool verbose):
+	Device(jtag, filename, verbose)
+{
 	if (_filename != ""){
 		if (_file_extension == "bit")
 			_mode = Device::MEM_MODE;
@@ -43,7 +44,6 @@ void Xilinx::reset()
 	_jtag->shiftIR(BYPASS, 6);
 	_jtag->set_state(FtdiJtag::RUN_TEST_IDLE);
 	_jtag->toggleClk(2000);
-
 }
 
 int Xilinx::idCode()
@@ -69,7 +69,7 @@ void Xilinx::program(unsigned int offset)
 			reset();
 			break;
 		case Device::MEM_MODE:
-			BitParser bitfile(_filename);
+			BitParser bitfile(_filename, _verbose);
 			bitfile.parse();
 			program_mem(bitfile, offset);
 			break;
@@ -82,14 +82,14 @@ void Xilinx::program_spi(unsigned int offset)
 	bitname += fpga_list[idCode()].family + ".bit";
 
 	/* first: load spi over jtag */
-	BitParser bitfile(bitname);
+	BitParser bitfile(bitname, _verbose);
 	bitfile.parse();
 	program_mem(bitfile, offset);
 
 	/* last: read file and erase/flash spi flash */
-	McsParser mcs(_filename);
+	McsParser mcs(_filename, _verbose);
 	mcs.parse();
-	SPIFlash spiFlash(_jtag);
+	SPIFlash spiFlash(_jtag, _verbose);
 	spiFlash.erase_and_prog(offset, mcs.getData(), mcs.getLength());
 }
 

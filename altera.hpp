@@ -8,7 +8,7 @@
 
 class Altera: public Device {
 	public:
-		Altera(FtdiJtag *jtag, std::string filename);
+		Altera(FtdiJtag *jtag, std::string filename, bool verbose);
 		~Altera();
 
 		void program(unsigned int offset = 0);
