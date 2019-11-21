@@ -7,7 +7,7 @@ using namespace std;
 
 class SVF_jtag {
  public:
-	SVF_jtag(FtdiJtag *jtag);
+	SVF_jtag(FtdiJtag *jtag, bool verbose);
 	~SVF_jtag();
 	void parse(string filename);
 	void setVerbose(bool verbose) {_verbose = verbose;}
