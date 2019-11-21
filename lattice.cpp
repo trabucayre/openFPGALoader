@@ -60,7 +60,8 @@ using namespace std;
 #	define REG_STATUS_FAIL		(1 << 13)
 #	define REG_STATUS_EXEC_ERR	(1 << 26)
 
-Lattice::Lattice(FtdiJtag *jtag, const string filename):Device(jtag, filename)
+Lattice::Lattice(FtdiJtag *jtag, const string filename, bool verbose):
+		Device(jtag, filename, verbose)
 {
 	if (_filename != "")
 		if (_file_extension == "jed")
@@ -129,11 +130,23 @@ void Lattice::program(unsigned int offset)
 	if (_mode != FLASH_MODE)
 		return;
 
-	JedParser _jed(_filename);
-	_jed.parse();
+	JedParser _jed(_filename, _verbose);
+
+	printInfo("Open file " + _filename + " ", false);
+	printSuccess("DONE");
+
+	if (_jed.parse() == EXIT_FAILURE) {
+		printInfo("Parse file ", false);
+		printError("FAIL");
+		return;
+	} else {
+		printInfo("Parse file ", false);
+		printSuccess("DONE");
+	}
 
 	/* read ID Code 0xE0 */
-	printf("IDCode : %x\n", idCode());
+	if (_verbose)
+		printf("IDCode : %x\n", idCode());
 
 	/* preload 0x1C */
 	uint8_t tx_buf[26];

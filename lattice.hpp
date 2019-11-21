@@ -29,7 +29,7 @@
 
 class Lattice: public Device {
 	public:
-		Lattice(FtdiJtag *jtag, std::string filename);
+		Lattice(FtdiJtag *jtag, std::string filename, bool verbose);
 		int idCode() override;
 		void reset() override {}
 		void program(unsigned int offset) override;
