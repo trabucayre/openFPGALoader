@@ -37,9 +37,10 @@
 
 using namespace std;
 
-JedParser::JedParser(string filename):
+JedParser::JedParser(string filename, bool verbose):
 	ConfigBitstreamParser(filename, ConfigBitstreamParser::BIN_MODE),
-	_fuse_count(0), _pin_count(0), _featuresRow(0), _feabits(0), _checksum(0)
+	_fuse_count(0), _pin_count(0), _featuresRow(0), _feabits(0), _checksum(0),
+	_userCode(0), _security_settings(0), _default_fuse_state(0)
 {
 }
 
@@ -202,10 +203,8 @@ int JedParser::parse()
 	std::vector<string>lines;
 	do {
 		lines = readJEDLine();
-		if (lines.size() == 0) {
-			printf("a un problem\n");
+		if (lines.size() == 0)
 			break;
-		}
 
 		switch (lines[0][0]) {
 		case 'N':  // note
@@ -227,18 +226,17 @@ int JedParser::parse()
 			}
 			break;
 		case 'G':
-			cout << lines[0] << endl;
+			_security_settings = static_cast<uint8_t>(lines[0][1]) - '0';
 			break;
 		case 'F':
-			cout << lines[0] << endl;
+			_default_fuse_state = lines[0][1] - '0';
 			break;
 		case 'C':
 			sscanf(lines[0].c_str() + 1, "%hx", &_checksum);
-			cout << "fuse checksum " << lines[0];
-			printf(" AA %x\n", _checksum);
 			break;
 		case 0x03:
-			cout << "end" << endl;
+			if (_verbose)
+				cout << "end" << endl;
 			break;
 		case 'E':
 			parseEField(lines);
@@ -247,16 +245,32 @@ int JedParser::parse()
 			parseLField(lines);
 			_data_list[_data_list.size()-1].associatedPrevNote = previousNote;
 			break;
+		case 'U':  // userCode
+			switch (lines[0][1]) {
+				case 'H': /* hex */
+					sscanf(lines[0].c_str() + 2, "%x", &_userCode);
+					break;
+				case 'A': /* ASCII */
+					sscanf(lines[0].c_str() + 2, "%d", &_userCode);
+					break;
+				default: /* binary */
+					for (size_t ii = 1; ii < lines[0].size(); ii++)
+						_userCode = ((_userCode << 1) | (lines[0][ii] - '0'));
+			}
+			break;
 		default:
 			printf("inconnu\n");
 			cout << lines[0]<< endl;
+			return EXIT_FAILURE;
 		}
 	} while (lines[0][0] != 0x03);
 
 	int size = 0;
 	for (size_t i = 0; i < _data_list.size(); i++) {
-		printf("area[%ld] %d %d ", i, _data_list[i].offset, _data_list[i].len);
-		printf("%s\n", _data_list[i].associatedPrevNote.c_str());
+		if (_verbose) {
+			printf("area[%ld] %d %d ", i, _data_list[i].offset, _data_list[i].len);
+			printf("%s\n", _data_list[i].associatedPrevNote.c_str());
+		}
 		size += _data_list[i].len;
 	}
 
@@ -266,19 +280,20 @@ int JedParser::parse()
 			checksum += (uint8_t)_data_list[0].data[line][col];
 	}
 
-	printf("theorical checksum %x -> %x\n", _checksum, checksum);
-
-	FILE *fd = fopen("toto.txt", "w+");
-	for (size_t line = 0; line < _data_list[0].data.size(); line++) {
-		for (size_t col = 0; col < _data_list[0].data[line].size(); col++)
-			fprintf(fd, "%02x ", (unsigned char)_data_list[0].data[line][col]);
-		fprintf(fd, "\n");
+	if (_verbose)
+		printf("theorical checksum %x -> %x\n", _checksum, checksum);
+	if (_checksum != checksum) {
+		cerr << "Error: wrong checksum" << endl;
+		return 0;
 	}
-	fclose(fd);
-	printf("array size %ld\n", _data_list[0].data.size());
 
-	if (_fuse_count != size)
+	if (_verbose)
+		printf("array size %ld\n", _data_list[0].data.size());
+
+	if (_fuse_count != size) {
 		cerr << "Not all fuses are programmed" << endl;
+		return 0;
+	}
 
 
 	return EXIT_SUCCESS;

@@ -36,7 +36,7 @@ class JedParser: public ConfigBitstreamParser {
 		};
 
 	public:
-		JedParser(std::string filename);
+		JedParser(std::string filename, bool verbose = false);
 		int parse();
 		void display();
 
@@ -61,6 +61,9 @@ class JedParser: public ConfigBitstreamParser {
 		uint64_t _featuresRow;
 		uint16_t _feabits;
 		uint16_t _checksum;
+		uint32_t _userCode;
+		uint8_t _security_settings;
+		uint8_t _default_fuse_state;
 };
 
 #endif  // JEDPARSER_HPP_
