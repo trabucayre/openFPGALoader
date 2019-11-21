@@ -43,17 +43,16 @@ using namespace std;
  */
 
 FtdiJtag::FtdiJtag(FTDIpp_MPSSE::mpsse_bit_config &cable, string dev,
-			unsigned char interface, uint32_t clkHZ):
-			FTDIpp_MPSSE(dev, interface, clkHZ),
+			unsigned char interface, uint32_t clkHZ, bool verbose):
+			FTDIpp_MPSSE(dev, interface, clkHZ, verbose),
 			_state(RUN_TEST_IDLE),
 			_tms_buffer_size(128), _num_tms(0),
-			_board_name("nope"), _verbose(false)
+			_board_name("nope")
 {
 	display("%x\n", cable.bit_low_val);
 	display("%x\n", cable.bit_low_dir);
 	display("%x\n", cable.bit_high_val);
 	display("%x\n", cable.bit_high_dir);
-	_verbose = false;
 
 	_tms_buffer = (unsigned char *)malloc(sizeof(unsigned char) * _tms_buffer_size);
 	bzero(_tms_buffer, _tms_buffer_size);
@@ -61,18 +60,17 @@ FtdiJtag::FtdiJtag(FTDIpp_MPSSE::mpsse_bit_config &cable, string dev,
 }
 
 FtdiJtag::FtdiJtag(FTDIpp_MPSSE::mpsse_bit_config &cable,
-		   unsigned char interface, uint32_t clkHZ):
-		   FTDIpp_MPSSE(cable.vid, cable.pid, interface, clkHZ),
+		   unsigned char interface, uint32_t clkHZ, bool verbose):
+		   FTDIpp_MPSSE(cable.vid, cable.pid, interface, clkHZ, verbose),
 		   _state(RUN_TEST_IDLE),
 		   _tms_buffer_size(128), _num_tms(0),
-		   _board_name("nope"), _verbose(false)
+		   _board_name("nope")
 {
 	display("board_name %s\n", _board_name.c_str());
 	display("%x\n", cable.bit_low_val);
 	display("%x\n", cable.bit_low_dir);
 	display("%x\n", cable.bit_high_val);
 	display("%x\n", cable.bit_high_dir);
-	_verbose = false;
 
 	_tms_buffer = (unsigned char *)malloc(sizeof(unsigned char) * _tms_buffer_size);
 	bzero(_tms_buffer, _tms_buffer_size);

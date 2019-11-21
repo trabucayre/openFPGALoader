@@ -10,8 +10,9 @@ class FtdiJtag : public FTDIpp_MPSSE {
  public:
 	//FtdiJtag(std::string board_name, int vid, int pid, unsigned char interface, uint32_t clkHZ);
 	FtdiJtag(FTDIpp_MPSSE::mpsse_bit_config &cable, std::string dev,
-		unsigned char interface, uint32_t clkHZ);
-	FtdiJtag(FTDIpp_MPSSE::mpsse_bit_config &cable, unsigned char interface, uint32_t clkHZ);
+		unsigned char interface, uint32_t clkHZ, bool verbose = false);
+	FtdiJtag(FTDIpp_MPSSE::mpsse_bit_config &cable, unsigned char interface, uint32_t clkHZ,
+		bool verbose);
 	~FtdiJtag();
 
 	int detectChain(std::vector<int> &devices, int max_dev);

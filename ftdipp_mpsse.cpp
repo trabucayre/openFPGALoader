@@ -24,9 +24,9 @@ using namespace std;
 #endif
 
 FTDIpp_MPSSE::FTDIpp_MPSSE(const string &dev, unsigned char interface,
-			   uint32_t clkHZ):_vid(0), _pid(0), _bus(-1), _addr(-1), _product(""),
-			    _interface(interface),
-				_clkHZ(clkHZ), _buffer_size(2*32768), _num(0), _verbose(false)
+			   uint32_t clkHZ, bool verbose):_verbose(verbose), _vid(0),
+				_pid(0), _bus(-1), _addr(-1), _product(""), _interface(interface),
+				_clkHZ(clkHZ), _buffer_size(2*32768), _num(0)
 {
 	if (!search_with_dev(dev)) {
 		cerr << "No cable found" << endl;
@@ -43,9 +43,10 @@ FTDIpp_MPSSE::FTDIpp_MPSSE(const string &dev, unsigned char interface,
 }
 
 FTDIpp_MPSSE::FTDIpp_MPSSE(int vid, int pid, unsigned char interface,
-			   uint32_t clkHZ):_vid(vid), _pid(pid), _bus(-1), _addr(-1), _product(""),
-			   _interface(interface),
-			   _clkHZ(clkHZ), _buffer_size(2*32768), _num(0), _verbose(false)
+			   uint32_t clkHZ, bool verbose):_verbose(verbose), _vid(vid),
+			   _pid(pid), _bus(-1),
+			   _addr(-1), _product(""), _interface(interface),
+			   _clkHZ(clkHZ), _buffer_size(2*32768), _num(0)
 {
 	open_device(115200);
 
@@ -69,7 +70,7 @@ void FTDIpp_MPSSE::open_device(unsigned int baudrate)
 {
 	int ret;
 
-	printf("try to open %x %x %d %d\n", _vid, _pid, _bus, _addr);
+	display("try to open %x %x %d %d\n", _vid, _pid, _bus, _addr);
 
 	_ftdi = ftdi_new();
 	if (_ftdi == NULL) {
@@ -78,7 +79,7 @@ void FTDIpp_MPSSE::open_device(unsigned int baudrate)
 	}
 
 	ftdi_set_interface(_ftdi, (ftdi_interface)_interface);
-	if (_bus == -1 or _addr == -1)
+	if (_bus == -1 || _addr == -1)
 		ret = ftdi_usb_open_desc(_ftdi, _vid, _pid, NULL, NULL);
 	else
 #if (OLD_FTDI_VERSION == 1)
@@ -100,7 +101,7 @@ void FTDIpp_MPSSE::open_device(unsigned int baudrate)
 }
 
 /* cf. ftdi.c same function */
-void FTDIpp_MPSSE::ftdi_usb_close_internal ()
+void FTDIpp_MPSSE::ftdi_usb_close_internal()
 {
 	libusb_close(_ftdi->usb_dev);
 	_ftdi->usb_dev = NULL;
@@ -128,7 +129,7 @@ int FTDIpp_MPSSE::close_device()
 		if (_ftdi->module_detach_mode == AUTO_DETACH_SIO_MODULE) {
 			rtn = libusb_attach_kernel_driver(_ftdi->usb_dev, _ftdi->interface);
 			if( rtn != 0)
-				fprintf(stderr, "detach error %d\n",rtn);
+				fprintf(stderr, "detach error %d\n", rtn);
 		}
 	}
 	ftdi_usb_close_internal();
@@ -175,11 +176,11 @@ int FTDIpp_MPSSE::init(unsigned char latency, unsigned char bitmask_mode,
 	if (setClkFreq(_clkHZ, 0) < 0)
 		return -1;
 
-	buf_cmd[1] = bit_conf.bit_low_val;	//0xe8;
-	buf_cmd[2] = bit_conf.bit_low_dir;	//0xeb;
+	buf_cmd[1] = bit_conf.bit_low_val;  // 0xe8;
+	buf_cmd[2] = bit_conf.bit_low_dir;  // 0xeb;
 
-	buf_cmd[4] = bit_conf.bit_high_val;	//0x00;
-	buf_cmd[5] = bit_conf.bit_high_dir;	//0x60;
+	buf_cmd[4] = bit_conf.bit_high_val;  // 0x00;
+	buf_cmd[5] = bit_conf.bit_high_dir;  // 0x60;
 	mpsse_store(buf_cmd, 6);
 	mpsse_write();
 
@@ -212,8 +213,8 @@ int FTDIpp_MPSSE::setClkFreq(uint32_t clkHZ, char use_divide_by_5)
 
     presc = (base_freq /(_clkHZ * 2)) -1;
     real_freq = base_freq / ((1+presc)*2);
-    display("presc : %d input freq : %d requested freq : %d real freq : %d\n", presc,
-            base_freq, _clkHZ, real_freq);
+    display("presc : %d input freq : %d requested freq : %d real freq : %d\n",
+			presc, base_freq, _clkHZ, real_freq);
     buffer[2] = presc & 0xff;
     buffer[3] = (presc >> 8) & 0xff;
 
@@ -249,7 +250,7 @@ int FTDIpp_MPSSE::mpsse_store(unsigned char *buff, int len)
 			return -1;
 		}
 	}
-	if (_verbose) cout << __func__ << " " << _num << " " << len << endl;
+	display("%s %d %d\n", __func__, _num, len);
 	memcpy(_buffer + _num, ptr, len);
 	_num += len;
 	return 0;
@@ -386,7 +387,7 @@ bool FTDIpp_MPSSE::search_with_dev(const string &device)
 	_pid = udevstufftoint(udev_device_get_sysattr_value(
 		usbdeviceparent, "idProduct"), 16);
 
-	printf("vid %x pid %x bus %d addr %d product name : %s\n", _vid, _pid, _bus, _addr, _product);
+	display("vid %x pid %x bus %d addr %d product name : %s\n", _vid, _pid, _bus, _addr, _product);
 
 	return true;
 }

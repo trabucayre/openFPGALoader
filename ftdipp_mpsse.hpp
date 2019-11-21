@@ -5,8 +5,10 @@
 
 class FTDIpp_MPSSE {
 	public:
-		FTDIpp_MPSSE(const std::string &dev, unsigned char interface, uint32_t clkHZ);
-		FTDIpp_MPSSE(int vid, int pid, unsigned char interface, uint32_t clkHZ);
+		FTDIpp_MPSSE(const std::string &dev, unsigned char interface,
+			uint32_t clkHZ, bool verbose = false);
+		FTDIpp_MPSSE(int vid, int pid, unsigned char interface,
+			uint32_t clkHZ, bool verbose = false);
 		~FTDIpp_MPSSE();
 
 		typedef struct {
@@ -36,6 +38,7 @@ class FTDIpp_MPSSE {
 		int mpsse_get_buffer_size() {return _buffer_size;}
 		unsigned int udevstufftoint(const char *udevstring, int base);
 		bool search_with_dev(const std::string &device);
+		bool _verbose;
 
 	private:
 		int _vid;
@@ -47,7 +50,6 @@ class FTDIpp_MPSSE {
 		int _clkHZ;
 		int _buffer_size;
 		int _num;
-		bool _verbose;
 		unsigned char *_buffer;
 		struct ftdi_context *_ftdi;
 };
