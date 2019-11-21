@@ -14,14 +14,9 @@
 
 using namespace std;
 
-#define DEBUG 1
-
-#ifdef DEBUG
+//#define DEBUG 1
 #define display(...) \
 	do { if (_verbose) fprintf(stdout, __VA_ARGS__);}while(0)
-#else
-#define display(...) do {}while(0)
-#endif
 
 FTDIpp_MPSSE::FTDIpp_MPSSE(const string &dev, unsigned char interface,
 			   uint32_t clkHZ, bool verbose):_verbose(verbose), _vid(0),
@@ -250,7 +245,9 @@ int FTDIpp_MPSSE::mpsse_store(unsigned char *buff, int len)
 			return -1;
 		}
 	}
+#ifdef DEBUG
 	display("%s %d %d\n", __func__, _num, len);
+#endif
 	memcpy(_buffer + _num, ptr, len);
 	_num += len;
 	return 0;
@@ -261,7 +258,9 @@ int FTDIpp_MPSSE::mpsse_write()
 	if (_num == 0)
 		return 0;
 
+#ifdef DEBUG
 	display("%s %d\n", __func__, _num);
+#endif
 
 	if (ftdi_write_data(_ftdi, _buffer, _num) != _num) {
 		cout << "erreur de write" << endl;
@@ -288,11 +287,13 @@ int FTDIpp_MPSSE::mpsse_read(unsigned char *rx_buff, int len)
 			fprintf(stderr, "Error: ftdi_read_data in %s", __func__);
 			return -1;
 		}
+#ifdef DEBUG
 		if (_verbose) {
 			display("%s %d\n", __func__, n);
 			for (int i = 0; i < n; i++)
 				display("\t%s %x\n", __func__, p[i]);
 		}
+#endif
 
 		len -= n;
 		p += n;
