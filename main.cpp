@@ -78,7 +78,8 @@ int main(int argc, char **argv)
 		}
 		args.cable = (*t).first;
 	} else if (args.cable[0] == '-') { /* if no board and no cable */
-		cout << "No cable or board specified: using direct ft2232 interface" << endl;
+		if (args.verbose)
+			cout << "No cable or board specified: using direct ft2232 interface" << endl;
 		args.cable = "ft2232";
 	}
 
@@ -92,15 +93,16 @@ int main(int argc, char **argv)
 	/* jtag base */
 	FtdiJtag *jtag;
 	if (args.device == "-")
-		jtag = new FtdiJtag(cable, 1, 6000000);
+		jtag = new FtdiJtag(cable, 1, 6000000, args.verbose);
 	else
-		jtag = new FtdiJtag(cable, args.device, 1, 6000000);
+		jtag = new FtdiJtag(cable, args.device, 1, 6000000, args.verbose);
 
 	/* chain detection */
 	vector<int> listDev;
 	int found = jtag->detectChain(listDev, 5);
 
-	cout << "found " << std::to_string(found) << " devices" << endl;
+	if (args.verbose)
+		cout << "found " << std::to_string(found) << " devices" << endl;
 	if (found > 1) {
 		cerr << "Error: currently only one device is supported" << endl;
 		return EXIT_FAILURE;
@@ -114,7 +116,7 @@ int main(int argc, char **argv)
 	if (fpga_list.find(idcode) == fpga_list.end()) {
 		cerr << "Error: device not supported" << endl;
 		return 1;
-	} else {
+	} else if (args.verbose) {
 		printf("idcode 0x%x\nfunder %s\nmodel  %s\nfamily %s\n",
 			idcode,
 			fpga_list[idcode].funder.c_str(),
@@ -129,7 +131,7 @@ int main(int argc, char **argv)
 	} else if (fab == "altera") {
 		fpga = new Altera(jtag, args.bit_file);
 	} else {
-		fpga = new Lattice(jtag, args.bit_file);
+		fpga = new Lattice(jtag, args.bit_file, args.verbose);
 	}
 
 	fpga->program(args.offset);
