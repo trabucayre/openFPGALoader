@@ -160,11 +160,13 @@ void EPCQ::program(unsigned int start_offset, string filename, bool reverse)
 	erase_sector(start_sector, (char)nb_sect);
 
 	/* now start programming */
-	printf("program in ");
-	if (reverse)
-		printf("reverse mode\n");
-	else
-		printf("direct mode\n");
+	if (_verbose) {
+		printf("program in ");
+		if (reverse)
+			printf("reverse mode\n");
+		else
+			printf("direct mode\n");
+	}
 	buffer[0] = WR_BYTES_REG;
 	for (i= 0; i < nb_iter; i++) {
 		do_write_enable();
@@ -240,17 +242,20 @@ short EPCQ::detect()
 	tx_buf[0] = 0x9f;
 	/* 1 cmd byte + 2 dummy_byte */
 	_spi.ft2232_spi_wr_then_rd(tx_buf, 3, &_device_id, 1);
-	printf("device id 0x%x attendu 0x15\n", _device_id);
+	if (_verbose)
+		printf("device id 0x%x attendu 0x15\n", _device_id);
 	/* read EPCQ silicon id */
 	tx_buf[0] = 0xAB;
 	/* 1 cmd byte + 3 dummy_byte */
 	_spi.ft2232_spi_wr_then_rd(tx_buf, 4, &_silicon_id, 1);
-	printf("silicon id 0x%x attendu 0x14\n", _silicon_id);
+	if (_verbose)
+		printf("silicon id 0x%x attendu 0x14\n", _silicon_id);
 	return (_device_id << 8) | _silicon_id;
 }
 
-EPCQ::EPCQ(int vid, int pid, unsigned char interface, uint32_t clkHZ):
-	_spi(vid, pid, interface, clkHZ)
+EPCQ::EPCQ(int vid, int pid, unsigned char interface, uint32_t clkHZ,
+	bool verbose):
+	_spi(vid, pid, interface, clkHZ, verbose)
 {
 	unsigned char mode = 0;
 	

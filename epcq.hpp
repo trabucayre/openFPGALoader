@@ -5,7 +5,8 @@ using namespace std;
 
 class EPCQ {
  public:
- 	EPCQ(int vid, int pid, unsigned char interface, uint32_t clkHZ);
+ 	EPCQ(int vid, int pid, unsigned char interface, uint32_t clkHZ,
+		bool verbose = false);
 	~EPCQ();
 
 	short detect();
@@ -28,6 +29,7 @@ class EPCQ {
 
 		unsigned char _device_id;
 		unsigned char _silicon_id;
+		bool _verbose;
 
 #if 0
 	uint32_t _freq_hz;
