@@ -13,7 +13,8 @@ class FtdiSpi : public FTDIpp_MPSSE {
 	#define SPI_CS_MANUAL 1
 
 
-	FtdiSpi(int vid, int pid, unsigned char interface, uint32_t clkHZ);
+	FtdiSpi(int vid, int pid, unsigned char interface, uint32_t clkHZ,
+		bool verbose);
 	~FtdiSpi();
 
 	void setMode(uint8_t mode);
@@ -38,4 +39,6 @@ class FtdiSpi : public FTDIpp_MPSSE {
 	uint8_t _rd_mode;
 	unsigned char _endian;
 	uint8_t _cs_mode;
+ protected:
+	bool _verbose;
 };
