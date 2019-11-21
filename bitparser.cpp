@@ -6,16 +6,12 @@
 
 using namespace std;
 
-#ifdef DEBUG
 #define display(...) \
-	do { if (1) fprintf(stdout, __VA_ARGS__);} while(0)
-#else
-#define display(...) do {} while(0)
-#endif
+	do { if (_verbose) fprintf(stdout, __VA_ARGS__);} while(0)
 
-BitParser::BitParser(string filename):
-	ConfigBitstreamParser(filename, ConfigBitstreamParser::BIN_MODE),
-	fieldA(), part_name(), date(), hour(),
+BitParser::BitParser(string filename, bool verbose):
+	ConfigBitstreamParser(filename, ConfigBitstreamParser::BIN_MODE,
+	verbose), fieldA(), part_name(), date(), hour(),
 	design_name(), userID(), toolVersion()
 {
 }
@@ -41,28 +37,28 @@ int BitParser::parseField()
 		length = 4;
 	}
 	_fd.read(tmp, sizeof(uint8_t)*length);
-#ifdef DEBUG
-	for (int i = 0; i < length; i++)
-		printf("%c", tmp[i]);
-	printf("\n");
-#endif
+	if (_verbose) {
+		for (int i = 0; i < length; i++)
+			printf("%c", tmp[i]);
+		printf("\n");
+	}
 	switch (type) {
 		case 'a': /* design name:userid:synthesize tool version */
 			fieldA=(tmp);
 			prev_pos = 0;
 			pos = fieldA.find(";");
 			design_name = fieldA.substr(prev_pos, pos);
-			printf("%d %d %s\n", prev_pos, pos, design_name.c_str());
+			display("%d %d %s\n", prev_pos, pos, design_name.c_str());
 			prev_pos = pos+1;
 
 			pos = fieldA.find(";", prev_pos);
 			userID = fieldA.substr(prev_pos, pos-prev_pos);
-			printf("%d %d %s\n", prev_pos, pos, userID.c_str());
+			display("%d %d %s\n", prev_pos, pos, userID.c_str());
 			prev_pos = pos+1;
 
 			//pos = fieldA.find(";", prev_pos);
 			toolVersion = fieldA.substr(prev_pos);
-			printf("%d %d %s\n", prev_pos, pos, toolVersion.c_str());
+			display("%d %d %s\n", prev_pos, pos, toolVersion.c_str());
 			break;
 		case 'b': /* FPGA model */
 			part_name = (tmp);
@@ -76,15 +72,11 @@ int BitParser::parseField()
 		case 'e': /* file size */
 			_bit_length = 0;
 			for (int i = 0; i < 4; i++) {
-#ifdef DEBUG
-				printf("%x %x\n", 0xff & tmp[i], _bit_length);
-#endif
+				display("%x %x\n", 0xff & tmp[i], _bit_length);
 				_bit_length <<= 8;
 				_bit_length |= 0xff & tmp[i];
 			}
-#ifdef DEBUG
-			printf("    %x\n", _bit_length);
-#endif
+			display("    %x\n", _bit_length);
 			ret = 0;
 
 			break;
@@ -108,18 +100,20 @@ int BitParser::parse()
 	/* process all field */
 	do {} while (parseField());
 
-	display("results\n\n");
+	if (_verbose) {
+		display("results\n\n");
 
-	cout << "fieldA      : " << fieldA << endl;
-	cout << "            : " << design_name << ";" << userID << ";" << toolVersion << endl;
-	cout << "part name   : " << part_name << endl;
-	cout << "date        : " << date << endl;
-	cout << "hour        : " << hour << endl;
-	cout << "file length : " << _bit_length << endl;
+		cout << "fieldA      : " << fieldA << endl;
+		cout << "            : " << design_name << ";" << userID << ";" << toolVersion << endl;
+		cout << "part name   : " << part_name << endl;
+		cout << "date        : " << date << endl;
+		cout << "hour        : " << hour << endl;
+		cout << "file length : " << _bit_length << endl;
+	}
 
 	/* rest of the file is data to send */
 	int pos = _fd.tellg();
-	cout << pos + _bit_length << endl;
+	display("%d %d\n", pos, _bit_length);
 	_fd.read((char *)&_bit_data[0], sizeof(uint8_t) * _bit_length);
 	if (_fd.gcount() != _bit_length) {
 		cerr << "Error: data read different to asked length ";

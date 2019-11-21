@@ -8,7 +8,7 @@
 
 class BitParser: public ConfigBitstreamParser {
 	public:
-		BitParser(std::string filename);
+		BitParser(std::string filename, bool verbose = false);
 		~BitParser();
 		int parse();
 
