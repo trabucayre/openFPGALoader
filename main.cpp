@@ -118,13 +118,13 @@ int main(int argc, char **argv)
 		cerr << "Error: device " << hex << idcode << " not supported" << endl;
 		return 1;
 	} else if (args.verbose) {
-		printf("idcode 0x%x\nfunder %s\nmodel  %s\nfamily %s\n",
+		printf("idcode 0x%x\nmanufacturer %s\nmodel  %s\nfamily %s\n",
 			idcode,
-			fpga_list[idcode].funder.c_str(),
+			fpga_list[idcode].manufacturer.c_str(),
 			fpga_list[idcode].model.c_str(),
 			fpga_list[idcode].family.c_str());
 	}
-	string fab = fpga_list[idcode].funder;
+	string fab = fpga_list[idcode].manufacturer;
 
 	Device *fpga;
 	if (fab == "xilinx") {
