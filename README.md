@@ -1,17 +1,19 @@
 # openFPGALoader
-Utility for programming Intel/Altera Cyclone Xilinx Serie 7 and Lattice MachXO3
+Universal utility for programming FPGA
 
-__Current support:__
+__Current support kits:__
 
 * Trenz cyc1000 Cyclone 10 LP 10CL025 (memory and spi flash)
 * Digilent arty Artix xc7a35ti (memory and spi flash)
 * Lattice MachXO3LF Starter Kit LCMX03LF-6900C (flash)
 * [Trenz Gowin LittleBee (TEC0117)](https://shop.trenz-electronic.de/en/TEC0117-01-FPGA-Module-with-GOWIN-LittleBee-and-8-MByte-internal-SDRAM)
 
-__Supported FPGA:__
+__Supported (tested) FPGA:__
 
-* Gowin [GW1N (GW1NR-9)](https://www.gowinsemi.com/en/product/detail/2/) (SRAM
-  only)
+* Gowin [GW1N (GW1NR-9)](https://www.gowinsemi.com/en/product/detail/2/) (SRAM only)
+* Lattice [MachXO3LF](http://www.latticesemi.com/en/Products/FPGAandCPLD/MachXO3.aspx)
+* Xilinx Artix 7 [xc7a35ti](https://www.xilinx.com/products/silicon-devices/fpga/artix-7.html) (memory and spi flash)
+* Intel Cyclone 10 LP [10CL025](https://www.intel.com/content/www/us/en/products/programmable/fpga/cyclone-10.html)
 
 __Supported cables:__
 
