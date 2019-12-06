@@ -9,7 +9,7 @@ class ConfigBitstreamParser {
 	public:
 		ConfigBitstreamParser(std::string filename, int mode = ASCII_MODE,
 			bool verbose = false);
-		~ConfigBitstreamParser();
+		virtual ~ConfigBitstreamParser();
 		virtual int parse() = 0;
 		uint8_t *getData() {return (uint8_t*)_bit_data.c_str();}
 		int getLength() {return _bit_length;}
