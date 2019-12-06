@@ -27,6 +27,7 @@
 #include "board.hpp"
 #include "cable.hpp"
 #include "device.hpp"
+#include "gowin.hpp"
 #include "lattice.hpp"
 #include "ftdijtag.hpp"
 #include "part.hpp"
@@ -114,7 +115,7 @@ int main(int argc, char **argv)
 	int idcode = listDev[0];
 
 	if (fpga_list.find(idcode) == fpga_list.end()) {
-		cerr << "Error: device not supported" << endl;
+		cerr << "Error: device " << hex << idcode << " not supported" << endl;
 		return 1;
 	} else if (args.verbose) {
 		printf("idcode 0x%x\nfunder %s\nmodel  %s\nfamily %s\n",
@@ -130,6 +131,8 @@ int main(int argc, char **argv)
 		fpga = new Xilinx(jtag, args.bit_file, args.verbose);
 	} else if (fab == "altera") {
 		fpga = new Altera(jtag, args.bit_file, args.verbose);
+	} else if (fab == "gowin") {
+		fpga = new Gowin(jtag, args.bit_file, args.verbose);
 	} else {
 		fpga = new Lattice(jtag, args.bit_file, args.verbose);
 	}
@@ -155,7 +158,6 @@ static error_t parse_opt(int key, char *arg, struct argp_state *state)
 		arguments->reset = true;
 		break;
 	case 'd':
-		printf("device\n");
 		arguments->device = arg;
 		break;
 	case 'v':
