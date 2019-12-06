@@ -1,4 +1,4 @@
-# cycloader
+# openFPGALoader
 Utility for programming Intel/Altera Cyclone Xilinx Serie 7 and Lattice MachXO3
 
 __Current support:__
@@ -40,9 +40,9 @@ Currently, the install path is hardcoded to /usr/local
 ## Usage
 
 ```bash
-cycloader --help
-Usage: cycloader [OPTION...] BIT_FILE
-cycloader -- a program to flash cyclone10 LP FPGA
+openFPGALoader --help
+Usage: openFPGALoader [OPTION...] BIT_FILE
+openFPGALoader -- a program to flash cyclone10 LP FPGA
 
   -b, --board=BOARD          board name, may be used instead of cable
   -c, --cable=CABLE          jtag interface
@@ -63,35 +63,35 @@ To have complete help
 
 With board name:
 ```bash
-cycloader -b theBoard
+openFPGALoader -b theBoard
 ```
 
 With cable:
 ```bash
-cycloader -c theCable
+openFPGALoader -c theCable
 ```
 
 With device node:
 ```bash
-cycloader -d /dev/ttyUSBX
+openFPGALoader -d /dev/ttyUSBX
 ```
 
 **Note:** for some cable (like *digilent* adapters) signals from the converter
 are not just directly to the FPGA. For this case, the *-c* must be added.
 
-**Note:** when -d is not provided, *cycloader* will opens the first *ftdi*
+**Note:** when -d is not provided, *openFPGALoader* will opens the first *ftdi*
 found, if more than one converter is connected to the computer,
 the *-d* option is the better solution
 
 #### Reset device
 
 ```bash
-cycloader [options] -r
+openFPGALoader [options] -r
 ```
 
 #### load bitstream device (memory or flash)
 ```bash
-cycloader [options] /path/to/bitstream.ext
+openFPGALoader [options] /path/to/bitstream.ext
 ```
 
 ### CYC1000
@@ -104,7 +104,7 @@ quartus_cpf -c -q -g 3.3 -n 12.0MHz p project_name.sof project_name.svf
 ```
 file load:
 ```bash
-cycloader -b cyc1000 project_name.svf
+openFPGALoader -b cyc1000 project_name.svf
 ```
 
 #### SPI flash:
@@ -114,7 +114,7 @@ quartus_cpf -o auto_create_rpd=on -c -d EPCQ16A -s 10CL025YU256C8G project_name.
 ```
 file load:
 ```bash
-cycloader -b cyc1000 -r project_name_auto.rpd
+openFPGALoader -b cyc1000 -r project_name_auto.rpd
 ```
 
 **Note about SPI flash:
@@ -137,7 +137,7 @@ task must be done to generates this bitstream.
 
 __file load:__
 ```bash
-cycloader -b arty *.runs/impl_1/*.bit
+openFPGALoader -b arty *.runs/impl_1/*.bit
 ```
 
 #### SPI flash:
@@ -163,7 +163,7 @@ vivado -nolog -nojournal -mode batch -source script.tcl -tclargs myproject
 
 __file load:__
 ```bash
-cycloader -b arty *.runs/impl_1/*.mcs
+openFPGALoader -b arty *.runs/impl_1/*.mcs
 ```
 ### MachXO3 Starter Kit
 
@@ -174,7 +174,7 @@ special must be done to generates this file.
 
 __file load__:
 ```bash
-cycloader -b machXO3SK impl1/*.jed
+openFPGALoader -b machXO3SK impl1/*.jed
 ```
 
 ### Trenz GOWIN LittleBee (TEC0117)
@@ -186,5 +186,5 @@ special must be done to generates this file.
 
 __file load__:
 ```bash
-cycloader -b machXO3SK impl/pnr/*.fs
+openFPGALoader -b machXO3SK impl/pnr/*.fs
 ```

@@ -1,4 +1,4 @@
-EXEC_NAME=cycloader
+EXEC_NAME=openFPGALoader
 SRC= $(wildcard *.cpp) 
 OBJS= $(SRC:.cpp=.o)
 LDFLAGS=-lm -g -Wall -std=c++11 $(shell pkg-config --libs libftdipp1 libudev)
@@ -20,10 +20,10 @@ $(EXEC_NAME):$(OBJS)
 	$(CC) $(CFLAGS) -o $@ -c $<
 
 install:
-	cp -f cycloader /usr/local/bin
-	mkdir -p /usr/local/share/cycloader
-	cp -f test_sfl.svf /usr/local/share/cycloader
-	cp -f spiOverJtag/*.bit /usr/local/share/cycloader
+	cp -f openFPGALoader /usr/local/bin
+	mkdir -p /usr/local/share/openFPGALoader
+	cp -f test_sfl.svf /usr/local/share/openFPGALoader
+	cp -f spiOverJtag/*.bit /usr/local/share/openFPGALoader
 
 clean:
 	rm -rf *.o

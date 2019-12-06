@@ -44,9 +44,9 @@ struct arguments {
 	string board;
 };
 
-const char *argp_program_version = "cycloader 1.0";
+const char *argp_program_version = "openFPGALoader 1.0";
 const char *argp_program_bug_address = "<gwenhael.goavec-merou@trabucayre.com>";
-static char doc[] = "cycloader -- a program to flash cyclone10 LP FPGA";
+static char doc[] = "openFPGALoader -- a program to flash FPGA";
 static char args_doc[] = "BIT_FILE";
 static error_t parse_opt(int key, char *arg, struct argp_state *state);
 static struct argp_option options[] = {

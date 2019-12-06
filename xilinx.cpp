@@ -78,7 +78,7 @@ void Xilinx::program(unsigned int offset)
 
 void Xilinx::program_spi(unsigned int offset)
 {
-	std::string bitname = "/usr/local/share/cycloader/spiOverJtag_";
+	std::string bitname = "/usr/local/share/openFPGALoader/spiOverJtag_";
 	bitname += fpga_list[idCode()].family + ".bit";
 
 	/* first: load spi over jtag */
