@@ -26,6 +26,7 @@ class FtdiJtag : public FTDIpp_MPSSE {
 	void go_test_logic_reset();
 	void set_state(int newState);
 	int flushTMS(bool flush_buffer = false);
+	void flush() {mpsse_write();}
 	void setTMS(unsigned char tms);
 
 	enum tapState_t {
