@@ -16,6 +16,7 @@
  */
 #include <argp.h>
 #include <fstream>
+#include <iomanip>
 #include <iostream>
 #include <map>
 #include <sstream>
@@ -27,6 +28,7 @@
 #include "board.hpp"
 #include "cable.hpp"
 #include "device.hpp"
+#include "display.hpp"
 #include "gowin.hpp"
 #include "lattice.hpp"
 #include "ftdijtag.hpp"
@@ -42,7 +44,14 @@ struct arguments {
 	string device;
 	string cable;
 	string board;
+	bool list_cables;
+	bool list_boards;
+	bool list_fpga;
 };
+
+#define LIST_CABLE	1
+#define LIST_BOARD 	2
+#define LIST_FPGA	3
 
 const char *argp_program_version = "openFPGALoader 1.0";
 const char *argp_program_bug_address = "<gwenhael.goavec-merou@trabucayre.com>";
@@ -51,23 +60,34 @@ static char args_doc[] = "BIT_FILE";
 static error_t parse_opt(int key, char *arg, struct argp_state *state);
 static struct argp_option options[] = {
 	{"cable",   'c', "CABLE", 0, "jtag interface"},
+	{"list-cables", LIST_CABLE, 0, 0, "list all supported cables"},
 	{"board",   'b', "BOARD", 0, "board name, may be used instead of cable"},
+	{"list-boards", LIST_BOARD, 0, 0, "list all supported boards"},
 	{"device",  'd', "DEVICE", 0, "device to use (/dev/ttyUSBx)"},
+	{"list-fpga", LIST_FPGA, 0, 0, "list all supported FPGA"},
 	{"offset",  'o', "OFFSET", 0, "start offset in EEPROM"},
 	{"verbose", 'v', 0, 0, "Produce verbose output"},
 	{"reset",   'r', 0, 0, "reset FPGA after operations"},
 	{0}
 };
+
 static struct argp argp = { options, parse_opt, args_doc, doc };
+void displaySupported(const struct arguments &args);
 
 int main(int argc, char **argv)
 {
 	FTDIpp_MPSSE::mpsse_bit_config cable;
 
 	/* command line args. */
-	struct arguments args = {false, false, 0, "", "-", "-", "-"};
+	struct arguments args = {false, false, 0, "", "-", "-", "-",
+			false, false, false};
 	/* parse arguments */
 	argp_parse(&argp, argc, argv, 0, 0, &args);
+
+	if (args.list_boards == true || args.list_cables == true || args.list_fpga) {
+		displaySupported(args);
+		return EXIT_SUCCESS;
+	}
 
 	/* if a board name is specified try to use this to determine cable */
 	if (args.board[0] != '-' && board_list.find(args.board) != board_list.end()) {
@@ -144,11 +164,9 @@ int main(int argc, char **argv)
 
 	delete(fpga);
 	delete(jtag);
-
 }
 
 /* arguments parser */
-
 static error_t parse_opt(int key, char *arg, struct argp_state *state)
 {
 	struct arguments *arguments = (struct arguments *)state->input;
@@ -177,9 +195,64 @@ static error_t parse_opt(int key, char *arg, struct argp_state *state)
 		break;
 	case ARGP_KEY_END:
 		break;
+	case LIST_CABLE:
+		arguments->list_cables = true;
+		break;
+	case LIST_BOARD:
+		arguments->list_boards = true;
+		break;
+	case LIST_FPGA:
+		arguments->list_fpga = true;
+		break;
 	default:
 		return ARGP_ERR_UNKNOWN;
 	}
 	return 0;
 }
 
+/* display list of cables, boards and devices supported */
+void displaySupported(const struct arguments &args)
+{
+	if (args.list_cables == true) {
+		stringstream t;
+		t << setw(15) << left << "cable name:" << "vid:pid";
+		printSuccess(t.str());
+		for (auto b = cable_list.begin(); b != cable_list.end(); b++) {
+			FTDIpp_MPSSE::mpsse_bit_config c = (*b).second;
+			stringstream ss;
+			ss << setw(15) << left << (*b).first;
+			ss << "0x" << hex << c.vid << ":" << c.pid;
+			printInfo(ss.str());
+		}
+		cout << endl;
+	}
+
+	if (args.list_boards) {
+		stringstream t;
+		t << setw(15) << left << "board name:" << "cable_name";
+		printSuccess(t.str());
+		for (auto b = board_list.begin(); b != board_list.end(); b++) {
+			stringstream ss;
+			ss << setw(15) << left << (*b).first << " " << (*b).second;
+			printInfo(ss.str());
+		}
+		cout << endl;
+	}
+
+	if (args.list_fpga) {
+		stringstream t;
+		t << setw(12) << left << "IDCode" << setw(14) << "manufacturer";
+		t << setw(15) << "family" << setw(20) << "model";
+		printSuccess(t.str());
+		for (auto b = fpga_list.begin(); b != fpga_list.end(); b++) {
+			fpga_model fpga = (*b).second;
+			stringstream ss, idCode;
+			idCode << "0x" << hex << (*b).first;
+			ss << setw(12) << left << idCode.str();
+			ss << setw(14) << fpga.manufacturer << setw(15) << fpga.family;
+			ss << setw(20) << fpga.model;
+			printInfo(ss.str());
+		}
+		cout << endl;
+	}
+}

@@ -49,6 +49,9 @@ openFPGALoader -- a program to flash cyclone10 LP FPGA
   -b, --board=BOARD          board name, may be used instead of cable
   -c, --cable=CABLE          jtag interface
   -d, --device=DEVICE        device to use (/dev/ttyUSBx)
+      --list-boards          list all supported boards
+      --list-cables          list all supported cables
+      --list-fpga            list all supported FPGA
   -o, --offset=OFFSET        start offset in EEPROM
   -r, --reset                reset FPGA after operations
   -v, --verbose              Produce verbose output
@@ -67,11 +70,13 @@ With board name:
 ```bash
 openFPGALoader -b theBoard
 ```
+(see `openFPGALoader --list-boards`)
 
 With cable:
 ```bash
 openFPGALoader -c theCable
 ```
+(see `openFPGALoader --list-cables`)
 
 With device node:
 ```bash
