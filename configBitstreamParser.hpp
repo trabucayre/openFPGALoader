@@ -19,6 +19,8 @@ class ConfigBitstreamParser {
 			BIN_MODE = std::ifstream::binary
 		};
 
+		static uint8_t reverseByte(uint8_t src);
+
 	protected:
 		std::string _filename;
 		int _bit_length;

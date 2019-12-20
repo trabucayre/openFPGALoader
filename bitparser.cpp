@@ -127,13 +127,3 @@ int BitParser::parse()
 
 	return 0;
 }
-
-uint8_t BitParser::reverseByte(uint8_t src)
-{
-	uint8_t dst = 0;
-	for (int i=0; i < 8; i++) {
-		dst = (dst << 1) | (src & 0x01);
-		src >>= 1;
-	}
-	return dst;
-}

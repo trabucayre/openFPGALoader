@@ -27,3 +27,13 @@ ConfigBitstreamParser::~ConfigBitstreamParser()
 {
 	_fd.close();
 }
+
+uint8_t ConfigBitstreamParser::reverseByte(uint8_t src)
+{
+	uint8_t dst = 0;
+	for (int i=0; i < 8; i++) {
+		dst = (dst << 1) | (src & 0x01);
+		src >>= 1;
+	}
+	return dst;
+}

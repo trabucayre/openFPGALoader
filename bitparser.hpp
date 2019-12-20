@@ -14,7 +14,6 @@ class BitParser: public ConfigBitstreamParser {
 
 	private:
 		int parseField();
-		unsigned char reverseByte(unsigned char c);
 		std::string fieldA;
 		std::string part_name;
 		std::string date;
