@@ -58,14 +58,21 @@ using namespace std;
 #	define REG_STATUS_ISC_EN	(1 << 9)
 #	define REG_STATUS_BUSY		(1 << 12)
 #	define REG_STATUS_FAIL		(1 << 13)
+#	define REG_STATUS_CNF_CHK_MASK	(0x7 << 23)
 #	define REG_STATUS_EXEC_ERR	(1 << 26)
 
 Lattice::Lattice(FtdiJtag *jtag, const string filename, bool verbose):
 		Device(jtag, filename, verbose)
 {
-	if (_filename != "")
-		if (_file_extension == "jed")
+	if (_filename != "") {
+		if (_file_extension == "jed") {
 			_mode = Device::FLASH_MODE;
+		} else if (_file_extension == "bit") {
+			_mode = Device::MEM_MODE;
+		} else {
+			throw std::exception();
+		}
+	}
 }
 
 
@@ -119,46 +126,165 @@ bool Lattice::checkStatus(uint32_t val, uint32_t mask)
 	return ((reg & mask) == val) ? true : false;
 }
 
-void Lattice::program(unsigned int offset)
+bool Lattice::program_mem()
 {
-	(void) offset;
-	uint64_t featuresRow;
-	uint16_t feabits;
-	uint8_t eraseMode;
-	vector<string> ufm_data, cfg_data;
-
-	if (_mode != FLASH_MODE)
-		return;
-
-	JedParser _jed(_filename, _verbose);
+	bool err;
+	LatticeBitParser _bit(_filename, _verbose);
 
 	printInfo("Open file " + _filename + " ", false);
 	printSuccess("DONE");
 
-	if (_jed.parse() == EXIT_FAILURE) {
-		printInfo("Parse file ", false);
+	err = _bit.parse();
+
+	printInfo("Parse file ", false);
+	if (err == EXIT_FAILURE) {
 		printError("FAIL");
-		return;
+		return false;
 	} else {
-		printInfo("Parse file ", false);
 		printSuccess("DONE");
 	}
 
-	/* read ID Code 0xE0 */
 	if (_verbose)
+		_bit.displayHeader();
+
+	/* read ID Code 0xE0 */
+	if (_verbose) {
 		printf("IDCode : %x\n", idCode());
+		displayReadReg(readStatusReg());
+	}
 
 	/* preload 0x1C */
 	uint8_t tx_buf[26];
 	memset(tx_buf, 0xff, 26);
 	wr_rd(0x1C, tx_buf, 26, NULL, 0);
 
+	wr_rd(0xFf, NULL, 0, NULL, 0);
+
 	/* ISC Enable 0xC6 */
 	printInfo("Enable configuration: ", false);
 	if (!EnableISC(0x00)) {
 		printError("FAIL");
 		displayReadReg(readStatusReg());
-		return;
+		return false;
+	} else {
+		printSuccess("DONE");
+	}
+
+	/* ISC ERASE */
+	printInfo("SRAM erase: ", false);
+	if (flashErase(FLASH_ERASE_SRAM) == false) {
+		printError("FAIL");
+		displayReadReg(readStatusReg());
+		return false;
+	} else {
+		printSuccess("DONE");
+	}
+
+	/* LSC_INIT_ADDRESS */
+	wr_rd(0x46, NULL, 0, NULL, 0);
+	_jtag->set_state(FtdiJtag::RUN_TEST_IDLE);
+	_jtag->toggleClk(1000);
+
+	uint8_t *data = _bit.getData();
+	int length = _bit.getLength()/8;
+	wr_rd(0x7A, NULL, 0, NULL, 0);
+	_jtag->set_state(FtdiJtag::RUN_TEST_IDLE);
+	_jtag->toggleClk(2);
+
+	uint8_t tmp[1024];
+	int size = 1024;
+
+	ProgressBar progress("Loading", length, 50);
+
+	for (int i = 0; i < length; i += size) {
+		progress.display(i);
+
+		if (length < i + size)
+			size = length-i;
+
+		for (int ii = 0; ii < size; ii++)
+			tmp[ii] = ConfigBitstreamParser::reverseByte(data[i+ii]);
+
+		_jtag->shiftDR(tmp, NULL, size*8, FtdiJtag::SHIFT_DR);
+	}
+
+	_jtag->set_state(FtdiJtag::RUN_TEST_IDLE);
+
+	if (checkStatus(0, REG_STATUS_CNF_CHK_MASK))
+		progress.done();
+	else {
+		progress.fail();
+		return false;
+	}
+
+	wr_rd(0xff, NULL, 0, NULL, 0);
+
+	if (_verbose)
+		printf("userCode: %08x\n", userCode());
+
+	/* bypass */
+	wr_rd(0xff, NULL, 0, NULL, 0);
+	/* disable configuration mode */
+	printInfo("Disable configuration: ", false);
+	if (!DisableISC()) {
+		printError("FAIL");
+		return false;
+	} else {
+		printSuccess("DONE");
+	}
+
+	if (_verbose)
+		displayReadReg(readStatusReg());
+
+	/* bypass */
+	wr_rd(0xff, NULL, 0, NULL, 0);
+	_jtag->go_test_logic_reset();
+	return true;
+}
+
+bool Lattice::program_flash(unsigned int offset)
+{
+	(void) offset;
+	bool err;
+	uint64_t featuresRow;
+	uint16_t feabits;
+	uint8_t eraseMode;
+	vector<string> ufm_data, cfg_data;
+
+	JedParser _jed(_filename, _verbose);
+
+	printInfo("Open file " + _filename + " ", false);
+	printSuccess("DONE");
+
+	err = _jed.parse();
+
+	printInfo("Parse file ", false);
+	if (err == EXIT_FAILURE) {
+		printError("FAIL");
+		return false;
+	} else {
+		printSuccess("DONE");
+	}
+
+	/* read ID Code 0xE0 */
+	if (_verbose) {
+		printf("IDCode : %x\n", idCode());
+		displayReadReg(readStatusReg());
+	}
+
+	/* preload 0x1C */
+	uint8_t tx_buf[26];
+	memset(tx_buf, 0xff, 26);
+	wr_rd(0x1C, tx_buf, 26, NULL, 0);
+
+	wr_rd(0xFf, NULL, 0, NULL, 0);
+
+	/* ISC Enable 0xC6 */
+	printInfo("Enable configuration: ", false);
+	if (!EnableISC(0x00)) {
+		printError("FAIL");
+		displayReadReg(readStatusReg());
+		return false;
 	} else {
 		printSuccess("DONE");
 	}
@@ -167,7 +293,7 @@ void Lattice::program(unsigned int offset)
 	if (flashErase(FLASH_ERASE_SRAM) == false) {
 		printError("FAIL");
 		displayReadReg(readStatusReg());
-		return;
+		return false;
 	} else {
 		printSuccess("DONE");
 	}
@@ -179,11 +305,10 @@ void Lattice::program(unsigned int offset)
 	if (!EnableISC(0x08)) {
 		printError("FAIL");
 		displayReadReg(readStatusReg());
-		return;
+		return false;
 	} else {
 		printSuccess("DONE");
 	}
-
 
 	for (size_t i = 0; i < _jed.nb_section(); i++) {
 		string note = _jed.noteForSection(i);
@@ -208,7 +333,7 @@ void Lattice::program(unsigned int offset)
 	printInfo("Flash erase: ", false);
 	if (flashErase(eraseMode) == false) {
 		printError("FAIL");
-		return;
+		return false;
 	} else {
 		printSuccess("DONE");
 	}
@@ -220,9 +345,9 @@ void Lattice::program(unsigned int offset)
 
 	/* flash UFM */
 	if (false == flashProg(0, cfg_data))
-		return;
+		return false;
 	if (Verify(_jed) == false)
-		return;
+		return false;
 
 	/* missing usercode update */
 
@@ -236,7 +361,7 @@ void Lattice::program(unsigned int offset)
 		printInfo("Program features Row: ", false);
 		if (writeFeaturesRow(_jed.featuresRow(), true) == false) {
 			printError("FAIL");
-			return;
+			return false;
 		} else {
 			printSuccess("DONE");
 		}
@@ -244,7 +369,7 @@ void Lattice::program(unsigned int offset)
 		printInfo("Program feabits: ", false);
 		if (writeFeabits(_jed.feabits(), true) == false) {
 			printError("FAIL");
-			return;
+			return false;
 		} else {
 			printSuccess("DONE");
 		}
@@ -254,32 +379,44 @@ void Lattice::program(unsigned int offset)
 	printInfo("Write program Done: ", false);
 	if (writeProgramDone() == false) {
 		printError("FAIL");
-		return;
+		return false;
 	} else {
 		printSuccess("DONE");
 	}
+
 	/* bypass */
 	wr_rd(0xff, NULL, 0, NULL, 0);
 	/* disable configuration mode */
 	printInfo("Disable configuration: ", false);
 	if (!DisableISC()) {
 		printError("FAIL");
-		return;
+		return false;
 	} else {
 		printSuccess("DONE");
 	}
-	/* ISC REFRESH 0x26 */
+
+	/* ISC REFRESH 0x79 */
 	printInfo("Refresh: ", false);
 	if (loadConfiguration() == false) {
 		printError("FAIL");
-		return;
+		return false;
 	} else {
 		printSuccess("DONE");
 	}
+
 	/* bypass */
 	wr_rd(0xff, NULL, 0, NULL, 0);
 	_jtag->go_test_logic_reset();
-	return;
+	return true;
+}
+
+void Lattice::program(unsigned int offset)
+{
+	if (_mode == FLASH_MODE)
+		program_flash(offset);
+	else if (_mode == MEM_MODE)
+		program_mem();
+
 }
 
 bool Lattice::EnableISC(uint8_t flash_mode)
@@ -333,6 +470,16 @@ int Lattice::idCode()
 					device_id[2] << 16 |
 					device_id[1] << 8  |
 					device_id[0];
+}
+
+int Lattice::userCode()
+{
+	uint8_t usercode[4];
+	wr_rd(0xC0, NULL, 0, usercode, 4);
+	return usercode[3] << 24 |
+					usercode[2] << 16 |
+					usercode[1] << 8  |
+					usercode[0];
 }
 
 bool Lattice::checkID()

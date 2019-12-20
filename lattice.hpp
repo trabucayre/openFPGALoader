@@ -26,13 +26,17 @@
 #include "ftdijtag.hpp"
 #include "device.hpp"
 #include "jedParser.hpp"
+#include "latticeBitParser.hpp"
 
 class Lattice: public Device {
 	public:
 		Lattice(FtdiJtag *jtag, std::string filename, bool verbose);
 		int idCode() override;
+		int userCode();
 		void reset() override {}
 		void program(unsigned int offset) override;
+		bool program_mem();
+		bool program_flash(unsigned int offset);
 		bool Verify(JedParser &_jed, bool unlock = false);
 
 	private:
