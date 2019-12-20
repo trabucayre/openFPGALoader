@@ -37,7 +37,7 @@ class JedParser: public ConfigBitstreamParser {
 
 	public:
 		JedParser(std::string filename, bool verbose = false);
-		int parse();
+		int parse() override;
 		void display();
 
 		size_t nb_section() { return _data_list.size();}
