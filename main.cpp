@@ -114,9 +114,9 @@ int main(int argc, char **argv)
 	/* jtag base */
 	FtdiJtag *jtag;
 	if (args.device == "-")
-		jtag = new FtdiJtag(cable, 1, 6000000, args.verbose);
+		jtag = new FtdiJtag(cable, 1, 6000000, false);
 	else
-		jtag = new FtdiJtag(cable, args.device, 1, 6000000, args.verbose);
+		jtag = new FtdiJtag(cable, args.device, 1, 6000000, false);
 
 	/* chain detection */
 	vector<int> listDev;
