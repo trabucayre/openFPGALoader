@@ -59,6 +59,5 @@ class FtdiJtag : public FTDIpp_MPSSE {
 	int _num_tms;
 	unsigned char *_tms_buffer;
 	std::string _board_name;
-	bool _verbose;
 };
 #endif

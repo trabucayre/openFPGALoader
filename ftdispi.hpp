@@ -39,6 +39,4 @@ class FtdiSpi : public FTDIpp_MPSSE {
 	uint8_t _rd_mode;
 	unsigned char _endian;
 	uint8_t _cs_mode;
- protected:
-	bool _verbose;
 };
