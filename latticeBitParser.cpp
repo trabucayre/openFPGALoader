@@ -63,10 +63,6 @@ int LatticeBitParser::parseHeader()
 		}
 	} while (dummyPrev != 0xBDffffff && dummy32 != 0x3BFFFFB3);
 	_endHeader = _fd.tellg();
-	char t;
-	_fd.read(&t, sizeof(char));
-	printf("%02x\n", t);
-	_fd.seekg(_endHeader, _fd.beg);
 	/* -8 => 2 * 4 byte for pattern
 	 */
 	int headerLength = _endHeader - currPos -8;
