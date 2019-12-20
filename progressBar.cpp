@@ -49,5 +49,5 @@ void ProgressBar::fail()
 {
 	display(_maxValue);
 	//fprintf(stderr, "\nDone\n");
-	printSuccess("\nFail");
+	printError("\nFail");
 }
