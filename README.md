@@ -5,13 +5,13 @@ __Current support kits:__
 
 * Trenz cyc1000 Cyclone 10 LP 10CL025 (memory and spi flash)
 * Digilent arty Artix xc7a35ti (memory and spi flash)
-* Lattice MachXO3LF Starter Kit LCMX03LF-6900C (flash)
+* Lattice MachXO3LF Starter Kit LCMX03LF-6900C (memory and flash)
 * [Trenz Gowin LittleBee (TEC0117)](https://shop.trenz-electronic.de/en/TEC0117-01-FPGA-Module-with-GOWIN-LittleBee-and-8-MByte-internal-SDRAM)
 
 __Supported (tested) FPGA:__
 
 * Gowin [GW1N (GW1NR-9)](https://www.gowinsemi.com/en/product/detail/2/) (SRAM only)
-* Lattice [MachXO3LF](http://www.latticesemi.com/en/Products/FPGAandCPLD/MachXO3.aspx)
+* Lattice [MachXO3LF](http://www.latticesemi.com/en/Products/FPGAandCPLD/MachXO3.aspx) (SRAM and Flash)
 * Xilinx Artix 7 [xc7a35ti](https://www.xilinx.com/products/silicon-devices/fpga/artix-7.html) (memory and spi flash)
 * Intel Cyclone 10 LP [10CL025](https://www.intel.com/content/www/us/en/products/programmable/fpga/cyclone-10.html)
 
@@ -182,6 +182,14 @@ special must be done to generates this file.
 __file load__:
 ```bash
 openFPGALoader -b machXO3SK impl1/*.jed
+```
+#### SRAM:
+
+To generates *.bit* file **Bitstream file** must be checked under **Exports Files** in *Lattice Diamond* left panel.
+
+__file load__:
+```bash
+openFPGALoader -b machXO3SK impl1/*.bit
 ```
 
 ### Trenz GOWIN LittleBee (TEC0117)
