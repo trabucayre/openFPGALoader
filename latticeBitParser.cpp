@@ -14,6 +14,7 @@
  * You should have received a copy of the GNU General Public License
  * along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
+#include <string.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <arpa/inet.h>
@@ -47,46 +48,39 @@ void LatticeBitParser::displayHeader()
 
 int LatticeBitParser::parseHeader()
 {
-	/* end is wrong detected
-	 * 3B is a command AFTER header
-	 */
-
-	int ret = 1;
 	int currPos = _fd.tellg();
-	uint32_t dummy32 = 0, dummyPrev = 0;
-	do {
-		dummyPrev = dummy32;
-		_fd.read(reinterpret_cast<char *>(&dummy32), sizeof(uint32_t));
-		if (_fd.eof()) {
-			printf("End of file without header end\n");
-			return EXIT_FAILURE;
+	char tmp[_file_size-currPos];
+	char field[256];
+	bool foundEndHeader = false;
+	uint32_t *d;
+
+	_fd.read(tmp, (_file_size-currPos)*sizeof(char));
+
+	for (int i = 0; i < _file_size-currPos;) {
+		if (tmp[i] == 0xff) {
+			d = (uint32_t*)(tmp+i);
+			if (d[0] != 0xBDffffff && (0xffffff00 & d[1]) != 0x3BFFFF00){
+				foundEndHeader = true;
+				_endHeader = i + currPos -1;
+				break;
+			}
+			i++;
+		} else {
+			strcpy(field, tmp+i);
+			string buff(field);
+			int pos = buff.find_first_of(':', 0);
+			if (pos != -1) {
+				string key(buff.substr(0, pos));
+				string val(buff.substr(pos+1, buff.size()));
+				int startPos = val.find_first_not_of(" ");
+				int endPos = val.find_last_not_of(" ")+1;
+				_attribs[key] = val.substr(startPos, endPos).c_str();
+			}
+			i+=strlen(field)+1;
 		}
-	} while (dummyPrev != 0xBDffffff && dummy32 != 0x3BFFFFB3);
-	_endHeader = _fd.tellg();
-	/* -8 => 2 * 4 byte for pattern
-	 */
-	int headerLength = _endHeader - currPos -8;
-	_endHeader-=8;  // pattern is included to data to send
-	_fd.seekg(currPos, _fd.beg);
-
-	char buffer[headerLength];
-	_fd.read(buffer, sizeof(char) * headerLength);
-
-	int i = 0;
-	while (i < headerLength) {
-		string buff(buffer+i);
-		i+= buff.size() + 1;
-		int pos = buff.find_first_of(':', 0);
-		if (pos == -1)  // useless
-			continue;
-		string key(buff.substr(0, pos));
-		string val(buff.substr(pos+1, buff.size()));
-		int startPos = val.find_first_not_of(" ");
-		int endPos = val.find_last_not_of(" ")+1;
-		_attribs[key] = val.substr(startPos, endPos).c_str();
 	}
 
-	return ret;
+	return (foundEndHeader) ? EXIT_SUCCESS : EXIT_FAILURE;
 }
 
 int LatticeBitParser::parse()
@@ -101,7 +95,8 @@ int LatticeBitParser::parse()
 	}
 
 	/* until 0xFFFFBDB3 0xFFFF */
-	parseHeader();
+	if (parseHeader() == EXIT_FAILURE)
+		return EXIT_FAILURE;
 
 	/* read All data */
 	_fd.seekg(_endHeader, _fd.beg);
