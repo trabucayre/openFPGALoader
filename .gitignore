@@ -32,4 +32,5 @@
 *.app
 
 cycloader
+openFPGALoader
 *.swp
