@@ -214,6 +214,7 @@ bool Lattice::program_mem()
 		progress.done();
 	else {
 		progress.fail();
+		displayReadReg(readStatusReg());
 		return false;
 	}
 
@@ -228,6 +229,7 @@ bool Lattice::program_mem()
 	printInfo("Disable configuration: ", false);
 	if (!DisableISC()) {
 		printError("FAIL");
+		displayReadReg(readStatusReg());
 		return false;
 	} else {
 		printSuccess("DONE");
