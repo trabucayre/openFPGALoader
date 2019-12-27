@@ -151,10 +151,14 @@ int main(int argc, char **argv)
 		fpga = new Xilinx(jtag, args.bit_file, args.verbose);
 	} else if (fab == "altera") {
 		fpga = new Altera(jtag, args.bit_file, args.verbose);
-	} else if (fab == "gowin") {
+	} else if (fab == "Gowin") {
 		fpga = new Gowin(jtag, args.bit_file, args.verbose);
-	} else {
+	} else if (fab == "lattice") {
 		fpga = new Lattice(jtag, args.bit_file, args.verbose);
+	} else {
+		cerr << "Error: manufacturer " << fab << " not supported" << endl;
+		delete(jtag);
+		return EXIT_FAILURE;
 	}
 
 	fpga->program(args.offset);
