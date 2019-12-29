@@ -201,5 +201,5 @@ special must be done to generates this file.
 
 __file load__:
 ```bash
-openFPGALoader -b machXO3SK impl/pnr/*.fs
+openFPGALoader -b littleBee impl/pnr/*.fs
 ```
