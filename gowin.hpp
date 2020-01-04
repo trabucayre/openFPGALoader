@@ -30,11 +30,13 @@
 
 class Gowin: public Device {
 	public:
-		Gowin(FtdiJtag *jtag, std::string filename, bool verbose);
+		Gowin(FtdiJtag *jtag, std::string filename, bool flash_wr, bool sram_wr,
+				bool verbose);
 		~Gowin();
 		int idCode() override;
 		void reset() override {}
 		void program(unsigned int offset) override;
+		void programFlash();
 
 	private:
 		bool wr_rd(uint8_t cmd, uint8_t *tx, int tx_len,
@@ -43,7 +45,9 @@ class Gowin: public Device {
 		bool DisableCfg();
 		bool pollFlag(uint32_t mask, uint32_t value);
 		bool eraseSRAM();
+		bool eraseFLASH();
 		bool flashSRAM(uint8_t *data, int length);
+		bool flashFLASH(uint8_t *data, int length);
 		void displayReadReg(uint32_t dev);
 		uint32_t readStatusReg();
 		uint32_t readUserCode();

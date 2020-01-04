@@ -47,6 +47,8 @@ struct arguments {
 	bool list_cables;
 	bool list_boards;
 	bool list_fpga;
+	bool write_flash;
+	bool write_sram;
 };
 
 #define LIST_CABLE	1
@@ -65,6 +67,10 @@ static struct argp_option options[] = {
 	{"list-boards", LIST_BOARD, 0, 0, "list all supported boards"},
 	{"device",  'd', "DEVICE", 0, "device to use (/dev/ttyUSBx)"},
 	{"list-fpga", LIST_FPGA, 0, 0, "list all supported FPGA"},
+	{"write-flash", 'f', 0, 0,
+			"write bitstream in flash (default: false, only for Gowin devices)"},
+	{"write-sram", 'm', 0, 0,
+			"write bitstream in SRAM (default: true, only for Gowin devices)"},
 	{"offset",  'o', "OFFSET", 0, "start offset in EEPROM"},
 	{"verbose", 'v', 0, 0, "Produce verbose output"},
 	{"reset",   'r', 0, 0, "reset FPGA after operations"},
@@ -80,7 +86,7 @@ int main(int argc, char **argv)
 
 	/* command line args. */
 	struct arguments args = {false, false, 0, "", "-", "-", "-",
-			false, false, false};
+			false, false, false, false, true};
 	/* parse arguments */
 	argp_parse(&argp, argc, argv, 0, 0, &args);
 
@@ -152,7 +158,8 @@ int main(int argc, char **argv)
 	} else if (fab == "altera") {
 		fpga = new Altera(jtag, args.bit_file, args.verbose);
 	} else if (fab == "Gowin") {
-		fpga = new Gowin(jtag, args.bit_file, args.verbose);
+		fpga = new Gowin(jtag, args.bit_file, args.write_flash, args.write_sram,
+			args.verbose);
 	} else if (fab == "lattice") {
 		fpga = new Lattice(jtag, args.bit_file, args.verbose);
 	} else {
@@ -176,6 +183,13 @@ static error_t parse_opt(int key, char *arg, struct argp_state *state)
 	struct arguments *arguments = (struct arguments *)state->input;
 
 	switch (key) {
+	case 'f':
+		arguments->write_flash = true;
+		arguments->write_sram = false;
+		break;
+	case 'm':
+		arguments->write_sram = true;
+		break;
 	case 'r':
 		arguments->reset = true;
 		break;

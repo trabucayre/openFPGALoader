@@ -60,15 +60,21 @@ using namespace std;
 #  define STATUS_READY				(1 << 15)
 #  define STATUS_POR				(1 << 16)
 #  define STATUS_FLASH_LOCK			(1 << 17)
+#define EF_PROGRAM			0x71
 #define EFLASH_ERASE		0x75
 
-Gowin::Gowin(FtdiJtag *jtag, const string filename, bool verbose):
-		Device(jtag, filename, verbose)
+Gowin::Gowin(FtdiJtag *jtag, const string filename, bool flash_wr, bool sram_wr,
+		bool verbose): Device(jtag, filename, verbose)
 {
 	if (_filename != "") {
 		if (_file_extension == "fs") {
-			_mode = Device::FLASH_MODE;
-			_fs = new FsParser(_filename, true, _verbose);
+			if (flash_wr && sram_wr)
+				throw std::runtime_error("both write-flash and write-sram can't be set");
+			if (flash_wr)
+				_mode = Device::FLASH_MODE;
+			else
+				_mode = Device::MEM_MODE;
+			_fs = new FsParser(_filename, _mode == Device::MEM_MODE, _verbose);
 			_fs->parse();
 		} else {
 			throw std::runtime_error("incompatible file format");
@@ -83,6 +89,41 @@ Gowin::~Gowin()
 		delete _fs;
 }
 
+void Gowin::programFlash()
+{
+	uint8_t *data;
+	int length;
+
+	data = _fs->getData();
+	length = _fs->getLength();
+
+	/* erase SRAM */
+	if (!EnableCfg())
+		return;
+	eraseSRAM();
+	wr_rd(XFER_DONE, NULL, 0, NULL, 0);
+	wr_rd(NOOP, NULL, 0, NULL, 0);
+	if (!DisableCfg())
+		return;
+
+	if (!EnableCfg())
+		return;
+	if (!eraseFLASH())
+		return;
+	if (!DisableCfg())
+		return;
+	wr_rd(RELOAD, NULL, 0, NULL, 0);
+	wr_rd(NOOP, NULL, 0, NULL, 0);
+	/* test status a faire */
+	if (!flashFLASH(data, length))
+		return;
+	if (!DisableCfg())
+		return;
+	wr_rd(RELOAD, NULL, 0, NULL, 0);
+	wr_rd(NOOP, NULL, 0, NULL, 0);
+	printf("%08x\n", readUserCode());
+}
+
 void Gowin::program(unsigned int offset)
 {
 	(void) offset;
@@ -93,6 +134,11 @@ void Gowin::program(unsigned int offset)
 
 	if (_filename == "" || !_fs)
 		return;
+
+	if (_mode == FLASH_MODE) {
+		programFlash();
+		return;
+	}
 
 	if (_verbose) {
 		displayReadReg(readStatusReg());
@@ -257,6 +303,73 @@ bool Gowin::pollFlag(uint32_t mask, uint32_t value)
 	return true;
 }
 
+/* TN653 p. 17-21 */
+bool Gowin::flashFLASH(uint8_t *data, int length)
+{
+	uint8_t tx[4] = {0x4E, 0x31, 0x57, 0x47};
+	uint8_t tmp[4];
+	uint32_t addr;
+	int nb_iter;
+	int byte_length = length / 8;
+	uint8_t tt[39];
+	bzero(tt, 39);
+
+	ProgressBar progress("Flash SRAM", byte_length, 50);
+	_jtag->go_test_logic_reset();
+
+	/* we have to send
+	 * bootcode a X=0, Y=0 (4Bytes)
+	 * 5 x 32 dummy bits
+	 * full bitstream
+	 */
+	int buffer_length = byte_length+(6*4);
+	unsigned char buffer[byte_length+(6*4)] = {
+									0x47, 0x57, 0x31, 0x4E,
+									0xff, 0xff , 0xff, 0xff,
+									0xff, 0xff , 0xff, 0xff,
+									0xff, 0xff , 0xff, 0xff,
+									0xff, 0xff , 0xff, 0xff,
+									0xff, 0xff , 0xff, 0xff};
+	memcpy(buffer+6*4, data, byte_length);
+
+	int nb_xpage = buffer_length/256;
+	if (nb_xpage * 256 != buffer_length)
+		nb_xpage++;
+
+	for (int i=0, xpage=0; xpage < nb_xpage; i+=(nb_iter*4), xpage++) {
+		wr_rd(CONFIG_ENABLE, NULL, 0, NULL, 0);
+		wr_rd(EF_PROGRAM, NULL, 0, NULL, 0);
+		_jtag->read_write(tt, NULL, 312, 0);
+		addr = xpage << 6;
+		tmp[3] = 0xff&(addr >> 24);
+		tmp[2] = 0xff&(addr >> 16);
+		tmp[1] = 0xff&(addr >> 8);
+		tmp[0] = addr&0xff;
+		_jtag->shiftDR(tmp, NULL, 32);
+		_jtag->read_write(tt, NULL, 312, 0);
+
+		int xoffset = xpage * 256;  // each page containt 256Bytes
+		if (xoffset + 256 > buffer_length)
+			nb_iter = (buffer_length-xoffset) / 4;
+		else
+			nb_iter = 64;
+
+		for (int ypage = 0; ypage < nb_iter; ypage++) {
+			unsigned char *t = buffer+xoffset + 4*ypage;
+			for (int x=0; x < 4; x++)
+				tx[3-x] = t[x];
+			_jtag->shiftDR(tx, NULL, 32);
+			_jtag->read_write(tt, NULL, 40, 0);
+		}
+		progress.display(i);
+	}
+	/* 2.2.6.6 */
+	_jtag->set_state(FtdiJtag::RUN_TEST_IDLE);
+
+	progress.done();
+	return true;
+}
+
 /* TN653 p. 9 */
 bool Gowin::flashSRAM(uint8_t *data, int length)
 {
@@ -298,11 +411,30 @@ bool Gowin::flashSRAM(uint8_t *data, int length)
 }
 
 /* Erase SRAM:
+ * TN653 p.14-17
+ */
+bool Gowin::eraseFLASH()
+{
+	unsigned char tx[4] = {0, 0, 0, 0};
+	printInfo("erase Flash ", false);
+	wr_rd(EFLASH_ERASE, NULL, 0, NULL, 0);
+	_jtag->set_state(FtdiJtag::RUN_TEST_IDLE);
+	_jtag->shiftDR(tx, NULL, 32);
+	/* TN653 specifies to wait for 120ms with
+	 * there are no bit in status register to specify
+	 * when this operation is done so we need to wait
+	 */
+	usleep(120000);
+	printSuccess("Done");
+	return true;
+}
+
+/* Erase SRAM:
  * TN653 p.9-10, 14 and 31
  */
 bool Gowin::eraseSRAM()
 {
-	printInfo("erase Flash ", false);
+	printInfo("erase SRAM ", false);
 	wr_rd(ERASE_SRAM, NULL, 0, NULL, 0);
 	wr_rd(NOOP, NULL, 0, NULL, 0);
 
