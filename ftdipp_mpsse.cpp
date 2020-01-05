@@ -89,7 +89,7 @@ void FTDIpp_MPSSE::open_device(unsigned int baudrate)
 		throw std::exception();
 	}
 	if (ftdi_set_baudrate(_ftdi, baudrate) < 0) {
-		fprintf(stderr, "erreur baudrate\n");
+		fprintf(stderr, "baudrate error\n");
 		close_device();
 		throw std::exception();
 	}
@@ -143,25 +143,25 @@ int FTDIpp_MPSSE::init(unsigned char latency, unsigned char bitmask_mode,
 	};
 
 	if (ftdi_usb_reset(_ftdi) != 0) {
-		cout << "erreur de reset" << endl;
+		cout << "reset error" << endl;
 		return -1;
 	}
 
 	if (ftdi_set_bitmode(_ftdi, 0x00, BITMODE_RESET) < 0) {
-		cout << "erreur de bitmode_reset" << endl;
+		cout << "bitmode_reset error" << endl;
 		return -1;
 	}
 	if (ftdi_usb_purge_buffers(_ftdi) != 0) {
-		cout << "erreur de reset" << endl;
+		cout << "reset error" << endl;
 		return -1;
 	}
 	if (ftdi_set_latency_timer(_ftdi, latency) != 0) {
-		cout << "erreur de reset" << endl;
+		cout << "reset error" << endl;
 		return -1;
 	}
 	/* enable MPSSE mode */
 	if (ftdi_set_bitmode(_ftdi, bitmask_mode, BITMODE_MPSSE) < 0) {
-		cout << "erreur de bitmode_mpsse" << endl;
+		cout << "bitmode_mpsse error" << endl;
 		return -1;
 	}
 
@@ -241,7 +241,7 @@ int FTDIpp_MPSSE::mpsse_store(unsigned char *buff, int len)
 
 	if (_num + len + 1 >= _buffer_size) {
 		if (mpsse_write() < 0) {
-			cout << "erreur de write_data dans " << __func__ << endl;
+			cout << "write_data error in " << __func__ << endl;
 			return -1;
 		}
 	}
@@ -263,7 +263,7 @@ int FTDIpp_MPSSE::mpsse_write()
 #endif
 
 	if (ftdi_write_data(_ftdi, _buffer, _num) != _num) {
-		cout << "erreur de write" << endl;
+		cout << "write error" << endl;
 		return -1;
 	}
 

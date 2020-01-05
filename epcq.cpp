@@ -109,7 +109,7 @@ int EPCQ::erase_sector(char start_sector, char nb_sectors)
 		printf("%d %d %x %x %x %x ", nb_sectors, base_addr, buffer[0], buffer[1], buffer[2], buffer[3]);
 
 		if (_spi.ft2232_spi_wr_and_rd(4, buffer, NULL) < 0) {
-			printf("erreur de write dans erase_sector\n");
+			cout << "Write error in erase_sector\n" << endl;
 			return -1;
 		}
 
@@ -139,7 +139,7 @@ void EPCQ::program(unsigned int start_offset, string filename, bool reverse)
 	 */
 	fd = fopen(filename.c_str(), "r");
 	if (!fd) {
-		cout << "erreur d'ouverture de " << filename << endl;
+		cout << "Error opening " << filename << endl;
 		return;
 	}
 	fseek(fd, 0, SEEK_END);
