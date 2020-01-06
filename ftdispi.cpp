@@ -91,7 +91,7 @@ int ftdi_spi_init_by_name(struct ftdi_spi *spi, char *devname,
 {
 	spi->ftdic = open_device_by_name(devname, interface, 115200);
 	if (spi->ftdic == NULL) {
-		printf("erreur d'ouverture\n");
+		printf("opening error\n");
 		return EXIT_FAILURE;
 	}
 	return ftdi_spi_init_internal(spi, clk_freq_hz);
@@ -102,7 +102,7 @@ int ftdi_spi_init(struct ftdi_spi *spi, uint32_t vid, uint32_t pid,
 {
 	spi->ftdic = open_device(vid, pid, interface, 115200);
 	if (spi->ftdic == NULL) {
-		printf("erreur d'ouverture\n");
+		printf("opening error\n");
 		return EXIT_FAILURE;
 	}
 	return ftdi_spi_init_internal(spi, clk_freq_hz);
@@ -116,66 +116,66 @@ int ftdi_spi_init_internal(struct ftdi_spi *spi, uint32_t clock_freq_hz)
 	spi->tx_buff = (uint8_t *)malloc(sizeof(uint8_t) * TX_BUFS);
 
 	if (ftdi_usb_reset(spi->ftdic) != 0) {
-		printf("erreur de reset\n");
+		printf("reset error\n");
 		return -1;
 	}
 	if (ftdi_usb_purge_rx_buffer(spi->ftdic) != 0) {
-		printf("erreur de reset\n");
+		printf("reset error\n");
 		return -1;
 	}
 	if (ftdi_usb_purge_tx_buffer(spi->ftdic) != 0) {
-		printf("erreur de reset\n");
+		printf("reset error\n");
 		return -1;
 	}
 	if (ftdi_read_data_set_chunksize(spi->ftdic, SIZE) != 0) {
-		printf("erreur de reset\n");
+		printf("reset error\n");
 		return -1;
 	}
 	if (ftdi_write_data_set_chunksize(spi->ftdic, SIZE) != 0) {
-		printf("erreur de reset\n");
+		printf("reset error\n");
 		return -1;
 	}
 	if (ftdi_set_latency_timer(spi->ftdic, LATENCY) != 0) {
-		printf("erreur de reset\n");
+		printf("reset error\n");
 		return -1;
 	}
 	if (ftdi_set_event_char(spi->ftdic, 0x00, 0) != 0) {
-		printf("erreur de reset\n");
+		printf("reset error\n");
 		return -1;
 	}
 	if (ftdi_set_error_char(spi->ftdic, 0x00, 0) != 0) {
-		printf("erreur de reset\n");
+		printf("reset error\n");
 		return -1;
 	}
 	// set the read timeouts in ms for the ft2232H
 	spi->ftdic->usb_read_timeout = TIMEOUT;
 	// set the write timeouts in ms for the ft2232H
 	spi->ftdic->usb_write_timeout = 5000;
-	if (ftdi_set_bitmode(spi->ftdic, 0x00, 0x00) != 0) {	// reset controller 
-		printf("erreur de reset\n");
+	if (ftdi_set_bitmode(spi->ftdic, 0x00, 0x00) != 0) {	// reset controller
+		printf("reset error\n");
 		return -1;
 	}
 
 	if (ftdi_set_bitmode(spi->ftdic, 0x00, 0x02) != 0) {	// enable mpsse mode
-		printf("erreur de reset\n");
+		printf("reset error\n");
 		return -1;
 	}
 
 	if (ftdi_setClock(spi->ftdic, /*0x08,*/ clock_freq_hz) < 0)
 		return -1;
 	spi->tx_size = 0;
-	
+
 	spi->tx_buff[spi->tx_size++] = 0x97;	// disable adaptive clocking
 	// devrait etre 8C pour enable et non 8D
 	spi->tx_buff[spi->tx_size++] = 0x8d;	//disable tri phase data clocking
 	if (ftdi_write_data(spi->ftdic, spi->tx_buff, spi->tx_size) != spi->tx_size) {
-		printf("erreur de write pour dis clock, adaptive, tri phase\n");
+		printf("write error for dis clock, adaptive, tri phase\n");
 		return -1;
 	}
 	spi->tx_size = 0;
 	spi->tx_buff[spi->tx_size++] = 0x85;	// disable loopback
 	if (ftdi_write_data(spi->ftdic, spi->tx_buff, spi->tx_size) != spi->tx_size) {
-		printf("erreur disable loopback\n");
+		printf("disable loopback error\n");
 		return -1;
 	}
 
@@ -184,7 +184,7 @@ int ftdi_spi_init_internal(struct ftdi_spi *spi, uint32_t clock_freq_hz)
 	spi->tx_buff[spi->tx_size++] = 0x08;
 	spi->tx_buff[spi->tx_size++] = 0x0B;
 	if (ftdi_write_data(spi->ftdic, spi->tx_buff, spi->tx_size) != spi->tx_size) {
-		printf("erreur de write pour set bit\n");
+		printf("write set bit error\n");
 		return -1;
 	}
 	spi->tx_size = 0;
@@ -276,7 +276,7 @@ void FtdiSpi::confCs(char stat)
 	tx_buf[4] |= (stat) ? cs_bits : 0;
 
 	if (mpsse_store(tx_buf, 6) != 0)
-		printf("erreur\n");
+		printf("error\n");
 }
 
 void FtdiSpi::setCs()
