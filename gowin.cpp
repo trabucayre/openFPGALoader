@@ -66,6 +66,7 @@ using namespace std;
 Gowin::Gowin(FtdiJtag *jtag, const string filename, bool flash_wr, bool sram_wr,
 		bool verbose): Device(jtag, filename, verbose)
 {
+	_fs = NULL;
 	if (_filename != "") {
 		if (_file_extension == "fs") {
 			if (flash_wr && sram_wr)
