@@ -191,15 +191,27 @@ int FTDIpp_MPSSE::setClkFreq(uint32_t clkHZ, char use_divide_by_5)
 {
 	_clkHZ = clkHZ;
 
-    uint8_t buffer[4] = { 0x08A, 0x86, 0x00, 0x00};
-    uint32_t base_freq = 60000000;
-    uint32_t real_freq = 0;
-    uint16_t presc;
+	int ret;
+	uint8_t buffer[4] = { TCK_DIVISOR, 0x00, 0x00};
+	uint32_t base_freq;
+	uint32_t real_freq = 0;
+	uint16_t presc;
 
-    if (use_divide_by_5) {
-        base_freq /= 5;
-        buffer[0] = 0x8B;
-    }
+	/* FT2232C has no divide by 5 instruction
+	 * and default freq is 12MHz
+	 */
+	if (_ftdi->type != TYPE_2232C) {
+		base_freq = 60000000;
+		if (use_divide_by_5) {
+			base_freq /= 5;
+			mpsse_store(EN_DIV_5);
+		} else {
+			mpsse_store(DIS_DIV_5);
+		}
+	} else {
+		base_freq = 12000000;
+		use_divide_by_5 = false;
+	}
 
     if ((use_divide_by_5 && _clkHZ > 6000000) || _clkHZ > 30000000) {
         fprintf(stderr, "Error: too fast frequency\n");
@@ -208,15 +220,21 @@ int FTDIpp_MPSSE::setClkFreq(uint32_t clkHZ, char use_divide_by_5)
 
     presc = (base_freq /(_clkHZ * 2)) -1;
     real_freq = base_freq / ((1+presc)*2);
+	if (real_freq > clkHZ)
+		presc ++;
+    real_freq = base_freq / ((1+presc)*2);
     display("presc : %d input freq : %d requested freq : %d real freq : %d\n",
 			presc, base_freq, _clkHZ, real_freq);
-    buffer[2] = presc & 0xff;
-    buffer[3] = (presc >> 8) & 0xff;
+    buffer[1] = presc & 0xff;
+    buffer[2] = (presc >> 8) & 0xff;
 
-    if (ftdi_write_data(_ftdi, buffer, 4) != 4) {
-        fprintf(stderr, "Error: write for frequency\n");
+	mpsse_store(buffer, 3);
+	ret = mpsse_write();
+    if (ret < 0) {
+        fprintf(stderr, "Error: write for frequency return %d\n", ret);
         return -1;
     }
+	ret = ftdi_read_data(_ftdi, buffer, 4);
 
     return real_freq;
 }
@@ -255,6 +273,7 @@ int FTDIpp_MPSSE::mpsse_store(unsigned char *buff, int len)
 
 int FTDIpp_MPSSE::mpsse_write()
 {
+	int ret;
 	if (_num == 0)
 		return 0;
 
@@ -262,13 +281,13 @@ int FTDIpp_MPSSE::mpsse_write()
 	display("%s %d\n", __func__, _num);
 #endif
 
-	if (ftdi_write_data(_ftdi, _buffer, _num) != _num) {
-		cout << "write error" << endl;
-		return -1;
+	if ((ret = ftdi_write_data(_ftdi, _buffer, _num)) != _num) {
+		cout << "write error: " << ret << " instead of " << _num << endl;
+		return ret;
 	}
 
 	_num = 0;
-	return 0;
+	return ret;
 }
 
 int FTDIpp_MPSSE::mpsse_read(unsigned char *rx_buff, int len)

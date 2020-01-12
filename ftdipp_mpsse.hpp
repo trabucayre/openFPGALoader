@@ -39,6 +39,7 @@ class FTDIpp_MPSSE {
 		unsigned int udevstufftoint(const char *udevstring, int base);
 		bool search_with_dev(const std::string &device);
 		bool _verbose;
+		struct ftdi_context *_ftdi;
 
 	private:
 		int _vid;
@@ -51,7 +52,6 @@ class FTDIpp_MPSSE {
 		int _buffer_size;
 		int _num;
 		unsigned char *_buffer;
-		struct ftdi_context *_ftdi;
 };
 
 #endif
