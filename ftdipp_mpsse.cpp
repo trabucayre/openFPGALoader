@@ -29,6 +29,7 @@ FTDIpp_MPSSE::FTDIpp_MPSSE(const string &dev, unsigned char interface,
 	}
 
 	open_device(115200);
+	_buffer_size = _ftdi->max_packet_size;
 
 	_buffer = (unsigned char *)malloc(sizeof(unsigned char) * _buffer_size);
 	if (!_buffer) {
@@ -44,6 +45,7 @@ FTDIpp_MPSSE::FTDIpp_MPSSE(int vid, int pid, unsigned char interface,
 			   _clkHZ(clkHZ), _buffer_size(2*32768), _num(0)
 {
 	open_device(115200);
+	_buffer_size = _ftdi->max_packet_size;
 
 	_buffer = (unsigned char *)malloc(sizeof(unsigned char) * _buffer_size);
 	if (!_buffer) {
