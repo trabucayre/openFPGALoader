@@ -249,27 +249,36 @@ int FTDIpp_MPSSE::mpsse_store(unsigned char c)
 int FTDIpp_MPSSE::mpsse_store(unsigned char *buff, int len)
 {
 	unsigned char *ptr = buff;
-	/* this case theorically never happen */
-	if (len > _buffer_size) {
-		mpsse_write();
-		for (; len > _buffer_size; len -= _buffer_size) {
-			memcpy(_buffer, ptr, _buffer_size);
+	int store_size;
+	/* check if _buffer as space to store all */
+	if (_num + len > _buffer_size) {
+		/* flush buffer if already full */
+		if (_num == _buffer_size)
 			mpsse_write();
-			ptr += _buffer_size;
+		/* loop until loop < _buffer_size */
+		while (_num + len > _buffer_size) {
+			/* we now have len enough to fill
+			 * buffer -> just complete buffer
+			 */
+			store_size = _buffer_size - _num;
+			memcpy(_buffer + _num, ptr, store_size);
+			_num += store_size;
+			if (mpsse_write() < 0) {
+				cout << "write_data error in " << __func__ << endl;
+				return -1;
+			}
+			ptr += store_size;
+			len -= store_size;
 		}
-	}
 
-	if (_num + len + 1 >= _buffer_size) {
-		if (mpsse_write() < 0) {
-			cout << "write_data error in " << __func__ << endl;
-			return -1;
-		}
 	}
 #ifdef DEBUG
 	display("%s %d %d\n", __func__, _num, len);
 #endif
-	memcpy(_buffer + _num, ptr, len);
-	_num += len;
+	if (len > 0) {
+		memcpy(_buffer + _num, ptr, len);
+		_num += len;
+	}
 	return 0;
 }
 
