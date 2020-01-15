@@ -90,6 +90,12 @@ Gowin::~Gowin()
 		delete _fs;
 }
 
+void Gowin::reset()
+{
+	wr_rd(RELOAD, NULL, 0, NULL, 0);
+	wr_rd(NOOP, NULL, 0, NULL, 0);
+}
+
 void Gowin::programFlash()
 {
 	uint8_t *data;

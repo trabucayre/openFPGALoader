@@ -34,7 +34,7 @@ class Gowin: public Device {
 				bool verbose);
 		~Gowin();
 		int idCode() override;
-		void reset() override {}
+		void reset() override;
 		void program(unsigned int offset) override;
 		void programFlash();
 
