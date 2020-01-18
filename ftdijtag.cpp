@@ -87,7 +87,7 @@ FtdiJtag::~FtdiJtag()
 	static unsigned char tbuf[16] = { SET_BITS_LOW, 0xff, 0x00,
 		SET_BITS_HIGH, 0xff, 0x00,
 		LOOPBACK_START,
-		MPSSE_DO_READ | MPSSE_READ_NEG |
+		MPSSE_DO_READ |
 		MPSSE_DO_WRITE | MPSSE_WRITE_NEG | MPSSE_LSB,
 		0x04, 0x00,
 		0xaa, 0x55, 0x00, 0xff, 0xaa,
@@ -201,7 +201,7 @@ int FtdiJtag::read_write(unsigned char *tdi, unsigned char *tdo, int len, char l
 	unsigned char *tx_ptr = (unsigned char *)tdi;
 	unsigned char tx_buf[3] = {(unsigned char)(MPSSE_LSB | MPSSE_WRITE_NEG |
 							   ((tdi) ? MPSSE_DO_WRITE : 0) |
-							   ((tdo) ? (MPSSE_DO_READ | MPSSE_READ_NEG) : 0)),
+							   ((tdo) ? MPSSE_DO_READ : 0)),
 							   static_cast<unsigned char>((xfer - 1) & 0xff),		// low
 							   static_cast<unsigned char>((((xfer - 1) >> 8) & 0xff))};	// high
 
@@ -276,7 +276,7 @@ int FtdiJtag::read_write(unsigned char *tdi, unsigned char *tdo, int len, char l
 		display("%s move to EXIT1_xx and send last bit %x\n", __func__, (last_bit?0x81:0x01));
 		/* write the last bit in conjunction with TMS */
 		tx_buf[0] = MPSSE_WRITE_TMS | MPSSE_LSB | MPSSE_BITMODE | MPSSE_WRITE_NEG |
-					((tdo) ? MPSSE_DO_READ | MPSSE_READ_NEG : 0);
+					((tdo) ? MPSSE_DO_READ : 0);
 		tx_buf[1] = 0x0 ;	// send 1bit
 		tx_buf[2] = ((last_bit)?0x81:0x01);	// we know in TMS tdi is bit 7
 							// and to move to EXIT_XR TMS = 1
