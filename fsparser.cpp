@@ -29,7 +29,7 @@ using namespace std;
 FsParser::FsParser(string filename, bool reverseByte, bool verbose):
 			ConfigBitstreamParser(filename, ConfigBitstreamParser::ASCII_MODE,
 			verbose), _reverseByte(reverseByte), _toolVersion(), _partNumber(),
-			_devicePackage(), _backgroundProgramming(false), _checksum(),
+			_devicePackage(), _backgroundProgramming(false), _checksum(0),
 			_crcCheck(false), _compress(false), _encryption(false),
 			_securityBit(false), _jtagAsRegularIO(false), _date()
 {
@@ -53,7 +53,10 @@ int FsParser::parseHeader()
 			continue;
 		string v1, v2;
 		v1 = buffer.substr(0, pos);
-		v2 = buffer.substr(pos+2);  // ':' + ' '
+		if (pos+2 == buffer.size())
+			v2 = "None";
+		else
+			v2 = buffer.substr(pos+2) + '\0';  // ':' + ' '
 
 		if (v1 == "GOWIN Version")
 			_toolVersion = v2;
@@ -101,7 +104,7 @@ int FsParser::parse()
 	uint8_t data;
 	string buffer, tmp;
 
-	printInfo("Parse " + _filename + ": ", false);
+	printInfo("Parse " + _filename + ": ", true);
 
 	parseHeader();
 	_fd.seekg(0, _fd.beg);
