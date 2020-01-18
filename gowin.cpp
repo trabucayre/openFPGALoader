@@ -128,7 +128,8 @@ void Gowin::programFlash()
 		return;
 	wr_rd(RELOAD, NULL, 0, NULL, 0);
 	wr_rd(NOOP, NULL, 0, NULL, 0);
-	printf("%08x\n", readUserCode());
+	if (_verbose)
+		printInfo("%08x\n", readUserCode());
 }
 
 void Gowin::program(unsigned int offset)
