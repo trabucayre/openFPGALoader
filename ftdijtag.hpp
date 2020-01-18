@@ -54,10 +54,12 @@ class FtdiJtag : public FTDIpp_MPSSE {
 	void setVerbose(bool verbose){_verbose=verbose;}
 
  private:
+	void init_internal(FTDIpp_MPSSE::mpsse_bit_config &cable);
 	int _state;
 	int _tms_buffer_size;
 	int _num_tms;
 	unsigned char *_tms_buffer;
 	std::string _board_name;
+	bool _ch552WA;
 };
 #endif

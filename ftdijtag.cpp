@@ -1,3 +1,4 @@
+#include <libusb.h>
 
 #include <iostream>
 #include <map>
@@ -47,16 +48,9 @@ FtdiJtag::FtdiJtag(FTDIpp_MPSSE::mpsse_bit_config &cable, string dev,
 			FTDIpp_MPSSE(dev, interface, clkHZ, verbose),
 			_state(RUN_TEST_IDLE),
 			_tms_buffer_size(128), _num_tms(0),
-			_board_name("nope")
+			_board_name("nope"), _ch552WA(false)
 {
-	display("%x\n", cable.bit_low_val);
-	display("%x\n", cable.bit_low_dir);
-	display("%x\n", cable.bit_high_val);
-	display("%x\n", cable.bit_high_dir);
-
-	_tms_buffer = (unsigned char *)malloc(sizeof(unsigned char) * _tms_buffer_size);
-	bzero(_tms_buffer, _tms_buffer_size);
-	init(1, 0xfb, cable);
+	init_internal(cable);
 }
 
 FtdiJtag::FtdiJtag(FTDIpp_MPSSE::mpsse_bit_config &cable,
@@ -64,17 +58,9 @@ FtdiJtag::FtdiJtag(FTDIpp_MPSSE::mpsse_bit_config &cable,
 		   FTDIpp_MPSSE(cable.vid, cable.pid, interface, clkHZ, verbose),
 		   _state(RUN_TEST_IDLE),
 		   _tms_buffer_size(128), _num_tms(0),
-		   _board_name("nope")
+		   _board_name("nope"), _ch552WA(false)
 {
-	display("board_name %s\n", _board_name.c_str());
-	display("%x\n", cable.bit_low_val);
-	display("%x\n", cable.bit_low_dir);
-	display("%x\n", cable.bit_high_val);
-	display("%x\n", cable.bit_high_dir);
-
-	_tms_buffer = (unsigned char *)malloc(sizeof(unsigned char) * _tms_buffer_size);
-	bzero(_tms_buffer, _tms_buffer_size);
-	init(1, 0xfb, cable);
+	init_internal(cable);
 }
 
 FtdiJtag::~FtdiJtag()
@@ -102,9 +88,40 @@ FtdiJtag::~FtdiJtag()
 	free(_tms_buffer);
 }
 
+void FtdiJtag::init_internal(FTDIpp_MPSSE::mpsse_bit_config &cable)
+{
+	/* search for iProduct -> need to have
+	 * ftdi->usb_dev (libusb_device_handler) -> libusb_device ->
+	 * libusb_device_descriptor
+	 */
+	struct libusb_device * usb_dev = libusb_get_device(_ftdi->usb_dev);
+	struct libusb_device_descriptor usb_desc;
+	unsigned char iProduct[200];
+	libusb_get_device_descriptor(usb_dev, &usb_desc);
+	libusb_get_string_descriptor_ascii(_ftdi->usb_dev, usb_desc.iProduct,
+		iProduct, 200);
+
+	display("iProduct : %s\n", iProduct);
+	if (!strncmp((const char *)iProduct, "Sipeed-Debug", 12)) {
+		_ch552WA = true;
+	}
+
+	display("board_name %s\n", _board_name.c_str());
+	display("%x\n", cable.bit_low_val);
+	display("%x\n", cable.bit_low_dir);
+	display("%x\n", cable.bit_high_val);
+	display("%x\n", cable.bit_high_dir);
+
+	_tms_buffer = (unsigned char *)malloc(sizeof(unsigned char) * _tms_buffer_size);
+	bzero(_tms_buffer, _tms_buffer_size);
+	init(5, 0xfb, cable);
+}
+
 int FtdiJtag::detectChain(vector<int> &devices, int max_dev)
 {
 	unsigned char rx_buff[4];
+	/* WA for CH552/tangNano: write is always mandatory */
+	unsigned char tx_buff[4] = {0xff, 0xff, 0xff, 0xff};
 	unsigned int tmp;
 
 	devices.clear();
@@ -112,7 +129,7 @@ int FtdiJtag::detectChain(vector<int> &devices, int max_dev)
 	set_state(SHIFT_DR);
 
 	for (int i = 0; i < max_dev; i++) {
-		read_write(NULL, rx_buff, 32, (i == max_dev-1)?1:0);
+		read_write(tx_buff, rx_buff, 32, (i == max_dev-1)?1:0);
 		tmp = 0;
 		for (int ii=0; ii < 4; ii++)
 			tmp |= (rx_buff[ii] << (8*ii));
@@ -197,6 +214,7 @@ int FtdiJtag::read_write(unsigned char *tdi, unsigned char *tdo, int len, char l
 	int nb_byte = real_len >> 3;	// number of byte to send
 	int nb_bit = (real_len & 0x07);	// residual bits
 	int xfer = tx_buff_size - 3;
+	unsigned char c[len];
 	unsigned char *rx_ptr = (unsigned char *)tdo;
 	unsigned char *tx_ptr = (unsigned char *)tdi;
 	unsigned char tx_buf[3] = {(unsigned char)(MPSSE_LSB | MPSSE_WRITE_NEG |
@@ -218,6 +236,8 @@ int FtdiJtag::read_write(unsigned char *tdi, unsigned char *tdo, int len, char l
 		if (tdo) {
 			mpsse_read(rx_ptr, xfer);
 			rx_ptr += xfer;
+		} else if (_ch552WA) {
+			ftdi_read_data(_ftdi, c, xfer);
 		}
 		nb_byte -= xfer;
 	}
@@ -236,6 +256,8 @@ int FtdiJtag::read_write(unsigned char *tdi, unsigned char *tdo, int len, char l
 		if (tdo) {
 			mpsse_read(rx_ptr, nb_byte);
 			rx_ptr += nb_byte;
+		} else if (_ch552WA) {
+			ftdi_read_data(_ftdi, c, nb_byte);
 		}
 	}
 
@@ -251,7 +273,7 @@ int FtdiJtag::read_write(unsigned char *tdi, unsigned char *tdo, int len, char l
 			mpsse_store(last_bit);
 		}
 		mpsse_write();
-	if (tdo) {
+		if (tdo) {
 			mpsse_read(rx_ptr, 1);
 			/* realign we have read nb_bit 
 			 * since LSB add bit by the left and shift
@@ -259,6 +281,8 @@ int FtdiJtag::read_write(unsigned char *tdi, unsigned char *tdo, int len, char l
 			 */
 			*rx_ptr >>= (8 - nb_bit);
 			display("%s %x\n", __func__, *rx_ptr);
+		} else if (_ch552WA) {
+			ftdi_read_data(_ftdi, c, nb_bit);
 		}
 	}
 
@@ -288,6 +312,8 @@ int FtdiJtag::read_write(unsigned char *tdi, unsigned char *tdo, int len, char l
 			/* in this case for 1 one it's always bit 7 */
 			*rx_ptr |= ((c & 0x80) << (7 - nb_bit));
 			display("%s %x\n", __func__, c);
+		} else if (_ch552WA) {
+			ftdi_read_data(_ftdi, c, 1);
 		}
 		_state = (_state == SHIFT_DR) ? EXIT1_DR : EXIT1_IR;
 	}
