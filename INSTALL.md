@@ -1,4 +1,6 @@
-== Compile from source ==
+# Install instructions
+
+## Compile from source
 
 ```
 $ mkdir build
