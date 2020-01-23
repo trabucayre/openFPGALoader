@@ -1,0 +1,3 @@
+// the configured options and settings for openFPGALoader
+#define openFPGALoader_VERSION_MAJOR @openFPGALoader_VERSION_MAJOR@
+#define openFPGALoader_VERSION_MINOR @openFPGALoader_VERSION_MINOR@
