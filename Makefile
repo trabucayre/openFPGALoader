@@ -16,9 +16,6 @@ all:$(EXEC_NAME)
 $(EXEC_NAME):$(OBJS)
 	$(CXX) -o $@ $^ $(LDFLAGS)
 
-%.o: %.c
-	$(CC) $(CFLAGS) -o $@ -c $<
-
 install:
 	cp -f openFPGALoader /usr/local/bin
 	mkdir -p /usr/local/share/openFPGALoader
