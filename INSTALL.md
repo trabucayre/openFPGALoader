@@ -5,6 +5,6 @@
 ```
 $ mkdir build
 $ cd build
-$ cmake ../openFPGALoader/
+$ cmake ../src/
 $ cmake --build .
 ```

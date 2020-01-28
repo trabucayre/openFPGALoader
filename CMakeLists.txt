@@ -12,7 +12,7 @@ set(CMAKE_CXX_FLAGS_DEBUG "-g -Wall -Wextra")
 find_package(PkgConfig REQUIRED)
 pkg_check_modules(LIBFTDI REQUIRED libftdi1)
 pkg_check_modules(LIBFTDIPP REQUIRED libftdipp1)
-pkg_check_modules(LIBUSB REQUIRED libusb)
+pkg_check_modules(LIBUSB REQUIRED libusb-1.0)
 pkg_check_modules(LIBUDEV REQUIRED libudev)
 
 set(OPENFPGALOADER_SOURCE

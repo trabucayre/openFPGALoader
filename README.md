@@ -28,7 +28,7 @@ __Supported cables:__
 This application uses **libftdi1**, so this library must be installed (and,
 depending of the distribution, headers too)
 ```bash
-apt-get install libftdi1-2 libftdi1-dev libftdipp1-3 libftdipp1-dev libudev-dev
+apt-get install libftdi1-2 libftdi1-dev libftdipp1-3 libftdipp1-dev libudev-dev cmake
 ```
 and if not already done, install **pkg-config**, **make** and **g++**.
 
