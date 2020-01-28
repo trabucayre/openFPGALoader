@@ -34,7 +34,12 @@ and if not already done, install **pkg-config**, **make** and **g++**.
 
 To build the app:
 ```bash
-$ make
+$ mkdir build
+$ cd build
+$ cmake ../
+$ cmake --build .
+or
+$ make -j$(nproc)
 ```
 To install
 ```bash

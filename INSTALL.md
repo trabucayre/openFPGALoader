@@ -5,6 +5,8 @@
 ```
 $ mkdir build
 $ cd build
-$ cmake ../src/
+$ cmake ../
 $ cmake --build .
+or
+$ make -j$(nproc)
 ```
