@@ -6,6 +6,7 @@ __Current support kits:__
 * Trenz cyc1000 Cyclone 10 LP 10CL025 (memory and spi flash)
 * Digilent arty Artix xc7a35ti (memory and spi flash)
 * Lattice MachXO3LF Starter Kit LCMX03LF-6900C (memory and flash)
+* [Lattice ECP5 5G Evaluation Board (LFE5UM5G-85F-EVN)](https://www.latticesemi.com/en/Products/DevelopmentBoardsAndKits/ECP5EvaluationBoard)
 * [Trenz Gowin LittleBee (TEC0117)](https://shop.trenz-electronic.de/en/TEC0117-01-FPGA-Module-with-GOWIN-LittleBee-and-8-MByte-internal-SDRAM)
 * [Sipeed Tang Nano](https://tangnano.sipeed.com/en/) (memory)
 
@@ -13,6 +14,7 @@ __Supported (tested) FPGA:__
 
 * Gowin [GW1N (GW1N-1, GW1N-4, GW1NR-9)](https://www.gowinsemi.com/en/product/detail/2/) (SRAM and Flash (flash mode only tested with GW1NR-9))
 * Lattice [MachXO3LF](http://www.latticesemi.com/en/Products/FPGAandCPLD/MachXO3.aspx) (SRAM and Flash)
+* Lattice [ECP5 5G](http://www.latticesemi.com/Products/FPGAandCPLD/ECP5) (SRAM)
 * Xilinx Artix 7 [xc7a35ti](https://www.xilinx.com/products/silicon-devices/fpga/artix-7.html) (memory and spi flash)
 * Intel Cyclone 10 LP [10CL025](https://www.intel.com/content/www/us/en/products/programmable/fpga/cyclone-10.html)
 
