@@ -57,7 +57,7 @@ int LatticeBitParser::parseHeader()
 	_fd.read(tmp, (_file_size-currPos)*sizeof(char));
 
 	for (int i = 0; i < _file_size-currPos;) {
-		if (tmp[i] == 0xff) {
+		if ((unsigned char)tmp[i] == 0xff) {
 			d = (uint32_t*)(tmp+i);
 			if (d[0] != 0xBDffffff && (0xffffff00 & d[1]) != 0x3BFFFF00){
 				foundEndHeader = true;
