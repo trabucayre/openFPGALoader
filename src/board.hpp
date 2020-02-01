@@ -10,6 +10,7 @@ static std::map <std::string, std::string > board_list = {
 	{"ecp5_evn", "ft2232"},
 	{"machXO3SK", "ft2232"},
 	{"littleBee", "ft2232"},
+	{"spartanEdgeAccelBoard", ""},
 	{"tangnano", "ft2232"}
 };
 
