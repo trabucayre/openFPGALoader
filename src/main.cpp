@@ -99,12 +99,13 @@ int main(int argc, char **argv)
 	if (args.board[0] != '-' && board_list.find(args.board) != board_list.end()) {
 		auto t = cable_list.find(board_list[args.board]);
 		if (t == cable_list.end()) {
-			cerr << "Error: interface "<< board_list[args.board];
-			cerr << " for board " << args.board << " is not supported" << endl;
-			return 1;
-		}
-		args.cable = (*t).first;
-	} else if (args.cable[0] == '-') { /* if no board and no cable */
+			args.cable = "-";
+			cout << "Board " << args.board << " has not default cable" << endl;
+		} else
+			args.cable = (*t).first;
+	}
+
+	if (args.cable[0] == '-') { /* if no board and no cable */
 		if (args.verbose)
 			cout << "No cable or board specified: using direct ft2232 interface" << endl;
 		args.cable = "ft2232";
