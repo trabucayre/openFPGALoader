@@ -8,6 +8,7 @@ __Current support kits:__
 * Lattice MachXO3LF Starter Kit LCMX03LF-6900C (memory and flash)
 * [Lattice ECP5 5G Evaluation Board (LFE5UM5G-85F-EVN)](https://www.latticesemi.com/en/Products/DevelopmentBoardsAndKits/ECP5EvaluationBoard)
 * [Trenz Gowin LittleBee (TEC0117)](https://shop.trenz-electronic.de/en/TEC0117-01-FPGA-Module-with-GOWIN-LittleBee-and-8-MByte-internal-SDRAM)
+* [SeeedStudio Spartan Edge Accelerator Board](http://wiki.seeedstudio.com/Spartan-Edge-Accelerator-Board) (memory)
 * [Sipeed Tang Nano](https://tangnano.sipeed.com/en/) (memory)
 
 __Supported (tested) FPGA:__
@@ -148,10 +149,13 @@ configured in SPI mode and sfl primitive used to access EPCQ SPI flash.**
 This interface is used for SPI communication only when the dedicated svf is
 loaded in RAM, rest of the time, user is free to use for what he want.**
 
-### ARTY
+### ARTY and Spartan Edge Accelerator Board
 
 To simplify further explanations, we consider the project is generated in the
 current directory.
+
+**Note: Spartan Edge Accelerator Board has only pinheader, so the cable must be
+provided**
 
 #### loading in memory:
 
@@ -162,8 +166,12 @@ __file load:__
 ```bash
 openFPGALoader -b arty *.runs/impl_1/*.bit
 ```
+or
+```bash
+openFPGALoader -b spartanEdgeAccelBoard -c digilent_hs2 *.runs/impl_1/*.bit
+```
 
-#### SPI flash:
+#### SPI flash (only for ARTY):
 .mcs must be generates through vivado with a tcl script like
 ```tcl
 set project [lindex $argv 0]
