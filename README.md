@@ -16,10 +16,12 @@ __Supported (tested) FPGA:__
 * Lattice [MachXO3LF](http://www.latticesemi.com/en/Products/FPGAandCPLD/MachXO3.aspx) (SRAM and Flash)
 * Lattice [ECP5 5G](http://www.latticesemi.com/Products/FPGAandCPLD/ECP5) (SRAM)
 * Xilinx Artix 7 [xc7a35ti](https://www.xilinx.com/products/silicon-devices/fpga/artix-7.html) (memory and spi flash)
+* Xilinx Spartan 7 [xc7s15](https://www.xilinx.com/products/silicon-devices/fpga/spartan-7.html) (memory)
 * Intel Cyclone 10 LP [10CL025](https://www.intel.com/content/www/us/en/products/programmable/fpga/cyclone-10.html)
 
 __Supported cables:__
 
+* [digilent_hs2](https://store.digilentinc.com/jtag-hs2-programming-cable/): jtag programmer cable from digilent
 * JTAG-HS3: jtag programmer cable from digilent
 * FT2232: generic programmer cable based on Ftdi FT2232
 * Tang Nano USB-JTAG interface: FT2232C clone based on CH552 microcontroler
