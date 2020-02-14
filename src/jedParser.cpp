@@ -38,7 +38,7 @@
 using namespace std;
 
 JedParser::JedParser(string filename, bool verbose):
-	ConfigBitstreamParser(filename, ConfigBitstreamParser::BIN_MODE),
+	ConfigBitstreamParser(filename, ConfigBitstreamParser::BIN_MODE, verbose),
 	_fuse_count(0), _pin_count(0), _featuresRow(0), _feabits(0), _checksum(0),
 	_userCode(0), _security_settings(0), _default_fuse_state(0)
 {
