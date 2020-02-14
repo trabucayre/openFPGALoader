@@ -36,7 +36,7 @@ class Lattice: public Device {
 		void reset() override {}
 		void program(unsigned int offset) override;
 		bool program_mem();
-		bool program_flash(unsigned int offset);
+		bool program_flash();
 		bool Verify(JedParser &_jed, bool unlock = false);
 
 	private:

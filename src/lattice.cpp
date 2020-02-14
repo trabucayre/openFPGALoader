@@ -244,9 +244,8 @@ bool Lattice::program_mem()
 	return true;
 }
 
-bool Lattice::program_flash(unsigned int offset)
+bool Lattice::program_flash()
 {
-	(void) offset;
 	bool err;
 	uint64_t featuresRow;
 	uint16_t feabits;
@@ -414,8 +413,9 @@ bool Lattice::program_flash(unsigned int offset)
 
 void Lattice::program(unsigned int offset)
 {
+	(void) offset;
 	if (_mode == FLASH_MODE)
-		program_flash(offset);
+		program_flash();
 	else if (_mode == MEM_MODE)
 		program_mem();
 

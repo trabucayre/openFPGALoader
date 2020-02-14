@@ -71,7 +71,7 @@ void Xilinx::program(unsigned int offset)
 		case Device::MEM_MODE:
 			BitParser bitfile(_filename, _verbose);
 			bitfile.parse();
-			program_mem(bitfile, offset);
+			program_mem(bitfile);
 			break;
 	}
 }
@@ -84,7 +84,7 @@ void Xilinx::program_spi(unsigned int offset)
 	/* first: load spi over jtag */
 	BitParser bitfile(bitname, _verbose);
 	bitfile.parse();
-	program_mem(bitfile, offset);
+	program_mem(bitfile);
 
 	/* last: read file and erase/flash spi flash */
 	McsParser mcs(_filename, _verbose);
@@ -93,7 +93,7 @@ void Xilinx::program_spi(unsigned int offset)
 	spiFlash.erase_and_prog(offset, mcs.getData(), mcs.getLength());
 }
 
-void Xilinx::program_mem(BitParser &bitfile, unsigned int offset)
+void Xilinx::program_mem(BitParser &bitfile)
 {
 	if (_filename == "") return;
 	std::cout << "load program" << std::endl;
