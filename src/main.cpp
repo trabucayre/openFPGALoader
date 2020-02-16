@@ -49,6 +49,7 @@ struct arguments {
 	bool list_fpga;
 	bool write_flash;
 	bool write_sram;
+	bool is_list_command;
 };
 
 #define LIST_CABLE	1
@@ -86,11 +87,11 @@ int main(int argc, char **argv)
 
 	/* command line args. */
 	struct arguments args = {false, false, 0, "", "-", "-", "-",
-			false, false, false, false, true};
+			false, false, false, false, true, false};
 	/* parse arguments */
 	argp_parse(&argp, argc, argv, 0, 0, &args);
 
-	if (args.list_boards == true || args.list_cables == true || args.list_fpga) {
+	if (args.is_list_command) {
 		displaySupported(args);
 		return EXIT_SUCCESS;
 	}
@@ -213,15 +214,24 @@ static error_t parse_opt(int key, char *arg, struct argp_state *state)
 		arguments->bit_file = arg;
 		break;
 	case ARGP_KEY_END:
+		if (arguments->bit_file.empty() &&
+		    !arguments->is_list_command &&
+		    !arguments->reset) {
+			cout << "Error: bitfile not specified" << endl;
+			argp_usage(state);
+		}
 		break;
 	case LIST_CABLE:
 		arguments->list_cables = true;
+		arguments->is_list_command = true;
 		break;
 	case LIST_BOARD:
 		arguments->list_boards = true;
+		arguments->is_list_command = true;
 		break;
 	case LIST_FPGA:
 		arguments->list_fpga = true;
+		arguments->is_list_command = true;
 		break;
 	default:
 		return ARGP_ERR_UNKNOWN;
@@ -275,3 +285,4 @@ void displaySupported(const struct arguments &args)
 		cout << endl;
 	}
 }
+
