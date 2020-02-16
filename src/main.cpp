@@ -170,7 +170,8 @@ int main(int argc, char **argv)
 		return EXIT_FAILURE;
 	}
 
-	fpga->program(args.offset);
+	if (!args.bit_file.empty())
+		fpga->program(args.offset);
 
 	if (args.reset)
 		fpga->reset();
