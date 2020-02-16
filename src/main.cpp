@@ -170,8 +170,15 @@ int main(int argc, char **argv)
 		return EXIT_FAILURE;
 	}
 
-	if (!args.bit_file.empty())
-		fpga->program(args.offset);
+	if (!args.bit_file.empty()) {
+		try {
+			fpga->program(args.offset);
+		} catch (std::exception &e) {
+			delete(fpga);
+			delete(jtag);
+			return EXIT_FAILURE;
+		}
+	}
 
 	if (args.reset)
 		fpga->reset();
