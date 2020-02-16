@@ -81,7 +81,7 @@ void Xilinx::program_spi(unsigned int offset)
 {
 	// DATA_DIR is defined at compile time.
 	std::string bitname = DATA_DIR "/openFPGALoader/spiOverJtag_";
-	bitname += fpga_list[idCode()].family + ".bit";
+	bitname += fpga_list[idCode()].model + ".bit";
 
 	/* first: load spi over jtag */
 	BitParser bitfile(bitname, _verbose);
