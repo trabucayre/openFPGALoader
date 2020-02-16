@@ -50,7 +50,8 @@ To install
 ```bash
 $ sudo make install
 ```
-Currently, the install path is hardcoded to /usr/local
+The default install path is `/usr/local`, to change it, use
+`-DCMAKE_INSTALL_PREFIX=myInstallDir` in cmake invokation.
 
 ## Usage
 

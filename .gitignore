@@ -34,3 +34,7 @@
 cycloader
 openFPGALoader
 *.swp
+
+# Build directory
+build/
+

@@ -9,6 +9,10 @@ set(CMAKE_CXX_STANDARD 11)
 set(CMAKE_CXX_STANDARD_REQUIRED True)
 set(CMAKE_CXX_FLAGS_DEBUG "-g -Wall -Wextra")
 
+include(GNUInstallDirs)
+# By default: DATA_DIR="/usr/local/share"
+add_definitions(-DDATA_DIR=\"${CMAKE_INSTALL_FULL_DATAROOTDIR}\")
+
 find_package(PkgConfig REQUIRED)
 pkg_check_modules(LIBFTDI REQUIRED libftdi1)
 pkg_check_modules(LIBFTDIPP REQUIRED libftdipp1)
@@ -92,5 +96,5 @@ install(TARGETS openFPGALoader DESTINATION bin)
 install(FILES 
 	test_sfl.svf
 	spiOverJtag/spiOverJtag_xc7a35.bit
-	DESTINATION share/openFPGALoader
+	DESTINATION ${CMAKE_INSTALL_DATAROOTDIR}/openFPGALoader
 )

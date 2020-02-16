@@ -5,7 +5,8 @@
 
 #define IDCODE 6
 #define IRLENGTH 10
-#define BIT_FOR_FLASH "/usr/local/share/openFPGALoader/test_sfl.svf"
+// DATA_DIR is defined at compile time.
+#define BIT_FOR_FLASH (DATA_DIR "/openFPGALoader/test_sfl.svf")
 
 Altera::Altera(FtdiJtag *jtag, std::string filename, bool verbose):
 	Device(jtag, filename, verbose), _svf(_jtag, _verbose)
