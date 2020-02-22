@@ -63,6 +63,7 @@ openFPGALoader -- a program to flash cyclone10 LP FPGA
   -b, --board=BOARD          board name, may be used instead of cable
   -c, --cable=CABLE          jtag interface
   -d, --device=DEVICE        device to use (/dev/ttyUSBx)
+      --detect               detect FPGA
   -f, --write-flash          write bitstream in flash (default: false, only for
                              Gowin devices)
       --list-boards          list all supported boards

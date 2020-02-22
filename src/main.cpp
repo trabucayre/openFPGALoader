@@ -38,7 +38,7 @@
 using namespace std;
 
 struct arguments {
-	bool verbose, reset;
+	bool verbose, reset, detect;
 	unsigned int offset;
 	string bit_file;
 	string device;
@@ -55,6 +55,7 @@ struct arguments {
 #define LIST_CABLE	1
 #define LIST_BOARD 	2
 #define LIST_FPGA	3
+#define DETECT   	4
 
 const char *argp_program_version = "openFPGALoader 1.0";
 const char *argp_program_bug_address = "<gwenhael.goavec-merou@trabucayre.com>";
@@ -68,6 +69,7 @@ static struct argp_option options[] = {
 	{"list-boards", LIST_BOARD, 0, 0, "list all supported boards"},
 	{"device",  'd', "DEVICE", 0, "device to use (/dev/ttyUSBx)"},
 	{"list-fpga", LIST_FPGA, 0, 0, "list all supported FPGA"},
+	{"detect", DETECT, 0, 0, "detect FPGA"},
 	{"write-flash", 'f', 0, 0,
 			"write bitstream in flash (default: false, only for Gowin devices)"},
 	{"write-sram", 'm', 0, 0,
@@ -86,7 +88,7 @@ int main(int argc, char **argv)
 	FTDIpp_MPSSE::mpsse_bit_config cable;
 
 	/* command line args. */
-	struct arguments args = {false, false, 0, "", "-", "-", "-",
+	struct arguments args = {false, false, false, 0, "", "-", "-", "-",
 			false, false, false, false, true, false};
 	/* parse arguments */
 	argp_parse(&argp, argc, argv, 0, 0, &args);
@@ -145,13 +147,19 @@ int main(int argc, char **argv)
 	if (fpga_list.find(idcode) == fpga_list.end()) {
 		cerr << "Error: device " << hex << idcode << " not supported" << endl;
 		return 1;
-	} else if (args.verbose) {
+	} else if (args.verbose || args.detect) {
 		printf("idcode 0x%x\nmanufacturer %s\nmodel  %s\nfamily %s\n",
 			idcode,
 			fpga_list[idcode].manufacturer.c_str(),
 			fpga_list[idcode].model.c_str(),
 			fpga_list[idcode].family.c_str());
 	}
+
+	if (args.detect == true) {
+		delete jtag;
+		return EXIT_SUCCESS;
+	}
+
 	string fab = fpga_list[idcode].manufacturer;
 
 	Device *fpga;
@@ -224,6 +232,7 @@ static error_t parse_opt(int key, char *arg, struct argp_state *state)
 	case ARGP_KEY_END:
 		if (arguments->bit_file.empty() &&
 		    !arguments->is_list_command &&
+			!arguments->detect &&
 		    !arguments->reset) {
 			cout << "Error: bitfile not specified" << endl;
 			argp_usage(state);
@@ -240,6 +249,9 @@ static error_t parse_opt(int key, char *arg, struct argp_state *state)
 	case LIST_FPGA:
 		arguments->list_fpga = true;
 		arguments->is_list_command = true;
+		break;
+	case DETECT:
+		arguments->detect = true;
 		break;
 	default:
 		return ARGP_ERR_UNKNOWN;
