@@ -5,6 +5,7 @@
 
 static std::map <std::string, std::string > board_list = {
 	{"arty",    "digilent"},
+	{"colorlight", ""},
 	{"cyc1000", "ft2232"},
 	{"de0nano", "usbblaster"},
 	{"ecp5_evn", "ft2232"},

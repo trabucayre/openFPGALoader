@@ -4,6 +4,7 @@ Universal utility for programming FPGA
 __Current support kits:__
 
 * Trenz cyc1000 Cyclone 10 LP 10CL025 (memory and spi flash)
+* [Colorlight 5A-75B (version 7)](https://fr.aliexpress.com/item/32281130824.html)
 * Digilent arty Artix xc7a35ti (memory and spi flash)
 * Lattice MachXO3LF Starter Kit LCMX03LF-6900C (memory and flash)
 * [Lattice ECP5 5G Evaluation Board (LFE5UM5G-85F-EVN)](https://www.latticesemi.com/en/Products/DevelopmentBoardsAndKits/ECP5EvaluationBoard)
