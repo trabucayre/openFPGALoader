@@ -71,7 +71,7 @@ FtdiSpi::FtdiSpi(int vid, int pid, unsigned char interface, uint32_t clkHZ,
 	setCSmode(SPI_CS_AUTO);
 	setEndianness(SPI_MSB_FIRST);
 
-	init(1, 0x00, bit_conf);
+	init(1, 0x00, BITMODE_MPSSE, bit_conf);
 }
 FtdiSpi::~FtdiSpi()
 {
