@@ -138,6 +138,7 @@ int FTDIpp_MPSSE::close_device()
 
 
 int FTDIpp_MPSSE::init(unsigned char latency, unsigned char bitmask_mode,
+				unsigned char mode,
 			   mpsse_bit_config & bit_conf)
 {
 	unsigned char buf_cmd[6] = { SET_BITS_LOW, 0, 0,
@@ -149,9 +150,11 @@ int FTDIpp_MPSSE::init(unsigned char latency, unsigned char bitmask_mode,
 		return -1;
 	}
 
-	if (ftdi_set_bitmode(_ftdi, 0x00, BITMODE_RESET) < 0) {
-		cout << "bitmode_reset error" << endl;
-		return -1;
+	if (mode == BITMODE_MPSSE) {
+		if (ftdi_set_bitmode(_ftdi, 0x00, BITMODE_RESET) < 0) {
+			cout << "bitmode_reset error" << endl;
+			return -1;
+		}
 	}
 	if (ftdi_usb_purge_buffers(_ftdi) != 0) {
 		cout << "reset error" << endl;
@@ -162,24 +165,26 @@ int FTDIpp_MPSSE::init(unsigned char latency, unsigned char bitmask_mode,
 		return -1;
 	}
 	/* enable MPSSE mode */
-	if (ftdi_set_bitmode(_ftdi, bitmask_mode, BITMODE_MPSSE) < 0) {
+	if (ftdi_set_bitmode(_ftdi, bitmask_mode, mode) < 0) {
 		cout << "bitmode_mpsse error" << endl;
 		return -1;
 	}
+	if (mode == BITMODE_MPSSE) {
 
-	unsigned char buf1[5];
-	ftdi_read_data(_ftdi, buf1, 5);
+		unsigned char buf1[5];
+		ftdi_read_data(_ftdi, buf1, 5);
 
-	if (setClkFreq(_clkHZ, 0) < 0)
-		return -1;
+		if (setClkFreq(_clkHZ, 0) < 0)
+			return -1;
 
-	buf_cmd[1] = bit_conf.bit_low_val;  // 0xe8;
-	buf_cmd[2] = bit_conf.bit_low_dir;  // 0xeb;
+		buf_cmd[1] = bit_conf.bit_low_val;  // 0xe8;
+		buf_cmd[2] = bit_conf.bit_low_dir;  // 0xeb;
 
-	buf_cmd[4] = bit_conf.bit_high_val;  // 0x00;
-	buf_cmd[5] = bit_conf.bit_high_dir;  // 0x60;
-	mpsse_store(buf_cmd, 6);
-	mpsse_write();
+		buf_cmd[4] = bit_conf.bit_high_val;  // 0x00;
+		buf_cmd[5] = bit_conf.bit_high_dir;  // 0x60;
+		mpsse_store(buf_cmd, 6);
+		mpsse_write();
+	}
 
 	return 0;
 }
