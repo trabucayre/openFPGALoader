@@ -25,7 +25,8 @@ set(OPENFPGALOADER_SOURCE
 	src/svf_jtag.cpp
 	src/jedParser.cpp
 	src/display.cpp
-	src/ftdijtag.cpp
+	src/jtag.cpp
+	src/ftdiJtagMPSSE.cpp
 	src/configBitstreamParser.cpp
 	src/ftdipp_mpsse.cpp
 	src/xilinx.cpp
@@ -46,7 +47,9 @@ set(OPENFPGALOADER_HEADERS
 	src/altera.hpp
 	src/progressBar.hpp
 	src/bitparser.hpp
-	src/ftdijtag.hpp
+	src/ftdiJtagMPSSE.hpp
+	src/jtag.hpp
+	src/jtagInterface.hpp
 	src/fsparser.hpp
 	src/part.hpp
 	src/board.hpp
