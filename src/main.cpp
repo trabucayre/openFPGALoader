@@ -31,7 +31,7 @@
 #include "display.hpp"
 #include "gowin.hpp"
 #include "lattice.hpp"
-#include "ftdijtag.hpp"
+#include "jtag.hpp"
 #include "part.hpp"
 #include "xilinx.hpp"
 
@@ -122,11 +122,11 @@ int main(int argc, char **argv)
 	cable = select_cable->second;
 
 	/* jtag base */
-	FtdiJtag *jtag;
+	Jtag *jtag;
 	if (args.device == "-")
-		jtag = new FtdiJtag(cable, 1, 6000000, false);
+		jtag = new Jtag(cable, 1, 6000000, false);
 	else
-		jtag = new FtdiJtag(cable, args.device, 1, 6000000, false);
+		jtag = new Jtag(cable, args.device, 1, 6000000, false);
 
 	/* chain detection */
 	vector<int> listDev;

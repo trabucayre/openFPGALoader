@@ -3,11 +3,11 @@
 
 #include "bitparser.hpp"
 #include "device.hpp"
-#include "ftdijtag.hpp"
+#include "jtag.hpp"
 
 class Xilinx: public Device {
 	public:
-		Xilinx(FtdiJtag *jtag, std::string filename, bool verbose);
+		Xilinx(Jtag *jtag, std::string filename, bool verbose);
 		~Xilinx();
 
 		void program(unsigned int offset = 0) override;

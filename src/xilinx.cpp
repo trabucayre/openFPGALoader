@@ -1,7 +1,7 @@
 #include <iostream>
 #include <stdexcept>
 
-#include "ftdijtag.hpp"
+#include "jtag.hpp"
 #include "bitparser.hpp"
 #include "mcsParser.hpp"
 #include "spiFlash.hpp"
@@ -10,7 +10,7 @@
 #include "part.hpp"
 #include "progressBar.hpp"
 
-Xilinx::Xilinx(FtdiJtag *jtag, std::string filename, bool verbose):
+Xilinx::Xilinx(Jtag *jtag, std::string filename, bool verbose):
 	Device(jtag, filename, verbose)
 {
 	if (_filename != ""){
@@ -36,23 +36,24 @@ void Xilinx::reset()
 {
 	_jtag->shiftIR(JSHUTDOWN, 6);
 	_jtag->shiftIR(JPROGRAM, 6);
-	_jtag->set_state(FtdiJtag::RUN_TEST_IDLE);
+	_jtag->set_state(Jtag::RUN_TEST_IDLE);
 	_jtag->toggleClk(10000*12);
 
-	_jtag->set_state(FtdiJtag::RUN_TEST_IDLE);
+	_jtag->set_state(Jtag::RUN_TEST_IDLE);
 	_jtag->toggleClk(2000);
 
 	_jtag->shiftIR(BYPASS, 6);
-	_jtag->set_state(FtdiJtag::RUN_TEST_IDLE);
+	_jtag->set_state(Jtag::RUN_TEST_IDLE);
 	_jtag->toggleClk(2000);
 }
 
 int Xilinx::idCode()
 {
+	unsigned char tx_data[4]= {0x00, 0x00, 0x00, 0x00};
 	unsigned char rx_data[4];
 	_jtag->go_test_logic_reset();
 	_jtag->shiftIR(IDCODE, 6);
-	_jtag->shiftDR(NULL, rx_data, 32);
+	_jtag->shiftDR(tx_data, rx_data, 32);
 	return ((rx_data[0] & 0x000000ff) |
 		((rx_data[1] << 8) & 0x0000ff00) |
 		((rx_data[2] << 16) & 0x00ff0000) |
@@ -128,7 +129,7 @@ void Xilinx::program_mem(BitParser &bitfile)
 	/*
 	 * 8: Move into the RTI state.                        X     0   10,000(1)
 	 */
-	_jtag->set_state(FtdiJtag::RUN_TEST_IDLE);
+	_jtag->set_state(Jtag::RUN_TEST_IDLE);
 	_jtag->toggleClk(10000*12);
 	/*
 	 * 9: Start loading the CFG_IN instruction,
@@ -141,11 +142,11 @@ void Xilinx::program_mem(BitParser &bitfile)
 	/*
 	 * 11: Enter the SELECT-DR state.                     X     1   2
 	 */
-	_jtag->set_state(FtdiJtag::SELECT_DR_SCAN);
+	_jtag->set_state(Jtag::SELECT_DR_SCAN);
 	/*
 	 * 12: Enter the SHIFT-DR state.                      X     0   2
 	 */
-	_jtag->set_state(FtdiJtag::SHIFT_DR);
+	_jtag->set_state(Jtag::SHIFT_DR);
 	/*
 	 * 13: Shift in the FPGA bitstream. Bitn (MSB)
 	 *     is the first bit in the bitstream(2).    bit1...bitn 0  (bits in bitstream)-1
@@ -177,11 +178,11 @@ void Xilinx::program_mem(BitParser &bitfile)
 	/*
 	 * 15: Enter UPDATE-DR state.                         X     1   1
 	 */
-	_jtag->set_state(FtdiJtag::UPDATE_DR);
+	_jtag->set_state(Jtag::UPDATE_DR);
 	/*
 	 * 16: Move into RTI state.                           X     0   1
 	 */
-	_jtag->set_state(FtdiJtag::RUN_TEST_IDLE);
+	_jtag->set_state(Jtag::RUN_TEST_IDLE);
 	/*
 	 * 17: Enter the SELECT-IR state.                     X     1   2
 	 * 18: Move to the SHIFT-IR state.                    X     0   2
@@ -191,13 +192,13 @@ void Xilinx::program_mem(BitParser &bitfile)
 	 * 20: Load the last bit of the JSTART instruction.   0     1   1
 	 * 21: Move to the UPDATE-IR state.                   X     1   1
 	 */
-	_jtag->shiftIR(JSTART, 6, FtdiJtag::UPDATE_IR);
+	_jtag->shiftIR(JSTART, 6, Jtag::UPDATE_IR);
 	/*
 	 * 22: Move to the RTI state and clock the
 	 *     startup sequence by applying a minimum         X     0   2000
 	 *     of 2000 clock cycles to the TCK.
 	 */
-	_jtag->set_state(FtdiJtag::RUN_TEST_IDLE);
+	_jtag->set_state(Jtag::RUN_TEST_IDLE);
 	_jtag->toggleClk(2000);
 	/*
 	 * 23: Move to the TLR state. The device is

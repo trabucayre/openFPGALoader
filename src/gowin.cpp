@@ -24,7 +24,7 @@
 
 #include <iostream>
 
-#include "ftdijtag.hpp"
+#include "jtag.hpp"
 #include "gowin.hpp"
 #include "progressBar.hpp"
 #include "display.hpp"
@@ -63,7 +63,7 @@ using namespace std;
 #define EF_PROGRAM			0x71
 #define EFLASH_ERASE		0x75
 
-Gowin::Gowin(FtdiJtag *jtag, const string filename, bool flash_wr, bool sram_wr,
+Gowin::Gowin(Jtag *jtag, const string filename, bool flash_wr, bool sram_wr,
 		bool verbose): Device(jtag, filename, verbose)
 {
 	_fs = NULL;
@@ -372,7 +372,7 @@ bool Gowin::flashFLASH(uint8_t *data, int length)
 		progress.display(i);
 	}
 	/* 2.2.6.6 */
-	_jtag->set_state(FtdiJtag::RUN_TEST_IDLE);
+	_jtag->set_state(Jtag::RUN_TEST_IDLE);
 
 	progress.done();
 	return true;
@@ -390,25 +390,28 @@ bool Gowin::flashSRAM(uint8_t *data, int length)
 	wr_rd(XFER_WRITE, NULL, 0, NULL, 0);
 
 	/* 2.2.6.5 */
-	_jtag->set_state(FtdiJtag::SHIFT_DR);
+	_jtag->set_state(Jtag::SHIFT_DR);
 
-	for (int i=0; i < byte_length; i+=256) {
-		if (i + 256 > byte_length) {  // last packet with some size
+	int xfer_len = 256;
+
+	for (int i=0; i < byte_length; i+=xfer_len) {
+		if (i + xfer_len > byte_length) {  // last packet with some size
 			tx_len = (byte_length - i) * 8;
 			tx_end = 1;  // to move in EXIT1_DR
 		} else {
-			tx_len = 256 * 8;
+			tx_len = xfer_len * 8;
 			tx_end = 0;
 		}
 		_jtag->read_write(data+i, NULL, tx_len, tx_end);
-		_jtag->flush();
+		//_jtag->flush();
 		progress.display(i);
 	}
 	/* 2.2.6.6 */
-	_jtag->set_state(FtdiJtag::RUN_TEST_IDLE);
+	_jtag->set_state(Jtag::RUN_TEST_IDLE);
 
 	/* p.15 fig 2.11 */
 	wr_rd(XFER_DONE, NULL, 0, NULL, 0);
+
 	if (pollFlag(STATUS_DONE_FINAL, STATUS_DONE_FINAL)) {
 		progress.done();
 		return true;
@@ -426,7 +429,7 @@ bool Gowin::eraseFLASH()
 	unsigned char tx[4] = {0, 0, 0, 0};
 	printInfo("erase Flash ", false);
 	wr_rd(EFLASH_ERASE, NULL, 0, NULL, 0);
-	_jtag->set_state(FtdiJtag::RUN_TEST_IDLE);
+	_jtag->set_state(Jtag::RUN_TEST_IDLE);
 	_jtag->shiftDR(tx, NULL, 32);
 	/* TN653 specifies to wait for 120ms with
 	 * there are no bit in status register to specify

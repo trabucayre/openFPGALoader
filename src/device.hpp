@@ -3,7 +3,7 @@
 
 #include <iostream>
 
-#include "ftdijtag.hpp"
+#include "jtag.hpp"
 
 /* GGM: TODO: program must have an optional
  * offset
@@ -18,13 +18,13 @@ class Device {
 			FLASH_MODE = 1,
 			MEM_MODE = 2
 		};
-		Device(FtdiJtag *jtag, std::string filename, bool verbose = false);
+		Device(Jtag *jtag, std::string filename, bool verbose = false);
 		virtual ~Device();
 		virtual void program(unsigned int offset = 0) = 0;
 		virtual int  idCode() = 0;
 		virtual void reset();
 	protected:
-		FtdiJtag *_jtag;
+		Jtag *_jtag;
 		std::string _filename;
 		std::string _file_extension;
 		enum prog_mode _mode;

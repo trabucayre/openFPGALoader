@@ -24,7 +24,7 @@
 
 #include <iostream>
 
-#include "ftdijtag.hpp"
+#include "jtag.hpp"
 #include "lattice.hpp"
 #include "progressBar.hpp"
 #include "display.hpp"
@@ -61,7 +61,7 @@ using namespace std;
 #	define REG_STATUS_CNF_CHK_MASK	(0x7 << 23)
 #	define REG_STATUS_EXEC_ERR	(1 << 26)
 
-Lattice::Lattice(FtdiJtag *jtag, const string filename, bool verbose):
+Lattice::Lattice(Jtag *jtag, const string filename, bool verbose):
 		Device(jtag, filename, verbose)
 {
 	if (_filename != "") {
@@ -182,13 +182,13 @@ bool Lattice::program_mem()
 
 	/* LSC_INIT_ADDRESS */
 	wr_rd(0x46, NULL, 0, NULL, 0);
-	_jtag->set_state(FtdiJtag::RUN_TEST_IDLE);
+	_jtag->set_state(Jtag::RUN_TEST_IDLE);
 	_jtag->toggleClk(1000);
 
 	uint8_t *data = _bit.getData();
 	int length = _bit.getLength()/8;
 	wr_rd(0x7A, NULL, 0, NULL, 0);
-	_jtag->set_state(FtdiJtag::RUN_TEST_IDLE);
+	_jtag->set_state(Jtag::RUN_TEST_IDLE);
 	_jtag->toggleClk(2);
 
 	uint8_t tmp[1024];
@@ -205,10 +205,10 @@ bool Lattice::program_mem()
 		for (int ii = 0; ii < size; ii++)
 			tmp[ii] = ConfigBitstreamParser::reverseByte(data[i+ii]);
 
-		_jtag->shiftDR(tmp, NULL, size*8, FtdiJtag::SHIFT_DR);
+		_jtag->shiftDR(tmp, NULL, size*8, Jtag::SHIFT_DR);
 	}
 
-	_jtag->set_state(FtdiJtag::RUN_TEST_IDLE);
+	_jtag->set_state(Jtag::RUN_TEST_IDLE);
 
 	if (checkStatus(0, REG_STATUS_CNF_CHK_MASK))
 		progress.done();
@@ -341,7 +341,7 @@ bool Lattice::program_flash()
 
 	/* LSC_INIT_ADDRESS */
 	wr_rd(0x46, NULL, 0, NULL, 0);
-	_jtag->set_state(FtdiJtag::RUN_TEST_IDLE);
+	_jtag->set_state(Jtag::RUN_TEST_IDLE);
 	_jtag->toggleClk(1000);
 
 	/* flash UFM */
@@ -354,7 +354,7 @@ bool Lattice::program_flash()
 
 	/* LSC_INIT_ADDRESS */
 	wr_rd(0x46, NULL, 0, NULL, 0);
-	_jtag->set_state(FtdiJtag::RUN_TEST_IDLE);
+	_jtag->set_state(Jtag::RUN_TEST_IDLE);
 	_jtag->toggleClk(1000);
 
 	if ((eraseMode & FLASH_ERASE_FEATURE) != 0) {
@@ -425,7 +425,7 @@ bool Lattice::EnableISC(uint8_t flash_mode)
 {
 	wr_rd(ISC_ENABLE, &flash_mode, 1, NULL, 0);
 
-	_jtag->set_state(FtdiJtag::RUN_TEST_IDLE);
+	_jtag->set_state(Jtag::RUN_TEST_IDLE);
 	_jtag->toggleClk(1000);
 	if (!pollBusyFlag())
 		return false;
@@ -437,7 +437,7 @@ bool Lattice::EnableISC(uint8_t flash_mode)
 bool Lattice::DisableISC()
 {
 	wr_rd(ISC_DISABLE, NULL, 0, NULL, 0);
-	_jtag->set_state(FtdiJtag::RUN_TEST_IDLE);
+	_jtag->set_state(Jtag::RUN_TEST_IDLE);
 	_jtag->toggleClk(1000);
 	if (!pollBusyFlag())
 		return false;
@@ -450,7 +450,7 @@ bool Lattice::EnableCfgIf()
 {
 	uint8_t tx_buf = 0x08;
 	wr_rd(0x74, &tx_buf, 1, NULL, 0);
-	_jtag->set_state(FtdiJtag::RUN_TEST_IDLE);
+	_jtag->set_state(Jtag::RUN_TEST_IDLE);
 	_jtag->toggleClk(1000);
 	return pollBusyFlag();
 }
@@ -459,7 +459,7 @@ bool Lattice::DisableCfg()
 {
 	uint8_t tx_buf, rx_buf;
 	wr_rd(0x26, &tx_buf, 1, &rx_buf, 1);
-	_jtag->set_state(FtdiJtag::RUN_TEST_IDLE);
+	_jtag->set_state(Jtag::RUN_TEST_IDLE);
 	_jtag->toggleClk(1000);
 	return true;
 }
@@ -490,7 +490,7 @@ bool Lattice::checkID()
 	printf("check ID\n");
 	uint8_t tx[4];
 	wr_rd(0xE2, tx, 4, NULL, 0);
-	_jtag->set_state(FtdiJtag::RUN_TEST_IDLE);
+	_jtag->set_state(Jtag::RUN_TEST_IDLE);
 	_jtag->toggleClk(1000);
 
 	uint32_t reg = readStatusReg();
@@ -501,7 +501,7 @@ bool Lattice::checkID()
 	tx[1] = 0xd0;
 	tx[0] = 0x43;
 	wr_rd(0xE2, tx, 4, NULL, 0);
-	_jtag->set_state(FtdiJtag::RUN_TEST_IDLE);
+	_jtag->set_state(Jtag::RUN_TEST_IDLE);
 	_jtag->toggleClk(1000);
 	reg = readStatusReg();
 	displayReadReg(reg);
@@ -519,7 +519,7 @@ uint32_t Lattice::readStatusReg()
 	uint32_t reg;
 	uint8_t rx[4], tx[4];
 	wr_rd(0x3C, tx, 4, rx, 4);
-	_jtag->set_state(FtdiJtag::RUN_TEST_IDLE);
+	_jtag->set_state(Jtag::RUN_TEST_IDLE);
 	_jtag->toggleClk(1000);
 	reg = rx[3] << 24 | rx[2] << 16 | rx[1] << 8 | rx[0];
 	return reg;
@@ -543,10 +543,10 @@ bool Lattice::wr_rd(uint8_t cmd,
 			xfer_tx[i] = tx[i];
 	}
 
-	_jtag->shiftIR(&cmd, NULL, 8, FtdiJtag::PAUSE_IR);
+	_jtag->shiftIR(&cmd, NULL, 8, Jtag::PAUSE_IR);
 	if (rx || tx) {
 		_jtag->shiftDR(xfer_tx, (rx) ? xfer_rx : NULL, 8 * xfer_len,
-			FtdiJtag::PAUSE_DR);
+			Jtag::PAUSE_DR);
 	}
 	if (rx) {
 		if (verbose) {
@@ -652,7 +652,7 @@ bool Lattice::pollBusyFlag(bool verbose)
 	int timeout = 0;
 	do {
 		wr_rd(CHECK_BUSY_FLAG, NULL, 0, &rx, 1);
-		_jtag->set_state(FtdiJtag::RUN_TEST_IDLE);
+		_jtag->set_state(Jtag::RUN_TEST_IDLE);
 		_jtag->toggleClk(1000);
 		if (verbose)
 			printf("pollBusyFlag :%02x\n", rx);
@@ -676,7 +676,7 @@ bool Lattice::flashErase(uint8_t mask)
 {
 	uint8_t tx[1] = {mask};
 	wr_rd(FLASH_ERASE, tx, 1, NULL, 0);
-	_jtag->set_state(FtdiJtag::RUN_TEST_IDLE);
+	_jtag->set_state(Jtag::RUN_TEST_IDLE);
 	_jtag->toggleClk(1000);
 	if (!pollBusyFlag())
 		return false;
@@ -692,7 +692,7 @@ bool Lattice::flashProg(uint32_t start_addr, std::vector<std::string> data)
 	for (uint32_t line = 0; line < data.size(); line++) {
 		wr_rd(PROG_CFG_FLASH, (uint8_t *)data[line].c_str(),
 				16, NULL, 0);
-		_jtag->set_state(FtdiJtag::RUN_TEST_IDLE);
+		_jtag->set_state(Jtag::RUN_TEST_IDLE);
 		_jtag->toggleClk(1000);
 		progress.display(line);
 		if (pollBusyFlag() == false)
@@ -709,20 +709,20 @@ bool Lattice::Verify(JedParser &_jed, bool unlock)
 		EnableISC(0x08);
 
 	wr_rd(0x46, NULL, 0, NULL, 0);
-	_jtag->set_state(FtdiJtag::RUN_TEST_IDLE);
+	_jtag->set_state(Jtag::RUN_TEST_IDLE);
 	_jtag->toggleClk(1000);
 
 	tx_buf[0] = 0x73;
-	_jtag->shiftIR(tx_buf, NULL, 8, FtdiJtag::PAUSE_IR);
+	_jtag->shiftIR(tx_buf, NULL, 8, Jtag::PAUSE_IR);
 
 	bzero(tx_buf, 16);
 	bool failure = false;
 	vector<string> data = _jed.data_for_section(0);
 	ProgressBar progress("Verifying", data.size(), 50);
 	for (size_t line = 0;  line< data.size(); line++) {
-		_jtag->set_state(FtdiJtag::RUN_TEST_IDLE);
+		_jtag->set_state(Jtag::RUN_TEST_IDLE);
 		_jtag->toggleClk(2);
-		_jtag->shiftDR(tx_buf, rx_buf, 16*8, FtdiJtag::PAUSE_DR);
+		_jtag->shiftDR(tx_buf, rx_buf, 16*8, Jtag::PAUSE_DR);
 		for (size_t i = 0; i < data[i].size(); i++) {
 			if (rx_buf[i] != (unsigned char)data[line][i]) {
 				printf("%3ld %3ld %02x -> %02x\n", line, i,
@@ -760,7 +760,7 @@ uint16_t Lattice::readFeabits()
 {
 	uint8_t rx_buf[2];
 	wr_rd(READ_FEABITS, NULL, 0, rx_buf, 2);
-	_jtag->set_state(FtdiJtag::RUN_TEST_IDLE);
+	_jtag->set_state(Jtag::RUN_TEST_IDLE);
 	_jtag->toggleClk(1000);
 
 	return rx_buf[0] | (((uint16_t)rx_buf[1]) << 8);
@@ -772,7 +772,7 @@ bool Lattice::writeFeaturesRow(uint64_t features, bool verify)
 	for (int i=0; i < 8; i++)
 		tx_buf[i] = ((features >> (i*8)) & 0x00ff);
 	wr_rd(PROG_FEATURE_ROW, tx_buf, 8, NULL, 0);
-	_jtag->set_state(FtdiJtag::RUN_TEST_IDLE);
+	_jtag->set_state(Jtag::RUN_TEST_IDLE);
 	_jtag->toggleClk(1000);
 	if (!pollBusyFlag())
 		return false;
@@ -787,7 +787,7 @@ bool Lattice::writeFeabits(uint16_t feabits, bool verify)
 							(uint8_t)(0x00ff & (feabits>>8))};
 
 	wr_rd(PROG_FEABITS, tx_buf, 2, NULL, 0);
-	_jtag->set_state(FtdiJtag::RUN_TEST_IDLE);
+	_jtag->set_state(Jtag::RUN_TEST_IDLE);
 	_jtag->toggleClk(1000);
 	if (!pollBusyFlag())
 		return false;
@@ -799,7 +799,7 @@ bool Lattice::writeFeabits(uint16_t feabits, bool verify)
 bool Lattice::writeProgramDone()
 {
 	wr_rd(PROG_DONE, NULL, 0, NULL, 0);
-	_jtag->set_state(FtdiJtag::RUN_TEST_IDLE);
+	_jtag->set_state(Jtag::RUN_TEST_IDLE);
 	_jtag->toggleClk(1000);
 	if (!pollBusyFlag())
 		return false;
@@ -811,7 +811,7 @@ bool Lattice::writeProgramDone()
 bool Lattice::loadConfiguration()
 {
 	wr_rd(REFRESH, NULL, 0, NULL, 0);
-	_jtag->set_state(FtdiJtag::RUN_TEST_IDLE);
+	_jtag->set_state(Jtag::RUN_TEST_IDLE);
 	_jtag->toggleClk(1000);
 	if (!pollBusyFlag())
 		return false;

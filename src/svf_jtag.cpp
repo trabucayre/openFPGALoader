@@ -4,7 +4,7 @@
 #include <map>
 #include <vector>
 
-#include "ftdijtag.hpp"
+#include "jtag.hpp"
 
 #include "svf_jtag.hpp"
 
@@ -231,7 +231,7 @@ void SVF_jtag::handle_instruction(vector<string> const &vstr)
 	}
 }
 
-SVF_jtag::SVF_jtag(FtdiJtag *jtag, bool verbose):_verbose(verbose), _freq_hz(0),
+SVF_jtag::SVF_jtag(Jtag *jtag, bool verbose):_verbose(verbose), _freq_hz(0),
 	_enddr(fsm_state["IDLE"]), _endir(fsm_state["IDLE"]),
 	_run_state(fsm_state["IDLE"]), _end_state(fsm_state["IDLE"])
 

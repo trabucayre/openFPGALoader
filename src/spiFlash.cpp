@@ -20,7 +20,7 @@
 #include <unistd.h>
 #include <iostream>
 
-#include "ftdijtag.hpp"
+#include "jtag.hpp"
 #include "ftdipp_mpsse.hpp"
 #include "progressBar.hpp"
 #include "spiFlash.hpp"
@@ -72,7 +72,7 @@ static uint8_t reverseByte(uint8_t src)
 #define FLASH_WRVECR   0x61
 #define FLASH_RDVECR   0x65
 
-SPIFlash::SPIFlash(FtdiJtag *jtag, bool verbose):_jtag(jtag), _verbose(verbose)
+SPIFlash::SPIFlash(Jtag *jtag, bool verbose):_jtag(jtag), _verbose(verbose)
 {
 }
 
@@ -116,8 +116,8 @@ int SPIFlash::wait(uint8_t mask, uint8_t cond, uint32_t timeout, bool verbose)
 	uint8_t tx = reverseByte(FLASH_RDSR);
 	uint32_t count = 0;
 
-	_jtag->shiftIR(USER1, 6, FtdiJtag::UPDATE_IR);
-	_jtag->set_state(FtdiJtag::SHIFT_DR);
+	_jtag->shiftIR(USER1, 6, Jtag::UPDATE_IR);
+	_jtag->set_state(Jtag::SHIFT_DR);
 	_jtag->read_write(&tx, NULL, 8, 0);
 
 	do {
