@@ -100,7 +100,7 @@ int main(int argc, char **argv)
 
 	/* if a board name is specified try to use this to determine cable */
 	if (args.board[0] != '-' && board_list.find(args.board) != board_list.end()) {
-		auto t = cable_list.find(board_list[args.board]);
+		auto t = cable_list.find(board_list[args.board].cable_name);
 		if (t == cable_list.end()) {
 			args.cable = "-";
 			cout << "Board " << args.board << " has not default cable" << endl;
@@ -282,7 +282,8 @@ void displaySupported(const struct arguments &args)
 		printSuccess(t.str());
 		for (auto b = board_list.begin(); b != board_list.end(); b++) {
 			stringstream ss;
-			ss << setw(15) << left << (*b).first << " " << (*b).second;
+			target_cable_t c = (*b).second;
+			ss << setw(15) << left << (*b).first << " " << c.cable_name;
 			printInfo(ss.str());
 		}
 		cout << endl;
