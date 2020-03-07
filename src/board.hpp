@@ -45,7 +45,8 @@ static std::map <std::string, target_cable_t> board_list = {
 	{"machXO3SK",  {"ft2232",     {}}},
 	{"littleBee",  {"ft2232",     {}}},
 	{"spartanEdgeAccelBoard", {"",{}}},
-	{"tangnano",   {"ft2232",     {}}}
+	{"tangnano",   {"ft2232",     {}}},
+	{"ulx3s",      {"ft231X",   {FT232RL_DCD, FT232RL_DSR, FT232RL_RI, FT232RL_CTS}}}
 };
 
 #endif
