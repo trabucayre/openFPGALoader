@@ -22,14 +22,15 @@
 #include <string>
 #include <vector>
 
+#include "cable.hpp"
 #include "ftdipp_mpsse.hpp"
 #include "jtagInterface.hpp"
 
 class Jtag {
  public:
-	Jtag(FTDIpp_MPSSE::mpsse_bit_config &cable, std::string dev,
+	Jtag(cable_t &cable, std::string dev,
 		uint32_t clkHZ, bool verbose = false);
-	Jtag(FTDIpp_MPSSE::mpsse_bit_config &cable,
+	Jtag(cable_t &cable,
 		uint32_t clkHZ, bool verbose);
 	~Jtag();
 
@@ -80,7 +81,7 @@ class Jtag {
 	void setVerbose(bool verbose){_verbose = verbose;}
 
  private:
-	void init_internal(FTDIpp_MPSSE::mpsse_bit_config &cable, uint32_t clkHZ);
+	void init_internal(cable_t &cable, uint32_t clkHZ);
 	bool _verbose;
 	int _state;
 	int _tms_buffer_size;

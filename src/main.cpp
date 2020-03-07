@@ -85,7 +85,7 @@ void displaySupported(const struct arguments &args);
 
 int main(int argc, char **argv)
 {
-	FTDIpp_MPSSE::mpsse_bit_config cable;
+	cable_t cable;
 
 	/* command line args. */
 	struct arguments args = {false, false, false, 0, "", "-", "-", "-",
@@ -267,7 +267,7 @@ void displaySupported(const struct arguments &args)
 		t << setw(15) << left << "cable name:" << "vid:pid";
 		printSuccess(t.str());
 		for (auto b = cable_list.begin(); b != cable_list.end(); b++) {
-			FTDIpp_MPSSE::mpsse_bit_config c = (*b).second;
+			FTDIpp_MPSSE::mpsse_bit_config c = (*b).second.config;
 			stringstream ss;
 			ss << setw(15) << left << (*b).first;
 			ss << "0x" << hex << c.vid << ":" << c.pid;
