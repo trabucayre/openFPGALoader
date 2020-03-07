@@ -35,9 +35,9 @@
 class FtdiJtagMPSSE : public JtagInterface, private FTDIpp_MPSSE {
  public:
 	FtdiJtagMPSSE(const FTDIpp_MPSSE::mpsse_bit_config &cable, std::string dev,
-		unsigned char interface, uint32_t clkHZ, bool verbose = false);
+		uint32_t clkHZ, bool verbose = false);
 	FtdiJtagMPSSE(const FTDIpp_MPSSE::mpsse_bit_config &cable,
-		unsigned char interface, uint32_t clkHZ, bool verbose);
+		uint32_t clkHZ, bool verbose);
 	virtual ~FtdiJtagMPSSE();
 
 	int setClkFreq(uint32_t clkHZ) override {

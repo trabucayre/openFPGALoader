@@ -14,6 +14,7 @@ class FTDIpp_MPSSE {
 		typedef struct {
 			int vid;
 			int pid;
+			int interface;
 			int bit_low_val;
 			int bit_low_dir;
 			int bit_high_val;

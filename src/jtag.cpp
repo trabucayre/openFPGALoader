@@ -64,23 +64,22 @@ using namespace std;
  */
 
 Jtag::Jtag(FTDIpp_MPSSE::mpsse_bit_config &cable, string dev,
-			unsigned char interface, uint32_t clkHZ, bool verbose):
+			uint32_t clkHZ, bool verbose):
 			_verbose(verbose),
 			_state(RUN_TEST_IDLE),
 			_tms_buffer_size(128), _num_tms(0),
 			_board_name("nope")
 {
-	init_internal(cable, interface, clkHZ);
+	init_internal(cable, clkHZ);
 }
 
-Jtag::Jtag(FTDIpp_MPSSE::mpsse_bit_config &cable,
-		   unsigned char interface, uint32_t clkHZ, bool verbose):
+Jtag::Jtag(FTDIpp_MPSSE::mpsse_bit_config &cable, uint32_t clkHZ, bool verbose):
 		   _verbose(verbose),
 		   _state(RUN_TEST_IDLE),
 		   _tms_buffer_size(128), _num_tms(0),
 		   _board_name("nope")
 {
-	init_internal(cable, interface, clkHZ);
+	init_internal(cable, clkHZ);
 }
 
 Jtag::~Jtag()
@@ -89,10 +88,9 @@ Jtag::~Jtag()
 	delete _jtag;
 }
 
-void Jtag::init_internal(FTDIpp_MPSSE::mpsse_bit_config &cable,
-	unsigned char interface, uint32_t clkHZ)
+void Jtag::init_internal(FTDIpp_MPSSE::mpsse_bit_config &cable, uint32_t clkHZ)
 {
-	_jtag = new FtdiJtagMPSSE(cable, interface, clkHZ, _verbose);
+	_jtag = new FtdiJtagMPSSE(cable, clkHZ, _verbose);
 
 	_tms_buffer = (unsigned char *)malloc(sizeof(unsigned char) * _tms_buffer_size);
 	bzero(_tms_buffer, _tms_buffer_size);
@@ -144,7 +142,7 @@ int Jtag::flushTMS(bool flush_buffer)
 	if (_num_tms != 0) {
 		display("%s: %d %x\n", __func__, _num_tms, _tms_buffer[0]);
 
-	_jtag->storeTMS(_tms_buffer, _num_tms);
+		_jtag->storeTMS(_tms_buffer, _num_tms);
 
 		/* reset buffer and number of bits */
 		bzero(_tms_buffer, _tms_buffer_size);

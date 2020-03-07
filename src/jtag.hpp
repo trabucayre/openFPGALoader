@@ -28,8 +28,8 @@
 class Jtag {
  public:
 	Jtag(FTDIpp_MPSSE::mpsse_bit_config &cable, std::string dev,
-		unsigned char interface, uint32_t clkHZ, bool verbose = false);
-	Jtag(FTDIpp_MPSSE::mpsse_bit_config &cable, unsigned char interface,
+		uint32_t clkHZ, bool verbose = false);
+	Jtag(FTDIpp_MPSSE::mpsse_bit_config &cable,
 		uint32_t clkHZ, bool verbose);
 	~Jtag();
 
@@ -80,8 +80,7 @@ class Jtag {
 	void setVerbose(bool verbose){_verbose = verbose;}
 
  private:
-	void init_internal(FTDIpp_MPSSE::mpsse_bit_config &cable,
-		unsigned char interface, uint32_t clkHZ);
+	void init_internal(FTDIpp_MPSSE::mpsse_bit_config &cable, uint32_t clkHZ);
 	bool _verbose;
 	int _state;
 	int _tms_buffer_size;
