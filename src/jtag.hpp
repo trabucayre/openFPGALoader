@@ -82,8 +82,8 @@ class Jtag {
 	void setVerbose(bool verbose){_verbose = verbose;}
 
  private:
-	void init_internal(cable_t &cable, const jtag_pins_conf_t *pin_conf,
-		uint32_t clkHZ);
+	void init_internal(cable_t &cable, const std::string &dev,
+		const jtag_pins_conf_t *pin_conf, uint32_t clkHZ);
 	bool _verbose;
 	int _state;
 	int _tms_buffer_size;
