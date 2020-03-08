@@ -5,12 +5,6 @@
 
 class FTDIpp_MPSSE {
 	public:
-		FTDIpp_MPSSE(const std::string &dev, unsigned char interface,
-			uint32_t clkHZ, bool verbose = false);
-		FTDIpp_MPSSE(int vid, int pid, unsigned char interface,
-			uint32_t clkHZ, bool verbose = false);
-		~FTDIpp_MPSSE();
-
 		typedef struct {
 			int vid;
 			int pid;
@@ -20,6 +14,12 @@ class FTDIpp_MPSSE {
 			int bit_high_val;
 			int bit_high_dir;
 		} mpsse_bit_config;
+
+		FTDIpp_MPSSE(const mpsse_bit_config &cable, const std::string &dev,
+			uint32_t clkHZ, bool verbose = false);
+		FTDIpp_MPSSE(const mpsse_bit_config &cablen,
+			uint32_t clkHZ, bool verbose = false);
+		~FTDIpp_MPSSE();
 
 		int init(unsigned char latency, unsigned char bitmask_mode, unsigned char mode,
 				mpsse_bit_config &bit_conf);

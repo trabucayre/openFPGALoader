@@ -80,7 +80,7 @@ Jtag::Jtag(cable_t &cable, const jtag_pins_conf_t *pin_conf,
 		   _tms_buffer_size(128), _num_tms(0),
 		   _board_name("nope")
 {
-	init_internal(cable, NULL, pin_conf, clkHZ);
+	init_internal(cable, "", pin_conf, clkHZ);
 }
 
 Jtag::~Jtag()
