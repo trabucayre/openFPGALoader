@@ -156,12 +156,11 @@ int FTDIpp_MPSSE::init(unsigned char latency, unsigned char bitmask_mode,
 		return -1;
 	}
 
-	if (mode == BITMODE_MPSSE) {
-		if (ftdi_set_bitmode(_ftdi, 0x00, BITMODE_RESET) < 0) {
-			cout << "bitmode_reset error" << endl;
-			return -1;
-		}
+	if (ftdi_set_bitmode(_ftdi, 0x00, BITMODE_RESET) < 0) {
+		cout << "bitmode_reset error" << endl;
+		return -1;
 	}
+
 	if (ftdi_usb_purge_buffers(_ftdi) != 0) {
 		cout << "reset error" << endl;
 		return -1;
@@ -170,7 +169,7 @@ int FTDIpp_MPSSE::init(unsigned char latency, unsigned char bitmask_mode,
 		cout << "reset error" << endl;
 		return -1;
 	}
-	/* enable MPSSE mode */
+	/* enable mode */
 	if (ftdi_set_bitmode(_ftdi, bitmask_mode, mode) < 0) {
 		cout << "bitmode_mpsse error" << endl;
 		return -1;
