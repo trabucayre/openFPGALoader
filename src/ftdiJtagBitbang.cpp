@@ -83,7 +83,11 @@ int FtdiJtagBitBang::setBitmode(uint8_t mode)
 	if (_bitmode == mode)
 		return 0;
 	_bitmode = mode;
-	return ftdi_set_bitmode(_ftdi, _tck_pin | _tms_pin | _tdi_pin, _bitmode);
+
+	int ret = ftdi_set_bitmode(_ftdi, _tck_pin | _tms_pin | _tdi_pin, _bitmode);
+	ftdi_usb_purge_rx_buffer(_ftdi);
+	ftdi_usb_purge_tx_buffer(_ftdi);
+	return ret;
 }
 
 /**
