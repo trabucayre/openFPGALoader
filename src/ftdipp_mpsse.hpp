@@ -5,22 +5,24 @@
 
 class FTDIpp_MPSSE {
 	public:
-		FTDIpp_MPSSE(const std::string &dev, unsigned char interface,
-			uint32_t clkHZ, bool verbose = false);
-		FTDIpp_MPSSE(int vid, int pid, unsigned char interface,
-			uint32_t clkHZ, bool verbose = false);
-		~FTDIpp_MPSSE();
-
 		typedef struct {
 			int vid;
 			int pid;
+			int interface;
 			int bit_low_val;
 			int bit_low_dir;
 			int bit_high_val;
 			int bit_high_dir;
 		} mpsse_bit_config;
 
-		int init(unsigned char latency, unsigned char bitmask_mode, mpsse_bit_config &bit_conf);
+		FTDIpp_MPSSE(const mpsse_bit_config &cable, const std::string &dev,
+			uint32_t clkHZ, bool verbose = false);
+		FTDIpp_MPSSE(const mpsse_bit_config &cablen,
+			uint32_t clkHZ, bool verbose = false);
+		~FTDIpp_MPSSE();
+
+		int init(unsigned char latency, unsigned char bitmask_mode, unsigned char mode,
+				mpsse_bit_config &bit_conf);
 		int setClkFreq(uint32_t clkHZ);
 		int setClkFreq(uint32_t clkHZ, char use_divide_by_5);
 
@@ -39,8 +41,6 @@ class FTDIpp_MPSSE {
 		unsigned int udevstufftoint(const char *udevstring, int base);
 		bool search_with_dev(const std::string &device);
 		bool _verbose;
-		struct ftdi_context *_ftdi;
-
 	private:
 		int _vid;
 		int _pid;
@@ -49,7 +49,10 @@ class FTDIpp_MPSSE {
 		char _product[64];
 		unsigned char _interface;
 		int _clkHZ;
+	protected:
+		struct ftdi_context *_ftdi;
 		int _buffer_size;
+	private:
 		int _num;
 		unsigned char *_buffer;
 };

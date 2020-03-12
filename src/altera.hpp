@@ -3,12 +3,12 @@
 
 #include "bitparser.hpp"
 #include "device.hpp"
-#include "ftdijtag.hpp"
+#include "jtag.hpp"
 #include "svf_jtag.hpp"
 
 class Altera: public Device {
 	public:
-		Altera(FtdiJtag *jtag, std::string filename, bool verbose);
+		Altera(Jtag *jtag, std::string filename, bool verbose);
 		~Altera();
 
 		void program(unsigned int offset = 0);

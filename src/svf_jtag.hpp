@@ -3,11 +3,13 @@
 #include <iostream>
 #include <vector>
 #include <map>
+
+#include "jtag.hpp"
 using namespace std;
 
 class SVF_jtag {
  public:
-	SVF_jtag(FtdiJtag *jtag, bool verbose);
+	SVF_jtag(Jtag *jtag, bool verbose);
 	~SVF_jtag();
 	void parse(string filename);
 	void setVerbose(bool verbose) {_verbose = verbose;}
@@ -46,7 +48,7 @@ class SVF_jtag {
 		{"IRUPDATE", 15}
 	};
 
-	FtdiJtag *_jtag;
+	Jtag *_jtag;
 	bool _verbose;
 
 	uint32_t _freq_hz;

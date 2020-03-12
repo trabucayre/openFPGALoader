@@ -18,14 +18,20 @@ using namespace std;
 #define display(...) \
 	do { if (_verbose) fprintf(stdout, __VA_ARGS__);}while(0)
 
-FTDIpp_MPSSE::FTDIpp_MPSSE(const string &dev, unsigned char interface,
+FTDIpp_MPSSE::FTDIpp_MPSSE(const mpsse_bit_config &cable, const string &dev,
 			   uint32_t clkHZ, bool verbose):_verbose(verbose), _vid(0),
-				_pid(0), _bus(-1), _addr(-1), _product(""), _interface(interface),
+				_pid(0), _bus(-1), _addr(-1), _product(""),
+				_interface(cable.interface),
 				_clkHZ(clkHZ), _buffer_size(2*32768), _num(0)
 {
-	if (!search_with_dev(dev)) {
-		cerr << "No cable found" << endl;
-		throw std::exception();
+	if (!dev.empty()) {
+		if (!search_with_dev(dev)) {
+			cerr << "No cable found" << endl;
+			throw std::exception();
+		}
+	} else {
+		_vid = cable.vid;
+		_pid = cable.pid;
 	}
 
 	open_device(115200);
@@ -38,10 +44,10 @@ FTDIpp_MPSSE::FTDIpp_MPSSE(const string &dev, unsigned char interface,
 	}
 }
 
-FTDIpp_MPSSE::FTDIpp_MPSSE(int vid, int pid, unsigned char interface,
-			   uint32_t clkHZ, bool verbose):_verbose(verbose), _vid(vid),
-			   _pid(pid), _bus(-1),
-			   _addr(-1), _product(""), _interface(interface),
+FTDIpp_MPSSE::FTDIpp_MPSSE(const mpsse_bit_config &cable,
+			   uint32_t clkHZ, bool verbose):_verbose(verbose),
+			   _vid(cable.vid), _pid(cable.pid), _bus(-1),
+			   _addr(-1), _product(""), _interface(cable.interface),
 			   _clkHZ(clkHZ), _buffer_size(2*32768), _num(0)
 {
 	open_device(115200);
@@ -138,6 +144,7 @@ int FTDIpp_MPSSE::close_device()
 
 
 int FTDIpp_MPSSE::init(unsigned char latency, unsigned char bitmask_mode,
+				unsigned char mode,
 			   mpsse_bit_config & bit_conf)
 {
 	unsigned char buf_cmd[6] = { SET_BITS_LOW, 0, 0,
@@ -153,6 +160,7 @@ int FTDIpp_MPSSE::init(unsigned char latency, unsigned char bitmask_mode,
 		cout << "bitmode_reset error" << endl;
 		return -1;
 	}
+
 	if (ftdi_usb_purge_buffers(_ftdi) != 0) {
 		cout << "reset error" << endl;
 		return -1;
@@ -161,25 +169,30 @@ int FTDIpp_MPSSE::init(unsigned char latency, unsigned char bitmask_mode,
 		cout << "reset error" << endl;
 		return -1;
 	}
-	/* enable MPSSE mode */
-	if (ftdi_set_bitmode(_ftdi, bitmask_mode, BITMODE_MPSSE) < 0) {
+	/* enable mode */
+	if (ftdi_set_bitmode(_ftdi, bitmask_mode, mode) < 0) {
 		cout << "bitmode_mpsse error" << endl;
 		return -1;
 	}
+	if (mode == BITMODE_MPSSE) {
 
-	unsigned char buf1[5];
-	ftdi_read_data(_ftdi, buf1, 5);
+		unsigned char buf1[5];
+		ftdi_read_data(_ftdi, buf1, 5);
 
-	if (setClkFreq(_clkHZ, 0) < 0)
-		return -1;
+		if (setClkFreq(_clkHZ, 0) < 0)
+			return -1;
 
-	buf_cmd[1] = bit_conf.bit_low_val;  // 0xe8;
-	buf_cmd[2] = bit_conf.bit_low_dir;  // 0xeb;
+		buf_cmd[1] = bit_conf.bit_low_val;  // 0xe8;
+		buf_cmd[2] = bit_conf.bit_low_dir;  // 0xeb;
 
-	buf_cmd[4] = bit_conf.bit_high_val;  // 0x00;
-	buf_cmd[5] = bit_conf.bit_high_dir;  // 0x60;
-	mpsse_store(buf_cmd, 6);
-	mpsse_write();
+		buf_cmd[4] = bit_conf.bit_high_val;  // 0x00;
+		buf_cmd[5] = bit_conf.bit_high_dir;  // 0x60;
+		mpsse_store(buf_cmd, 6);
+		mpsse_write();
+	}
+
+	ftdi_read_data_set_chunksize(_ftdi, _buffer_size);
+	ftdi_write_data_set_chunksize(_ftdi, _buffer_size);
 
 	return 0;
 }
@@ -237,6 +250,7 @@ int FTDIpp_MPSSE::setClkFreq(uint32_t clkHZ, char use_divide_by_5)
         return -1;
     }
 	ret = ftdi_read_data(_ftdi, buffer, 4);
+	ftdi_usb_purge_buffers(_ftdi);
 
     return real_freq;
 }

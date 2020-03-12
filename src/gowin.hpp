@@ -25,12 +25,12 @@
 
 #include "device.hpp"
 #include "fsparser.hpp"
-#include "ftdijtag.hpp"
+#include "jtag.hpp"
 #include "jedParser.hpp"
 
 class Gowin: public Device {
 	public:
-		Gowin(FtdiJtag *jtag, std::string filename, bool flash_wr, bool sram_wr,
+		Gowin(Jtag *jtag, std::string filename, bool flash_wr, bool sram_wr,
 				bool verbose);
 		~Gowin();
 		int idCode() override;

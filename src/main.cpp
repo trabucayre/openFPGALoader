@@ -31,7 +31,7 @@
 #include "display.hpp"
 #include "gowin.hpp"
 #include "lattice.hpp"
-#include "ftdijtag.hpp"
+#include "jtag.hpp"
 #include "part.hpp"
 #include "xilinx.hpp"
 
@@ -85,7 +85,8 @@ void displaySupported(const struct arguments &args);
 
 int main(int argc, char **argv)
 {
-	FTDIpp_MPSSE::mpsse_bit_config cable;
+	cable_t cable;
+	jtag_pins_conf_t *pins_config = NULL;
 
 	/* command line args. */
 	struct arguments args = {false, false, false, 0, "", "-", "-", "-",
@@ -100,7 +101,10 @@ int main(int argc, char **argv)
 
 	/* if a board name is specified try to use this to determine cable */
 	if (args.board[0] != '-' && board_list.find(args.board) != board_list.end()) {
-		auto t = cable_list.find(board_list[args.board]);
+		/* set pins config */
+		pins_config = &board_list[args.board].pins_config;
+		/* search for cable */
+		auto t = cable_list.find(board_list[args.board].cable_name);
 		if (t == cable_list.end()) {
 			args.cable = "-";
 			cout << "Board " << args.board << " has not default cable" << endl;
@@ -122,11 +126,11 @@ int main(int argc, char **argv)
 	cable = select_cable->second;
 
 	/* jtag base */
-	FtdiJtag *jtag;
+	Jtag *jtag;
 	if (args.device == "-")
-		jtag = new FtdiJtag(cable, 1, 6000000, false);
+		jtag = new Jtag(cable, pins_config, 6000000, false);
 	else
-		jtag = new FtdiJtag(cable, args.device, 1, 6000000, false);
+		jtag = new Jtag(cable, pins_config, args.device, 6000000, false);
 
 	/* chain detection */
 	vector<int> listDev;
@@ -267,7 +271,7 @@ void displaySupported(const struct arguments &args)
 		t << setw(15) << left << "cable name:" << "vid:pid";
 		printSuccess(t.str());
 		for (auto b = cable_list.begin(); b != cable_list.end(); b++) {
-			FTDIpp_MPSSE::mpsse_bit_config c = (*b).second;
+			FTDIpp_MPSSE::mpsse_bit_config c = (*b).second.config;
 			stringstream ss;
 			ss << setw(15) << left << (*b).first;
 			ss << "0x" << hex << c.vid << ":" << c.pid;
@@ -282,7 +286,8 @@ void displaySupported(const struct arguments &args)
 		printSuccess(t.str());
 		for (auto b = board_list.begin(); b != board_list.end(); b++) {
 			stringstream ss;
-			ss << setw(15) << left << (*b).first << " " << (*b).second;
+			target_cable_t c = (*b).second;
+			ss << setw(15) << left << (*b).first << " " << c.cable_name;
 			printInfo(ss.str());
 		}
 		cout << endl;

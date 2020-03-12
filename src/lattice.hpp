@@ -23,14 +23,14 @@
 #include <string>
 #include <vector>
 
-#include "ftdijtag.hpp"
+#include "jtag.hpp"
 #include "device.hpp"
 #include "jedParser.hpp"
 #include "latticeBitParser.hpp"
 
 class Lattice: public Device {
 	public:
-		Lattice(FtdiJtag *jtag, std::string filename, bool verbose);
+		Lattice(Jtag *jtag, std::string filename, bool verbose);
 		int idCode() override;
 		int userCode();
 		void reset() override {}
