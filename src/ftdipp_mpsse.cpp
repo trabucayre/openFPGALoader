@@ -7,7 +7,9 @@
 
 #include <iostream>
 
+#ifdef USE_UDEV
 #include <libudev.h>
+#endif
 #include <libusb.h>
 
 #include "ftdipp_mpsse.hpp"
@@ -346,6 +348,7 @@ int FTDIpp_MPSSE::mpsse_read(unsigned char *rx_buff, int len)
 	return num_read;
 }
 
+#ifdef USE_UDEV
 unsigned int FTDIpp_MPSSE::udevstufftoint(const char *udevstring, int base)
 {
 	char *endp;
@@ -436,3 +439,16 @@ bool FTDIpp_MPSSE::search_with_dev(const string &device)
 
 	return true;
 }
+#else
+unsigned int FTDIpp_MPSSE::udevstufftoint(const char *udevstring, int base)
+{
+	(void)udevstring;
+	(void)base;
+	return 0;
+}
+bool FTDIpp_MPSSE::search_with_dev(const string &device)
+{
+	(void)device;
+	return false;
+}
+#endif

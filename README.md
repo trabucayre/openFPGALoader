@@ -36,6 +36,12 @@ depending of the distribution, headers too)
 ```bash
 apt-get install libftdi1-2 libftdi1-dev libudev-dev cmake
 ```
+**libudev-dev** is optional, may be replaced by **eudev-dev** or just not installed.
+
+By default, **(e)udev** support is enabled (used to open a device by his */dev/xx*
+node). If you don't want this option, use:
+
+```-DENABLE_UDEV=OFF```
 
 For distributions using non-glibc (musl, uClibc) **argp-standalone** must be
 installed.
@@ -47,6 +53,7 @@ To build the app:
 $ mkdir build
 $ cd build
 $ cmake ../ # add -DBUILD_STATIC=ON to build a static version
+            # add -DENABLE_UDEV=OFF to disable udev support and -d /dev/xxx
 $ cmake --build .
 or
 $ make -j$(nproc)

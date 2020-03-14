@@ -67,7 +67,9 @@ static struct argp_option options[] = {
 	{"list-cables", LIST_CABLE, 0, 0, "list all supported cables"},
 	{"board",   'b', "BOARD", 0, "board name, may be used instead of cable"},
 	{"list-boards", LIST_BOARD, 0, 0, "list all supported boards"},
+#ifdef USE_UDEV
 	{"device",  'd', "DEVICE", 0, "device to use (/dev/ttyUSBx)"},
+#endif
 	{"list-fpga", LIST_FPGA, 0, 0, "list all supported FPGA"},
 	{"detect", DETECT, 0, 0, "detect FPGA"},
 	{"write-flash", 'f', 0, 0,
@@ -215,9 +217,11 @@ static error_t parse_opt(int key, char *arg, struct argp_state *state)
 	case 'r':
 		arguments->reset = true;
 		break;
+#ifdef USE_UDEV
 	case 'd':
 		arguments->device = arg;
 		break;
+#endif
 	case 'v':
 		arguments->verbose = true;
 		break;

@@ -5,6 +5,7 @@ cmake_minimum_required(VERSION 3.0)
 project(openFPGALoader VERSION 0.1 LANGUAGES CXX)
 
 option(BUILD_STATIC "Whether or not to build with static libraries" OFF)
+option(ENABLE_UDEV "use udev to search JTAG adapter from /dev/xx" ON)
 
 ## specify the C++ standard
 set(CMAKE_CXX_STANDARD 11)
@@ -23,7 +24,16 @@ add_definitions(-DDATA_DIR=\"${CMAKE_INSTALL_FULL_DATAROOTDIR}\")
 find_package(PkgConfig REQUIRED)
 pkg_check_modules(LIBFTDI REQUIRED libftdi1)
 pkg_check_modules(LIBUSB REQUIRED libusb-1.0)
-pkg_check_modules(LIBUDEV REQUIRED libudev)
+
+if(ENABLE_UDEV)
+	pkg_check_modules(LIBUDEV libudev)
+	if (LIBUDEV_FOUND)
+		add_definitions(-DUSE_UDEV)
+	else()
+		message("libudev not found, disabling udev support and -d parameter")
+		set(ENABLE_UDEV OFF)
+	endif()
+endif()
 
 # for non glibc, argp-standalone is required and must be
 # explicitly linked. This code will fail for others libc
@@ -92,16 +102,20 @@ add_executable(openFPGALoader
 	${OPENFPGALOADER_HEADERS}
 )
 
-include_directories(${LIBUDEV_INCLUDE_DIRS}
+include_directories(
 	${LIBUSB_INCLUDE_DIRS}
 	${LIBFTDI_INCLUDE_DIRS}
 )
 
 target_link_libraries(openFPGALoader
-	${LIBUDEV_LIBRARIES}
 	${LIBUSB_LIBRARIES}
 	${LIBFTDI_LIBRARIES}
 )
+
+if(ENABLE_UDEV)
+include_directories(${LIBUDEV_INCLUDE_DIRS})
+target_link_libraries(openFPGALoader ${LIBUDEV_LIBRARIES})
+endif()
 
 if(NOT HAVE_ARGP)
 	target_link_libraries(openFPGALoader /usr/lib/libargp.a)
