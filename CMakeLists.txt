@@ -15,7 +15,6 @@ add_definitions(-DDATA_DIR=\"${CMAKE_INSTALL_FULL_DATAROOTDIR}\")
 
 find_package(PkgConfig REQUIRED)
 pkg_check_modules(LIBFTDI REQUIRED libftdi1)
-pkg_check_modules(LIBFTDIPP REQUIRED libftdipp1)
 pkg_check_modules(LIBUSB REQUIRED libusb-1.0)
 pkg_check_modules(LIBUDEV REQUIRED libudev)
 
@@ -89,14 +88,12 @@ add_executable(openFPGALoader
 include_directories(${LIBUDEV_INCLUDE_DIRS}
 	${LIBUSB_INCLUDE_DIRS}
 	${LIBFTDI_INCLUDE_DIRS}
-	${LIBFTDIPP_INCLUDE_DIRS}
 )
 
 target_link_libraries(openFPGALoader
 	${LIBUDEV_LIBRARIES}
 	${LIBUSB_LIBRARIES}
 	${LIBFTDI_LIBRARIES}
-	${LIBFTDIPP_LIBRARIES}
 )
 
 if(NOT HAVE_ARGP)
