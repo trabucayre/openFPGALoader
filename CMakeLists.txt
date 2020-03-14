@@ -19,6 +19,15 @@ pkg_check_modules(LIBFTDIPP REQUIRED libftdipp1)
 pkg_check_modules(LIBUSB REQUIRED libusb-1.0)
 pkg_check_modules(LIBUDEV REQUIRED libudev)
 
+# for non glibc, argp-standalone is required and must be
+# explicitly linked. This code will fail for others libc
+# implementations
+include(CheckCXXSourceCompiles)
+check_cxx_source_compiles("
+	#include <argp.h>
+	int main(int argc, char **argv) {
+	argp_parse(NULL, argc, argv, 0, 0, NULL);}" HAVE_ARGP)
+
 set(OPENFPGALOADER_SOURCE
 	src/spiFlash.cpp
 	src/epcq.cpp
@@ -89,6 +98,10 @@ target_link_libraries(openFPGALoader
 	${LIBFTDI_LIBRARIES}
 	${LIBFTDIPP_LIBRARIES}
 )
+
+if(NOT HAVE_ARGP)
+	target_link_libraries(openFPGALoader /usr/lib/libargp.a)
+endif()
 
 # libftdi < 1.4 as no usb_addr
 if (${LIBFTDI_VERSION} VERSION_LESS 1.4)
