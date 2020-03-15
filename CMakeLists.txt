@@ -107,23 +107,37 @@ include_directories(
 	${LIBFTDI_INCLUDE_DIRS}
 )
 
+
+if (${CMAKE_SYSTEM_NAME} MATCHES "Darwin")
+	find_library(LIBFTDI1STATIC libftdi1.a REQUIRED)
+	find_library(LIBUSB1STATIC libusb-1.0.a REQUIRED)
+	find_library(LIBARGPSTATIC libargp.a REQUIRED)
+	target_link_libraries(openFPGALoader ${LIBFTDI1STATIC} ${LIBUSB1STATIC} ${LIBARGPSTATIC})
+	set(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} -framework CoreFoundation -framework IOKit")
+	link_directories(/usr/local/lib)
+	target_include_directories(openFPGALoader PRIVATE /usr/local/include)
+	set(CMAKE_FIND_LIBRARY_SUFFIXES ".a")
+	set_target_properties(openFPGALoader PROPERTIES LINK_SEARCH_END_STATIC 1)
+else()
 target_link_libraries(openFPGALoader
 	${LIBUSB_LIBRARIES}
 	${LIBFTDI_LIBRARIES}
 )
-
 if(ENABLE_UDEV)
 include_directories(${LIBUDEV_INCLUDE_DIRS})
 target_link_libraries(openFPGALoader ${LIBUDEV_LIBRARIES})
 endif()
 
 if(NOT HAVE_ARGP)
-	target_link_libraries(openFPGALoader /usr/lib/libargp.a)
+	find_library(LIBARGPSTATIC libargp.a REQUIRED)
+	target_link_libraries(openFPGALoader ${LIBARGPSTATIC})
 endif()
 
 if (BUILD_STATIC)
 	set_target_properties(openFPGALoader PROPERTIES LINK_SEARCH_END_STATIC 1)
 endif()
+endif()
+
 
 # libftdi < 1.4 as no usb_addr
 if (${LIBFTDI_VERSION} VERSION_LESS 1.4)

@@ -89,7 +89,9 @@ void SPIFlash::jtag_write_read(uint8_t cmd,
 			uint8_t *tx, uint8_t *rx, uint16_t len)
 {
 	int xfer_len = len + 1 + ((rx == NULL) ? 0 : 1);
-	uint8_t jtx[xfer_len] = {reverseByte(cmd)};
+	uint8_t jtx[xfer_len];
+	jtx[0] = reverseByte(cmd);
+	/* uint8_t jtx[xfer_len] = {reverseByte(cmd)}; */
 	uint8_t jrx[xfer_len];
 	if (tx != NULL) {
 		for (int i=0; i < len; i++)
@@ -182,11 +184,16 @@ int SPIFlash::sectors_erase(int base_addr, int size)
 	return 0;
 }
 
-int SPIFlash::write_page(int addr, uint8_t *data, int len) 
+int SPIFlash::write_page(int addr, uint8_t *data, int len)
 {
-	uint8_t tx[len+3] = {(uint8_t)(0xff & (addr >> 16)),
+	uint8_t tx[len+3];
+	tx[0] = (uint8_t)(0xff & (addr >> 16));
+	tx[1] = (uint8_t)(0xff & (addr >> 8));
+	tx[2] = (uint8_t)(addr & 0xff);
+
+	/*uint8_t tx[len+3] = {(uint8_t)(0xff & (addr >> 16)),
 								(uint8_t)(0xff & (addr >> 8)),
-								(uint8_t)(addr & 0xff)};
+								(uint8_t)(addr & 0xff)};*/
 	for (int i=0; i < len; i++) {
 		tx[i+3] = data[i];
 	}

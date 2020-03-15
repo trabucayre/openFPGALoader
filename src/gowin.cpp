@@ -331,13 +331,15 @@ bool Gowin::flashFLASH(uint8_t *data, int length)
 	 * full bitstream
 	 */
 	int buffer_length = byte_length+(6*4);
-	unsigned char buffer[byte_length+(6*4)] = {
+	unsigned char buffer[byte_length+(6*4)];
+	unsigned char bufvalues[]={
 									0x47, 0x57, 0x31, 0x4E,
 									0xff, 0xff , 0xff, 0xff,
 									0xff, 0xff , 0xff, 0xff,
 									0xff, 0xff , 0xff, 0xff,
 									0xff, 0xff , 0xff, 0xff,
 									0xff, 0xff , 0xff, 0xff};
+	memcpy(buffer, bufvalues, sizeof bufvalues);
 	memcpy(buffer+6*4, data, byte_length);
 
 	int nb_xpage = buffer_length/256;
