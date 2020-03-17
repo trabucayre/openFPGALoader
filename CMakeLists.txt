@@ -123,6 +123,12 @@ target_link_libraries(openFPGALoader
 	${LIBUSB_LIBRARIES}
 	${LIBFTDI_LIBRARIES}
 )
+
+# libusb_attach_kernel_driver is only available on Linux.
+if (${CMAKE_SYSTEM_NAME} MATCHES "Linux")
+	add_definitions(-DATTACH_KERNEL)
+endif()
+
 if(ENABLE_UDEV)
 include_directories(${LIBUDEV_INCLUDE_DIRS})
 target_link_libraries(openFPGALoader ${LIBUDEV_LIBRARIES})

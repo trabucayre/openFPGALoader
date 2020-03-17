@@ -131,11 +131,14 @@ int FTDIpp_MPSSE::close_device()
 			fprintf(stderr, "release interface failed %d\n", rtn);
 			return EXIT_FAILURE;
 		}
+#ifdef ATTACH_KERNEL
+		/* libusb_attach_kernel_driver is only available on Linux. */
 		if (_ftdi->module_detach_mode == AUTO_DETACH_SIO_MODULE) {
 			rtn = libusb_attach_kernel_driver(_ftdi->usb_dev, _ftdi->interface);
 			if( rtn != 0)
 				fprintf(stderr, "detach error %d\n", rtn);
 		}
+#endif
 	}
 	ftdi_usb_close_internal();
 
