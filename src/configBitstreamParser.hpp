@@ -4,6 +4,7 @@
 #include <iostream>
 #include <fstream>
 #include <stdint.h>
+#include <map>
 
 class ConfigBitstreamParser {
 	public:
@@ -28,6 +29,7 @@ class ConfigBitstreamParser {
 		bool _verbose;
 		std::ifstream _fd;
 		std::string _bit_data;
+		std::map<std::string, std::string> _hdr;
 };
 
 #endif
