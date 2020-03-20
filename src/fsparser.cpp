@@ -15,11 +15,9 @@
  * along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
 
-#include <arpa/inet.h>
-#include <stdio.h>
-#include <stdlib.h>
 #include <iostream>
 #include <vector>
+#include <cstdio>
 
 #include "fsparser.hpp"
 #include "display.hpp"
@@ -28,10 +26,7 @@ using namespace std;
 
 FsParser::FsParser(string filename, bool reverseByte, bool verbose):
 			ConfigBitstreamParser(filename, ConfigBitstreamParser::ASCII_MODE,
-			verbose), _reverseByte(reverseByte), _toolVersion(), _partNumber(),
-			_devicePackage(), _backgroundProgramming(false), _checksum(0),
-			_crcCheck(false), _compress(false), _encryption(false),
-			_securityBit(false), _jtagAsRegularIO(false), _date()
+			verbose), _reverseByte(reverseByte),  _checksum(0)
 {
 }
 FsParser::~FsParser()
@@ -58,42 +53,15 @@ int FsParser::parseHeader()
 		else
 			v2 = buffer.substr(pos+2) + '\0';  // ':' + ' '
 
-		if (v1 == "GOWIN Version")
-			_toolVersion = v2;
-		if (v1 == "Part Number")
-			_partNumber = v2;
-		if (v1 == "Device-package")
-			_devicePackage = v2;
-		if (v1 == "BackgroundProgramming")
-			_backgroundProgramming = ((v2 == "OFF")?false:true);
-		if (v1 == "CheckSum")
-			sscanf(v2.c_str(), "0x%04hx", &_checksum);
-		if (v1 == "CRCCheck")
-			_crcCheck = ((v2 == "OFF")?false:true);
-		if (v1 == "Compress")
-			_compress = ((v2 == "OFF")?false:true);
-		if (v1 == "Encryption")
-			_encryption = ((v2 == "OFF")?false:true);
-		if (v1 == "SecurityBit")
-			_securityBit = ((v2 == "OFF")?false:true);
-		if (v1 == "JTAGAsRegularIO")
-			_jtagAsRegularIO = ((v2 == "OFF")?false:true);
-		if (v1 == "Created Time")
-			_date = v2;
+		_hdr[v1] = v2;
 	}
+
+	if (_hdr.find("CheckSum") != _hdr.end())
+		sscanf(_hdr["CheckSum"].c_str(), "0x%04hx", &_checksum);
+
 	if (_verbose) {
-		printInfo("tool version:           " +  _toolVersion);
-		printInfo("Part number:            " + _partNumber);
-		printInfo("Device package:         " + _devicePackage);
-		printInfo("Background programming: " +
-				string((_backgroundProgramming)?"ON":"OFF"));
-		printInfo("Checksum:               " + _checksum);
-		printInfo("CRC check:              " + string((_crcCheck)?"ON":"OFF"));
-		printInfo("Compression:            " + string((_compress)?"ON":"OFF"));
-		printInfo("Encryption:             " + string((_encryption)?"ON":"OFF"));
-		printInfo("Security bit:           " + string((_securityBit)?"ON":"OFF"));
-		printInfo("Jtag as regular IO:     " + string((_jtagAsRegularIO)?"ON":"OFF"));
-		printInfo("Creation date:          " + _date);
+		for (auto &&t: _hdr)
+			printInfo("x" + t.first + ": " + t.second);
 	}
 
 	return ret;

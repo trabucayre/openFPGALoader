@@ -35,17 +35,7 @@ class FsParser: public ConfigBitstreamParser {
 	private:
 		int parseHeader();
 		bool _reverseByte;
-		std::string _toolVersion;
-		std::string _partNumber;
-		std::string _devicePackage;
-		bool _backgroundProgramming;
 		uint16_t _checksum;
-		bool _crcCheck;
-		bool _compress;
-		bool _encryption;
-		bool _securityBit;
-		bool _jtagAsRegularIO;
-		std::string _date;
 };
 
 #endif  // FSPARSER_HPP_
