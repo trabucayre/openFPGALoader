@@ -56,9 +56,6 @@ int FsParser::parseHeader()
 		_hdr[v1] = v2;
 	}
 
-	if (_hdr.find("CheckSum") != _hdr.end())
-		sscanf(_hdr["CheckSum"].c_str(), "0x%04hx", &_checksum);
-
 	if (_verbose) {
 		for (auto &&t: _hdr)
 			printInfo("x" + t.first + ": " + t.second);
@@ -70,12 +67,14 @@ int FsParser::parseHeader()
 int FsParser::parse()
 {
 	uint8_t data;
+	vector<string> vectTmp;
 	string buffer, tmp;
 
 	printInfo("Parse " + _filename + ": ", true);
 
 	parseHeader();
 	_fd.seekg(0, _fd.beg);
+	int max = 0;
 
 	while (1) {
 		std::getline(_fd, buffer, '\n');
@@ -83,27 +82,55 @@ int FsParser::parse()
 			break;
 		if (buffer[0] == '/')
 			continue;
-		tmp += buffer;
+		vectTmp.push_back(buffer);
+		/* needed to determine data used for checksum */
+		if ((int)buffer.size() > max)
+			max = (int) buffer.size();
 	}
 
-	_bit_length = tmp.size();
+	/* we know each data size finished with checksum (16bits) + 6 x 0xff */
+	int addr_length = max - 8 * 8;
+	int padding = 0;
+	/* GW1N-6 and GW1N(R)-9 are address length not multiple of byte */
+	if (addr_length % 16 != 0) {
+		padding = 4;
+		addr_length -= 4;
+	}
 
 	/* Fs file format is MSB first
 	 * so if reverseByte = false bit 0 -> 7, 1 -> 6,
 	 * if true 0 -> 0, 1 -> 1
 	 */
 
-	for (int i = 0; i < _bit_length; i+=8) {
-		data = 0;
-		for (int ii = 0; ii < 8; ii++) {
-			uint8_t val = (tmp[i+ii] == '1'?1:0);
-			if (_reverseByte)
-				data |= val << ii;
-			else
-				data |= val << (7-ii);
+	for (auto &&line: vectTmp) {
+		if ((int)line.size() == max)
+			tmp += line.substr(padding, addr_length);
+		for (int i = 0; i < (int)line.size(); i+=8) {
+			data = 0;
+			for (int ii = 0; ii < 8; ii++) {
+				uint8_t val = (line[i+ii] == '1'?1:0);
+				if (_reverseByte)
+					data |= val << ii;
+				else
+					data |= val << (7-ii);
+			}
+			_bit_data += data;
 		}
-		_bit_data += data;
 	}
+	_bit_length = (int)_bit_data.size() * 8;
+	printf("%02x\n", _checksum);
+	uint32_t sum = 0;
+
+	for (int pos = 0; pos < (int)tmp.size(); pos+=16) {
+		int16_t data16 = 0;
+		for (int offset = 0; offset < 16; offset ++) {
+			uint16_t val = (tmp[pos+offset] == '1'?1:0);
+			data16 |= val << (15-offset);
+		}
+		sum += data16;
+	}
+
+	_checksum = sum;
 
 	printSuccess("Done");
 
