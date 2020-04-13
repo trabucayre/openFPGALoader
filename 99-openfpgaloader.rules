@@ -1,0 +1,21 @@
+# Copy this file to /etc/udev/rules.d/
+
+ACTION!="add|change", GOTO="openfpgaloader_rules_end"
+SUBSYSTEM!="usb|tty|hidraw", GOTO="openfpgaloader_rules_end"
+
+# Original FT232/FT245 VID:PID
+ATTRS{idVendor}=="0403", ATTRS{idProduct}=="6001", MODE="664", GROUP="plugdev"
+
+# Original FT2232 VID:PID
+ATTRS{idVendor}=="0403", ATTRS{idProduct}=="6010", MODE="664", GROUP="plugdev"
+
+# Original FT4232 VID:PID
+ATTRS{idVendor}=="0403", ATTRS{idProduct}=="6011", MODE="664", GROUP="plugdev"
+
+# Original FT232H VID:PID
+ATTRS{idVendor}=="0403", ATTRS{idProduct}=="6014", MODE="664", GROUP="plugdev"
+
+# Original FT231X VID:PID
+ATTRS{idVendor}=="0403", ATTRS{idProduct}=="6015", MODE="664", GROUP="plugdev"
+
+LABEL="openfpgaloader_rules_end"
