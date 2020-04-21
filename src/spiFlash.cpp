@@ -20,12 +20,10 @@
 #include <unistd.h>
 #include <iostream>
 
-#include "jtag.hpp"
 #include "ftdipp_mpsse.hpp"
 #include "progressBar.hpp"
 #include "spiFlash.hpp"
-
-#define USER1 0x02
+#include "spiInterface.hpp"
 
 static uint8_t reverseByte(uint8_t src)
 {
@@ -39,19 +37,19 @@ static uint8_t reverseByte(uint8_t src)
 
 
 /* read/write status register : 0B addr + 0 dummy */
-#define FLASH_WRSR     0x01 
-#define FLASH_RDSR     0x05 
+#define FLASH_WRSR     0x01
+#define FLASH_RDSR     0x05
 #	define FLASH_RDSR_WIP	(0x01)
 #	define FLASH_RDSR_WEL	(0x02)
 /* flash program */
 #define FLASH_PP       0x02
 /* write [en|dis]able : 0B addr + 0 dummy */
-#define FLASH_WRDIS    0x04 
-#define FLASH_WREN     0x06 
+#define FLASH_WRDIS    0x04
+#define FLASH_WREN     0x06
 /* Read OTP : 3 B addr + 8 clk cycle*/
-#define FLASH_ROTP     0x4B 
-#define FLASH_POWER_UP 0xAB 
-#define FLASH_POWER_DOWN 0xB9 
+#define FLASH_ROTP     0x4B
+#define FLASH_POWER_UP 0xAB
+#define FLASH_POWER_DOWN 0xB9
 /* read/write non volatile register: 0B addr + 0 dummy */
 #define FLASH_RDNVCR   0xB5
 #define FLASH_WRNVCR   0x81
@@ -72,89 +70,16 @@ static uint8_t reverseByte(uint8_t src)
 #define FLASH_WRVECR   0x61
 #define FLASH_RDVECR   0x65
 
-SPIFlash::SPIFlash(Jtag *jtag, bool verbose):_jtag(jtag), _verbose(verbose)
+SPIFlash::SPIFlash(SPIInterface *spi, bool verbose):_spi(spi), _verbose(verbose)
 {
-}
-
-/* 
- * jtag : jtag interface
- * cmd  : opcode for SPI flash
- * tx   : buffer to send
- * rx   : buffer to fill
- * len  : number of byte to send/receive (cmd not comprise)
- *        so to send only a cmd set len to 0 (or omit this param)
- */
-
-void SPIFlash::jtag_write_read(uint8_t cmd,
-			uint8_t *tx, uint8_t *rx, uint16_t len)
-{
-	int xfer_len = len + 1 + ((rx == NULL) ? 0 : 1);
-	uint8_t jtx[xfer_len];
-	jtx[0] = reverseByte(cmd);
-	/* uint8_t jtx[xfer_len] = {reverseByte(cmd)}; */
-	uint8_t jrx[xfer_len];
-	if (tx != NULL) {
-		for (int i=0; i < len; i++)
-			jtx[i+1] = reverseByte(tx[i]);
-	}
-	/* addr BSCAN user1 */
-	_jtag->shiftIR(USER1, 6);
-	/* send first already stored cmd,
-	 * in the same time store each byte
-	 * to send next
-	 */
-	_jtag->shiftDR(jtx, (rx == NULL)? NULL: jrx, 8*xfer_len);
-
-	if (rx != NULL) {
-		for (int i=0; i < len; i++)
-			rx[i] = reverseByte(jrx[i+1] >> 1) | (jrx[i+2] & 0x01);
-	}
-}
-
-int SPIFlash::wait(uint8_t mask, uint8_t cond, uint32_t timeout, bool verbose)
-{
-	uint8_t rx[2];
-	uint8_t tmp;
-	uint8_t tx = reverseByte(FLASH_RDSR);
-	uint32_t count = 0;
-
-	_jtag->shiftIR(USER1, 6, Jtag::UPDATE_IR);
-	_jtag->set_state(Jtag::SHIFT_DR);
-	_jtag->read_write(&tx, NULL, 8, 0);
-
-	do {
-		_jtag->read_write(NULL, rx, 8*2, 0);
-		tmp = (reverseByte(rx[0]>>1)) | (0x01 & rx[1]); 
-		count ++;
-		if (count == timeout){
-			printf("timeout: %x %x %x\n", tmp, rx[0], rx[1]);
-			break;
-		}
-		if (tmp & ~0x3) {
-			printf("Error: rx %x %x %x\n", tmp, reverseByte(rx[0]), rx[1]);
-			count = timeout;
-			break;
-		}
-		if (verbose) {
-			printf("%x %x %x %d\n", tmp, mask, cond, count);
-		}
-	} while ((tmp & mask) != cond);
-	_jtag->go_test_logic_reset();
-
-	if (count == timeout) {
-		printf("%x\n", tmp);
-		std::cout << "wait: Error" << std::endl;
-		return -1;
-	} else
-		return 0;
 }
 
 int SPIFlash::bulk_erase()
 {
 	if (write_enable() == -1)
 		return -1;
-	jtag_write_read(FLASH_BE, NULL, NULL, 0);
-	return wait(FLASH_RDSR_WIP, 0x00, 100000, true);
+	_spi->spi_put(FLASH_BE, NULL, NULL, 0);
+	return _spi->spi_wait(FLASH_RDSR, FLASH_RDSR_WIP, 0x00, 100000, true);
 }
 
 int SPIFlash::sector_erase(int addr)
@@ -162,7 +87,7 @@ int SPIFlash::sector_erase(int addr)
 	uint8_t tx[3] = {(uint8_t)(0xff & (addr >> 16)),
 								(uint8_t)(0xff & (addr >> 8)),
 								(uint8_t)(addr & 0xff)};
-	jtag_write_read(FLASH_SE, tx, NULL, 3);
+	_spi->spi_put(FLASH_SE, tx, NULL, 3);
 	return 0;
 }
 
@@ -176,7 +101,7 @@ int SPIFlash::sectors_erase(int base_addr, int size)
 			return -1;
 		if (sector_erase(addr) == -1)
 			return -1;
-		if (wait(FLASH_RDSR_WIP, 0x00, 100000, false) == -1)
+		if (_spi->spi_wait(FLASH_RDSR, FLASH_RDSR_WIP, 0x00, 100000, false) == -1)
 			return -1;
 		progress.display(addr);
 	}
@@ -200,8 +125,8 @@ int SPIFlash::write_page(int addr, uint8_t *data, int len)
 	if (write_enable() == -1)
 		return -1;
 
-	jtag_write_read(FLASH_PP, tx, NULL, len+3);
-	return wait(FLASH_RDSR_WIP, 0x00, 1000);
+	_spi->spi_put(FLASH_PP, tx, NULL, len+3);
+	return _spi->spi_wait(FLASH_RDSR, FLASH_RDSR_WIP, 0x00, 1000);
 }
 
 int SPIFlash::erase_and_prog(int base_addr, uint8_t *data, int len)
@@ -209,7 +134,7 @@ int SPIFlash::erase_and_prog(int base_addr, uint8_t *data, int len)
 	ProgressBar progress("Writing", len, 50);
 	if (sectors_erase(0, len) == -1)
 		return -1;
-	
+
 	uint8_t *ptr = data;
 	int size = 0;
 	for (int addr = base_addr; addr < len; addr += size, ptr+=size) {
@@ -225,7 +150,7 @@ int SPIFlash::erase_and_prog(int base_addr, uint8_t *data, int len)
 void SPIFlash::reset()
 {
 	uint8_t data[8] = {0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff};
-	jtag_write_read(0xff, data, NULL, 8);
+	_spi->spi_put(0xff, data, NULL, 8);
 }
 
 void SPIFlash::read_id()
@@ -233,7 +158,7 @@ void SPIFlash::read_id()
 	int len = 4;
 	uint8_t rx[512];
 
-	jtag_write_read(0x9F, NULL, rx, 4);
+	_spi->spi_put(0x9F, NULL, rx, 4);
 	int d = 0;
 	for (int i=0; i < 4; i++) {
 		d = d << 8;
@@ -247,7 +172,7 @@ void SPIFlash::read_id()
 	/* read extented */
 	len += (d & 0x0ff);
 
-	jtag_write_read(0x9F, NULL, rx, len);
+	_spi->spi_put(0x9F, NULL, rx, len);
 
 	/* must be 0x20BA1810 ... */
 
@@ -268,7 +193,7 @@ void SPIFlash::read_id()
 uint8_t SPIFlash::read_status_reg()
 {
 	uint8_t rx;
-	jtag_write_read(FLASH_RDSR, NULL, &rx, 1);
+	_spi->spi_put(FLASH_RDSR, NULL, &rx, 1);
 	if (_verbose) {
 		printf("RDSR : %02x\n", rx);
 		printf("WIP  : %d\n", rx&0x01);
@@ -282,19 +207,19 @@ uint8_t SPIFlash::read_status_reg()
 
 void SPIFlash::power_up()
 {
-	jtag_write_read(FLASH_POWER_UP, NULL, NULL, 0);
+	_spi->spi_put(FLASH_POWER_UP, NULL, NULL, 0);
 }
 
 void SPIFlash::power_down()
 {
-	jtag_write_read(FLASH_POWER_DOWN, NULL, NULL, 0);
+	_spi->spi_put(FLASH_POWER_DOWN, NULL, NULL, 0);
 }
 
 int SPIFlash::write_enable()
 {
-	jtag_write_read(FLASH_WREN, NULL, NULL, 0);
+	_spi->spi_put(FLASH_WREN, NULL, NULL, 0);
 	/* wait WEL */
-	if (wait(FLASH_RDSR_WEL, FLASH_RDSR_WEL, 1000)) {
+	if (_spi->spi_wait(FLASH_RDSR, FLASH_RDSR_WEL, FLASH_RDSR_WEL, 1000)) {
 		printf("write en: Error\n");
 		return -1;
 	}
@@ -306,9 +231,9 @@ int SPIFlash::write_enable()
 
 int SPIFlash::write_disable()
 {
-	jtag_write_read(FLASH_WRDIS, NULL, NULL, 0);
+	_spi->spi_put(FLASH_WRDIS, NULL, NULL, 0);
 	/* wait ! WEL */
-	int ret = wait(FLASH_RDSR_WEL, 0x00, 1000);
+	int ret = _spi->spi_wait(FLASH_RDSR, FLASH_RDSR_WEL, 0x00, 1000);
 	if (ret == -1)
 		printf("write disable: Error\n");
 	else if (_verbose)
@@ -319,8 +244,8 @@ int SPIFlash::write_disable()
 int SPIFlash::disable_protection()
 {
 	uint8_t data = 0x00;
-	jtag_write_read(FLASH_WRSR, &data, NULL, 1);
-	if (wait(0xff, 0, 1000) < 0)
+	_spi->spi_put(FLASH_WRSR, &data, NULL, 1);
+	if (_spi->spi_wait(FLASH_RDSR, 0xff, 0, 1000) < 0)
 		return -1;
 
 	/* read status */

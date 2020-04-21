@@ -18,11 +18,11 @@
 #ifndef SPIFLASH_HPP
 #define SPIFLASH_HPP
 
-#include "jtag.hpp"
+#include "spiInterface.hpp"
 
 class SPIFlash {
 	public:
-		SPIFlash(Jtag *jtag, bool verbose);
+		SPIFlash(SPIInterface *spi, bool verbose);
 		/* power */
 		void power_up();
 		void power_down();
@@ -43,10 +43,7 @@ class SPIFlash {
 		uint8_t read_status_reg();
 		void read_id();
 	private:
-		void jtag_write_read(uint8_t cmd, uint8_t *tx, uint8_t *rx, uint16_t len = 0);
-		int wait(uint8_t mask, uint8_t cond, uint32_t timeout, bool verbose=false);
-
-		Jtag *_jtag;
+		SPIInterface *_spi;
 		bool _verbose;
 };
 
