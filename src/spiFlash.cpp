@@ -131,6 +131,14 @@ int SPIFlash::write_page(int addr, uint8_t *data, int len)
 
 int SPIFlash::erase_and_prog(int base_addr, uint8_t *data, int len)
 {
+	/* check Block Protect Bits */
+	uint8_t status = read_status_reg();
+	if ((status & 0x1c) !=0) {
+		if (write_enable() != 0)
+			return -1;
+		if (disable_protection() != 0)
+			return -1;
+	}
 	ProgressBar progress("Writing", len, 50);
 	if (sectors_erase(0, len) == -1)
 		return -1;
