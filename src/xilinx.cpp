@@ -22,6 +22,7 @@ Xilinx::Xilinx(Jtag *jtag, std::string filename, bool verbose):
 }
 Xilinx::~Xilinx() {}
 
+#define USER1	0x02
 #define CFG_IN   0x05
 #define USERCODE   0x08
 #define IDCODE     0x09
@@ -92,7 +93,7 @@ void Xilinx::program_spi(unsigned int offset)
 	/* last: read file and erase/flash spi flash */
 	McsParser mcs(_filename, _verbose);
 	mcs.parse();
-	SPIFlash spiFlash(_jtag, _verbose);
+	SPIFlash spiFlash(this, _verbose);
 	spiFlash.erase_and_prog(offset, mcs.getData(), mcs.getLength());
 }
 
@@ -205,4 +206,104 @@ void Xilinx::program_mem(BitParser &bitfile)
 	 * now functional.                                    X     1   3
 	 */
 	_jtag->go_test_logic_reset();
+}
+
+/*
+ * jtag : jtag interface
+ * cmd  : opcode for SPI flash
+ * tx   : buffer to send
+ * rx   : buffer to fill
+ * len  : number of byte to send/receive (cmd not comprise)
+ *        so to send only a cmd set len to 0 (or omit this param)
+ */
+int Xilinx::spi_put(uint8_t cmd,
+			uint8_t *tx, uint8_t *rx, uint16_t len)
+{
+	int xfer_len = len + 1 + ((rx == NULL) ? 0 : 1);
+	uint8_t jtx[xfer_len];
+	jtx[0] = McsParser::reverseByte(cmd);
+	/* uint8_t jtx[xfer_len] = {McsParser::reverseByte(cmd)}; */
+	uint8_t jrx[xfer_len];
+	if (tx != NULL) {
+		for (int i=0; i < len; i++)
+			jtx[i+1] = McsParser::reverseByte(tx[i]);
+	}
+	/* addr BSCAN user1 */
+	_jtag->shiftIR(USER1, 6);
+	/* send first already stored cmd,
+	 * in the same time store each byte
+	 * to next
+	 */
+	_jtag->shiftDR(jtx, (rx == NULL)? NULL: jrx, 8*xfer_len);
+
+	if (rx != NULL) {
+		for (int i=0; i < len; i++)
+			rx[i] = McsParser::reverseByte(jrx[i+1] >> 1) | (jrx[i+2] & 0x01);
+	}
+	return 0;
+}
+
+int Xilinx::spi_put(uint8_t *tx, uint8_t *rx, uint16_t len)
+{
+	int xfer_len = len + ((rx == NULL) ? 0 : 1);
+	uint8_t jtx[xfer_len];
+	uint8_t jrx[xfer_len];
+	if (tx != NULL) {
+		for (int i=0; i < len; i++)
+			jtx[i] = McsParser::reverseByte(tx[i]);
+	}
+	/* addr BSCAN user1 */
+	_jtag->shiftIR(USER1, 6);
+	/* send first already stored cmd,
+	 * in the same time store each byte
+	 * to next
+	 */
+	_jtag->shiftDR(jtx, (rx == NULL)? NULL: jrx, 8*xfer_len);
+
+	if (rx != NULL) {
+		for (int i=0; i < len; i++)
+			rx[i] = McsParser::reverseByte(jrx[i] >> 1) | (jrx[i+1] & 0x01);
+	}
+	return 0;
+}
+
+int Xilinx::spi_wait(uint8_t cmd, uint8_t mask, uint8_t cond,
+			uint32_t timeout, bool verbose)
+{
+	uint8_t rx[2];
+	uint8_t dummy[2];
+	uint8_t tmp;
+	uint8_t tx = McsParser::reverseByte(cmd);
+	uint32_t count = 0;
+
+	_jtag->shiftIR(USER1, 6, Jtag::UPDATE_IR);
+	_jtag->set_state(Jtag::SHIFT_DR);
+	_jtag->read_write(&tx, NULL, 8, 0);
+
+	do {
+		_jtag->read_write(dummy, rx, 8*2, 0);
+		tmp = (McsParser::reverseByte(rx[0]>>1)) | (0x01 & rx[1]);
+		count++;
+		if (count == timeout){
+			printf("timeout: %x %x %x\n", tmp, rx[0], rx[1]);
+			break;
+		}
+		if (tmp & ~0x3) {
+			printf("Error: rx %x %x %x\n", tmp, McsParser::reverseByte(rx[0]), rx[1]);
+			count = timeout;
+			break;
+		}
+		if (verbose) {
+			printf("%x %x %x %d\n", tmp, mask, cond, count);
+		}
+	} while ((tmp & mask) != cond);
+	_jtag->go_test_logic_reset();
+
+	if (count == timeout) {
+		printf("%x\n", tmp);
+		std::cout << "wait: Error" << std::endl;
+		return -ETIME;
+	} else {
+		return 0;
+	}
 }
