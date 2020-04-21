@@ -157,6 +157,7 @@ void SPIFlash::read_id()
 {
 	int len = 4;
 	uint8_t rx[512];
+	bool has_edid = false;
 
 	_spi->spi_put(0x9F, NULL, rx, 4);
 	int d = 0;
@@ -169,10 +170,13 @@ void SPIFlash::read_id()
 
 	if (_verbose)
 		printf("read %x\n", d);
-	/* read extented */
-	len += (d & 0x0ff);
 
-	_spi->spi_put(0x9F, NULL, rx, len);
+	/* read extented */
+	if ((d & 0xff) != 0) {
+		has_edid = true;
+		len += (d & 0x0ff);
+		_spi->spi_put(0x9F, NULL, rx, len);
+	}
 
 	/* must be 0x20BA1810 ... */
 
@@ -180,13 +184,17 @@ void SPIFlash::read_id()
 	printf("Jedec ID          : %02x\n", rx[0]);
 	printf("memory type       : %02x\n", rx[1]);
 	printf("memory capacity   : %02x\n", rx[2]);
-	printf("EDID + CFD length : %02x\n", rx[3]);
-	printf("EDID              : %02x%02x\n", rx[5], rx[4]);
-	printf("CFD               : ");
-	if (_verbose) {
-		for (int i = 6; i < len; i++)
-			printf("%02x ", rx[i]);
-		printf("\n");
+	if (has_edid) {
+		printf("EDID + CFD length : %02x\n", rx[3]);
+		printf("EDID              : %02x%02x\n", rx[5], rx[4]);
+		printf("CFD               : ");
+		if (_verbose) {
+			for (int i = 6; i < len; i++)
+				printf("%02x ", rx[i]);
+			printf("\n");
+		} else {
+			printf("\n");
+		}
 	}
 }
 
