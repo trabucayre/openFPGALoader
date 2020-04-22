@@ -73,9 +73,9 @@ static struct argp_option options[] = {
 	{"list-fpga", LIST_FPGA, 0, 0, "list all supported FPGA"},
 	{"detect", DETECT, 0, 0, "detect FPGA"},
 	{"write-flash", 'f', 0, 0,
-			"write bitstream in flash (default: false, only for Gowin devices)"},
+			"write bitstream in flash (default: false, only for Gowin and ECP5 devices)"},
 	{"write-sram", 'm', 0, 0,
-			"write bitstream in SRAM (default: true, only for Gowin devices)"},
+			"write bitstream in SRAM (default: true, only for Gowin and ECP5 devices)"},
 	{"offset",  'o', "OFFSET", 0, "start offset in EEPROM"},
 	{"verbose", 'v', 0, 0, "Produce verbose output"},
 	{"reset",   'r', 0, 0, "reset FPGA after operations"},
@@ -177,7 +177,8 @@ int main(int argc, char **argv)
 		fpga = new Gowin(jtag, args.bit_file, args.write_flash, args.write_sram,
 			args.verbose);
 	} else if (fab == "lattice") {
-		fpga = new Lattice(jtag, args.bit_file, args.verbose);
+		fpga = new Lattice(jtag, args.bit_file, args.write_flash, args.write_sram,
+			args.verbose);
 	} else {
 		cerr << "Error: manufacturer " << fab << " not supported" << endl;
 		delete(jtag);
