@@ -4,10 +4,10 @@ Universal utility for programming FPGA
 __Current support kits:__
 
 * Trenz cyc1000 Cyclone 10 LP 10CL025 (memory and spi flash)
-* [Colorlight 5A-75B (version 7)](https://fr.aliexpress.com/item/32281130824.html)
+* [Colorlight 5A-75B (version 7)](https://fr.aliexpress.com/item/32281130824.html) (memory and spi flash)
 * Digilent arty Artix xc7a35ti (memory and spi flash)
 * Lattice MachXO3LF Starter Kit LCMX03LF-6900C (memory and flash)
-* [Lattice ECP5 5G Evaluation Board (LFE5UM5G-85F-EVN)](https://www.latticesemi.com/en/Products/DevelopmentBoardsAndKits/ECP5EvaluationBoard)
+* [Lattice ECP5 5G Evaluation Board (LFE5UM5G-85F-EVN)](https://www.latticesemi.com/en/Products/DevelopmentBoardsAndKits/ECP5EvaluationBoard) (memory and spi flash)
 * [Trenz Gowin LittleBee (TEC0117)](https://shop.trenz-electronic.de/en/TEC0117-01-FPGA-Module-with-GOWIN-LittleBee-and-8-MByte-internal-SDRAM)
 * [SeeedStudio Spartan Edge Accelerator Board](http://wiki.seeedstudio.com/Spartan-Edge-Accelerator-Board) (memory)
 * [Sipeed Tang Nano](https://tangnano.sipeed.com/en/) (memory)
@@ -16,7 +16,7 @@ __Supported (tested) FPGA:__
 
 * Gowin [GW1N (GW1N-1, GW1N-4, GW1NR-9)](https://www.gowinsemi.com/en/product/detail/2/) (SRAM and Flash (flash mode only tested with GW1NR-9))
 * Lattice [MachXO3LF](http://www.latticesemi.com/en/Products/FPGAandCPLD/MachXO3.aspx) (SRAM and Flash)
-* Lattice [ECP5 (25F, 5G 85F](http://www.latticesemi.com/Products/FPGAandCPLD/ECP5) (SRAM)
+* Lattice [ECP5 (25F, 5G 85F](http://www.latticesemi.com/Products/FPGAandCPLD/ECP5) (SRAM and Flash)
 * Xilinx Artix 7 [xc7a35ti, xc7a100t](https://www.xilinx.com/products/silicon-devices/fpga/artix-7.html) (memory (all) and spi flash (xc7a35ti)
 * Xilinx Spartan 7 [xc7s15](https://www.xilinx.com/products/silicon-devices/fpga/spartan-7.html) (memory)
 * Intel Cyclone 10 LP [10CL025](https://www.intel.com/content/www/us/en/products/programmable/fpga/cyclone-10.html)
@@ -91,12 +91,12 @@ openFPGALoader -- a program to flash cyclone10 LP FPGA
   -d, --device=DEVICE        device to use (/dev/ttyUSBx)
       --detect               detect FPGA
   -f, --write-flash          write bitstream in flash (default: false, only for
-                             Gowin devices)
+                             Gowin and ECP5 devices)
       --list-boards          list all supported boards
       --list-cables          list all supported cables
       --list-fpga            list all supported FPGA
   -m, --write-sram           write bitstream in SRAM (default: true, only for
-                             Gowin devices)
+                             Gowin and ECP5 devices)
   -o, --offset=OFFSET        start offset in EEPROM
   -r, --reset                reset FPGA after operations
   -v, --verbose              Produce verbose output
@@ -242,6 +242,21 @@ To generates *.bit* file **Bitstream file** must be checked under **Exports File
 __file load__:
 ```bash
 openFPGALoader -b machXO3SK impl1/*.bit
+```
+
+### Lattice ECP5 (Colorlight 5A-75b, Lattice ECP5 5G Evaluation board, ULX3S)
+
+#### SRAM:
+
+```bash
+openFPGALoader [-b yourBoard] [-c yourCable] -m project_name/*.bit
+```
+
+**By default, openFPGALoader load bitstream in memory, so the '-m' argument is optional**
+#### SPI Flash:
+
+```bash
+openFPGALoader [-b yourBoard] [-c yourCable] -f project_name/*.bit
 ```
 
 ### Trenz GOWIN LittleBee (TEC0117) and Sipeed Tang Nano
