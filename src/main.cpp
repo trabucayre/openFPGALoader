@@ -53,9 +53,9 @@ struct arguments {
 };
 
 #define LIST_CABLE	1
-#define LIST_BOARD 	2
+#define LIST_BOARD	2
 #define LIST_FPGA	3
-#define DETECT   	4
+#define DETECT		4
 
 const char *argp_program_version = "openFPGALoader 1.0";
 const char *argp_program_bug_address = "<gwenhael.goavec-merou@trabucayre.com>";
@@ -240,9 +240,9 @@ static error_t parse_opt(int key, char *arg, struct argp_state *state)
 		break;
 	case ARGP_KEY_END:
 		if (arguments->bit_file.empty() &&
-		    !arguments->is_list_command &&
+			!arguments->is_list_command &&
 			!arguments->detect &&
-		    !arguments->reset) {
+			!arguments->reset) {
 			cout << "Error: bitfile not specified" << endl;
 			argp_usage(state);
 		}
