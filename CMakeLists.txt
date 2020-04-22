@@ -86,6 +86,7 @@ set(OPENFPGALOADER_HEADERS
 	src/ftdipp_mpsse.hpp
 	src/spiFlash.hpp
 	src/epcq.hpp
+	src/spiInterface.hpp
 	src/svf_jtag.hpp
 	src/xilinx.hpp
 	src/configBitstreamParser.hpp
