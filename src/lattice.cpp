@@ -28,6 +28,7 @@
 #include "lattice.hpp"
 #include "progressBar.hpp"
 #include "display.hpp"
+#include "spiFlash.hpp"
 
 using namespace std;
 
@@ -61,14 +62,18 @@ using namespace std;
 #	define REG_STATUS_CNF_CHK_MASK	(0x7 << 23)
 #	define REG_STATUS_EXEC_ERR	(1 << 26)
 
-Lattice::Lattice(Jtag *jtag, const string filename, bool verbose):
+Lattice::Lattice(Jtag *jtag, const string filename,
+	bool flash_wr, bool sram_wr, bool verbose):
 		Device(jtag, filename, verbose)
 {
 	if (_filename != "") {
 		if (_file_extension == "jed") {
 			_mode = Device::FLASH_MODE;
 		} else if (_file_extension == "bit") {
-			_mode = Device::MEM_MODE;
+			if (flash_wr)
+				_mode = Device::FLASH_MODE;
+			else
+				_mode = Device::MEM_MODE;
 		} else {
 			throw std::exception();
 		}
@@ -244,7 +249,7 @@ bool Lattice::program_mem()
 	return true;
 }
 
-bool Lattice::program_flash()
+bool Lattice::program_intFlash()
 {
 	bool err;
 	uint64_t featuresRow;
@@ -262,38 +267,6 @@ bool Lattice::program_flash()
 	printInfo("Parse file ", false);
 	if (err == EXIT_FAILURE) {
 		printError("FAIL");
-		return false;
-	} else {
-		printSuccess("DONE");
-	}
-
-	/* read ID Code 0xE0 */
-	if (_verbose) {
-		printf("IDCode : %x\n", idCode());
-		displayReadReg(readStatusReg());
-	}
-
-	/* preload 0x1C */
-	uint8_t tx_buf[26];
-	memset(tx_buf, 0xff, 26);
-	wr_rd(0x1C, tx_buf, 26, NULL, 0);
-
-	wr_rd(0xFf, NULL, 0, NULL, 0);
-
-	/* ISC Enable 0xC6 */
-	printInfo("Enable configuration: ", false);
-	if (!EnableISC(0x00)) {
-		printError("FAIL");
-		displayReadReg(readStatusReg());
-		return false;
-	} else {
-		printSuccess("DONE");
-	}
-	/* ISC ERASE */
-	printInfo("SRAM erase: ", false);
-	if (flashErase(FLASH_ERASE_SRAM) == false) {
-		printError("FAIL");
-		displayReadReg(readStatusReg());
 		return false;
 	} else {
 		printSuccess("DONE");
@@ -395,6 +368,91 @@ bool Lattice::program_flash()
 	} else {
 		printSuccess("DONE");
 	}
+	return true;
+}
+
+bool Lattice::program_extFlash(unsigned int offset)
+{
+	LatticeBitParser _bit(_filename, _verbose);
+
+	printInfo("Open file " + _filename + " ", false);
+	printSuccess("DONE");
+
+	int err = _bit.parse();
+
+	printInfo("Parse file ", false);
+	if (err == EXIT_FAILURE) {
+		printError("FAIL");
+		return false;
+	} else {
+		printSuccess("DONE");
+	}
+
+	/*IR = 0h3A, DR=0hFE,0h68. Enter RUNTESTIDLE.
+	 * thank @GregDavill
+	 * https://twitter.com/GregDavill/status/1251786406441086977
+	 */
+	_jtag->shiftIR(0x3A, 8, Jtag::EXIT1_IR);
+	uint8_t tmp[2] = {0xFE, 0x68};
+	_jtag->shiftDR(tmp, NULL, 16);
+
+	uint8_t *data = _bit.getData();
+	int length = _bit.getLength()/8;
+
+	/* test SPI */
+	SPIFlash flash(this, _verbose);
+	flash.reset();
+	flash.read_id();
+	flash.read_status_reg();
+	flash.erase_and_prog(offset, data, length);
+	return true;
+}
+
+bool Lattice::program_flash(unsigned int offset)
+{
+	/* read ID Code 0xE0 */
+	if (_verbose) {
+		printf("IDCode : %x\n", idCode());
+		displayReadReg(readStatusReg());
+	}
+
+	/* preload 0x1C */
+	uint8_t tx_buf[26];
+	memset(tx_buf, 0xff, 26);
+	wr_rd(0x1C, tx_buf, 26, NULL, 0);
+
+	wr_rd(0xFf, NULL, 0, NULL, 0);
+
+	/* ISC Enable 0xC6 */
+	printInfo("Enable configuration: ", false);
+	if (!EnableISC(0x00)) {
+		printError("FAIL");
+		displayReadReg(readStatusReg());
+		return false;
+	} else {
+		printSuccess("DONE");
+	}
+
+	/* ISC ERASE */
+	printInfo("SRAM erase: ", false);
+	if (flashErase(FLASH_ERASE_SRAM) == false) {
+		printError("FAIL");
+		displayReadReg(readStatusReg());
+		return false;
+	} else {
+		printSuccess("DONE");
+	}
+
+	DisableISC();
+
+	if (_file_extension == "jed")
+		program_intFlash();
+	else
+		program_extFlash(offset);
+
+	/* *************************** */
+	/* reload bitstream from flash */
+	/* *************************** */
 
 	/* ISC REFRESH 0x79 */
 	printInfo("Refresh: ", false);
@@ -413,14 +471,14 @@ bool Lattice::program_flash()
 
 void Lattice::program(unsigned int offset)
 {
-	(void) offset;
 	if (_mode == FLASH_MODE)
-		program_flash();
+		program_flash(offset);
 	else if (_mode == MEM_MODE)
 		program_mem();
-
 }
 
+/* flash mode :
+ */
 bool Lattice::EnableISC(uint8_t flash_mode)
 {
 	wr_rd(ISC_ENABLE, &flash_mode, 1, NULL, 0);
@@ -818,4 +876,96 @@ bool Lattice::loadConfiguration()
 	if (!checkStatus(REG_STATUS_DONE, REG_STATUS_DONE))
 		return false;
 	return true;
+}
+
+/* ------------------ */
+/* SPI implementation */
+/* ------------------ */
+
+int Lattice::spi_put(uint8_t cmd, uint8_t *tx, uint8_t *rx, uint16_t len)
+{
+	int xfer_len = len + 1;
+	uint8_t jtx[xfer_len];
+	uint8_t jrx[xfer_len];
+
+	jtx[0] = LatticeBitParser::reverseByte(cmd);
+
+	if (tx != NULL) {
+		for (int i=0; i < len; i++)
+			jtx[i+1] = LatticeBitParser::reverseByte(tx[i]);
+	}
+
+	/* send first already stored cmd,
+	 * in the same time store each byte
+	 * to next
+	 */
+	_jtag->shiftDR(jtx, (rx == NULL)? NULL: jrx, 8*xfer_len);
+
+	if (rx != NULL) {
+		for (int i=0; i < len; i++)
+			rx[i] = LatticeBitParser::reverseByte(jrx[i+1]);
+	}
+	return 0;
+}
+
+int Lattice::spi_put(uint8_t *tx, uint8_t *rx, uint16_t len)
+{
+	int xfer_len = len;
+	uint8_t jtx[xfer_len];
+	uint8_t jrx[xfer_len];
+
+	if (tx != NULL) {
+		for (int i=0; i < len; i++)
+			jtx[i] = LatticeBitParser::reverseByte(tx[i]);
+	}
+
+	/* send first already stored cmd,
+	 * in the same time store each byte
+	 * to next
+	 */
+	_jtag->shiftDR(jtx, (rx == NULL)? NULL: jrx, 8*xfer_len);
+
+	if (rx != NULL) {
+		for (int i=0; i < len; i++)
+			rx[i] = LatticeBitParser::reverseByte(jrx[i]);
+	}
+	return 0;
+}
+
+int Lattice::spi_wait(uint8_t cmd, uint8_t mask, uint8_t cond,
+            uint32_t timeout, bool verbose)
+{
+	uint8_t rx;
+	uint8_t dummy[2];
+	uint8_t tmp;
+	uint8_t tx = LatticeBitParser::reverseByte(cmd);
+	uint32_t count = 0;
+
+	/* CS is low until state goes to EXIT1_IR
+	 * so manually move to state machine to stay is this
+	 * state as long as needed
+	 */
+	_jtag->set_state(Jtag::SHIFT_DR);
+	_jtag->read_write(&tx, NULL, 8, 0);
+
+	do {
+		_jtag->read_write(dummy, &rx, 8, 0);
+		tmp = (LatticeBitParser::reverseByte(rx));
+		count ++;
+		if (count == timeout){
+			printf("timeout: %x %x %d\n", tmp, rx, count);
+			break;
+		}
+
+		if (verbose) {
+			printf("%x %x %x %d\n", tmp, mask, cond, count);
+		}
+	} while ((tmp & mask) != cond);
+	_jtag->set_state(Jtag::RUN_TEST_IDLE);
+	if (count == timeout) {
+		printf("%x\n", tmp);
+		std::cout << "wait: Error" << std::endl;
+		return -ETIME;
+	} else
+		return 0;
 }

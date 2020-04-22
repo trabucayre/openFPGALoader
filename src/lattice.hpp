@@ -27,19 +27,30 @@
 #include "device.hpp"
 #include "jedParser.hpp"
 #include "latticeBitParser.hpp"
+#include "spiInterface.hpp"
 
-class Lattice: public Device {
+class Lattice: public Device, SPIInterface {
 	public:
-		Lattice(Jtag *jtag, std::string filename, bool verbose);
+		Lattice(Jtag *jtag, std::string filename, bool flash_wr, bool sram_wr,
+			bool verbose);
 		int idCode() override;
 		int userCode();
 		void reset() override {}
 		void program(unsigned int offset) override;
 		bool program_mem();
-		bool program_flash();
+		bool program_flash(unsigned int offset);
 		bool Verify(JedParser &_jed, bool unlock = false);
 
+		/* spi interface */
+		int spi_put(uint8_t cmd, uint8_t *tx, uint8_t *rx,
+		uint16_t len) override;
+		int spi_put(uint8_t *tx, uint8_t *rx, uint16_t len) override;
+		int spi_wait(uint8_t cmd, uint8_t mask, uint8_t cond,
+				uint32_t timeout, bool verbose=false) override;
+
 	private:
+		bool program_intFlash();
+		bool program_extFlash(unsigned int offset);
 		bool wr_rd(uint8_t cmd, uint8_t *tx, int tx_len,
 				uint8_t *rx, int rx_len, bool verbose = false);
 		void unlock();
