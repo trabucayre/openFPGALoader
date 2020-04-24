@@ -194,7 +194,7 @@ int JedParser::parse()
 	std::getline(_fd, content, '\n');
 	if (content[0] != 0x02) {
 		printf("wrong file\n");
-		return 0;
+		return EXIT_FAILURE;
 	}
 
 	/* read full content
@@ -286,7 +286,7 @@ int JedParser::parse()
 		printf("theorical checksum %x -> %x\n", _checksum, checksum);
 	if (_checksum != checksum) {
 		cerr << "Error: wrong checksum" << endl;
-		return 0;
+		return EXIT_FAILURE;
 	}
 
 	if (_verbose)
@@ -294,9 +294,8 @@ int JedParser::parse()
 
 	if (_fuse_count != size) {
 		cerr << "Not all fuses are programmed" << endl;
-		return 0;
+		return EXIT_FAILURE;
 	}
-
 
 	return EXIT_SUCCESS;
 }
