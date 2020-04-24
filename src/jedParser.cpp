@@ -275,9 +275,11 @@ int JedParser::parse()
 	}
 
 	uint16_t checksum = 0;
-	for (size_t line = 0; line < _data_list[0].data.size(); line++) {
-		for (size_t col = 0; col < _data_list[0].data[line].size(); col++)
-			checksum += (uint8_t)_data_list[0].data[line][col];
+	for (size_t area = 0; area < _data_list.size(); area++) {
+		for (size_t line = 0; line < _data_list[area].data.size(); line++) {
+			for (size_t col = 0; col < _data_list[area].data[line].size(); col++)
+				checksum += (uint8_t)_data_list[area].data[line][col];
+		}
 	}
 
 	if (_verbose)
