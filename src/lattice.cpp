@@ -47,6 +47,7 @@ using namespace std;
 #  define CHECK_BUSY_FLAG_BUSY	(1 << 7)
 #define RESET_CFG_ADDR			0x46
 #define PROG_CFG_FLASH			0x70
+#define REG_CFG_FLASH			0x73
 #define PROG_FEATURE_ROW		0xE4
 #define PROG_FEABITS			0xF8
 #define PROG_DONE				0x5E
@@ -274,7 +275,8 @@ bool Lattice::program_intFlash()
 
 	/* bypass */
 	wr_rd(0xff, NULL, 0, NULL, 0);
-	/* ISC Enable 0xC6 followed by 0x08 */
+	/* ISC Enable 0xC6 followed by
+	 * 0x08 (Enable nVCM/Flash Normal mode */
 	printInfo("Enable configuration: ", false);
 	if (!EnableISC(0x08)) {
 		printError("FAIL");
@@ -317,10 +319,11 @@ bool Lattice::program_intFlash()
 	_jtag->set_state(Jtag::RUN_TEST_IDLE);
 	_jtag->toggleClk(1000);
 
-	/* flash UFM */
+	/* flash CfgFlash */
 	if (false == flashProg(0, cfg_data))
 		return false;
-	if (Verify(_jed) == false)
+	/* verify write */
+	if (Verify(cfg_data) == false)
 		return false;
 
 	/* missing usercode update */
@@ -760,7 +763,7 @@ bool Lattice::flashProg(uint32_t start_addr, std::vector<std::string> data)
 	return true;
 }
 
-bool Lattice::Verify(JedParser &_jed, bool unlock)
+bool Lattice::Verify(std::vector<std::string> data, bool unlock)
 {
 	uint8_t tx_buf[16], rx_buf[16];
 	if (unlock)
@@ -770,18 +773,17 @@ bool Lattice::Verify(JedParser &_jed, bool unlock)
 	_jtag->set_state(Jtag::RUN_TEST_IDLE);
 	_jtag->toggleClk(1000);
 
-	tx_buf[0] = 0x73;
+	tx_buf[0] = REG_CFG_FLASH;
 	_jtag->shiftIR(tx_buf, NULL, 8, Jtag::PAUSE_IR);
 
 	bzero(tx_buf, 16);
 	bool failure = false;
-	vector<string> data = _jed.data_for_section(0);
 	ProgressBar progress("Verifying", data.size(), 50);
 	for (size_t line = 0;  line< data.size(); line++) {
 		_jtag->set_state(Jtag::RUN_TEST_IDLE);
 		_jtag->toggleClk(2);
 		_jtag->shiftDR(tx_buf, rx_buf, 16*8, Jtag::PAUSE_DR);
-		for (size_t i = 0; i < data[i].size(); i++) {
+		for (size_t i = 0; i < data[line].size(); i++) {
 			if (rx_buf[i] != (unsigned char)data[line][i]) {
 				printf("%3ld %3ld %02x -> %02x\n", line, i,
 						rx_buf[i], (unsigned char)data[line][i]);

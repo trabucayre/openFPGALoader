@@ -39,7 +39,7 @@ class Lattice: public Device, SPIInterface {
 		void program(unsigned int offset) override;
 		bool program_mem();
 		bool program_flash(unsigned int offset);
-		bool Verify(JedParser &_jed, bool unlock = false);
+		bool Verify(std::vector<std::string> data, bool unlock = false);
 
 		/* spi interface */
 		int spi_put(uint8_t cmd, uint8_t *tx, uint8_t *rx,
