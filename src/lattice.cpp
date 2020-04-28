@@ -461,6 +461,7 @@ bool Lattice::program_flash(unsigned int offset)
 	printInfo("Refresh: ", false);
 	if (loadConfiguration() == false) {
 		printError("FAIL");
+		displayReadReg(readStatusReg());
 		return false;
 	} else {
 		printSuccess("DONE");
