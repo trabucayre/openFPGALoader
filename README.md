@@ -18,6 +18,7 @@ __Supported (tested) FPGA:__
 * Lattice [MachXO3LF](http://www.latticesemi.com/en/Products/FPGAandCPLD/MachXO3.aspx) (SRAM and Flash)
 * Lattice [ECP5 (25F, 5G 85F](http://www.latticesemi.com/Products/FPGAandCPLD/ECP5) (SRAM and Flash)
 * Xilinx Artix 7 [xc7a35ti, xc7a100t](https://www.xilinx.com/products/silicon-devices/fpga/artix-7.html) (memory (all) and spi flash (xc7a35ti)
+* Xilinx Spartan 6 [xc6slx45](https://www.xilinx.com/products/silicon-devices/fpga/spartan-6.html) (memory)
 * Xilinx Spartan 7 [xc7s15](https://www.xilinx.com/products/silicon-devices/fpga/spartan-7.html) (memory)
 * Intel Cyclone 10 LP [10CL025](https://www.intel.com/content/www/us/en/products/programmable/fpga/cyclone-10.html)
 
