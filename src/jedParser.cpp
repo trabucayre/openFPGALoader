@@ -239,6 +239,7 @@ int JedParser::parse()
 	 * JED file end fix ETX (0x03) + file checksum + \n
 	 */
 	std::vector<string>lines;
+	int first_pos;
 	do {
 		lines = readJEDLine();
 		if (lines.size() == 0)
@@ -246,7 +247,9 @@ int JedParser::parse()
 
 		switch (lines[0][0]) {
 		case 'N':  // note
-			previousNote = lines[0].substr(5);
+			/* note may start with "N " or "NOTE " */
+			first_pos = lines[0].find_first_of(' ', 0) + 1;
+			previousNote = lines[0].substr(first_pos);
 			break;
 		case 'Q':
 			int count;
