@@ -15,6 +15,10 @@
  * along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
 
+/*
+ * http://k1.spdns.de/Develop/Projects/GalAsm/info/galer/jedecfile.html
+ */
+
 #include <stdio.h>
 #include <stdlib.h>
 #include <stdint.h>
@@ -44,6 +48,23 @@ JedParser::JedParser(string filename, bool verbose):
 {
 }
 
+/*!
+ * \brief read a line with '\r''\n' or '\n' terminaison
+ * check if last char is '\r'
+ * \return the line without [\r]\n
+ */
+string JedParser::readline()
+{
+	string buffer;
+	std::getline(_fd, buffer, '\n');
+	if (buffer.size() != 0) {
+		/* if '\r' is present -> drop */
+		if (buffer[buffer.size() -1] == '\r')
+			buffer.pop_back();
+	}
+	return buffer;
+}
+
 /* fill a vector with consecutive lines until '*'
  */
 vector<string> JedParser::readJEDLine()
@@ -53,7 +74,7 @@ vector<string> JedParser::readJEDLine()
 	bool inLine = true;
 
 	do {
-		std::getline(_fd, buffer, '\n');
+		buffer = readline();
 		if (buffer.size() == 0)
 			break;
 
@@ -191,7 +212,7 @@ int JedParser::parse()
 	_fd.seekg(0, _fd.beg);
 
 	/* First line must STX (0x02) */
-	std::getline(_fd, content, '\n');
+	content = readline();
 	if (content[0] != 0x02) {
 		printf("wrong file\n");
 		return EXIT_FAILURE;

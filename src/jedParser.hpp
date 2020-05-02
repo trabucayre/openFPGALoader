@@ -50,6 +50,7 @@ class JedParser: public ConfigBitstreamParser {
 		uint64_t featuresRow() {return _featuresRow;}
 
 	private:
+		std::string readline();
 		std::vector<std::string>readJEDLine();
 		void buildDataArray(const std::string &content, struct jed_data &jed);
 		void parseEField(const std::vector<std::string> content);
