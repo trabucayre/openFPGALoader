@@ -256,7 +256,7 @@ bool Lattice::program_intFlash()
 	uint64_t featuresRow;
 	uint16_t feabits;
 	uint8_t eraseMode;
-	vector<string> ufm_data, cfg_data;
+	vector<string> ufm_data, cfg_data, ebr_data;
 
 	JedParser _jed(_filename, _verbose);
 
@@ -293,6 +293,8 @@ bool Lattice::program_intFlash()
 			ufm_data = _jed.data_for_section(i);
 		} else if (note == "END CONFIG DATA") {
 			continue;
+		} else if (note == "EBR_INIT DATA") {
+			ebr_data = _jed.data_for_section(i);
 		} else {
 			cfg_data = _jed.data_for_section(i);
 		}
@@ -320,8 +322,14 @@ bool Lattice::program_intFlash()
 	_jtag->toggleClk(1000);
 
 	/* flash CfgFlash */
-	if (false == flashProg(0, cfg_data))
+	if (false == flashProg(0, "data", cfg_data))
 		return false;
+
+	/* flash EBR Init */
+	if (ebr_data.size()) {
+		if (false == flashProg(0, "EBR", ebr_data))
+			return false;
+	}
 	/* verify write */
 	if (Verify(cfg_data) == false)
 		return false;
@@ -747,10 +755,10 @@ bool Lattice::flashErase(uint8_t mask)
 	return true;
 }
 
-bool Lattice::flashProg(uint32_t start_addr, std::vector<std::string> data)
+bool Lattice::flashProg(uint32_t start_addr, string name, vector<string> data)
 {
 	(void)start_addr;
-	ProgressBar progress("Writing", data.size(), 50);
+	ProgressBar progress("Writing " + name, data.size(), 50);
 	for (uint32_t line = 0; line < data.size(); line++) {
 		wr_rd(PROG_CFG_FLASH, (uint8_t *)data[line].c_str(),
 				16, NULL, 0);
