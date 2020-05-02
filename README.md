@@ -6,6 +6,7 @@ __Current support kits:__
 * Trenz cyc1000 Cyclone 10 LP 10CL025 (memory and spi flash)
 * [Colorlight 5A-75B (version 7)](https://fr.aliexpress.com/item/32281130824.html) (memory and spi flash)
 * Digilent arty Artix xc7a35ti (memory and spi flash)
+* [Lattice MachXO2 Breakout Board Evaluation Kit (LCMXO2-7000HE)](https://www.latticesemi.com/products/developmentboardsandkits/machxo2breakoutboard) (memory and flash)
 * Lattice MachXO3LF Starter Kit LCMX03LF-6900C (memory and flash)
 * [Lattice ECP5 5G Evaluation Board (LFE5UM5G-85F-EVN)](https://www.latticesemi.com/en/Products/DevelopmentBoardsAndKits/ECP5EvaluationBoard) (memory and spi flash)
 * [Trenz Gowin LittleBee (TEC0117)](https://shop.trenz-electronic.de/en/TEC0117-01-FPGA-Module-with-GOWIN-LittleBee-and-8-MByte-internal-SDRAM)
@@ -16,6 +17,7 @@ __Current support kits:__
 __Supported (tested) FPGA:__
 
 * Gowin [GW1N (GW1N-1, GW1N-4, GW1NR-9)](https://www.gowinsemi.com/en/product/detail/2/) (SRAM and Flash (flash mode only tested with GW1NR-9))
+* Lattice [MachXO2](https://www.latticesemi.com/en/Products/FPGAandCPLD/MachXO2) (SRAM and Flash)
 * Lattice [MachXO3LF](http://www.latticesemi.com/en/Products/FPGAandCPLD/MachXO3.aspx) (SRAM and Flash)
 * Lattice [ECP5 (25F, 5G 85F](http://www.latticesemi.com/Products/FPGAandCPLD/ECP5) (SRAM and Flash)
 * Xilinx Artix 7 [xc7a35ti, xc7a100t](https://www.xilinx.com/products/silicon-devices/fpga/artix-7.html) (memory (all) and spi flash (xc7a35ti)
@@ -226,7 +228,7 @@ __file load:__
 ```bash
 openFPGALoader -b arty *.runs/impl_1/*.mcs
 ```
-### MachXO3 Starter Kit
+### MachXO2/MachXO3 Starter Kit
 
 #### Flash memory:
 
@@ -235,16 +237,23 @@ special must be done to generates this file.
 
 __file load__:
 ```bash
-openFPGALoader -b machXO3SK impl1/*.jed
+openFPGALoader [-b yourboard] impl1/*.jed
 ```
+where *yourboard* may be:
+* *machX02EVN*
+* *machXO3SK*
+
 #### SRAM:
 
 To generates *.bit* file **Bitstream file** must be checked under **Exports Files** in *Lattice Diamond* left panel.
 
 __file load__:
 ```bash
-openFPGALoader -b machXO3SK impl1/*.bit
+openFPGALoader [-b yourboard] impl1/*.bit
 ```
+where *yourboard* may be:
+* *machX02EVN*
+* *machXO3SK*
 
 ### Lattice ECP5 (Colorlight 5A-75b, Lattice ECP5 5G Evaluation board, ULX3S)
 
