@@ -211,12 +211,29 @@ int JedParser::parse()
 
 	_fd.seekg(0, _fd.beg);
 
-	/* First line must STX (0x02) */
-	content = readline();
-	if (content[0] != 0x02) {
-		printf("wrong file\n");
+	/* JED file may have some ASCII line before STX (0x02)
+	 * read until STX or EOF
+	 */
+	char c;
+	do {
+		_fd.read(&c, 1);
+	} while (_fd && c != 0x02);
+
+	/* if file descriptor == EOF
+	 * return an ERROR
+	 */
+	if (!_fd) {
+		cerr << "Error: STX not found: wrong file" << endl;
 		return EXIT_FAILURE;
 	}
+
+	/* the line starting with STX may contains
+	 * others informations */
+	_fd.read(&c, 1);
+	if (c != '*')  // something to process
+		_fd.seekg(-1, _fd.cur);
+	else  // STX in a dedicated line
+		content = readline();
 
 	/* read full content
 	 * JED file end fix ETX (0x03) + file checksum + \n
@@ -242,7 +259,7 @@ int JedParser::parse()
 					_pin_count = count;
 					break;
 				default:
-					cerr << "Error for 'Q' unknown qualifier " << lines[1] << endl;
+					cerr << "Error for 'Q' unknown qualifier " << lines[0] << endl;
 					return EXIT_FAILURE;
 			}
 			break;
