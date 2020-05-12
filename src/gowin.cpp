@@ -119,8 +119,6 @@ void Gowin::programFlash()
 		return;
 	if (!DisableCfg())
 		return;
-	wr_rd(RELOAD, NULL, 0, NULL, 0);
-	wr_rd(NOOP, NULL, 0, NULL, 0);
 	/* test status a faire */
 	if (!flashFLASH(data, length))
 		return;
