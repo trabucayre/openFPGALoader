@@ -13,6 +13,7 @@ __Current support kits:__
 * [Saanlima Pipistrello LX45](http://pipistrello.saanlima.com/index.php?title=Welcome_to_Pipistrello) (memory)
 * [SeeedStudio Spartan Edge Accelerator Board](http://wiki.seeedstudio.com/Spartan-Edge-Accelerator-Board) (memory)
 * [Sipeed Tang Nano](https://tangnano.sipeed.com/en/) (memory)
+* LambdaConcept ECPIX-5 (memory and flash)
 
 __Supported (tested) FPGA:__
 
