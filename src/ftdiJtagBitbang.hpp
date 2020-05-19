@@ -70,7 +70,7 @@ class FtdiJtagBitBang : public JtagInterface, private FTDIpp_MPSSE {
  private:
 	void init_internal(const FTDIpp_MPSSE::mpsse_bit_config &cable,
 		const jtag_pins_conf_t *pin_conf);
-	int write(uint8_t *tdo);
+	int write(uint8_t *tdo, int nb_bit);
 	int setBitmode(uint8_t mode);
 	uint8_t *_in_buf;
 

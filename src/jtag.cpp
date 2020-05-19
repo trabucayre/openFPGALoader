@@ -147,6 +147,7 @@ void Jtag::setTMS(unsigned char tms)
 
 int Jtag::flushTMS(bool flush_buffer)
 {
+	int xfer = _num_tms;
 	if (_num_tms != 0) {
 		display("%s: %d %x\n", __func__, _num_tms, _tms_buffer[0]);
 
@@ -155,9 +156,10 @@ int Jtag::flushTMS(bool flush_buffer)
 		/* reset buffer and number of bits */
 		bzero(_tms_buffer, _tms_buffer_size);
 		_num_tms = 0;
+		if (flush_buffer) {
+			return _jtag->writeTMS(NULL, xfer);
+		}
 	}
-	if (flush_buffer)
-		return _jtag->writeTMS(NULL);
 	return 0;
 }
 

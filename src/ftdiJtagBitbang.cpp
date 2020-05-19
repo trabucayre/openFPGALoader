@@ -115,15 +115,14 @@ int FtdiJtagBitBang::storeTMS(uint8_t *tms, int nb_bit, uint8_t tdi, bool read)
 
 		xfer_len -= xfer;
 		if (xfer_len != 0)
-			write(NULL);
+			write(NULL, 0);
 	}
 	return nb_bit;
 }
 
 int FtdiJtagBitBang::writeTMS(uint8_t *tdo, int len)
 {
-	(void) len;
-	return write(tdo);
+	return write(tdo, len);
 }
 
 /**
@@ -159,12 +158,11 @@ int FtdiJtagBitBang::storeTDI(uint8_t *tdi, int nb_byte, bool read)
 
 int FtdiJtagBitBang::writeTDI(uint8_t *tdo, int nb_bit)
 {
-	(void) nb_bit;
-	return write(tdo);
+	return write(tdo, nb_bit);
 }
 
 
-int FtdiJtagBitBang::write(uint8_t *tdo)
+int FtdiJtagBitBang::write(uint8_t *tdo, int nb_bit)
 {
 	int ret = 0;
 	if (_nb_bit == 0)
@@ -184,8 +182,10 @@ int FtdiJtagBitBang::write(uint8_t *tdo)
 		 * even bit are discarded since JTAG read in rising edge
 		 * since jtag is LSB first we need to shift right content by 1
 		 * and add 0x80 (1 << 7) or 0
+		 * the buffer may contains some tms bit, so start with i
+		 * equal to fill exactly nb_bit bits
 		 * */
-		for (int i = 1, offset=0; i < _nb_bit; i+=2, offset++) {
+		for (int i = (_nb_bit-(nb_bit *2) + 1), offset=0; i < _nb_bit; i+=2, offset++) {
 			tdo[offset >> 3] = (((_in_buf[i] & _tdo_pin) ? 0x80 : 0x00) |
 							(tdo[offset >> 3] >> 1));
 		}
