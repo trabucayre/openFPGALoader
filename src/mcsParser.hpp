@@ -22,13 +22,14 @@
 
 class McsParser: public ConfigBitstreamParser {
 	public:
-		McsParser(std::string filename, bool verbose);
+		McsParser(std::string filename, bool reverseOrder, bool verbose);
 		int parse();
 
 	private:
 		int parseLine(std::string buffer);
 
 		int _base_addr;
+		bool _reverseOrder;
 };
 
 #endif

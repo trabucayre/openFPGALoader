@@ -41,10 +41,10 @@ using namespace std;
 #define TYPE_BASE 7
 #define DATA_BASE 9
 
-McsParser::McsParser(string filename, bool verbose):
+McsParser::McsParser(string filename, bool reverseOrder, bool verbose):
 		ConfigBitstreamParser(filename, ConfigBitstreamParser::ASCII_MODE,
 		verbose),
-		_base_addr(0)
+		_base_addr(0), _reverseOrder(reverseOrder)
 {}
 
 int McsParser::parse()
@@ -56,7 +56,7 @@ int McsParser::parse()
 		getline(_fd, str);
 		ret = parseLine(str);
 	} while (ret == 0);
-	return ret;
+	return (ret < 0) ? EXIT_FAILURE : EXIT_SUCCESS;
 }
 
 int McsParser::parseLine(string buffer)
@@ -87,10 +87,10 @@ int McsParser::parseLine(string buffer)
 		ptr = (char *)(buff + DATA_BASE);
 		for (int i = 0; i < byteLen; i++, ptr += 2) {
 			sscanf(ptr, "%2hx", &tmp);
-			_bit_data[loc_addr + i] = tmp;
+			_bit_data[loc_addr + i] = (_reverseOrder)? reverseByte(tmp):tmp;
 			sum += tmp;
 		}
-		_bit_length +=byteLen;
+		_bit_length += (byteLen * 8);
 	} else if (type == 1) {
 		return 1;
 	} else if (type == 4) {
