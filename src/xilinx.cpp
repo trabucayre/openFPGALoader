@@ -91,10 +91,10 @@ void Xilinx::program_spi(unsigned int offset)
 	program_mem(bitfile);
 
 	/* last: read file and erase/flash spi flash */
-	McsParser mcs(_filename, _verbose);
+	McsParser mcs(_filename, false, _verbose);
 	mcs.parse();
 	SPIFlash spiFlash(this, _verbose);
-	spiFlash.erase_and_prog(offset, mcs.getData(), mcs.getLength());
+	spiFlash.erase_and_prog(offset, mcs.getData(), mcs.getLength()/8);
 }
 
 void Xilinx::program_mem(BitParser &bitfile)
