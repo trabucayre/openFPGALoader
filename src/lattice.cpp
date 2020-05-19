@@ -26,6 +26,8 @@
 
 #include "jtag.hpp"
 #include "lattice.hpp"
+#include "latticeBitParser.hpp"
+#include "mcsParser.hpp"
 #include "progressBar.hpp"
 #include "display.hpp"
 #include "spiFlash.hpp"
@@ -68,7 +70,7 @@ Lattice::Lattice(Jtag *jtag, const string filename,
 		Device(jtag, filename, verbose)
 {
 	if (_filename != "") {
-		if (_file_extension == "jed") {
+		if (_file_extension == "jed" || _file_extension == "mcs") {
 			_mode = Device::FLASH_MODE;
 		} else if (_file_extension == "bit") {
 			if (flash_wr)
@@ -384,12 +386,16 @@ bool Lattice::program_intFlash()
 
 bool Lattice::program_extFlash(unsigned int offset)
 {
-	LatticeBitParser _bit(_filename, _verbose);
+	ConfigBitstreamParser *_bit;
+	if (_file_extension == "mcs")
+		_bit = new McsParser(_filename, true, _verbose);
+	else
+		_bit = new LatticeBitParser(_filename, _verbose);
 
 	printInfo("Open file " + _filename + " ", false);
 	printSuccess("DONE");
 
-	int err = _bit.parse();
+	int err = _bit->parse();
 
 	printInfo("Parse file ", false);
 	if (err == EXIT_FAILURE) {
@@ -407,8 +413,8 @@ bool Lattice::program_extFlash(unsigned int offset)
 	uint8_t tmp[2] = {0xFE, 0x68};
 	_jtag->shiftDR(tmp, NULL, 16);
 
-	uint8_t *data = _bit.getData();
-	int length = _bit.getLength()/8;
+	uint8_t *data = _bit->getData();
+	int length = _bit->getLength()/8;
 
 	/* test SPI */
 	SPIFlash flash(this, _verbose);
@@ -416,6 +422,8 @@ bool Lattice::program_extFlash(unsigned int offset)
 	flash.read_id();
 	flash.read_status_reg();
 	flash.erase_and_prog(offset, data, length);
+
+	delete _bit;
 	return true;
 }
 
