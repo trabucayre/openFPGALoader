@@ -265,11 +265,23 @@ openFPGALoader [-b yourBoard] [-c yourCable] -m project_name/*.bit
 ```
 
 **By default, openFPGALoader load bitstream in memory, so the '-m' argument is optional**
+
 #### SPI Flash:
+
+##### bit
 
 ```bash
 openFPGALoader [-b yourBoard] [-c yourCable] -f project_name/*.bit
 ```
+
+##### mcs
+
+To generates *.mcs* file **PROM File** must be checked under **Exports Files** in *Lattice Diamond* left panel.
+
+```bash
+openFPGALoader [-b yourBoard] [-c yourCable] project_name/*.mcs
+```
+
 
 ### Trenz GOWIN LittleBee (TEC0117) and Sipeed Tang Nano
 
