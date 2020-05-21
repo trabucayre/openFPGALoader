@@ -43,6 +43,7 @@ struct arguments {
 	string bit_file;
 	string device;
 	string cable;
+	string speed;
 	string board;
 	bool list_cables;
 	bool list_boards;
@@ -64,6 +65,7 @@ static char args_doc[] = "BIT_FILE";
 static error_t parse_opt(int key, char *arg, struct argp_state *state);
 static struct argp_option options[] = {
 	{"cable",   'c', "CABLE", 0, "jtag interface"},
+	{"speed",   's', "SPEED", 0, "jtag frequency (Hz)"},
 	{"list-cables", LIST_CABLE, 0, 0, "list all supported cables"},
 	{"board",   'b', "BOARD", 0, "board name, may be used instead of cable"},
 	{"list-boards", LIST_BOARD, 0, 0, "list all supported boards"},
@@ -91,7 +93,7 @@ int main(int argc, char **argv)
 	jtag_pins_conf_t *pins_config = NULL;
 
 	/* command line args. */
-	struct arguments args = {false, false, false, 0, "", "-", "-", "-",
+	struct arguments args = {false, false, false, 0, "", "-", "-", "6M", "-",
 			false, false, false, false, true, false};
 	/* parse arguments */
 	argp_parse(&argp, argc, argv, 0, 0, &args);
@@ -127,12 +129,39 @@ int main(int argc, char **argv)
 	}
 	cable = select_cable->second;
 
+	uint32_t speed;
+	try {
+		size_t end;
+		float speed_base = stof(args.speed, &end);
+		if (end == args.speed.size()) {
+			speed = (uint32_t)speed_base;
+		} else if (end == (args.speed.size() - 1)) {
+			switch (args.speed.back()) {
+			case 'k': case 'K':
+				speed = (uint32_t)(1e3 * speed_base);
+				break;
+			case 'm': case 'M':
+				speed = (uint32_t)(1e6 * speed_base);
+				break;
+			default:
+				cerr << "error : speed: invaild postfix \"" << args.speed.back() << "\"" << endl;
+				return EXIT_FAILURE;
+			}
+		} else {
+			cerr << "error : speed: invaild postfix \"" << args.speed.substr(end) << "\"" << endl;
+			return EXIT_FAILURE;
+		}
+	} catch (...) {
+		cerr << "error : speed: invaild format" << endl;
+		return EXIT_FAILURE;
+	}
+
 	/* jtag base */
 	Jtag *jtag;
 	if (args.device == "-")
-		jtag = new Jtag(cable, pins_config, 6000000, false);
+		jtag = new Jtag(cable, pins_config, speed, false);
 	else
-		jtag = new Jtag(cable, pins_config, args.device, 6000000, false);
+		jtag = new Jtag(cable, pins_config, args.device, speed, false);
 
 	/* chain detection */
 	vector<int> listDev;
@@ -234,6 +263,9 @@ static error_t parse_opt(int key, char *arg, struct argp_state *state)
 		break;
 	case 'b':
 		arguments->board = arg;
+		break;
+	case 's':
+		arguments->speed = arg;
 		break;
 	case ARGP_KEY_ARG:
 		arguments->bit_file = arg;
