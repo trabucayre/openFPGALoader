@@ -52,5 +52,6 @@ class Gowin: public Device {
 		uint32_t readStatusReg();
 		uint32_t readUserCode();
 		FsParser *_fs;
+		bool is_gw1n1;
 };
 #endif  // GOWIN_HPP_

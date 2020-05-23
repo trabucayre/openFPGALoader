@@ -64,7 +64,7 @@ using namespace std;
 #define EFLASH_ERASE		0x75
 
 Gowin::Gowin(Jtag *jtag, const string filename, bool flash_wr, bool sram_wr,
-		bool verbose): Device(jtag, filename, verbose)
+		bool verbose): Device(jtag, filename, verbose), is_gw1n1(false)
 {
 	_fs = NULL;
 	if (_filename != "") {
@@ -82,6 +82,10 @@ Gowin::Gowin(Jtag *jtag, const string filename, bool flash_wr, bool sram_wr,
 		}
 	}
 	_jtag->setClkFreq(2500000, 0);
+
+	/* erase and program flash differ for GW1N1 */
+	if (idCode() == 0x0900281B)
+		is_gw1n1 = true;
 }
 
 Gowin::~Gowin()
@@ -98,6 +102,7 @@ void Gowin::reset()
 
 void Gowin::programFlash()
 {
+	int status;
 	uint8_t *data;
 	int length;
 
@@ -126,8 +131,20 @@ void Gowin::programFlash()
 		return;
 	wr_rd(RELOAD, NULL, 0, NULL, 0);
 	wr_rd(NOOP, NULL, 0, NULL, 0);
+
+	/* wait for reload */
+	usleep(150*1000);
+
+	/* check if file checksum == checksum in FPGA */
+	status = readUserCode();
+	if (_fs->checksum() != status) {
+		printError("SRAM Flash: FAIL");
+		printf("%04x %04x\n", _fs->checksum(), status);
+	} else
+		printSuccess("SRAM Flash: Success");
+
 	if (_verbose)
-		printInfo("%08x\n", readUserCode());
+		displayReadReg(readStatusReg());
 }
 
 void Gowin::program(unsigned int offset)
@@ -320,7 +337,6 @@ bool Gowin::flashFLASH(uint8_t *data, int length)
 	uint8_t tt[39];
 	bzero(tt, 39);
 
-	ProgressBar progress("Flash SRAM", byte_length, 50);
 	_jtag->go_test_logic_reset();
 
 	/* we have to send
@@ -329,7 +345,6 @@ bool Gowin::flashFLASH(uint8_t *data, int length)
 	 * full bitstream
 	 */
 	int buffer_length = byte_length+(6*4);
-	unsigned char buffer[byte_length+(6*4)];
 	unsigned char bufvalues[]={
 									0x47, 0x57, 0x31, 0x4E,
 									0xff, 0xff , 0xff, 0xff,
@@ -337,17 +352,29 @@ bool Gowin::flashFLASH(uint8_t *data, int length)
 									0xff, 0xff , 0xff, 0xff,
 									0xff, 0xff , 0xff, 0xff,
 									0xff, 0xff , 0xff, 0xff};
-	memcpy(buffer, bufvalues, sizeof bufvalues);
-	memcpy(buffer+6*4, data, byte_length);
 
 	int nb_xpage = buffer_length/256;
-	if (nb_xpage * 256 != buffer_length)
+	if (nb_xpage * 256 != buffer_length) {
 		nb_xpage++;
+		buffer_length = nb_xpage * 256;
+	}
+
+	unsigned char buffer[buffer_length];
+	/* fill theorical size with 0xff */
+	memset(buffer, 0xff, buffer_length);
+	/* fill first page with code */
+	memcpy(buffer, bufvalues, 6*4);
+	/* bitstream just after opcode */
+	memcpy(buffer+6*4, data, byte_length);
+
+
+	ProgressBar progress("Flash SRAM", buffer_length, 50);
 
 	for (int i=0, xpage=0; xpage < nb_xpage; i+=(nb_iter*4), xpage++) {
 		wr_rd(CONFIG_ENABLE, NULL, 0, NULL, 0);
 		wr_rd(EF_PROGRAM, NULL, 0, NULL, 0);
-		_jtag->read_write(tt, NULL, 312, 0);
+		if (xpage != 0)
+			_jtag->read_write(tt, NULL, 312, 0);
 		addr = xpage << 6;
 		tmp[3] = 0xff&(addr >> 24);
 		tmp[2] = 0xff&(addr >> 16);
@@ -367,7 +394,15 @@ bool Gowin::flashFLASH(uint8_t *data, int length)
 			for (int x=0; x < 4; x++)
 				tx[3-x] = t[x];
 			_jtag->shiftDR(tx, NULL, 32);
-			_jtag->read_write(tt, NULL, 40, 0);
+
+			if (!is_gw1n1)
+				_jtag->read_write(tt, NULL, 40, 0);
+		}
+		if (is_gw1n1) {
+			//usleep(10*2400*2);
+			uint8_t tt2[6008/8];
+			memset(tt2, 0, 6008/8);
+			_jtag->read_write(tt2, tt2, 6008, 0);
 		}
 		progress.display(i);
 	}
@@ -426,16 +461,28 @@ bool Gowin::flashSRAM(uint8_t *data, int length)
  */
 bool Gowin::eraseFLASH()
 {
+	uint8_t tt[37500];
 	unsigned char tx[4] = {0, 0, 0, 0};
 	printInfo("erase Flash ", false);
 	wr_rd(EFLASH_ERASE, NULL, 0, NULL, 0);
 	_jtag->set_state(Jtag::RUN_TEST_IDLE);
-	_jtag->shiftDR(tx, NULL, 32);
-	/* TN653 specifies to wait for 120ms with
+	//_jtag->read_write(tt, tt, 37500*8, 0);
+
+	/* GW1N1 need 65 x 32bits
+	 * others 1 x 32bits
+	 */
+	int nb_iter = (is_gw1n1)?65:1;
+	for (int i = 0; i < nb_iter; i++) {
+		_jtag->shiftDR(tx, NULL, 32);
+		_jtag->toggleClk(6);
+	}
+	/* TN653 specifies to wait for 160ms with
 	 * there are no bit in status register to specify
 	 * when this operation is done so we need to wait
 	 */
-	usleep(120000);
+	//usleep(2*120000);
+	//uint8_t tt[37500];
+	_jtag->read_write(tt, tt, 37500*8, 0);
 	printSuccess("Done");
 	return true;
 }
