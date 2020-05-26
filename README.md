@@ -95,6 +95,7 @@ openFPGALoader -- a program to flash cyclone10 LP FPGA
   -c, --cable=CABLE          jtag interface
   -d, --device=DEVICE        device to use (/dev/ttyUSBx)
       --detect               detect FPGA
+      --freq=FREQ            jtag frequency (Hz)
   -f, --write-flash          write bitstream in flash (default: false, only for
                              Gowin and ECP5 devices)
       --list-boards          list all supported boards

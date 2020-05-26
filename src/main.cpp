@@ -43,6 +43,7 @@ struct arguments {
 	string bit_file;
 	string device;
 	string cable;
+	uint32_t freq;
 	string board;
 	bool list_cables;
 	bool list_boards;
@@ -56,6 +57,7 @@ struct arguments {
 #define LIST_BOARD	2
 #define LIST_FPGA	3
 #define DETECT		4
+#define FREQUENCY	5
 
 const char *argp_program_version = "openFPGALoader 1.0";
 const char *argp_program_bug_address = "<gwenhael.goavec-merou@trabucayre.com>";
@@ -64,6 +66,7 @@ static char args_doc[] = "BIT_FILE";
 static error_t parse_opt(int key, char *arg, struct argp_state *state);
 static struct argp_option options[] = {
 	{"cable",   'c', "CABLE", 0, "jtag interface"},
+	{"freq",   FREQUENCY, "FREQ", 0, "jtag frequency (Hz)"},
 	{"list-cables", LIST_CABLE, 0, 0, "list all supported cables"},
 	{"board",   'b', "BOARD", 0, "board name, may be used instead of cable"},
 	{"list-boards", LIST_BOARD, 0, 0, "list all supported boards"},
@@ -91,7 +94,7 @@ int main(int argc, char **argv)
 	jtag_pins_conf_t *pins_config = NULL;
 
 	/* command line args. */
-	struct arguments args = {false, false, false, 0, "", "-", "-", "-",
+	struct arguments args = {false, false, false, 0, "", "-", "-", 6000000, "-",
 			false, false, false, false, true, false};
 	/* parse arguments */
 	argp_parse(&argp, argc, argv, 0, 0, &args);
@@ -130,9 +133,9 @@ int main(int argc, char **argv)
 	/* jtag base */
 	Jtag *jtag;
 	if (args.device == "-")
-		jtag = new Jtag(cable, pins_config, 6000000, false);
+		jtag = new Jtag(cable, pins_config, args.freq, false);
 	else
-		jtag = new Jtag(cable, pins_config, args.device, 6000000, false);
+		jtag = new Jtag(cable, pins_config, args.device, args.freq, false);
 
 	/* chain detection */
 	vector<int> listDev;
@@ -202,6 +205,35 @@ int main(int argc, char **argv)
 	delete(jtag);
 }
 
+// parse double from string in enginerring notation
+// can deal with postfixes k and m, add more when required
+static error_t parse_eng(string arg, double *dst) {
+	try {
+		size_t end;
+		double base = stod(arg, &end);
+		if (end == arg.size()) {
+			*dst = base;
+			return 0;
+		} else if (end == (arg.size() - 1)) {
+			switch (arg.back()) {
+			case 'k': case 'K':
+				*dst = (uint32_t)(1e3 * base);
+				return 0;
+			case 'm': case 'M':
+				*dst = (uint32_t)(1e6 * base);
+				return 0;
+			default:
+				return EINVAL;
+			}
+		} else {
+			return EINVAL;
+		}
+	} catch (...) {
+		cerr << "error : speed: invaild format" << endl;
+		return EINVAL;
+	}
+}
+
 /* arguments parser */
 static error_t parse_opt(int key, char *arg, struct argp_state *state)
 {
@@ -234,6 +266,18 @@ static error_t parse_opt(int key, char *arg, struct argp_state *state)
 		break;
 	case 'b':
 		arguments->board = arg;
+		break;
+	case FREQUENCY:
+		double freq;
+		if (parse_eng(string(arg), &freq)) {
+			cerr << "Error: invalid format for --freq" << endl;
+			exit(1);
+		}
+		if (freq < 1) {
+			cerr << "Error: --freq must be positive" << endl;
+			exit(1);
+		}
+		arguments->freq = freq;
 		break;
 	case ARGP_KEY_ARG:
 		arguments->bit_file = arg;
