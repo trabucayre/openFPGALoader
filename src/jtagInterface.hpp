@@ -36,43 +36,32 @@ class JtagInterface {
 	virtual int setClkFreq(uint32_t clkHZ, char use_divide_by_5) = 0;
 
 	/*!
-	 * \brief store TMS states in internal buffer. Not limited to 8 states
-	 * \param tms: array of TMS values
-	 * \param nb_bit: number of TMS states to store
-	 * \param tdi: state of TDI for all TMS to store
-	 * \return number of states stored
-	 */
-	virtual int storeTMS(uint8_t *tms, int nb_bit, uint8_t tdi = 1,
-						bool read = false) = 0;
-	/*!
 	 * \brief flush TMS internal buffer (ie. transmit to converter)
 	 * \param tdo: pointer for read operation. May be NULL
 	 * \param len: number of bit to send
 	 * \return number of bit send/received
 	 */
-	virtual int writeTMS(uint8_t *tdo, int len = 0) = 0;
+	virtual int writeTMS(uint8_t *tms, int len, bool flush_buffer) = 0;
+
 	/*!
-	 * \brief store up to 8 TDI state(s) in internal buffer
-	 * \param tdi: TDI value(s)
-	 * \param tms: state of TMS for all TDI to store
-	 * \param nb_bit: number of TMS states to store
-	 * \return number of states stored
+	 * \brief send TDI bits (mainly in shift DR/IR state)
+	 * \param tdi: array of TDI values (used to write)
+	 * \param tdo: array of TDO values (used when read)
+	 * \param len: number of bit to send/receive
+	 * \param end: in JTAG state machine last bit and tms are set in same time
+	 *             but only in shift[i|d]r, if end is false tms remain the same.
+	 * \return number of bit written and/or read
 	 */
-	virtual int storeTDI(uint8_t tdi, int nb_bit, bool read) = 0;
+	virtual int writeTDI(uint8_t *tx, uint8_t *rx, uint32_t len, bool end) = 0;
+
 	/*!
-	 * \brief store TDI multiple of 8 states in internal buffer.
-	 * \param tdi: array of TDI values
-	 * \param tms: state of TMS for all TDI to store
-	 * \param nb_byte: number of TDI states to store
-	 * \return number of states stored
+	 * \brief toggle clk without touch of TDI/TMS
+	 * \param tms: state of tms signal
+	 * \param tdi: state of tdi signal
+	 * \param clk_len: number of clock cycle
+	 * \return number of clock cycle send
 	 */
-	virtual int storeTDI(uint8_t *tdi, int nb_byte, bool read) = 0;
-	/*!
-	 * \brief flush TDI internal buffer (ie. transmit to converter)
-	 * \param tdo: pointer for read operation. May be NULL
-	 * \return number of bit send/received
-	 */
-	virtual int writeTDI(uint8_t *tdo, int nb_bit) = 0;
+	virtual int toggleClk(uint8_t tms, uint8_t tdi, uint32_t clk_len) = 0;
 
 	/*!
 	 * \brief return internal buffer size (in byte)
@@ -85,5 +74,11 @@ class JtagInterface {
 	 * \return true when internal buffer is full
 	 */
 	virtual bool isFull() = 0;
+
+	/*!
+	 * \brief force internal flush buffer
+	 * \return 1 if success, 0 if nothing to write, -1 is something wrong
+	 */
+	virtual int flush() = 0;
 };
 #endif  // _JTAGINTERFACE_H_

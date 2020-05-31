@@ -42,21 +42,16 @@ class FtdiJtagBitBang : public JtagInterface, private FTDIpp_MPSSE {
 		const jtag_pins_conf_t *pin_conf, uint32_t clkHZ, bool verbose);
 	virtual ~FtdiJtagBitBang();
 
-	int setClkFreq(uint32_t clkHZ) override {
-		return FTDIpp_MPSSE::setClkFreq(clkHZ);
-	}
+	int setClkFreq(uint32_t clkHZ) override;
 	int setClkFreq(uint32_t clkHZ, char use_divide_by_5) override {
 		return FTDIpp_MPSSE::setClkFreq(clkHZ, use_divide_by_5);}
 
 	/* TMS */
-	int storeTMS(uint8_t *tms, int _bit_len, uint8_t tdi = 1,
-		bool read = false) override;
-	int writeTMS(uint8_t *tdo, int len = 0) override;
+	int writeTMS(uint8_t *tms, int len, bool flush_buffer) override;
 
 	/* TDI */
-	int storeTDI(uint8_t tdi, int nb_bit, bool read) override;
-	int storeTDI(uint8_t *tdi, int nb_byte, bool read) override;
-	int writeTDI(uint8_t *tdo, int nb_bit) override;
+	int writeTDI(uint8_t *tx, uint8_t *rx, uint32_t len, bool end) override;
+	int toggleClk(uint8_t tms, uint8_t tdo, uint32_t clk_len) override;
 
 	/*!
 	 * \brief return internal buffer size (in byte).
@@ -66,6 +61,8 @@ class FtdiJtagBitBang : public JtagInterface, private FTDIpp_MPSSE {
 	int get_buffer_size() override { return _buffer_size/8/2; }
 
 	bool isFull() override { return _nb_bit == 8*get_buffer_size();}
+
+	int flush() override;
 
  private:
 	void init_internal(const FTDIpp_MPSSE::mpsse_bit_config &cable,
@@ -80,5 +77,6 @@ class FtdiJtagBitBang : public JtagInterface, private FTDIpp_MPSSE {
 	uint8_t _tdo_pin; /*!< tdo pin: 1 << pin id */
 	uint8_t _tdi_pin; /*!< tdi pin: 1 << pin id */
 	int _nb_bit;
+	uint8_t _curr_tms;
 };
 #endif

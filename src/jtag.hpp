@@ -54,7 +54,7 @@ class Jtag {
 	void go_test_logic_reset();
 	void set_state(int newState);
 	int flushTMS(bool flush_buffer = false);
-	void flush() {_jtag->writeTMS(NULL, 0); _jtag->writeTDI(NULL, 0);}
+	void flush() {flushTMS(); _jtag->flush();}
 	void setTMS(unsigned char tms);
 
 	enum tapState_t {

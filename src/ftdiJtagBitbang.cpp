@@ -42,7 +42,8 @@ using namespace std;
 
 FtdiJtagBitBang::FtdiJtagBitBang(const FTDIpp_MPSSE::mpsse_bit_config &cable,
 			const jtag_pins_conf_t *pin_conf, string dev, uint32_t clkHZ, bool verbose):
-			FTDIpp_MPSSE(cable, dev, clkHZ, verbose), _bitmode(0), _nb_bit(0)
+			FTDIpp_MPSSE(cable, dev, clkHZ, verbose), _bitmode(0), _nb_bit(0),
+			_curr_tms(0)
 {
 	init_internal(cable, pin_conf);
 }
@@ -68,14 +69,24 @@ void FtdiJtagBitBang::init_internal(const FTDIpp_MPSSE::mpsse_bit_config &cable,
 	_tdi_pin = (1 << pin_conf->tdi_pin);
 	_tdo_pin = (1 << pin_conf->tdo_pin);
 
-	_buffer_size = 128;  // TX Fifo size
+	_buffer_size = 512;  // TX Fifo size
+
+	setClkFreq(_clkHZ);
 
 	_in_buf = (unsigned char *)malloc(sizeof(unsigned char) * _buffer_size);
 	bzero(_in_buf, _buffer_size);
 	init(1, _tck_pin | _tms_pin | _tdi_pin, BITMODE_BITBANG,
 		(FTDIpp_MPSSE::mpsse_bit_config &)cable);
 	setBitmode(BITMODE_BITBANG);
+}
 
+int FtdiJtagBitBang::setClkFreq(uint32_t clkHZ)
+{
+	if (clkHZ > 3000000)
+		clkHZ = 3000000;
+	int ret = ftdi_set_baudrate(_ftdi, clkHZ);
+	printf("ret %d\n", ret);
+	return ret;
 }
 
 int FtdiJtagBitBang::setBitmode(uint8_t mode)
@@ -90,77 +101,111 @@ int FtdiJtagBitBang::setBitmode(uint8_t mode)
 	return ret;
 }
 
-/**
- * store tms in
- * internal buffer
- */
-int FtdiJtagBitBang::storeTMS(uint8_t *tms, int nb_bit, uint8_t tdi, bool read)
+int FtdiJtagBitBang::writeTMS(uint8_t *tms, int len, bool flush_buffer)
 {
-	(void) read;
-	int xfer_len = nb_bit;
-	/* need to check for available space in buffer */
-	if (nb_bit == 0)
-		return 0;
+	int ret;
 
-	while (xfer_len > 0) {
-		int xfer = xfer_len;
-		if ((_nb_bit + 2*xfer) > _buffer_size)
-			xfer = (_buffer_size - _nb_bit) >> 1;
-
-		for (int i = 0; i < xfer; i++, _nb_bit += 2) {
-			_in_buf[_nb_bit] = ((tdi)?_tdi_pin:0) |
-					(((tms[i >> 3] >> (i & 0x7)) & 0x01)? _tms_pin:0);
-			_in_buf[_nb_bit + 1] = _in_buf[_nb_bit] | _tck_pin;
+	/* nothing to send
+	 * but maybe need to flush internal buffer
+	 */
+	if (len == 0) {
+		if (flush_buffer) {
+			ret = flush();
+			return ret;
 		}
-
-		xfer_len -= xfer;
-		if (xfer_len != 0)
-			write(NULL, 0);
+		return 0;
 	}
-	return nb_bit;
-}
 
-int FtdiJtagBitBang::writeTMS(uint8_t *tdo, int len)
-{
-	return write(tdo, len);
-}
-
-/**
- * store tdi in
- * internal buffer with tms
- * size must be <= 8
- */
-int FtdiJtagBitBang::storeTDI(uint8_t tdi, int nb_bit, bool read)
-{
-	for (int i = 0; i < nb_bit; i++, _nb_bit += 2) {
-		_in_buf[_nb_bit] =
-				((tdi & (1 << (i & 0x7)))?_tdi_pin:0);
-		_in_buf[_nb_bit + 1] = _in_buf[_nb_bit] | _tck_pin;
+	/* check for at least one bit space in buffer */
+	if (_nb_bit+2 > _buffer_size) {
+		ret = flush();
+		if (ret < 0)
+			return ret;
 	}
-	return nb_bit;
-}
 
-/**
- * store tdi in
- * internal buffer
- * since TDI is used in shiftDR and shiftIR, tms is always set to 0
- */
-int FtdiJtagBitBang::storeTDI(uint8_t *tdi, int nb_byte, bool read)
-{
-	/* need to check for available space in buffer */
-	for (int i = 0; i < nb_byte * 8; i++, _nb_bit += 2) {
-		_in_buf[_nb_bit] =
-				((tdi[i >> 3] & (1 << (i & 0x7)))?_tdi_pin:0);
-		_in_buf[_nb_bit + 1] = _in_buf[_nb_bit] | _tck_pin;
+	/* fill buffer to reduce USB transaction */
+	for (int i = 0; i < len; i++) {
+		_curr_tms = ((tms[i >> 3] & (1 << (i & 0x07)))? _tms_pin : 0);
+		uint8_t val = _tdi_pin | _curr_tms;
+		_in_buf[_nb_bit++] = val;
+		_in_buf[_nb_bit++] = val | _tck_pin;
+
+		if (_nb_bit + 2 > _buffer_size) {
+			ret = write(NULL, 0);
+			if (ret < 0)
+				return ret;
+		}
 	}
-	return nb_byte;
+
+	/* security check: try to flush buffer */
+	if (flush_buffer) {
+		ret = write(NULL, 0);
+		if (ret < 0)
+			return ret;
+	}
+
+	return len;
 }
 
-int FtdiJtagBitBang::writeTDI(uint8_t *tdo, int nb_bit)
+int FtdiJtagBitBang::writeTDI(uint8_t *tx, uint8_t *rx, uint32_t len, bool end)
 {
-	return write(tdo, nb_bit);
+	uint32_t iter;
+	if (len * 2 + 1 < (uint32_t)_buffer_size) {
+		iter = len;
+	} else {
+		iter = _buffer_size >> 1;  // two tx / bit
+		iter = (iter / 8) * 8;
+	}
+
+	uint8_t *rx_ptr = rx;
+
+	if (len == 0)
+		return 0;
+	if (rx)
+		bzero(rx, len/8);
+
+	for (uint32_t i = 0, pos = 0; i < len; i++) {
+		/* keep tms or
+		 * set tms high if it's last bit and end true */
+		if (end && (i == len -1))
+			_curr_tms = _tms_pin;
+		uint8_t val = _curr_tms;
+
+		if (tx)
+			val |= ((tx[i >> 3] & (1 << (i & 0x07)))? _tdi_pin : 0);
+		_in_buf[_nb_bit    ] = val;
+		_in_buf[_nb_bit + 1] = val | _tck_pin;
+
+		_nb_bit += 2;
+
+		pos++;
+		/* flush buffer */
+		if (pos == iter) {
+			pos = 0;
+			write((rx) ? rx_ptr : NULL, iter);
+			if (rx)
+				rx_ptr += (iter/8);
+		}
+	}
+
+	/* security check: try to flush buffer */
+	if (_nb_bit != 0) {
+		write((rx && _nb_bit > 1) ? rx_ptr : NULL, _nb_bit / 2);
+	}
+
+	return len;
 }
 
+int FtdiJtagBitBang::toggleClk(uint8_t tms, uint8_t tdo, uint32_t clk_len)
+{
+	(void) tms; (void) tdo; (void) clk_len;
+	return -1;
+}
+
+int FtdiJtagBitBang::flush()
+{
+	return write(NULL, 0);
+}
 
 int FtdiJtagBitBang::write(uint8_t *tdo, int nb_bit)
 {
@@ -171,13 +216,17 @@ int FtdiJtagBitBang::write(uint8_t *tdo, int nb_bit)
 	setBitmode((tdo) ? BITMODE_SYNCBB : BITMODE_BITBANG);
 
 	ret = ftdi_write_data(_ftdi, _in_buf, _nb_bit);
-	if (ret != _nb_bit)
+	if (ret != _nb_bit) {
 		printf("problem %d written\n", ret);
+		return ret;
+	}
 
 	if (tdo) {
 		ret = ftdi_read_data(_ftdi, _in_buf, _nb_bit);
-		if (ret != _nb_bit)
+		if (ret != _nb_bit) {
 			printf("problem %d read\n", ret);
+			return ret;
+		}
 		/* need to reconstruct received word 
 		 * even bit are discarded since JTAG read in rising edge
 		 * since jtag is LSB first we need to shift right content by 1

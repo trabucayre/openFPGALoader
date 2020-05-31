@@ -49,8 +49,7 @@ FtdiJtagMPSSE::FtdiJtagMPSSE(const FTDIpp_MPSSE::mpsse_bit_config &cable,
 
 FtdiJtagMPSSE::FtdiJtagMPSSE(const FTDIpp_MPSSE::mpsse_bit_config &cable,
 		   uint32_t clkHZ, bool verbose):
-		   FTDIpp_MPSSE(cable, clkHZ, verbose),
-		   _ch552WA(false)
+		   FTDIpp_MPSSE(cable, clkHZ, verbose), _ch552WA(false)
 {
 	init_internal(cable);
 }
@@ -76,8 +75,6 @@ FtdiJtagMPSSE::~FtdiJtagMPSSE()
 	if (read != 5)
 		fprintf(stderr,
 			"Loopback failed, expect problems on later runs %d\n", read);
-
-	free(_in_buf);
 }
 
 void FtdiJtagMPSSE::init_internal(const FTDIpp_MPSSE::mpsse_bit_config &cable)
@@ -104,109 +101,194 @@ void FtdiJtagMPSSE::init_internal(const FTDIpp_MPSSE::mpsse_bit_config &cable)
 	display("%x\n", cable.bit_high_val);
 	display("%x\n", cable.bit_high_dir);
 
-	_in_buf = (unsigned char *)malloc(sizeof(unsigned char) * _buffer_size);
-	bzero(_in_buf, _buffer_size);
 	init(5, 0xfb, BITMODE_MPSSE, (FTDIpp_MPSSE::mpsse_bit_config &)cable);
 }
 
-/**
- * store tms in
- * internal buffer
- * size must be <= 8
- */
-int FtdiJtagMPSSE::storeTMS(uint8_t *tms, int nb_bit, uint8_t tdi, bool read)
+int FtdiJtagMPSSE::writeTMS(uint8_t *tms, int len, bool flush_buffer)
 {
-	int xfer, pos = 0, tx = nb_bit;
-	unsigned char buf[3]= {static_cast<unsigned char>(MPSSE_WRITE_TMS | MPSSE_LSB |
-		MPSSE_BITMODE | MPSSE_WRITE_NEG | ((read) ? MPSSE_DO_READ : 0)),
-		static_cast<unsigned char>(0),
-		static_cast<unsigned char>(0)};
+	(void) flush_buffer;
+	display("%s %d %d\n", __func__, len, (len/8)+1);
 
-	if (nb_bit == 0)
+	if (len == 0)
 		return 0;
 
-	display("%s: %d %s %d %d %x\n", __func__, tdi, (read) ? "true" : "false",
-			nb_bit, (nb_bit / 6) * 3, tms[0]);
-	int plop = 0;
+	int xfer = len;
+	int iter = _buffer_size / 3;
+	int offset = 0, pos = 0;
 
-	while (nb_bit != 0) {
-		xfer = (nb_bit > 6) ? 6 : nb_bit;
-		buf[1] = xfer - 1;
-		buf[2] = (tdi)?0x80 : 0x00;
-		for (int i = 0; i < xfer; i++, pos++) {
+	uint8_t buf[3]= {static_cast<unsigned char>(MPSSE_WRITE_TMS | MPSSE_LSB |
+						MPSSE_BITMODE | MPSSE_WRITE_NEG),
+						0, 0};
+	while (xfer > 0) {
+		int bit_to_send = (xfer > 6) ? 6 : xfer;
+		buf[1] = bit_to_send-1;
+		buf[2] = 0x80;
+
+		for (int i = 0; i < bit_to_send; i++, offset++) {
 			buf[2] |=
-			(((tms[pos >> 3] & (1 << (pos & 0x07))) ? 1 : 0) << i);
+			(((tms[offset >> 3] & (1 << (offset & 0x07))) ? 1 : 0) << i);
 		}
-		nb_bit -= xfer;
+		pos+=3;
+
 		mpsse_store(buf, 3);
-		plop += 3;
-	}
+		if (pos == iter * 3) {
+			pos = 0;
+			if (mpsse_write() < 0)
+				printf("writeTMS: error\n");
 
-	return tx;
-}
-
-int FtdiJtagMPSSE::writeTMS(uint8_t *tdo, int len)
-{
-	display("%s %s %d %d\n", __func__, (tdo)?"true":"false", len, (len/8)+1);
-
-	if (tdo) {
-		return mpsse_read(tdo, (len/8)+1);
-	} else {
-		int ret = mpsse_write();
-		if (_ch552WA) {
-			uint8_t c[len/8+1];
-			ftdi_read_data(_ftdi, c, len/8+1);
+			if (_ch552WA) {
+				uint8_t c[len/8+1];
+				int ret = ftdi_read_data(_ftdi, c, len/8+1);
+				if (ret != 0) {
+					printf("ret : %d\n", ret);
+				}
+			}
 		}
-		return ret;
+		xfer -= bit_to_send;
 	}
+	mpsse_write();
+	if (_ch552WA) {
+		uint8_t c[len/8+1];
+		ftdi_read_data(_ftdi, c, len/8+1);
+	}
+
+	return len;
 }
 
-/**
- * store tdi in internal buffer
- * size must be <= 8
- */
-int FtdiJtagMPSSE::storeTDI(uint8_t tdi, int nb_bit, bool read)
+/* need a WA for ch552 */
+int FtdiJtagMPSSE::toggleClk(uint8_t tms, uint8_t tdi, uint32_t clk_len)
 {
+	(void) tms;
+	(void) tdi;
+
+	uint8_t buf[] = {static_cast<uint8_t>(0x8e),
+					0, 0};
+	int xfer_len = clk_len;
+	while (xfer_len > 0) {
+		int xfer = (xfer_len > 8) ? 8 : xfer_len;
+		buf[1] = xfer -1;
+		mpsse_store(buf, 2);
+		mpsse_write();
+		xfer_len -= xfer;
+	}
+	return 0;
+}
+
+int FtdiJtagMPSSE::flush()
+{
+	return mpsse_write();
+}
+
+int FtdiJtagMPSSE::writeTDI(uint8_t *tdi, uint8_t *tdo, uint32_t len, bool last)
+{
+	/* 3 possible case :
+	 *  - n * 8bits to send -> use byte command
+	 *  - less than 8bits   -> use bit command
+	 *  - last bit to send  -> sent in conjunction with TMS
+	 */
+	int tx_buff_size = mpsse_get_buffer_size();
+	int real_len = (last) ? len - 1 : len;  // if its a buffer in a big send send len
+						// else supress last bit -> with TMS
+	int nb_byte = real_len >> 3;    // number of byte to send
+	int nb_bit = (real_len & 0x07); // residual bits
+	int xfer = tx_buff_size - 3;
+	unsigned char c[len];
+	unsigned char *rx_ptr = (unsigned char *)tdo;
+	unsigned char *tx_ptr = (unsigned char *)tdi;
 	unsigned char tx_buf[3] = {(unsigned char)(MPSSE_LSB | MPSSE_WRITE_NEG |
-		MPSSE_DO_WRITE | MPSSE_BITMODE | ((read) ? MPSSE_DO_READ : 0)),
-		static_cast<unsigned char>(nb_bit - 1),
-		tdi};
-	mpsse_store(tx_buf, 3);
+						((tdi) ? MPSSE_DO_WRITE : 0) |
+						((tdo) ? MPSSE_DO_READ : 0)),
+						static_cast<unsigned char>((xfer - 1) & 0xff),       // low
+						static_cast<unsigned char>((((xfer - 1) >> 8) & 0xff))}; // high
 
-	return nb_bit;
-}
+	display("%s len : %d %d %d %d\n", __func__, len, real_len, nb_byte,
+		nb_bit);
 
-/**
- * store tdi in internal buffer
- */
-int FtdiJtagMPSSE::storeTDI(uint8_t *tdi, int nb_byte, bool read)
-{
-	unsigned char tx_buf[3] = {(unsigned char)(MPSSE_LSB | MPSSE_WRITE_NEG |
-		MPSSE_DO_WRITE |
-		((read) ? MPSSE_DO_READ : 0)),
-		static_cast<unsigned char>((nb_byte - 1) & 0xff),
-		static_cast<unsigned char>(((nb_byte - 1) >> 8) & 0xff)};
-	mpsse_store(tx_buf, 3);
-	mpsse_store(tdi, nb_byte);
+	if ((nb_byte * 8) + nb_bit != real_len) {
+		printf("pas cool\n");
+		throw std::exception();
+	}
 
-	return nb_byte;
-}
-
-/* flush buffer
- * if tdo is not null read nb_bit
- */
-int FtdiJtagMPSSE::writeTDI(uint8_t *tdo, int nb_bit)
-{
-	int nb_byte = (nb_bit < 8)? 1: (nb_bit >> 3);
-
-	if (tdo) {
-		return mpsse_read(tdo, nb_byte);
-	} else {
-		int ret = mpsse_write();
-		if (_ch552WA) {
-			uint8_t c[nb_byte];
-			ftdi_read_data(_ftdi, c, nb_byte);
+	while (nb_byte != 0) {
+		int xfer_len = (nb_byte > xfer) ? xfer : nb_byte;
+		tx_buf[1] = (((xfer_len - 1)     ) & 0xff);  // low
+		tx_buf[2] = (((xfer_len - 1) >> 8) & 0xff);  // high
+		mpsse_store(tx_buf, 3);
+		if (tdi) {
+			mpsse_store(tx_ptr, xfer_len);
+			tx_ptr += xfer_len;
 		}
-		return ret;
+		if (tdo) {
+			mpsse_read(rx_ptr, xfer_len);
+			rx_ptr += xfer_len;
+		} else if (_ch552WA) {
+			mpsse_write();
+			ftdi_read_data(_ftdi, c, xfer_len);
+		} else {
+			mpsse_write();
+		}
+		nb_byte -= xfer_len;
 	}
+
+	unsigned char last_bit = (tdi) ? *tx_ptr : 0;
+
+	if (nb_bit != 0) {
+		display("%s read/write %d bit\n", __func__, nb_bit);
+		tx_buf[0] |= MPSSE_BITMODE;
+		tx_buf[1] = nb_bit - 1;
+		mpsse_store(tx_buf, 2);
+		if (tdi) {
+			display("%s last_bit %x size %d\n", __func__, last_bit, nb_bit-1);
+			mpsse_store(last_bit);
+		}
+		if (tdo) {
+			mpsse_read(rx_ptr, 1);
+			/* realign we have read nb_bit
+			 * since LSB add bit by the left and shift
+			 * we need to complete shift
+			 */
+			*rx_ptr >>= (8 - nb_bit);
+			display("%s %x\n", __func__, *rx_ptr);
+		} else if (_ch552WA) {
+			mpsse_write();
+			ftdi_read_data(_ftdi, c, nb_bit);
+		} else {
+			mpsse_write();
+		}
+	}
+
+	/* display : must be dropped */
+	if (_verbose && tdo) {
+		display("\n");
+		for (int i = (len / 8) - 1; i >= 0; i--)
+			display("%x ", (unsigned char)tdo[i]);
+		display("\n");
+	}
+
+	if (last == 1) {
+		last_bit = (tdi)? (*tx_ptr & (1 << nb_bit)) : 0;
+
+		display("%s move to EXIT1_xx and send last bit %x\n", __func__, (last_bit?0x81:0x01));
+		/* write the last bit in conjunction with TMS */
+		tx_buf[0] = MPSSE_WRITE_TMS | MPSSE_LSB | MPSSE_BITMODE | MPSSE_WRITE_NEG |
+					((tdo) ? MPSSE_DO_READ : 0);
+		tx_buf[1] = 0x0;  // send 1bit
+		tx_buf[2] = ((last_bit) ? 0x81 : 0x01);  // we know in TMS tdi is bit 7
+							// and to move to EXIT_XR TMS = 1
+		mpsse_store(tx_buf, 3);
+		if (tdo) {
+			unsigned char c;
+			mpsse_read(&c, 1);
+			/* in this case for 1 one it's always bit 7 */
+			*rx_ptr |= ((c & 0x80) << (7 - nb_bit));
+			display("%s %x\n", __func__, c);
+		} else if (_ch552WA) {
+			mpsse_write();
+			ftdi_read_data(_ftdi, c, 1);
+		} else {
+			mpsse_write();
+		}
+	}
+
+	return 0;
 }

@@ -47,13 +47,11 @@ class FtdiJtagMPSSE : public JtagInterface, private FTDIpp_MPSSE {
 		return FTDIpp_MPSSE::setClkFreq(clkHZ, use_divide_by_5);}
 
 	/* TMS */
-	int storeTMS(uint8_t *tms, int nb_bit, uint8_t tdi = 1,
-				bool read = false) override;
-	int writeTMS(uint8_t *tdo, int len = 0) override;
+	int writeTMS(uint8_t *tms, int len, bool flush_buffer) override;
+	/* clock */
+	int toggleClk(uint8_t tms, uint8_t tdi, uint32_t clk_len) override;
 	/* TDI */
-	int storeTDI(uint8_t tdi, int nb_bit, bool read) override;
-	int storeTDI(uint8_t *tdi, int nb_byte, bool read) override;
-	int writeTDI(uint8_t *tdo, int nb_bit) override;
+	int writeTDI(uint8_t *tx, uint8_t *rx, uint32_t len, bool end) override;
 
 	/*!
 	 * \brief return internal buffer size (in byte).
@@ -63,9 +61,10 @@ class FtdiJtagMPSSE : public JtagInterface, private FTDIpp_MPSSE {
 
 	bool isFull() override { return false;}
 
+	int flush() override;
+
  private:
 	void init_internal(const FTDIpp_MPSSE::mpsse_bit_config &cable);
-	uint8_t *_in_buf;
 	bool _ch552WA; /* avoid errors with SiPeed tangNano */
 };
 #endif

@@ -147,20 +147,19 @@ void Jtag::setTMS(unsigned char tms)
 
 int Jtag::flushTMS(bool flush_buffer)
 {
-	int xfer = _num_tms;
+	int ret = 0;
 	if (_num_tms != 0) {
 		display("%s: %d %x\n", __func__, _num_tms, _tms_buffer[0]);
 
-		_jtag->storeTMS(_tms_buffer, _num_tms);
+		ret = _jtag->writeTMS(_tms_buffer, _num_tms, flush_buffer);
 
 		/* reset buffer and number of bits */
 		bzero(_tms_buffer, _tms_buffer_size);
 		_num_tms = 0;
-		if (flush_buffer) {
-			return _jtag->writeTMS(NULL, xfer);
-		}
+	} else if (flush_buffer) {
+		_jtag->flush();
 	}
-	return 0;
+	return ret;
 }
 
 void Jtag::go_test_logic_reset()
@@ -172,123 +171,29 @@ void Jtag::go_test_logic_reset()
 	_state = TEST_LOGIC_RESET;
 }
 
-/* GGM: faut tenir plus compte de la taille de la fifo interne
- *      du FT2232 pour maximiser l'envoi au lieu de faire de petits envoies
- */
 int Jtag::read_write(unsigned char *tdi, unsigned char *tdo, int len, char last)
 {
-	/* 3 possible case :
-	 *  - n * 8bits to send -> use byte command
-	 *  - less than 8bits   -> use bit command
-	 *  - last bit to send  -> sent in conjunction with TMS
-	 */
-	int tx_buff_size = _jtag->get_buffer_size();
-	int real_len = (last) ? len - 1 : len;	// if its a buffer in a big send send len
-						// else supress last bit -> with TMS
-	int nb_byte = real_len >> 3;	// number of byte to send
-	int nb_bit = (real_len & 0x07);	// residual bits
-	int xfer = tx_buff_size;
-
-	unsigned char *rx_ptr = (unsigned char *)tdo;
-	unsigned char *tx_ptr = (unsigned char *)tdi;
-
 	flushTMS(true);
-
-	display("%s len : %d %d %d %d %d\n", __func__, len, real_len, nb_byte,
-		nb_bit, tx_buff_size);
-	while (nb_byte > xfer) {
-		display("%s %d %d\n", __func__, nb_byte, xfer);
-
-		if (xfer != _jtag->storeTDI(tx_ptr, xfer, tdo != NULL)) {
-			printError("%s: Fail to store tdi\n", __func__);
-			return -1;
-		}
-		if (0 > _jtag->writeTDI(rx_ptr, xfer * 8)) {
-			printError("%s: Write errror\n", __func__);
-			return -1;
-		}
-		if (tdi)
-			tx_ptr += xfer;
-		if (tdo)
-			rx_ptr += xfer;
-		nb_byte -= xfer;
-	}
-
-
-	/* 1/ send serie of byte */
-	if (nb_byte > 0) {
-		display("%s read/write %d byte\n", __func__, nb_byte);
-		if (nb_byte != _jtag->storeTDI(tx_ptr, nb_byte, tdo != NULL)) {
-			printError("%s: Fail to store tdi\n", __func__);
-			return -1;
-		}
-		if (0 > _jtag->writeTDI(((tdo)?rx_ptr:NULL), nb_byte * 8)) {
-			printError("%s: Write errror\n", __func__);
-			return -1;
-		}
-		if (tdi)
-			tx_ptr += nb_byte;
-		if (tdo)
-			rx_ptr += nb_byte;
-	}
-
-	unsigned char last_bit = (tdi) ? *tx_ptr : 0;
-
-	if (nb_bit != 0) {
-		display("%s read/write %d bit\n", __func__, nb_bit);
-		if (nb_bit != _jtag->storeTDI(last_bit, nb_bit, tdo != NULL)) {
-			printError("%s: Fail to store tdi\n", __func__);
-			return -1;
-		}
-		if (0 > _jtag->writeTDI((tdo)?rx_ptr:NULL, nb_bit)) {
-			printError("%s: Write errror\n", __func__);
-			return -1;
-		}
-
-		if (tdo) {
-			/* realign we have read nb_bit 
-			 * since LSB add bit by the left and shift
-			 * we need to complete shift
-			 */
-			*rx_ptr >>= (8 - nb_bit);
-			display("%s %x\n", __func__, *rx_ptr);
-		}
-	}
-
-	/* display : must be dropped */
-	if (_verbose && tdo) {
-		display("\n");
-		for (int i = (len / 8) - 1; i >= 0; i--)
-			display("%x ", (unsigned char)tdo[i]);
-		display("\n");
-	}
-
-	if (last == 1) {
-		uint8_t c;
-		last_bit = (tdi)? (*tx_ptr & (1 << nb_bit)) : 0;
-
-		display("%s move to EXIT1_xx and send last bit %x\n", __func__, (last_bit?0x81:0x01));
-
-		c=1;
-		_jtag->storeTMS(&c, 1, (last_bit)?1:0, tdo != NULL);
-		_jtag->writeTMS((tdo)?&c:NULL, 1);
-		if (tdo) {
-			/* in this case for 1 one it's always bit 7 */
-			*rx_ptr |= ((c & 0x80) << (7 - nb_bit));
-			display("%s %x\n", __func__, c);
-		}
+	_jtag->writeTDI(tdi, tdo, len, last);
+	if (last == 1)
 		_state = (_state == SHIFT_DR) ? EXIT1_DR : EXIT1_IR;
-	}
-
 	return 0;
 }
 
 void Jtag::toggleClk(int nb)
 {
 	unsigned char c = (TEST_LOGIC_RESET == _state) ? 1 : 0;
+#if 0
+	flushTMS(true);
+	if (_jtag->toggleClk(c, 0, nb) >= 0)
+		return;
+	throw std::exception();
+	return;
+#else
 	for (int i = 0; i < nb; i++)
 		setTMS(c);
 	flushTMS(true);
+#endif
 }
 
 int Jtag::shiftDR(unsigned char *tdi, unsigned char *tdo, int drlen, int end_state)
