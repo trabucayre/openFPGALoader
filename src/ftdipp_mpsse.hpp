@@ -48,8 +48,8 @@ class FTDIpp_MPSSE {
 		int _addr;
 		char _product[64];
 		unsigned char _interface;
-		int _clkHZ;
 	protected:
+		int _clkHZ;
 		struct ftdi_context *_ftdi;
 		int _buffer_size;
 	private:
