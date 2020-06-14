@@ -183,17 +183,11 @@ int Jtag::read_write(unsigned char *tdi, unsigned char *tdo, int len, char last)
 void Jtag::toggleClk(int nb)
 {
 	unsigned char c = (TEST_LOGIC_RESET == _state) ? 1 : 0;
-#if 0
 	flushTMS(true);
 	if (_jtag->toggleClk(c, 0, nb) >= 0)
 		return;
 	throw std::exception();
 	return;
-#else
-	for (int i = 0; i < nb; i++)
-		setTMS(c);
-	flushTMS(true);
-#endif
 }
 
 int Jtag::shiftDR(unsigned char *tdi, unsigned char *tdo, int drlen, int end_state)
