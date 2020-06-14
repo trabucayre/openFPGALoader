@@ -196,10 +196,25 @@ int FtdiJtagBitBang::writeTDI(uint8_t *tx, uint8_t *rx, uint32_t len, bool end)
 	return len;
 }
 
-int FtdiJtagBitBang::toggleClk(uint8_t tms, uint8_t tdo, uint32_t clk_len)
+int FtdiJtagBitBang::toggleClk(uint8_t tms, uint8_t tdi, uint32_t clk_len)
 {
-	(void) tms; (void) tdo; (void) clk_len;
-	return -1;
+	int xfer_len = clk_len;
+
+	int val = ((tms) ? _tms_pin : 0) | ((tdi) ? _tdi_pin : 0);
+	while (xfer_len > 0) {
+		if (_nb_bit + 2 > _buffer_size)
+			if (write(NULL, 0) < 0)
+				return -EXIT_FAILURE;
+		_in_buf[_nb_bit++] = val | _tck_pin;
+		_in_buf[_nb_bit++] = val;
+
+		xfer_len--;
+	}
+
+	/* flush */
+	write(NULL, 0);
+
+	return clk_len;
 }
 
 int FtdiJtagBitBang::flush()
