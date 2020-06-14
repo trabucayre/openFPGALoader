@@ -29,6 +29,7 @@ __Supported (tested) FPGA:__
 __Supported cables:__
 
 * [digilent_hs2](https://store.digilentinc.com/jtag-hs2-programming-cable/): jtag programmer cable from digilent
+* [DirtyJTAG](https://github.com/jeanthom/DirtyJTAG): JTAG probe firmware for STM32F1
 * JTAG-HS3: jtag programmer cable from digilent
 * FT2232: generic programmer cable based on Ftdi FT2232
 * Tang Nano USB-JTAG interface: FT2232C clone based on CH552 microcontroler

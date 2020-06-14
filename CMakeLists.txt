@@ -45,6 +45,7 @@ check_cxx_source_compiles("
 	argp_parse(NULL, argc, argv, 0, 0, NULL);}" HAVE_ARGP)
 
 set(OPENFPGALOADER_SOURCE
+	src/dirtyJtag.cpp
 	src/spiFlash.cpp
 	src/epcq.cpp
 	src/svf_jtag.cpp
@@ -71,6 +72,7 @@ set(OPENFPGALOADER_SOURCE
 
 set(OPENFPGALOADER_HEADERS
 	src/altera.hpp
+	src/dirtyJtag.hpp
 	src/progressBar.hpp
 	src/bitparser.hpp
 	src/ftdiJtagBitbang.hpp
