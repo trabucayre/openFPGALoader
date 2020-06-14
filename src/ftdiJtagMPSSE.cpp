@@ -158,20 +158,45 @@ int FtdiJtagMPSSE::writeTMS(uint8_t *tms, int len, bool flush_buffer)
 /* need a WA for ch552 */
 int FtdiJtagMPSSE::toggleClk(uint8_t tms, uint8_t tdi, uint32_t clk_len)
 {
-	(void) tms;
 	(void) tdi;
+	int ret;
+	uint32_t len = clk_len;
 
-	uint8_t buf[] = {static_cast<uint8_t>(0x8e),
-					0, 0};
-	int xfer_len = clk_len;
-	while (xfer_len > 0) {
-		int xfer = (xfer_len > 8) ? 8 : xfer_len;
-		buf[1] = xfer -1;
-		mpsse_store(buf, 2);
-		mpsse_write();
-		xfer_len -= xfer;
+	/* clk ouput without data xfer is only supported
+	 * with 2232H, 4242H & 232H
+	 */
+
+	if (_ftdi->type == TYPE_2232H || _ftdi->type == TYPE_4232H ||
+				_ftdi->type == TYPE_232H) {
+		uint8_t buf[] = {static_cast<uint8_t>(0x8f), 0, 0};
+		if (clk_len > 8) {
+			buf[1] = ((len / 8)     ) & 0xff;
+			buf[2] = ((len / 8) >> 8) & 0xff;
+			mpsse_store(buf, 3);
+			ret = mpsse_write();
+			if (ret < 0)
+				return ret;
+			len %= 8;
+		}
+
+		if (len > 0) {
+			buf[0] = 0x8E;
+			buf[1] = len - 1;
+			mpsse_store(buf, 2);
+			mpsse_write();
+			if (ret < 0)
+				return ret;
+		}
+		ret = clk_len;
+	} else {
+		printf("ftdi type : %d\n", _ftdi->type);
+			int byteLen = (len+7)/8;
+			uint8_t buf_tms[byteLen];
+			memset(buf_tms, (tms) ? 0xff : 0x00, byteLen);
+			ret = writeTMS(buf_tms, len, true);
 	}
-	return 0;
+
+	return ret;
 }
 
 int FtdiJtagMPSSE::flush()
