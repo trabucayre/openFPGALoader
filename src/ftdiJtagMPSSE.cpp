@@ -189,11 +189,10 @@ int FtdiJtagMPSSE::toggleClk(uint8_t tms, uint8_t tdi, uint32_t clk_len)
 		}
 		ret = clk_len;
 	} else {
-		printf("ftdi type : %d\n", _ftdi->type);
-			int byteLen = (len+7)/8;
-			uint8_t buf_tms[byteLen];
-			memset(buf_tms, (tms) ? 0xff : 0x00, byteLen);
-			ret = writeTMS(buf_tms, len, true);
+		int byteLen = (len+7)/8;
+		uint8_t buf_tms[byteLen];
+		memset(buf_tms, (tms) ? 0xff : 0x00, byteLen);
+		ret = writeTMS(buf_tms, len, true);
 	}
 
 	return ret;
