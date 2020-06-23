@@ -183,7 +183,7 @@ int FtdiJtagMPSSE::toggleClk(uint8_t tms, uint8_t tdi, uint32_t clk_len)
 			buf[0] = 0x8E;
 			buf[1] = len - 1;
 			mpsse_store(buf, 2);
-			mpsse_write();
+			ret = mpsse_write();
 			if (ret < 0)
 				return ret;
 		}
