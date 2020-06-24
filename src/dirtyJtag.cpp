@@ -215,7 +215,7 @@ int DirtyJtag::writeTDI(uint8_t *tx, uint8_t *rx, uint32_t len, bool end)
 		int pos = len-1;
 		uint8_t sig;
 		unsigned char last_bit =
-				(tx_buf[pos >> 3] & (1 << pos & 0x07)) ? SIG_TDI: 0;
+				(tx_cpy[pos >> 3] & (1 << (pos & 0x07))) ? SIG_TDI: 0;
 
 		if (sendBitBang(SIG_TMS | SIG_TDI,
 					SIG_TMS | (last_bit), &sig, true) != 0) {
