@@ -132,10 +132,15 @@ int main(int argc, char **argv)
 
 	/* jtag base */
 	Jtag *jtag;
-	if (args.device == "-")
-		jtag = new Jtag(cable, pins_config, args.freq, false);
-	else
-		jtag = new Jtag(cable, pins_config, args.device, args.freq, false);
+	try {
+		if (args.device == "-")
+			jtag = new Jtag(cable, pins_config, args.freq, false);
+		else
+			jtag = new Jtag(cable, pins_config, args.device, args.freq, false);
+	} catch (std::exception &e) {
+		printError("Error: Failed to claim cable");
+		return EXIT_FAILURE;
+	}
 
 	/* chain detection */
 	vector<int> listDev;
