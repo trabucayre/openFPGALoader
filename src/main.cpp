@@ -125,7 +125,7 @@ int main(int argc, char **argv)
 
 	auto select_cable = cable_list.find(args.cable);
 	if (select_cable == cable_list.end()) {
-		cerr << "error : " << args.cable << " not found" << endl;
+		printError("error : " + args.cable + " not found");
 		return EXIT_FAILURE;
 	}
 	cable = select_cable->second;
@@ -149,10 +149,10 @@ int main(int argc, char **argv)
 	if (args.verbose)
 		cout << "found " << std::to_string(found) << " devices" << endl;
 	if (found > 1) {
-		cerr << "Error: currently only one device is supported" << endl;
+		printError("Error: currently only one device is supported");
 		return EXIT_FAILURE;
 	} else if (found < 1) {
-		cerr << "Error: no device found" << endl;
+		printError("Error: no device found");
 		return EXIT_FAILURE;
 	}
 
@@ -160,7 +160,7 @@ int main(int argc, char **argv)
 
 	if (fpga_list.find(idcode) == fpga_list.end()) {
 		cerr << "Error: device " << hex << idcode << " not supported" << endl;
-		return 1;
+		return EXIT_FAILURE;
 	} else if (args.verbose || args.detect) {
 		printf("idcode 0x%x\nmanufacturer %s\nmodel  %s\nfamily %s\n",
 			idcode,
@@ -188,7 +188,7 @@ int main(int argc, char **argv)
 		fpga = new Lattice(jtag, args.bit_file, args.write_flash, args.write_sram,
 			args.verbose);
 	} else {
-		cerr << "Error: manufacturer " << fab << " not supported" << endl;
+		printError("Error: manufacturer " + fab + " not supported");
 		delete(jtag);
 		return EXIT_FAILURE;
 	}
