@@ -59,7 +59,7 @@ struct arguments {
 #define DETECT		4
 #define FREQUENCY	5
 
-const char *argp_program_version = "openFPGALoader 1.0";
+const char *argp_program_version = "openFPGALoader v0.1";
 const char *argp_program_bug_address = "<gwenhael.goavec-merou@trabucayre.com>";
 static char doc[] = "openFPGALoader -- a program to flash FPGA";
 static char args_doc[] = "BIT_FILE";
