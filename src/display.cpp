@@ -15,6 +15,8 @@
  * along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
 
+#include <unistd.h>
+
 #include <iostream>
 #include <string>
 
@@ -31,21 +33,33 @@
 
 void printError(std::string err, bool eol)
 {
-	std::cerr << KRED << err << "\e[0m" << std::flush;
+	if (isatty(STDERR_FILENO))
+		std::cerr << KRED << err << "\e[0m";
+	else
+		std::cerr << err;
+	std::cerr << std::flush;
 	if (eol)
 		std::cerr << std::endl;
 }
 
 void printInfo(std::string info, bool eol)
 {
-	std::cout << KBLU << info << "\e[0m" << std::flush;
+	if (isatty(STDOUT_FILENO))
+		std::cout << KBLU << info << "\e[0m" << std::flush;
+	else
+		std::cout << info;
+	std::cout << std::flush;
 	if (eol)
 		std::cout << std::endl;
 }
 
 void printSuccess(std::string success, bool eol)
 {
-	std::cout << KGRN << success << "\e[0m" << std::flush;
+	if (isatty(STDOUT_FILENO))
+		std::cout << KGRN << success << "\e[0m" << std::flush;
+	else
+		std::cout << success;
+	std::cout << std::flush;
 	if (eol)
 		std::cout << std::endl;
 }
