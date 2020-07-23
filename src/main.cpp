@@ -14,7 +14,7 @@
  * You should have received a copy of the GNU General Public License
  * along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
-#include <argp.h>
+#include "cxxopts.hpp"
 #include <fstream>
 #include <iomanip>
 #include <iostream>
@@ -53,39 +53,8 @@ struct arguments {
 	bool is_list_command;
 };
 
-#define LIST_CABLE	1
-#define LIST_BOARD	2
-#define LIST_FPGA	3
-#define DETECT		4
-#define FREQUENCY	5
+int parse_opt(int argc, char **argv, struct arguments *args);
 
-const char *argp_program_version = "openFPGALoader v0.1";
-const char *argp_program_bug_address = "<gwenhael.goavec-merou@trabucayre.com>";
-static char doc[] = "openFPGALoader -- a program to flash FPGA";
-static char args_doc[] = "BIT_FILE";
-static error_t parse_opt(int key, char *arg, struct argp_state *state);
-static struct argp_option options[] = {
-	{"cable",   'c', "CABLE", 0, "jtag interface"},
-	{"freq",   FREQUENCY, "FREQ", 0, "jtag frequency (Hz)"},
-	{"list-cables", LIST_CABLE, 0, 0, "list all supported cables"},
-	{"board",   'b', "BOARD", 0, "board name, may be used instead of cable"},
-	{"list-boards", LIST_BOARD, 0, 0, "list all supported boards"},
-#ifdef USE_UDEV
-	{"device",  'd', "DEVICE", 0, "device to use (/dev/ttyUSBx)"},
-#endif
-	{"list-fpga", LIST_FPGA, 0, 0, "list all supported FPGA"},
-	{"detect", DETECT, 0, 0, "detect FPGA"},
-	{"write-flash", 'f', 0, 0,
-			"write bitstream in flash (default: false, only for Gowin and ECP5 devices)"},
-	{"write-sram", 'm', 0, 0,
-			"write bitstream in SRAM (default: true, only for Gowin and ECP5 devices)"},
-	{"offset",  'o', "OFFSET", 0, "start offset in EEPROM"},
-	{"verbose", 'v', 0, 0, "Produce verbose output"},
-	{"reset",   'r', 0, 0, "reset FPGA after operations"},
-	{0}
-};
-
-static struct argp argp = { options, parse_opt, args_doc, doc };
 void displaySupported(const struct arguments &args);
 
 int main(int argc, char **argv)
@@ -97,7 +66,13 @@ int main(int argc, char **argv)
 	struct arguments args = {false, false, false, 0, "", "-", "-", 6000000, "-",
 			false, false, false, false, true, false};
 	/* parse arguments */
-	argp_parse(&argp, argc, argv, 0, 0, &args);
+	try {
+		if (parse_opt(argc, argv, &args))
+			return EXIT_SUCCESS;
+	} catch (std::exception &e) {
+		printError("Error in parse arg step");
+		return EXIT_FAILURE;
+	}
 
 	if (args.is_list_command) {
 		displaySupported(args);
@@ -240,80 +215,107 @@ static error_t parse_eng(string arg, double *dst) {
 }
 
 /* arguments parser */
-static error_t parse_opt(int key, char *arg, struct argp_state *state)
+int parse_opt(int argc, char **argv, struct arguments *args)
 {
-	struct arguments *arguments = (struct arguments *)state->input;
 
-	switch (key) {
-	case 'f':
-		arguments->write_flash = true;
-		arguments->write_sram = false;
-		break;
-	case 'm':
-		arguments->write_sram = true;
-		break;
-	case 'r':
-		arguments->reset = true;
-		break;
+	string freqo;
+	try {
+		cxxopts::Options options(argv[0], "openFPGALoader -- a program to flash FPGA",
+			"<gwenhael.goavec-merou@trabucayre.com>");
+		options
+			.positional_help("BIT_FILE")
+			.show_positional_help();
+
+		options
+			.add_options()
+			("bitstream", "bitstream",
+				cxxopts::value<std::string>(args->bit_file))
+			("b,board",     "board name, may be used instead of cable",
+				cxxopts::value<string>(args->board))
+			("c,cable", "jtag interface", cxxopts::value<string>(args->cable))
 #ifdef USE_UDEV
-	case 'd':
-		arguments->device = arg;
-		break;
+			("d,device",  "device to use (/dev/ttyUSBx)",
+				cxxopts::value<string>(args->device))
 #endif
-	case 'v':
-		arguments->verbose = true;
-		break;
-	case 'o':
-		arguments->offset = strtoul(arg, NULL, 16);
-		break;
-	case 'c':
-		arguments->cable = arg;
-		break;
-	case 'b':
-		arguments->board = arg;
-		break;
-	case FREQUENCY:
-		double freq;
-		if (parse_eng(string(arg), &freq)) {
-			cerr << "Error: invalid format for --freq" << endl;
-			exit(1);
+			("detect",      "detect FPGA",
+				cxxopts::value<bool>(args->detect))
+			("freq",        "jtag frequency (Hz)", cxxopts::value<string>(freqo))
+			("f,write-flash",
+				"write bitstream in flash (default: false, only for Gowin and ECP5 devices)")
+			("list-boards", "list all supported boards",
+				cxxopts::value<bool>(args->list_boards))
+			("list-cables", "list all supported cables",
+				cxxopts::value<bool>(args->list_cables))
+			("list-fpga", "list all supported FPGA",
+				cxxopts::value<bool>(args->list_fpga))
+			("m,write-sram",
+				"write bitstream in SRAM (default: true, only for Gowin and ECP5 devices)")
+			("o,offset",  "start offset in EEPROM",
+				cxxopts::value<unsigned int>(args->offset))
+			("r,reset",   "reset FPGA after operations",
+				cxxopts::value<bool>(args->reset))
+			("v,verbose", "Produce verbose output", cxxopts::value<bool>(args->verbose))
+			("h,help", "Give this help list")
+			("V,Version", "Print program version");
+
+		options.parse_positional({"bitstream"});
+		auto result = options.parse(argc, argv);
+
+		if (result.count("help")) {
+			cout << options.help() << endl;
+			return 1;
 		}
-		if (freq < 1) {
-			cerr << "Error: --freq must be positive" << endl;
-			exit(1);
+
+		if (result.count("Version")) {
+			cout << "openFPGALoader v0.1" << endl;
+			return 1;
 		}
-		arguments->freq = freq;
-		break;
-	case ARGP_KEY_ARG:
-		arguments->bit_file = arg;
-		break;
-	case ARGP_KEY_END:
-		if (arguments->bit_file.empty() &&
-			!arguments->is_list_command &&
-			!arguments->detect &&
-			!arguments->reset) {
-			cout << "Error: bitfile not specified" << endl;
-			argp_usage(state);
+
+		if (result.count("write-flash") && result.count("write-sram")) {
+			printError("Error: both write to flash and write to ram enabled");
+			throw std::exception();
 		}
-		break;
-	case LIST_CABLE:
-		arguments->list_cables = true;
-		arguments->is_list_command = true;
-		break;
-	case LIST_BOARD:
-		arguments->list_boards = true;
-		arguments->is_list_command = true;
-		break;
-	case LIST_FPGA:
-		arguments->list_fpga = true;
-		arguments->is_list_command = true;
-		break;
-	case DETECT:
-		arguments->detect = true;
-		break;
-	default:
-		return ARGP_ERR_UNKNOWN;
+
+		if (result.count("write-flash")) {
+			args->write_flash = true;
+			args->write_sram = false;
+		}
+
+		if (result.count("write-sram")) {
+			args->write_flash = false;
+			args->write_sram = true;
+		}
+
+		if (result.count("freq")) {
+			double freq;
+			if (parse_eng(freqo, &freq)) {
+				printError("Error: invalid format for --freq");
+				throw std::exception();
+			}
+			if (freq < 1) {
+				printError("Error: --freq must be positive");
+				throw std::exception();
+			}
+			args->freq = static_cast<uint32_t>(freq);
+		}
+
+		if (args->list_cables || args->list_boards || args->list_fpga)
+			args->is_list_command = true;
+
+		if (args->bit_file.empty() &&
+			!args->is_list_command &&
+			!args->detect &&
+			!args->reset) {
+			printError("Error: bitfile not specified");
+			cout << options.help() << endl;
+			throw std::exception();
+		}
+
+	} catch (const cxxopts::OptionException& e) {
+		cerr << "Error parsing options: " << e.what() << endl;
+		throw std::exception();
 	}
+
 	return 0;
 }
 

@@ -35,15 +35,6 @@ if(ENABLE_UDEV)
 	endif()
 endif()
 
-# for non glibc, argp-standalone is required and must be
-# explicitly linked. This code will fail for others libc
-# implementations
-include(CheckCXXSourceCompiles)
-check_cxx_source_compiles("
-	#include <argp.h>
-	int main(int argc, char **argv) {
-	argp_parse(NULL, argc, argv, 0, 0, NULL);}" HAVE_ARGP)
-
 set(OPENFPGALOADER_SOURCE
 	src/dirtyJtag.cpp
 	src/spiFlash.cpp
@@ -72,6 +63,7 @@ set(OPENFPGALOADER_SOURCE
 
 set(OPENFPGALOADER_HEADERS
 	src/altera.hpp
+	src/cxxopts.hpp
 	src/dirtyJtag.hpp
 	src/progressBar.hpp
 	src/bitparser.hpp
@@ -114,8 +106,7 @@ include_directories(
 if (${CMAKE_SYSTEM_NAME} MATCHES "Darwin")
 	find_library(LIBFTDI1STATIC libftdi1.a REQUIRED)
 	find_library(LIBUSB1STATIC libusb-1.0.a REQUIRED)
-	find_library(LIBARGPSTATIC libargp.a REQUIRED)
-	target_link_libraries(openFPGALoader ${LIBFTDI1STATIC} ${LIBUSB1STATIC} ${LIBARGPSTATIC})
+	target_link_libraries(openFPGALoader ${LIBFTDI1STATIC} ${LIBUSB1STATIC})
 	set(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} -framework CoreFoundation -framework IOKit")
 	link_directories(/usr/local/lib)
 	target_include_directories(openFPGALoader PRIVATE /usr/local/include)
@@ -135,11 +126,6 @@ endif()
 if(ENABLE_UDEV)
 include_directories(${LIBUDEV_INCLUDE_DIRS})
 target_link_libraries(openFPGALoader ${LIBUDEV_LIBRARIES})
-endif()
-
-if(NOT HAVE_ARGP)
-	find_library(LIBARGPSTATIC libargp.a REQUIRED)
-	target_link_libraries(openFPGALoader ${LIBARGPSTATIC})
 endif()
 
 if (BUILD_STATIC)

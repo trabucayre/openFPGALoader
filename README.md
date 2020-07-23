@@ -49,9 +49,6 @@ node). If you don't want this option, use:
 
 ```-DENABLE_UDEV=OFF```
 
-For distributions using non-glibc (musl, uClibc) **argp-standalone** must be
-installed.
-
 And if not already done, install **pkg-config**, **make** and **g++**.
 
 To build the app:
@@ -107,8 +104,7 @@ openFPGALoader -- a program to flash cyclone10 LP FPGA
   -o, --offset=OFFSET        start offset in EEPROM
   -r, --reset                reset FPGA after operations
   -v, --verbose              Produce verbose output
-  -?, --help                 Give this help list
-      --usage                Give a short usage message
+  -h, --help                 Give this help list
   -V, --version              Print program version
 
 ```
