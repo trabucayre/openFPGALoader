@@ -1453,7 +1453,7 @@ namespace cxxopts
     constexpr int OPTION_DESC_GAP = 2;
 
     std::basic_regex<char> option_matcher
-      ("--([[:alnum:]][-_[:alnum:]]+)(=(.*))?|-([[:alnum:]]+)");
+      ("--([[:alnum:]][-_[:alnum:]]+)(=(.*))?|-([_[:alnum:]]+)");
 
     std::basic_regex<char> option_specifier
       ("(([[:alnum:]]),)?[ ]*([[:alnum:]][-_[:alnum:]]*)?");
