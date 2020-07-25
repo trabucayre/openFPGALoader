@@ -246,7 +246,7 @@ bool Gowin::wr_rd(uint8_t cmd,
 		xfer_len = tx_len;
 
 	uint8_t xfer_tx[xfer_len], xfer_rx[xfer_len];
-	bzero(xfer_tx, xfer_len);
+	memset(xfer_tx, 0, xfer_len);
 	int i;
 	if (tx != NULL) {
 		for (i = 0; i < tx_len; i++)
@@ -335,7 +335,7 @@ bool Gowin::flashFLASH(uint8_t *data, int length)
 	int nb_iter;
 	int byte_length = length / 8;
 	uint8_t tt[39];
-	bzero(tt, 39);
+	memset(tt, 0, 39);
 
 	_jtag->go_test_logic_reset();
 
