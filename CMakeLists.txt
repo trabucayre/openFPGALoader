@@ -6,32 +6,36 @@ project(openFPGALoader VERSION 0.1 LANGUAGES CXX)
 
 option(BUILD_STATIC "Whether or not to build with static libraries" OFF)
 option(ENABLE_UDEV "use udev to search JTAG adapter from /dev/xx" ON)
+option(USE_PKGCONFIG "Use pkgconfig to find libraries" ON)
+option(LINK_CMAKE_THREADS "Use CMake find_package to link the threading library" OFF)
 
 ## specify the C++ standard
 set(CMAKE_CXX_STANDARD 11)
 set(CMAKE_CXX_STANDARD_REQUIRED True)
-set(CMAKE_CXX_FLAGS_DEBUG "-g -Wall -Wextra")
+set(CMAKE_CXX_FLAGS_DEBUG "-g -Wall -Wextra ${CMAKE_CXX_FLAGS_DEBUG}")
 
 if (BUILD_STATIC)
-	 set(CMAKE_EXE_LINKER_FLAGS "-static-libstdc++ -static")
-	 set(BUILD_SHARED_LIBS OFF)
+	set(CMAKE_EXE_LINKER_FLAGS "-static-libstdc++ -static ${CMAKE_EXE_LINKER_FLAGS}")
+	set(BUILD_SHARED_LIBS OFF)
 endif()
 
 include(GNUInstallDirs)
 # By default: DATA_DIR="/usr/local/share"
 add_definitions(-DDATA_DIR=\"${CMAKE_INSTALL_FULL_DATAROOTDIR}\")
 
-find_package(PkgConfig REQUIRED)
-pkg_check_modules(LIBFTDI REQUIRED libftdi1)
-pkg_check_modules(LIBUSB REQUIRED libusb-1.0)
+if(USE_PKGCONFIG)
+	find_package(PkgConfig REQUIRED)
+	pkg_check_modules(LIBFTDI REQUIRED libftdi1)
+	pkg_check_modules(LIBUSB REQUIRED libusb-1.0)
 
-if(ENABLE_UDEV)
-	pkg_check_modules(LIBUDEV libudev)
-	if (LIBUDEV_FOUND)
-		add_definitions(-DUSE_UDEV)
-	else()
-		message("libudev not found, disabling udev support and -d parameter")
-		set(ENABLE_UDEV OFF)
+	if(ENABLE_UDEV)
+		pkg_check_modules(LIBUDEV libudev)
+		if (LIBUDEV_FOUND)
+			add_definitions(-DUSE_UDEV)
+		else()
+			message("libudev not found, disabling udev support and -D parameter")
+			set(ENABLE_UDEV OFF)
+		endif()
 	endif()
 endif()
 
@@ -133,12 +137,17 @@ if (BUILD_STATIC)
 endif()
 endif()
 
+if (LINK_CMAKE_THREADS)
+	find_package(Threads REQUIRED)
+	target_link_libraries(openFPGALoader Threads::Threads)
+endif()
+
 
 # libftdi < 1.4 as no usb_addr
 if (${LIBFTDI_VERSION} VERSION_LESS 1.4)
-	set(CMAKE_CXX_FLAGS "-DOLD_FTDI_VERSION=1")
+	set(CMAKE_CXX_FLAGS "-DOLD_FTDI_VERSION=1 ${CMAKE_CXX_FLAGS}")
 else()
-	set(CMAKE_CXX_FLAGS "-DOLD_FTDI_VERSION=0")
+	set(CMAKE_CXX_FLAGS "-DOLD_FTDI_VERSION=0 ${CMAKE_CXX_FLAGS}")
 endif()
 
 install(TARGETS openFPGALoader DESTINATION bin)
