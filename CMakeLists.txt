@@ -122,6 +122,11 @@ target_link_libraries(openFPGALoader
 	${LIBFTDI_LIBRARIES}
 )
 
+if (${CMAKE_SYSTEM_NAME} MATCHES "Windows")
+	# winsock provides ntohs
+	target_link_libraries(openFPGALoader ws2_32)
+endif()
+
 # libusb_attach_kernel_driver is only available on Linux.
 if (${CMAKE_SYSTEM_NAME} MATCHES "Linux")
 	add_definitions(-DATTACH_KERNEL)

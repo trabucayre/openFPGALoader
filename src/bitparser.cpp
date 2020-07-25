@@ -5,12 +5,8 @@
 #ifndef _WIN32
 #include <arpa/inet.h>
 #else
-// WARNING: this will be incorrect on ARM-based windows platforms
-// that are big-endian, but the rest of this code has not been tested for
-// those platforms anyway.
-uint16_t ntohs(uint16_t netshort) {
-	return ((netshort & 0xFF) << 8) | ((netshort & 0xFF00) >> 8);
-}
+//for ntohs
+#include <winsock2.h>
 #endif
 
 using namespace std;

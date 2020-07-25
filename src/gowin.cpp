@@ -32,6 +32,11 @@
 
 using namespace std;
 
+#ifdef STATUS_TIMEOUT
+// defined in the Windows headers included by libftdi.h
+#undef STATUS_TIMEOUT
+#endif
+
 #define NOOP				0x02
 #define ERASE_SRAM			0x05
 #define READ_SRAM			0x03
