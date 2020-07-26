@@ -169,7 +169,7 @@ int DirtyJtag::writeTDI(uint8_t *tx, uint8_t *rx, uint32_t len, bool end)
 	if (tx)
 		memcpy(tx_cpy, tx, real_byte_len);
 	else
-		bzero(tx_cpy, real_byte_len);
+		memset(tx_cpy, 0, real_byte_len);
 	tx_ptr = tx_cpy;
 
 	/* first send 30 x 8 bits */
@@ -178,7 +178,7 @@ int DirtyJtag::writeTDI(uint8_t *tx, uint8_t *rx, uint32_t len, bool end)
 		uint8_t bit_to_send = (real_bit_len > 240) ? 240 : real_bit_len;
 		uint8_t byte_to_send = (bit_to_send + 7) / 8;
 		tx_buf[1] = bit_to_send;
-		bzero(tx_buf + 2, 30);
+		memset(tx_buf + 2, 0, 30);
 		for (int i = 0; i < bit_to_send; i++)
 			if (tx_ptr[i >> 3] & (1 << (i & 0x07)))
 				tx_buf[2 + (i >> 3)] |= (0x80 >> (i & 0x07));

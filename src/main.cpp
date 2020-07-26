@@ -185,9 +185,9 @@ int main(int argc, char **argv)
 	delete(jtag);
 }
 
-// parse double from string in enginerring notation
+// parse double from string in engineering notation
 // can deal with postfixes k and m, add more when required
-static error_t parse_eng(string arg, double *dst) {
+static int parse_eng(string arg, double *dst) {
 	try {
 		size_t end;
 		double base = stod(arg, &end);
@@ -209,7 +209,7 @@ static error_t parse_eng(string arg, double *dst) {
 			return EINVAL;
 		}
 	} catch (...) {
-		cerr << "error : speed: invaild format" << endl;
+		cerr << "error : speed: invalid format" << endl;
 		return EINVAL;
 	}
 }

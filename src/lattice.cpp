@@ -614,7 +614,7 @@ bool Lattice::wr_rd(uint8_t cmd,
 
 	uint8_t xfer_tx[xfer_len];
 	uint8_t xfer_rx[xfer_len];
-	bzero(xfer_tx, xfer_len);
+	memset(xfer_tx, 0, xfer_len);
 	int i;
 	if (tx != NULL) {
 		for (i = 0; i < tx_len; i++)
@@ -793,7 +793,7 @@ bool Lattice::Verify(std::vector<std::string> data, bool unlock)
 	tx_buf[0] = REG_CFG_FLASH;
 	_jtag->shiftIR(tx_buf, NULL, 8, Jtag::PAUSE_IR);
 
-	bzero(tx_buf, 16);
+	memset(tx_buf, 0, 16);
 	bool failure = false;
 	ProgressBar progress("Verifying", data.size(), 50);
 	for (size_t line = 0;  line< data.size(); line++) {
@@ -826,7 +826,7 @@ uint64_t Lattice::readFeaturesRow()
 	uint8_t tx_buf[8];
 	uint8_t rx_buf[8];
 	uint64_t reg = 0;
-	bzero(tx_buf, 8);
+	memset(tx_buf, 0, 8);
 	wr_rd(READ_FEATURE_ROW, tx_buf, 8, rx_buf, 8);
 	for (int i = 0; i < 8; i++)
 		reg |= ((uint64_t)rx_buf[i] << (i*8));

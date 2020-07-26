@@ -111,7 +111,7 @@ void Jtag::init_internal(cable_t &cable, const string &dev,
 	}
 
 	_tms_buffer = (unsigned char *)malloc(sizeof(unsigned char) * _tms_buffer_size);
-	bzero(_tms_buffer, _tms_buffer_size);
+	memset(_tms_buffer, 0, _tms_buffer_size);
 }
 
 int Jtag::detectChain(vector<int> &devices, int max_dev)
@@ -164,7 +164,7 @@ int Jtag::flushTMS(bool flush_buffer)
 		ret = _jtag->writeTMS(_tms_buffer, _num_tms, flush_buffer);
 
 		/* reset buffer and number of bits */
-		bzero(_tms_buffer, _tms_buffer_size);
+		memset(_tms_buffer, 0, _tms_buffer_size);
 		_num_tms = 0;
 	} else if (flush_buffer) {
 		_jtag->flush();

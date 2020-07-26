@@ -58,7 +58,7 @@ int Altera::idCode()
 	unsigned char rx_data[4];
 	_jtag->go_test_logic_reset();
 	_jtag->shiftIR(tx_data, NULL, IRLENGTH);
-	bzero(tx_data, 4);
+	memset(tx_data, 0, 4);
 	_jtag->shiftDR(tx_data, rx_data, 32);
 	return ((rx_data[0] & 0x000000ff) |
 		((rx_data[1] << 8) & 0x0000ff00) |

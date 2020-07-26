@@ -2,7 +2,12 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <iostream>
+#ifndef _WIN32
 #include <arpa/inet.h>
+#else
+//for ntohs
+#include <winsock2.h>
+#endif
 
 using namespace std;
 

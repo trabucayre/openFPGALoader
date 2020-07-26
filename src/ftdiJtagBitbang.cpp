@@ -74,7 +74,7 @@ void FtdiJtagBitBang::init_internal(const FTDIpp_MPSSE::mpsse_bit_config &cable,
 	setClkFreq(_clkHZ);
 
 	_in_buf = (unsigned char *)malloc(sizeof(unsigned char) * _buffer_size);
-	bzero(_in_buf, _buffer_size);
+	memset(_in_buf, 0, _buffer_size);
 	init(1, _tck_pin | _tms_pin | _tdi_pin, BITMODE_BITBANG,
 		(FTDIpp_MPSSE::mpsse_bit_config &)cable);
 	setBitmode(BITMODE_BITBANG);
@@ -162,7 +162,7 @@ int FtdiJtagBitBang::writeTDI(uint8_t *tx, uint8_t *rx, uint32_t len, bool end)
 	if (len == 0)
 		return 0;
 	if (rx)
-		bzero(rx, len/8);
+		memset(rx, 0, len/8);
 
 	for (uint32_t i = 0, pos = 0; i < len; i++) {
 		/* keep tms or
