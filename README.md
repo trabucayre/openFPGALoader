@@ -51,6 +51,14 @@ node). If you don't want this option, use:
 
 And if not already done, install **pkg-config**, **make** and **g++**.
 
+Alternatively you can manually specify the location of **libusb** and **libftdi1**:
+
+```-DUSE_PKGCONFIG=OFF -DLIBUSB_LIBRARIES=<path_to_libusb> -DLIBFTDI_LIBRARIES=<path_to_libftdi> -DLIBFTDI_VERSION=<version> -DCMAKE_CXX_FLAGS="-I<libusb_include_dir> -I<libftdi1_include_dir>"```
+
+You may also need to add this if you see link errors between **libusb** and **pthread**:
+
+```-DLINK_CMAKE_THREADS=ON```
+
 To build the app:
 ```bash
 $ mkdir build
