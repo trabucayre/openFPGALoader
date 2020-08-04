@@ -45,6 +45,7 @@ struct arguments {
 	string cable;
 	uint32_t freq;
 	string board;
+	bool pin_config;
 	bool list_cables;
 	bool list_boards;
 	bool list_fpga;
@@ -53,21 +54,21 @@ struct arguments {
 	bool is_list_command;
 };
 
-int parse_opt(int argc, char **argv, struct arguments *args);
+int parse_opt(int argc, char **argv, struct arguments *args, jtag_pins_conf_t *pins_config);
 
 void displaySupported(const struct arguments &args);
 
 int main(int argc, char **argv)
 {
 	cable_t cable;
-	jtag_pins_conf_t *pins_config = NULL;
+	jtag_pins_conf_t pins_config = {0, 0, 0, 0};
 
 	/* command line args. */
 	struct arguments args = {false, false, false, 0, "", "-", "-", 6000000, "-",
-			false, false, false, false, true, false};
+			false, false, false, false, false, true, false};
 	/* parse arguments */
 	try {
-		if (parse_opt(argc, argv, &args))
+		if (parse_opt(argc, argv, &args, &pins_config))
 			return EXIT_SUCCESS;
 	} catch (std::exception &e) {
 		printError("Error in parse arg step");
@@ -81,8 +82,15 @@ int main(int argc, char **argv)
 
 	/* if a board name is specified try to use this to determine cable */
 	if (args.board[0] != '-' && board_list.find(args.board) != board_list.end()) {
-		/* set pins config */
-		pins_config = &board_list[args.board].pins_config;
+		/* set pins config (only when user has not already provided
+		 * configuration
+		 */
+		if (!args.pin_config) {
+			pins_config.tdi_pin = board_list[args.board].pins_config.tdi_pin;
+			pins_config.tdo_pin = board_list[args.board].pins_config.tdo_pin;
+			pins_config.tms_pin = board_list[args.board].pins_config.tms_pin;
+			pins_config.tck_pin = board_list[args.board].pins_config.tck_pin;
+		}
 		/* search for cable */
 		auto t = cable_list.find(board_list[args.board].cable_name);
 		if (t == cable_list.end()) {
@@ -109,9 +117,9 @@ int main(int argc, char **argv)
 	Jtag *jtag;
 	try {
 		if (args.device == "-")
-			jtag = new Jtag(cable, pins_config, args.freq, false);
+			jtag = new Jtag(cable, &pins_config, args.freq, false);
 		else
-			jtag = new Jtag(cable, pins_config, args.device, args.freq, false);
+			jtag = new Jtag(cable, &pins_config, args.device, args.freq, false);
 	} catch (std::exception &e) {
 		printError("Error: Failed to claim cable");
 		return EXIT_FAILURE;
@@ -215,10 +223,11 @@ static int parse_eng(string arg, double *dst) {
 }
 
 /* arguments parser */
-int parse_opt(int argc, char **argv, struct arguments *args)
+int parse_opt(int argc, char **argv, struct arguments *args, jtag_pins_conf_t *pins_config)
 {
 
 	string freqo;
+	vector<string> pins;
 	try {
 		cxxopts::Options options(argv[0], "openFPGALoader -- a program to flash FPGA",
 			"<gwenhael.goavec-merou@trabucayre.com>");
@@ -252,6 +261,8 @@ int parse_opt(int argc, char **argv, struct arguments *args)
 				"write bitstream in SRAM (default: true, only for Gowin and ECP5 devices)")
 			("o,offset",  "start offset in EEPROM",
 				cxxopts::value<unsigned int>(args->offset))
+			("pins", "pin config (only for ft232R) TDI:TDO:TCK:TMS",
+				cxxopts::value<vector<string>>(pins))
 			("r,reset",   "reset FPGA after operations",
 				cxxopts::value<bool>(args->reset))
 			("v,verbose", "Produce verbose output", cxxopts::value<bool>(args->verbose))
@@ -297,6 +308,58 @@ int parse_opt(int argc, char **argv, struct arguments *args)
 				throw std::exception();
 			}
 			args->freq = static_cast<uint32_t>(freq);
+		}
+
+		if (result.count("pins")) {
+			if (pins.size() != 4) {
+				printError("Error: pin_config need 4 pins");
+				throw std::exception();
+			}
+
+			static std::map <std::string, int> pins_list = {
+				{"TXD", FT232RL_TXD},
+				{"RXD", FT232RL_RXD},
+				{"RTS", FT232RL_RTS},
+				{"CTS", FT232RL_CTS},
+				{"DTR", FT232RL_DTR},
+				{"DSR", FT232RL_DSR},
+				{"DCD", FT232RL_DCD},
+				{"RI" , FT232RL_RI }};
+
+
+			for (int i = 0; i < 4; i++) {
+				int pin_num;
+				try {
+					pin_num = std::stoi(pins[i], nullptr, 0);
+				} catch (std::exception &e) {
+					if (pins_list.find(pins[i]) == pins_list.end()) {
+						printError("Invalid pin name");
+						throw std::exception();
+					}
+					pin_num = pins_list[pins[i]];
+				}
+
+				if (pin_num > 7 || pin_num < 0) {
+					printError("Invalid pin ID");
+					throw std::exception();
+				}
+
+				switch (i) {
+					case 0:
+						pins_config->tdi_pin = pin_num;
+						break;
+					case 1:
+						pins_config->tdo_pin = pin_num;
+						break;
+					case 2:
+						pins_config->tck_pin = pin_num;
+						break;
+					case 3:
+						pins_config->tms_pin = pin_num;
+						break;
+				}
+			}
+			args->pin_config = true;
 		}
 
 		if (args->list_cables || args->list_boards || args->list_fpga)

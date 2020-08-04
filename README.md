@@ -32,6 +32,7 @@ __Supported cables:__
 * [DirtyJTAG](https://github.com/jeanthom/DirtyJTAG): JTAG probe firmware for STM32F1
 * JTAG-HS3: jtag programmer cable from digilent
 * FT2232: generic programmer cable based on Ftdi FT2232
+* FT232RL and FT231X: generic USB<->UART converters in bitbang mode
 * Tang Nano USB-JTAG interface: FT2232C clone based on CH552 microcontroler
   (with some limitations and workaround)
 
@@ -110,6 +111,7 @@ openFPGALoader -- a program to flash cyclone10 LP FPGA
   -m, --write-sram           write bitstream in SRAM (default: true, only for
                              Gowin and ECP5 devices)
   -o, --offset=OFFSET        start offset in EEPROM
+      --pins arg             pin config (only for bitbang) TDI:TDO:TCK:TMS
   -r, --reset                reset FPGA after operations
   -v, --verbose              Produce verbose output
   -h, --help                 Give this help list
@@ -156,6 +158,33 @@ openFPGALoader [options] -r
 ```bash
 openFPGALoader [options] /path/to/bitstream.ext
 ```
+
+#### bitbang mode and pins configuration
+
+*FT232R* and *ft231X* may be used as JTAG programmer. JTAG communications are
+emulated in bitbang mode.
+
+To use these devices user needs to provides both the cable and the pin mapping:
+```bash
+openFPGALoader [options] -cft23XXX --pins=TDI:TDO:TCK:TMS /path/to/bitstream.ext
+```
+where:
+* ft23XXX may be **ft232RL** or **ft231X**
+* TDI:TDO:TCK:TMS may be the pin ID (0 <= id <= 7) or string value
+
+allowed values are:
+
+| value | ID |
+|-------|----|
+|  TXD  | 0  |
+|  RXD  | 1  |
+|  RTS  | 2  |
+|  CTS  | 3  |
+|  DTR  | 4  |
+|  DSR  | 5  |
+|  DCD  | 6  |
+|  RI   | 7  |
+
 
 ### CYC1000
 
