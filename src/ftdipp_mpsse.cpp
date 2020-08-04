@@ -21,10 +21,11 @@ using namespace std;
 
 FTDIpp_MPSSE::FTDIpp_MPSSE(const mpsse_bit_config &cable, const string &dev,
 			   uint32_t clkHZ, bool verbose):_verbose(verbose), _vid(0),
-				_pid(0), _bus(-1), _addr(-1), _product(""),
+				_pid(0), _bus(-1), _addr(-1),
 				_interface(cable.interface),
 				_clkHZ(clkHZ), _buffer_size(2*32768), _num(0)
 {
+	sprintf(_product, "");
 	if (!dev.empty()) {
 		if (!search_with_dev(dev)) {
 			cerr << "No cable found" << endl;
@@ -48,9 +49,10 @@ FTDIpp_MPSSE::FTDIpp_MPSSE(const mpsse_bit_config &cable, const string &dev,
 FTDIpp_MPSSE::FTDIpp_MPSSE(const mpsse_bit_config &cable,
 			   uint32_t clkHZ, bool verbose):_verbose(verbose),
 			   _vid(cable.vid), _pid(cable.pid), _bus(-1),
-			   _addr(-1), _product(""), _interface(cable.interface),
+			   _addr(-1), _interface(cable.interface),
 			   _clkHZ(clkHZ), _buffer_size(2*32768), _num(0)
 {
+	sprintf(_product, "");
 	open_device(115200);
 	_buffer_size = _ftdi->max_packet_size;
 
