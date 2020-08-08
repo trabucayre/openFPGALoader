@@ -1,15 +1,16 @@
 set model [lindex $argv 0]
 
-set project_name "spiOverJtag_${model}"
+set project_name "spiOverJtag"
 
-set build_path tmp
+set build_path tmp_${model}
 file delete -force $build_path
 
 # Project creation
-create_project $project_name $build_path -part xc7a35ticsg324-1L
+set parts [dict create xc7a35 xc7a35ticsg324-1L xc7s50 xc7s50csga324-1]
+create_project $project_name $build_path -part [dict get $parts $model]
 
 add_files -norecurse xilinx_spiOverJtag.vhd
-add_files -norecurse -fileset constrs_1 constr.xdc
+add_files -norecurse -fileset constrs_1 constr_${model}.xdc
 
 set_property VERILOG_DEFINE {TOOL_VIVADO} [current_fileset]
 
