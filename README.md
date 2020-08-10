@@ -5,7 +5,8 @@ __Current support kits:__
 
 * Trenz cyc1000 Cyclone 10 LP 10CL025 (memory and spi flash)
 * [Colorlight 5A-75B (version 7)](https://fr.aliexpress.com/item/32281130824.html) (memory and spi flash)
-* Digilent arty Artix xc7a35ti (memory and spi flash)
+* [Digilent Arty A7 xc7a35ti](https://reference.digilentinc.com/reference/programmable-logic/arty-a7/start) (memory and spi flash)
+* [Digilent Arty S7 xc7s50](https://reference.digilentinc.com/reference/programmable-logic/arty-s7/start) (memory and spi flash)
 * [Lattice MachXO2 Breakout Board Evaluation Kit (LCMXO2-7000HE)](https://www.latticesemi.com/products/developmentboardsandkits/machxo2breakoutboard) (memory and flash)
 * Lattice MachXO3LF Starter Kit LCMX03LF-6900C (memory and flash)
 * [Lattice ECP5 5G Evaluation Board (LFE5UM5G-85F-EVN)](https://www.latticesemi.com/en/Products/DevelopmentBoardsAndKits/ECP5EvaluationBoard) (memory and spi flash)
@@ -23,7 +24,7 @@ __Supported (tested) FPGA:__
 * Lattice [ECP5 (25F, 5G 85F](http://www.latticesemi.com/Products/FPGAandCPLD/ECP5) (SRAM and Flash)
 * Xilinx Artix 7 [xc7a35ti, xc7a100t](https://www.xilinx.com/products/silicon-devices/fpga/artix-7.html) (memory (all) and spi flash (xc7a35ti)
 * Xilinx Spartan 6 [xc6slx45](https://www.xilinx.com/products/silicon-devices/fpga/spartan-6.html) (memory)
-* Xilinx Spartan 7 [xc7s15](https://www.xilinx.com/products/silicon-devices/fpga/spartan-7.html) (memory)
+* Xilinx Spartan 7 [xc7s15, xc7s50](https://www.xilinx.com/products/silicon-devices/fpga/spartan-7.html) (memory (all) and spi flash (xc7s50))
 * Intel Cyclone 10 LP [10CL025](https://www.intel.com/content/www/us/en/products/programmable/fpga/cyclone-10.html)
 
 __Supported cables:__

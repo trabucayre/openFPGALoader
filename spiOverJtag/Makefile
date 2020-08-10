@@ -1,14 +1,13 @@
 VIVADO := vivado -nolog -nojournal -mode batch -source
-MODEL = xc7a35
-PRJ = spiOverJtag_$(MODEL)
+MODELS := xc7a35 xc7s50
+BIT_FILES := $(addsuffix .bit,$(addprefix spiOverJtag_, $(MODELS)))
 
-BIT_PATH     = tmp/$(PRJ).runs/impl_1/
-BIT_TMP_FILE = $(BIT_PATH)/*.bit
-BIT_FILE = $(PRJ).bit
+all: $(BIT_FILES)
 
-$(BIT_FILE) : $(BIT_TMP_FILE)
-	cp $(BIT_TMP_FILE) $(BIT_FILE)
-$(BIT_TMP_FILE): xilinx_spiOverJtag.vhd constr.xdc
-	$(VIVADO) xilinx_spiOverJtag.tcl -tclargs $(MODEL)
+$(BIT_FILES) : spiOverJtag_%.bit : tmp_%/spiOverJtag.runs/impl_1/xilinx_spiOverJtag.bit
+	cp $< $@
+tmp_%/spiOverJtag.runs/impl_1/xilinx_spiOverJtag.bit : xilinx_spiOverJtag.vhd constr_%.xdc
+	$(VIVADO) xilinx_spiOverJtag.tcl -tclargs $*
+
 clean:
-	-rm -rf tmp *.jou *.log .Xil
+	-rm -rf tmp_* *.jou *.log .Xil
