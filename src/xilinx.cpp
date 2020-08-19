@@ -10,7 +10,7 @@
 #include "part.hpp"
 #include "progressBar.hpp"
 
-Xilinx::Xilinx(Jtag *jtag, std::string filename, bool verbose):
+Xilinx::Xilinx(Jtag *jtag, const std::string &filename, bool verbose):
 	Device(jtag, filename, verbose)
 {
 	if (_filename != ""){
@@ -294,7 +294,7 @@ int Xilinx::spi_wait(uint8_t cmd, uint8_t mask, uint8_t cond,
 			break;
 		}
 		if (verbose) {
-			printf("%x %x %x %d\n", tmp, mask, cond, count);
+			printf("%x %x %x %u\n", tmp, mask, cond, count);
 		}
 	} while ((tmp & mask) != cond);
 	_jtag->go_test_logic_reset();

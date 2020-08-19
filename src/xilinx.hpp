@@ -10,14 +10,14 @@
 
 class Xilinx: public Device, SPIInterface {
 	public:
-		Xilinx(Jtag *jtag, std::string filename, bool verbose);
+		Xilinx(Jtag *jtag, const std::string &filename, bool verbose);
 		~Xilinx();
 
 		void program(unsigned int offset = 0) override;
 		void program_spi(unsigned int offset = 0);
 		void program_mem(BitParser &bitfile);
-		int idCode();
-		void reset();
+		int idCode() override;
+		void reset() override;
 
 		/* spi interface */
 		int spi_put(uint8_t cmd, uint8_t *tx, uint8_t *rx,
