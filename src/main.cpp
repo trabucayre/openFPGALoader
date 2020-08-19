@@ -133,9 +133,11 @@ int main(int argc, char **argv)
 		cout << "found " << std::to_string(found) << " devices" << endl;
 	if (found > 1) {
 		printError("Error: currently only one device is supported");
+		delete(jtag);
 		return EXIT_FAILURE;
 	} else if (found < 1) {
 		printError("Error: no device found");
+		delete(jtag);
 		return EXIT_FAILURE;
 	}
 
