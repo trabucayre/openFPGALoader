@@ -330,7 +330,7 @@ int UsbBlaster::writeBit(uint8_t *tdo, int nb_bit)
 		 * the buffer may contains some tms bit, so start with i
 		 * equal to fill exactly nb_bit bits
 		 * */
-		for (int i = nb_bit, offset=0; i < rd_bit; i++, offset++) {
+		for (int i = 0, offset=0; i < nb_bit; i++, offset++) {
 			tdo[offset >> 3] = (((_in_buf[i] & (1<<0)) ? 0x80 : 0x00) |
 							(tdo[offset >> 3] >> 1));
 		}
