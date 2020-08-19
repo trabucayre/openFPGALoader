@@ -763,7 +763,7 @@ bool Lattice::flashErase(uint8_t mask)
 	return true;
 }
 
-bool Lattice::flashProg(uint32_t start_addr, string name, vector<string> data)
+bool Lattice::flashProg(uint32_t start_addr, const string &name, vector<string> data)
 {
 	(void)start_addr;
 	ProgressBar progress("Writing " + name, data.size(), 50);
@@ -802,7 +802,7 @@ bool Lattice::Verify(std::vector<std::string> data, bool unlock)
 		_jtag->shiftDR(tx_buf, rx_buf, 16*8, Jtag::PAUSE_DR);
 		for (size_t i = 0; i < data[line].size(); i++) {
 			if (rx_buf[i] != (unsigned char)data[line][i]) {
-				printf("%3ld %3ld %02x -> %02x\n", line, i,
+				printf("%3lu %3lu %02x -> %02x\n", line, i,
 						rx_buf[i], (unsigned char)data[line][i]);
 				failure = true;
 			}
@@ -972,12 +972,12 @@ int Lattice::spi_wait(uint8_t cmd, uint8_t mask, uint8_t cond,
 		tmp = (LatticeBitParser::reverseByte(rx));
 		count ++;
 		if (count == timeout){
-			printf("timeout: %x %x %d\n", tmp, rx, count);
+			printf("timeout: %x %x %u\n", tmp, rx, count);
 			break;
 		}
 
 		if (verbose) {
-			printf("%x %x %x %d\n", tmp, mask, cond, count);
+			printf("%x %x %x %u\n", tmp, mask, cond, count);
 		}
 	} while ((tmp & mask) != cond);
 	_jtag->set_state(Jtag::RUN_TEST_IDLE);

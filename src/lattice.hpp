@@ -61,7 +61,7 @@ class Lattice: public Device, SPIInterface {
 		bool pollBusyFlag(bool verbose = false);
 		bool flashEraseAll();
 		bool flashErase(uint8_t mask);
-		bool flashProg(uint32_t start_addr, std::string name,
+		bool flashProg(uint32_t start_addr, const std::string &name,
 				std::vector<std::string> data);
 		bool checkStatus(uint32_t val, uint32_t mask);
 		void displayReadReg(uint32_t dev);
