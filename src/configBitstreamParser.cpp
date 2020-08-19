@@ -6,7 +6,7 @@
 
 using namespace std;
 
-ConfigBitstreamParser::ConfigBitstreamParser(string filename, int mode,
+ConfigBitstreamParser::ConfigBitstreamParser(const string &filename, int mode,
 			bool verbose):
 			_filename(filename), _bit_length(0),
 			_file_size(0), _verbose(verbose), _fd(filename,

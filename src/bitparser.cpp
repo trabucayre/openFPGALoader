@@ -14,7 +14,7 @@ using namespace std;
 #define display(...) \
 	do { if (_verbose) fprintf(stdout, __VA_ARGS__);} while(0)
 
-BitParser::BitParser(string filename, bool verbose):
+BitParser::BitParser(const string &filename, bool verbose):
 	ConfigBitstreamParser(filename, ConfigBitstreamParser::BIN_MODE,
 	verbose), fieldA(), part_name(), date(), hour(),
 	design_name(), userID(), toolVersion()

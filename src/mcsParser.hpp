@@ -22,8 +22,8 @@
 
 class McsParser: public ConfigBitstreamParser {
 	public:
-		McsParser(std::string filename, bool reverseOrder, bool verbose);
-		int parse();
+		McsParser(const std::string &filename, bool reverseOrder, bool verbose);
+		int parse() override;
 
 	private:
 		int parseLine(std::string buffer);

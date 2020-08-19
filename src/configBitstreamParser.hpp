@@ -8,7 +8,7 @@
 
 class ConfigBitstreamParser {
 	public:
-		ConfigBitstreamParser(std::string filename, int mode = ASCII_MODE,
+		ConfigBitstreamParser(const std::string &filename, int mode = ASCII_MODE,
 			bool verbose = false);
 		virtual ~ConfigBitstreamParser();
 		virtual int parse() = 0;
