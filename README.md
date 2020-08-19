@@ -14,6 +14,7 @@ __Current support kits:__
 * [Saanlima Pipistrello LX45](http://pipistrello.saanlima.com/index.php?title=Welcome_to_Pipistrello) (memory)
 * [SeeedStudio Spartan Edge Accelerator Board](http://wiki.seeedstudio.com/Spartan-Edge-Accelerator-Board) (memory)
 * [Sipeed Tang Nano](https://tangnano.sipeed.com/en/) (memory)
+* [Terasic de0nano](https://www.terasic.com.tw/cgi-bin/page/archive.pl?No=593) (memory)
 * LambdaConcept ECPIX-5 (memory and flash)
 
 __Supported (tested) FPGA:__
@@ -25,12 +26,17 @@ __Supported (tested) FPGA:__
 * Xilinx Artix 7 [xc7a35ti, xc7a100t](https://www.xilinx.com/products/silicon-devices/fpga/artix-7.html) (memory (all) and spi flash (xc7a35ti)
 * Xilinx Spartan 6 [xc6slx45](https://www.xilinx.com/products/silicon-devices/fpga/spartan-6.html) (memory)
 * Xilinx Spartan 7 [xc7s15, xc7s50](https://www.xilinx.com/products/silicon-devices/fpga/spartan-7.html) (memory (all) and spi flash (xc7s50))
+* Intel Cyclone IV CE [EP4CE22](https://www.intel.com/content/www/us/en/products/programmable/fpga/cyclone-iv/features.html) (memory. See note below)
 * Intel Cyclone 10 LP [10CL025](https://www.intel.com/content/www/us/en/products/programmable/fpga/cyclone-10.html)
+
+**Note**: cyclone IV and cyclone 10 have same idcode. A WA is mandatory to
+detect correct model for flash programming.
 
 __Supported cables:__
 
 * [digilent_hs2](https://store.digilentinc.com/jtag-hs2-programming-cable/): jtag programmer cable from digilent
 * [DirtyJTAG](https://github.com/jeanthom/DirtyJTAG): JTAG probe firmware for STM32F1
+* Intel USB Blaster: jtag programmer cable from intel/altera
 * JTAG-HS3: jtag programmer cable from digilent
 * FT2232: generic programmer cable based on Ftdi FT2232
 * FT232RL and FT231X: generic USB<->UART converters in bitbang mode
@@ -187,7 +193,7 @@ allowed values are:
 |  RI   | 7  |
 
 
-### CYC1000
+### CYC1000 and de0nano
 
 #### loading in memory:
 
@@ -198,6 +204,10 @@ quartus_cpf -c -q -g 3.3 -n 12.0MHz p project_name.sof project_name.svf
 file load:
 ```bash
 openFPGALoader -b cyc1000 project_name.svf
+```
+
+```bash
+openFPGALoader -b de0nano -b project_name.svf
 ```
 
 #### SPI flash:

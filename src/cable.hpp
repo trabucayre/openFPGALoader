@@ -12,7 +12,8 @@
 enum {
 	MODE_FTDI_BITBANG = 0, /*! used with ft232RL/ft231x */
 	MODE_FTDI_SERIAL  = 1, /*! ft2232, ft232H */
-	MODE_DIRTYJTAG    = 2  /*! JTAG probe firmware for STM32F1 */
+	MODE_DIRTYJTAG    = 2, /*! JTAG probe firmware for STM32F1 */
+	MODE_USBBLASTER   = 3  /*! JTAG probe firmware for USBBLASTER */
 } communication_type_t;
 
 typedef struct {
@@ -35,6 +36,7 @@ static std::map <std::string, cable_t> cable_list = {
 	{"ft232RL",      {MODE_FTDI_BITBANG, {0x0403, 0x6001, INTERFACE_A, 0x08, 0x0B, 0x08, 0x0B}}},
 	{"ft4232",       {MODE_FTDI_SERIAL,  {0x0403, 0x6011, INTERFACE_A, 0x08, 0x0B, 0x08, 0x0B}}},
 	{"ecpix5-debug", {MODE_FTDI_SERIAL,  {0x0403, 0x6010, INTERFACE_A, 0xF8, 0xFB, 0xFF, 0xFF}}},
+	{"usb-blaster",  {MODE_USBBLASTER,   {}}},
 };
 
 #endif

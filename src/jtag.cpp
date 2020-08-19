@@ -30,6 +30,7 @@
 #include "ftdiJtagBitbang.hpp"
 #include "ftdiJtagMPSSE.hpp"
 #include "dirtyJtag.hpp"
+#include "usbBlaster.hpp"
 
 using namespace std;
 
@@ -104,6 +105,9 @@ void Jtag::init_internal(cable_t &cable, const string &dev,
 		break;
 	case MODE_DIRTYJTAG:
 		_jtag = new DirtyJtag(clkHZ, _verbose);
+		break;
+	case MODE_USBBLASTER:
+		_jtag = new UsbBlaster(_verbose);
 		break;
 	default:
 		std::cerr << "Jtag: unknown cable type" << std::endl;

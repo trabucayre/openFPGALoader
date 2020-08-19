@@ -42,6 +42,7 @@ endif()
 set(OPENFPGALOADER_SOURCE
 	src/dirtyJtag.cpp
 	src/spiFlash.cpp
+	src/usbBlaster.cpp
 	src/epcq.cpp
 	src/svf_jtag.cpp
 	src/jedParser.cpp
@@ -70,6 +71,7 @@ set(OPENFPGALOADER_HEADERS
 	src/cxxopts.hpp
 	src/dirtyJtag.hpp
 	src/progressBar.hpp
+	src/usbBlaster.hpp
 	src/bitparser.hpp
 	src/ftdiJtagBitbang.hpp
 	src/ftdiJtagMPSSE.hpp
