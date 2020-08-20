@@ -361,3 +361,28 @@ __file load__:
 ```bash
 openFPGALoader -f -b littleBee impl/pnr/*.fs
 ```
+
+### Sipeed Lichee Tang
+
+Due to a lack of information about FPGA configuration using JTAG, it's not
+possible to use directly the *.bit* file.
+The current way is to convert *.bit* to *.svf* by using a tool provided by
+[prjtang project](https://github.com/mmicko/prjtang)
+
+```bash
+mkdir build
+cd build
+cmake ../
+make
+```
+
+Now a file called *tangbit* is present in current directory and has to be used as
+follow:
+```bash
+tangbit --input /somewhere.bit --svf bitstream.svf
+```
+
+__file load__:
+```bash
+openFPGALoader -b licheeTang /somewhere/*.svf
+```
