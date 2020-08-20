@@ -24,6 +24,7 @@
 #include <string.h>
 #include <string>
 
+#include "anlogicCable.hpp"
 #include "display.hpp"
 #include "jtag.hpp"
 #include "ftdipp_mpsse.hpp"
@@ -95,6 +96,9 @@ void Jtag::init_internal(cable_t &cable, const string &dev,
 	const jtag_pins_conf_t *pin_conf, uint32_t clkHZ)
 {
 	switch (cable.type) {
+	case MODE_ANLOGICCABLE:
+		_jtag = new AnlogicCable(clkHZ, _verbose);
+		break;
 	case MODE_FTDI_BITBANG:
 		if (pin_conf == NULL)
 			throw std::exception();

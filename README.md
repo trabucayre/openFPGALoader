@@ -34,6 +34,7 @@ detect correct model for flash programming.
 
 __Supported cables:__
 
+* anlogic JTAG adapter
 * [digilent_hs2](https://store.digilentinc.com/jtag-hs2-programming-cable/): jtag programmer cable from digilent
 * [DirtyJTAG](https://github.com/jeanthom/DirtyJTAG): JTAG probe firmware for STM32F1
 * Intel USB Blaster: jtag programmer cable from intel/altera
