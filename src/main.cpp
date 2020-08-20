@@ -25,6 +25,7 @@
 #include <vector>
 
 #include "altera.hpp"
+#include "anlogic.hpp"
 #include "board.hpp"
 #include "cable.hpp"
 #include "device.hpp"
@@ -145,6 +146,7 @@ int main(int argc, char **argv)
 
 	if (fpga_list.find(idcode) == fpga_list.end()) {
 		cerr << "Error: device " << hex << idcode << " not supported" << endl;
+		delete(jtag);
 		return EXIT_FAILURE;
 	} else if (args.verbose || args.detect) {
 		printf("idcode 0x%x\nmanufacturer %s\nmodel  %s\nfamily %s\n",
@@ -166,6 +168,8 @@ int main(int argc, char **argv)
 		fpga = new Xilinx(jtag, args.bit_file, args.verbose);
 	} else if (fab == "altera") {
 		fpga = new Altera(jtag, args.bit_file, args.verbose);
+	} else if (fab == "anlogic") {
+		fpga = new Anlogic(jtag, args.bit_file, args.verbose);
 	} else if (fab == "Gowin") {
 		fpga = new Gowin(jtag, args.bit_file, args.write_flash, args.write_sram,
 			args.verbose);

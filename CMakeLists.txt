@@ -40,6 +40,7 @@ if(USE_PKGCONFIG)
 endif()
 
 set(OPENFPGALOADER_SOURCE
+	src/anlogic.cpp
 	src/anlogicCable.cpp
 	src/dirtyJtag.cpp
 	src/spiFlash.cpp
@@ -69,6 +70,7 @@ set(OPENFPGALOADER_SOURCE
 
 set(OPENFPGALOADER_HEADERS
 	src/altera.hpp
+	src/anlogic.hpp
 	src/anlogicCable.hpp
 	src/cxxopts.hpp
 	src/dirtyJtag.hpp

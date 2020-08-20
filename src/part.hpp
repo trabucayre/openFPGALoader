@@ -11,6 +11,8 @@ typedef struct {
 } fpga_model;
 
 static std::map <int, fpga_model> fpga_list = {
+	{0x0a014c35, {"anlogic", "eagle s20", "EG4S20BG256"}},
+
 	{0x0362D093, {"xilinx", "artix a7 35t", "xc7a35"}},
 	{0x13631093, {"xilinx", "artix a7 100t", "xc7a100"}},
 
