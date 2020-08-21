@@ -364,10 +364,24 @@ openFPGALoader -f -b littleBee impl/pnr/*.fs
 
 ### Sipeed Lichee Tang
 
-Due to a lack of information about FPGA configuration using JTAG, it's not
-possible to use directly the *.bit* file.
-The current way is to convert *.bit* to *.svf* by using a tool provided by
-[prjtang project](https://github.com/mmicko/prjtang)
+Support is currently limited to SRAM write
+
+For this target, *openFPGALoader* support *svf* and *bit*
+
+__bit file load__
+
+```bash
+openFPGALoader -b licheeTang /somewhere/project/prj/*.bit
+```
+
+__svf file load__
+
+It's possible to produce this file by using *TD*:
+* Tools->Device Chain
+* Add your bit file
+* Option : Create svf
+
+or by using [prjtang project](https://github.com/mmicko/prjtang)
 
 ```bash
 mkdir build
@@ -382,7 +396,6 @@ follow:
 tangbit --input /somewhere.bit --svf bitstream.svf
 ```
 
-__file load__:
 ```bash
 openFPGALoader -b licheeTang /somewhere/*.svf
 ```
