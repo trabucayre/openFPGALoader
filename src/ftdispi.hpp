@@ -3,8 +3,9 @@
 #include <vector>
 
 #include "ftdipp_mpsse.hpp"
+#include "spiInterface.hpp"
 
-class FtdiSpi : public FTDIpp_MPSSE {
+class FtdiSpi : public FTDIpp_MPSSE, SPIInterface {
  public:
 	#define SPI_MSB_FIRST 0
 	#define SPI_LSB_FIRST 1
@@ -14,6 +15,8 @@ class FtdiSpi : public FTDIpp_MPSSE {
 
 
 	FtdiSpi(int vid, int pid, unsigned char interface, uint32_t clkHZ,
+		bool verbose);
+	FtdiSpi(const FTDIpp_MPSSE::mpsse_bit_config &conf, uint32_t clkHZ,
 		bool verbose);
 	~FtdiSpi();
 
@@ -31,6 +34,13 @@ class FtdiSpi : public FTDIpp_MPSSE {
 							uint8_t *rx_data, uint32_t rx_len);
 	int ft2232_spi_wr_and_rd(uint32_t writecnt,
 							const uint8_t *writearr, uint8_t *readarr);
+
+	/* spi interface */
+	int spi_put(uint8_t cmd, uint8_t *tx, uint8_t *rx,
+			uint32_t len) override;
+	int spi_put(uint8_t *tx, uint8_t *rx, uint32_t len) override;
+	int spi_wait(uint8_t cmd, uint8_t mask, uint8_t cond,
+			uint32_t timeout, bool verbose=false) override;
 
  private:
 	uint8_t _cs;

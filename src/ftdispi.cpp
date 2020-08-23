@@ -73,6 +73,17 @@ FtdiSpi::FtdiSpi(int vid, int pid, unsigned char interface, uint32_t clkHZ,
 
 	init(1, 0x00, BITMODE_MPSSE, bit_conf);
 }
+
+FtdiSpi::FtdiSpi(const FTDIpp_MPSSE::mpsse_bit_config &conf, uint32_t clkHZ,
+	bool verbose):
+	FTDIpp_MPSSE(conf, clkHZ, verbose)
+{
+	setCSmode(SPI_CS_AUTO);
+	setEndianness(SPI_MSB_FIRST);
+
+	init(1, 0x00, BITMODE_MPSSE, bit_conf);
+}
+
 FtdiSpi::~FtdiSpi()
 {
 }
@@ -325,8 +336,8 @@ int FtdiSpi::ft2232_spi_wr_and_rd(//struct ftdi_spi *spi,
 
 	uint8_t *rx_ptr = readarr;
 	uint8_t *tx_ptr = (uint8_t *)writearr;
-	int len = writecnt;
-	int xfer;
+	uint32_t len = writecnt;
+	uint32_t xfer;
 
 	if (_cs_mode == SPI_CS_AUTO) {
 		buf[i++] = SET_BITS_LOW;
@@ -335,6 +346,7 @@ int FtdiSpi::ft2232_spi_wr_and_rd(//struct ftdi_spi *spi,
 		mpsse_store(buf, i);
 		i=0;
 	}
+	mpsse_write();
 
 	/*
 	 * Minimize USB transfers by packing as many commands as possible
@@ -370,6 +382,11 @@ int FtdiSpi::ft2232_spi_wr_and_rd(//struct ftdi_spi *spi,
 				printf("get_buf failed: %i\n", ret);
 			//}
 			rx_ptr += xfer;
+		} else {
+			ret = mpsse_write();
+			failed = ret;
+			if (ret != xfer+3)
+				printf("error %d %d\n", ret, i);
 		}
 		len -= xfer;
 
@@ -383,7 +400,73 @@ int FtdiSpi::ft2232_spi_wr_and_rd(//struct ftdi_spi *spi,
 		failed |= ret;
 		if (ret)
 			printf("send_buf failed at end: %i\n", ret);
+		if (3 != mpsse_write())
+			printf("send_buf failed at write\n");
 	}
 
 	return 0;//failed ? -1 : 0;
+}
+
+/* method spiInterface::spi_put */
+int FtdiSpi::spi_put(uint8_t cmd, uint8_t *tx, uint8_t *rx, uint32_t len)
+{
+	uint32_t xfer_len = len + 1;
+	uint8_t jtx[xfer_len];
+	uint8_t jrx[xfer_len];
+
+	jtx[0] = cmd;
+	if (tx != NULL)
+		memcpy(jtx+1, tx, len);
+
+	/* send first alreay stored cmd,
+	 * in the same time store each byte
+	 * to next
+	 */
+	ft2232_spi_wr_and_rd(xfer_len, jtx, (rx != NULL)?jrx:NULL);
+
+	if (rx != NULL)
+		memcpy(rx, jrx+1, len);
+
+	return 0;
+}
+
+/* method spiInterface::spi_put */
+int FtdiSpi::spi_put(uint8_t *tx, uint8_t *rx, uint32_t len)
+{
+	return ft2232_spi_wr_and_rd(len, tx, rx);
+}
+
+/* method spiInterface::spi_wait
+ */
+int FtdiSpi::spi_wait(uint8_t cmd, uint8_t mask, uint8_t cond,
+			uint32_t timeout, bool verbose)
+{
+	uint8_t rx;
+	uint8_t dummy[2];
+	uint32_t count = 0;
+
+	setCSmode(SPI_CS_MANUAL);
+	clearCs();
+	ft2232_spi_wr_and_rd(1, &cmd, NULL);
+	do {
+		ft2232_spi_wr_and_rd(1, NULL, &rx);
+		count ++;
+		if (count == timeout) {
+			printf("timeout: %2x %d\n", rx, count);
+			break;
+		}
+
+		if (verbose) {
+			printf("%02x %02x %02x %02x\n", rx, mask, cond, count);
+		}
+	} while((rx & mask) != cond);
+	setCs();
+	setCSmode(SPI_CS_AUTO);
+
+	if (count == timeout) {
+		printf("%x\n", rx);
+		std::cout << "wait: Error" << std::endl;
+		return -ETIME;
+	} else
+		return 0;
 }
