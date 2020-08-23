@@ -37,11 +37,15 @@ class SPIFlash {
 		int sectors_erase(int base_addr, int len);
 		/* write */
 		int write_page(int addr, uint8_t *data, int len);
+		/* read */
+		int read(int base_addr, uint8_t *data, int len);
 		/* combo flash + erase */
 		int erase_and_prog(int base_addr, uint8_t *data, int len);
 		/* display/info */
 		uint8_t read_status_reg();
 		void read_id();
+		uint16_t readNonVolatileCfgReg();
+		uint16_t readVolatileCfgReg();
 	private:
 		SPIInterface *_spi;
 		bool _verbose;

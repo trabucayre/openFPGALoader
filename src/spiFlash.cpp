@@ -16,6 +16,7 @@
  */
 
 #include <stdio.h>
+#include <string.h>
 #include <stdlib.h>
 #include <unistd.h>
 #include <iostream>
@@ -24,17 +25,6 @@
 #include "progressBar.hpp"
 #include "spiFlash.hpp"
 #include "spiInterface.hpp"
-
-static uint8_t reverseByte(uint8_t src)
-{
-	uint8_t dst = 0;
-	for (int i=0; i < 8; i++) {
-		dst = (dst << 1) | (src & 0x01);
-		src >>= 1;
-	}
-	return dst;
-}
-
 
 /* read/write status register : 0B addr + 0 dummy */
 #define FLASH_WRSR     0x01
@@ -52,7 +42,10 @@ static uint8_t reverseByte(uint8_t src)
 #define FLASH_POWER_DOWN 0xB9
 /* read/write non volatile register: 0B addr + 0 dummy */
 #define FLASH_RDNVCR   0xB5
-#define FLASH_WRNVCR   0x81
+#define FLASH_WRNVCR   0xB1
+/* read/write volatile register */
+#define FLASH_RDVCR    0x85
+#define FLASH_WRVCR    0x81
 /* bulk erase */
 #define FLASH_BE       0xC7
 /* sector (64kb) erase */
@@ -63,9 +56,6 @@ static uint8_t reverseByte(uint8_t src)
 /* read/clear flag status register : 0B addr + 0 dummy */
 #define FLASH_CLFSR    0x50
 #define FLASH_RFSR     0x70
-/* */
-#define FLASH_WRVCR    0x81
-#define FLASH_RDVCR    0x85
 /* */
 #define FLASH_WRVECR   0x61
 #define FLASH_RDVECR   0x65
@@ -84,17 +74,19 @@ int SPIFlash::bulk_erase()
 
 int SPIFlash::sector_erase(int addr)
 {
-	uint8_t tx[3] = {(uint8_t)(0xff & (addr >> 16)),
-								(uint8_t)(0xff & (addr >> 8)),
-								(uint8_t)(addr & 0xff)};
-	_spi->spi_put(FLASH_SE, tx, NULL, 3);
+	uint8_t tx[4];
+	tx[0] = (uint8_t)(FLASH_SE           );
+	tx[1] = (uint8_t)(0xff & (addr >> 16));
+	tx[2] = (uint8_t)(0xff & (addr >>  8));
+	tx[3] = (uint8_t)(0xff & (addr      ));
+	_spi->spi_put(tx, NULL, 4);
 	return 0;
 }
 
 int SPIFlash::sectors_erase(int base_addr, int size)
 {
 	int start_addr = base_addr;
-	int end_addr = (size + 0xffff) & ~0xffff;
+	int end_addr = (base_addr + size + 0xffff) & ~0xffff;
 	ProgressBar progress("Erasing", end_addr, 50);
 	for (int addr = start_addr; addr < end_addr; addr += 0x10000) {
 		if (write_enable() == -1)
@@ -113,20 +105,32 @@ int SPIFlash::write_page(int addr, uint8_t *data, int len)
 {
 	uint8_t tx[len+3];
 	tx[0] = (uint8_t)(0xff & (addr >> 16));
-	tx[1] = (uint8_t)(0xff & (addr >> 8));
-	tx[2] = (uint8_t)(addr & 0xff);
+	tx[1] = (uint8_t)(0xff & (addr >>  8));
+	tx[2] = (uint8_t)(0xff & (addr      ));
 
-	/*uint8_t tx[len+3] = {(uint8_t)(0xff & (addr >> 16)),
-								(uint8_t)(0xff & (addr >> 8)),
-								(uint8_t)(addr & 0xff)};*/
-	for (int i=0; i < len; i++) {
-		tx[i+3] = data[i];
-	}
+	memcpy(tx+3, data, len);
+
 	if (write_enable() == -1)
 		return -1;
 
 	_spi->spi_put(FLASH_PP, tx, NULL, len+3);
 	return _spi->spi_wait(FLASH_RDSR, FLASH_RDSR_WIP, 0x00, 1000);
+}
+
+int SPIFlash::read(int base_addr, uint8_t *data, int len)
+{
+	uint8_t tx[len+3];
+	uint8_t rx[len+3];
+	tx[0] = (uint8_t)(0xff & (base_addr >> 16));
+	tx[1] = (uint8_t)(0xff & (base_addr >>  8));
+	tx[2] = (uint8_t)(0xff & (base_addr      ));
+
+	int ret = _spi->spi_put(0x03, tx, rx, len+3);
+	if (ret == 0)
+		memcpy(data, rx+3, len);
+	else
+		printf("error\n");
+	return ret;
 }
 
 int SPIFlash::erase_and_prog(int base_addr, uint8_t *data, int len)
@@ -140,14 +144,14 @@ int SPIFlash::erase_and_prog(int base_addr, uint8_t *data, int len)
 			return -1;
 	}
 	ProgressBar progress("Writing", len, 50);
-	if (sectors_erase(0, len) == -1)
+	if (sectors_erase(base_addr, len) == -1)
 		return -1;
 
 	uint8_t *ptr = data;
 	int size = 0;
-	for (int addr = base_addr; addr < len; addr += size, ptr+=size) {
+	for (int addr = 0; addr < len; addr += size, ptr+=size) {
 		size = (addr + 256 > len)?(len-addr) : 256;
-		if (write_page(addr, ptr, size) == -1)
+		if (write_page(base_addr + addr, ptr, size) == -1)
 			return -1;
 		progress.display(addr);
 	}
@@ -157,7 +161,8 @@ int SPIFlash::erase_and_prog(int base_addr, uint8_t *data, int len)
 
 void SPIFlash::reset()
 {
-	uint8_t data[8] = {0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff};
+	uint8_t data[8];
+	memset(data, 0xff, 8);
 	_spi->spi_put(0xff, data, NULL, 8);
 }
 
@@ -219,6 +224,24 @@ uint8_t SPIFlash::read_status_reg()
 		printf("SRWD : %d\n", (((rx>>7)&0x01)));
 	}
 	return rx;
+}
+
+uint16_t SPIFlash::readNonVolatileCfgReg()
+{
+	uint8_t rx[2];
+	_spi->spi_put(FLASH_RDNVCR, NULL, rx, 2);
+	if (_verbose)
+		printf("Non Volatile %x %x\n", rx[0], rx[1]);
+	return (rx[1] << 8) | rx[0];
+}
+
+uint16_t SPIFlash::readVolatileCfgReg()
+{
+	uint8_t rx[2];
+	_spi->spi_put(FLASH_RDVCR, NULL, rx, 2);
+	if (_verbose)
+		printf("Volatile %x %x\n", rx[0], rx[1]);
+	return (rx[1] << 8) | rx[0];
 }
 
 void SPIFlash::power_up()
