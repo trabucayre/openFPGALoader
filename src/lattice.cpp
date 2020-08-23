@@ -901,7 +901,7 @@ bool Lattice::loadConfiguration()
 /* SPI implementation */
 /* ------------------ */
 
-int Lattice::spi_put(uint8_t cmd, uint8_t *tx, uint8_t *rx, uint16_t len)
+int Lattice::spi_put(uint8_t cmd, uint8_t *tx, uint8_t *rx, uint32_t len)
 {
 	int xfer_len = len + 1;
 	uint8_t jtx[xfer_len];
@@ -927,7 +927,7 @@ int Lattice::spi_put(uint8_t cmd, uint8_t *tx, uint8_t *rx, uint16_t len)
 	return 0;
 }
 
-int Lattice::spi_put(uint8_t *tx, uint8_t *rx, uint16_t len)
+int Lattice::spi_put(uint8_t *tx, uint8_t *rx, uint32_t len)
 {
 	int xfer_len = len;
 	uint8_t jtx[xfer_len];

@@ -43,8 +43,8 @@ class Lattice: public Device, SPIInterface {
 
 		/* spi interface */
 		int spi_put(uint8_t cmd, uint8_t *tx, uint8_t *rx,
-		uint16_t len) override;
-		int spi_put(uint8_t *tx, uint8_t *rx, uint16_t len) override;
+		uint32_t len) override;
+		int spi_put(uint8_t *tx, uint8_t *rx, uint32_t len) override;
 		int spi_wait(uint8_t cmd, uint8_t mask, uint8_t cond,
 				uint32_t timeout, bool verbose=false) override;
 

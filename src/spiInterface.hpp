@@ -42,7 +42,7 @@ class SPIInterface {
 	 * \return 0 when success
 	 */
 	virtual int spi_put(uint8_t cmd, uint8_t *tx, uint8_t *rx,
-						uint16_t len) = 0;
+						uint32_t len) = 0;
 
 	/*!
 	 * \brief send a command, followed by len byte.
@@ -51,7 +51,7 @@ class SPIInterface {
 	 * \param[in] len: number of byte to send/receive
 	 * \return 0 when success
 	 */
-	virtual int spi_put(uint8_t *tx, uint8_t *rx, uint16_t len) = 0;
+	virtual int spi_put(uint8_t *tx, uint8_t *rx, uint32_t len) = 0;
 
 	/*!
 	 * \brief wait until register content and mask match cond, or timeout
