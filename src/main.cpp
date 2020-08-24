@@ -169,7 +169,8 @@ int main(int argc, char **argv)
 	} else if (fab == "altera") {
 		fpga = new Altera(jtag, args.bit_file, args.verbose);
 	} else if (fab == "anlogic") {
-		fpga = new Anlogic(jtag, args.bit_file, args.verbose);
+		fpga = new Anlogic(jtag, args.bit_file, args.write_flash, args.write_sram,
+			args.verbose);
 	} else if (fab == "Gowin") {
 		fpga = new Gowin(jtag, args.bit_file, args.write_flash, args.write_sram,
 			args.verbose);
