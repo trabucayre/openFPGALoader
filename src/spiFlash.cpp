@@ -263,8 +263,6 @@ int SPIFlash::write_enable()
 		return -1;
 	}
 
-	if (_verbose)
-		std::cout << "write en: Success" << std::endl;
 	return 0;
 }
 
