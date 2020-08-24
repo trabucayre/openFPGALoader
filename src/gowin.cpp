@@ -23,6 +23,7 @@
 #include <unistd.h>
 
 #include <iostream>
+#include <stdexcept>
 
 #include "jtag.hpp"
 #include "gowin.hpp"
