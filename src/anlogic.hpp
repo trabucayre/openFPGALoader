@@ -23,16 +23,25 @@
 #include "bitparser.hpp"
 #include "device.hpp"
 #include "jtag.hpp"
+#include "spiInterface.hpp"
 #include "svf_jtag.hpp"
 
-class Anlogic: public Device {
+class Anlogic: public Device, SPIInterface {
 	public:
-		Anlogic(Jtag *jtag, const std::string &filename, bool verbose);
+		Anlogic(Jtag *jtag, const std::string &filename,
+			bool flash_wr, bool sram_wr, bool verbose);
 		~Anlogic();
 
 		void program(unsigned int offset = 0) override;
 		int idCode() override;
 		void reset() override;
+
+		/* spi interface */
+		int spi_put(uint8_t cmd, uint8_t *tx, uint8_t *rx,
+			uint32_t len) override;
+		int spi_put(uint8_t *tx, uint8_t *rx, uint32_t len) override;
+		int spi_wait(uint8_t cmd, uint8_t mask, uint8_t cond,
+			uint32_t timeout, bool verbose=false) override;
 	private:
 		SVF_jtag _svf;
 };
