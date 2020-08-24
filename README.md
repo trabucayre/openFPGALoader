@@ -14,14 +14,14 @@ __Current support kits:__
 * [Saanlima Pipistrello LX45](http://pipistrello.saanlima.com/index.php?title=Welcome_to_Pipistrello) (memory)
 * [SeeedStudio Spartan Edge Accelerator Board](http://wiki.seeedstudio.com/Spartan-Edge-Accelerator-Board) (memory)
 * [Sipeed Tang Nano](https://tangnano.sipeed.com/en/) (memory)
-* [Sipeed Lichee Tang](https://tang.sipeed.com/en/hardware-overview/lichee-tang/) (memory)
+* [Sipeed Lichee Tang](https://tang.sipeed.com/en/hardware-overview/lichee-tang/) (memory and spi flash)
 * [Terasic de0nano](https://www.terasic.com.tw/cgi-bin/page/archive.pl?No=593) (memory)
 * LambdaConcept ECPIX-5 (memory and flash)
 
 __Supported (tested) FPGA:__
 
-* Anlogic [EG4S20](http://www.anlogic.com/prod_view.aspx?TypeId=10&Id=168&FId=t3:10:3) (SRAM)
-* Gowin [GW1N (GW1N-1, GW1N-4, GW1NR-9)](https://www.gowinsemi.com/en/product/detail/2/) (SRAM and Flash (flash mode only tested with GW1NR-9))
+* Anlogic [EG4S20](http://www.anlogic.com/prod_view.aspx?TypeId=10&Id=168&FId=t3:10:3) (SRAM and Flash)
+* Gowin [GW1N (GW1N-1, GW1N-4, GW1NR-9)](https://www.gowinsemi.com/en/product/detail/2/) (SRAM and Flash)
 * Lattice [MachXO2](https://www.latticesemi.com/en/Products/FPGAandCPLD/MachXO2) (SRAM and Flash)
 * Lattice [MachXO3LF](http://www.latticesemi.com/en/Products/FPGAandCPLD/MachXO3.aspx) (SRAM and Flash)
 * Lattice [ECP5 (25F, 5G 85F](http://www.latticesemi.com/Products/FPGAandCPLD/ECP5) (SRAM and Flash)
@@ -364,14 +364,20 @@ openFPGALoader -f -b littleBee impl/pnr/*.fs
 
 ### Sipeed Lichee Tang
 
-Support is currently limited to SRAM write
-
 For this target, *openFPGALoader* support *svf* and *bit*
 
-__bit file load__
+__bit file load (memory)__
 
 ```bash
-openFPGALoader -b licheeTang /somewhere/project/prj/*.bit
+openFPGALoader -m -b licheeTang /somewhere/project/prj/*.bit
+```
+
+Since *-m* is the default, this argument is optional
+
+__bit file load (spi flash)__
+
+```bash
+openFPGALoader -f -b licheeTang /somewhere/project/prj/*.bit
 ```
 
 __svf file load__
