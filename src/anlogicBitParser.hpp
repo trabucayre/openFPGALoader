@@ -30,13 +30,15 @@
  */
 class AnlogicBitParser: public ConfigBitstreamParser {
 	public:
-		AnlogicBitParser(const std::string &filename, bool verbose = false);
+		AnlogicBitParser(const std::string &filename, bool reverseOrder,
+			bool verbose = false);
 		~AnlogicBitParser();
 		int parse() override;
 		void displayHeader();
 
 	private:
 		int parseHeader();
+		bool _reverseOrder;
 };
 
 #endif  // SRC_ANLOGICBITPARSER_HPP_

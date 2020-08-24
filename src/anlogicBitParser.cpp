@@ -31,8 +31,10 @@
 
 using namespace std;
 
-AnlogicBitParser::AnlogicBitParser(const string &filename, bool verbose):
-	ConfigBitstreamParser(filename, ConfigBitstreamParser::BIN_MODE, verbose)
+AnlogicBitParser::AnlogicBitParser(const string &filename, bool reverseOrder,
+	bool verbose):
+	ConfigBitstreamParser(filename, ConfigBitstreamParser::BIN_MODE, verbose),
+	_reverseOrder(reverseOrder)
 {}
 
 AnlogicBitParser::~AnlogicBitParser()
@@ -136,7 +138,10 @@ int AnlogicBitParser::parse()
 	_bit_data.clear();
 	for (auto it = blocks.begin(); it != blocks.end(); it++) {
 		for (size_t pos = 0; pos < it->size(); pos++) {
-			_bit_data += reverseByte(((*it)[pos]));
+			if (_reverseOrder == true)
+				_bit_data += reverseByte(((*it)[pos]));
+			else
+				_bit_data += ((*it)[pos]);
 		}
 	}
 	_bit_length = _bit_data.size() * 8;
