@@ -45,6 +45,7 @@ set(OPENFPGALOADER_SOURCE
 	src/anlogicCable.cpp
 	src/dirtyJtag.cpp
 	src/spiFlash.cpp
+	src/rawParser.cpp
 	src/usbBlaster.cpp
 	src/epcq.cpp
 	src/svf_jtag.cpp
@@ -77,6 +78,7 @@ set(OPENFPGALOADER_HEADERS
 	src/cxxopts.hpp
 	src/dirtyJtag.hpp
 	src/progressBar.hpp
+	src/rawParser.hpp
 	src/usbBlaster.hpp
 	src/bitparser.hpp
 	src/ftdiJtagBitbang.hpp
