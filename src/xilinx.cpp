@@ -225,7 +225,7 @@ int Xilinx::spi_put(uint8_t cmd,
 	/* uint8_t jtx[xfer_len] = {McsParser::reverseByte(cmd)}; */
 	uint8_t jrx[xfer_len];
 	if (tx != NULL) {
-		for (int i=0; i < len; i++)
+		for (uint32_t i=0; i < len; i++)
 			jtx[i+1] = McsParser::reverseByte(tx[i]);
 	}
 	/* addr BSCAN user1 */
@@ -237,7 +237,7 @@ int Xilinx::spi_put(uint8_t cmd,
 	_jtag->shiftDR(jtx, (rx == NULL)? NULL: jrx, 8*xfer_len);
 
 	if (rx != NULL) {
-		for (int i=0; i < len; i++)
+		for (uint32_t i=0; i < len; i++)
 			rx[i] = McsParser::reverseByte(jrx[i+1] >> 1) | (jrx[i+2] & 0x01);
 	}
 	return 0;
@@ -249,7 +249,7 @@ int Xilinx::spi_put(uint8_t *tx, uint8_t *rx, uint32_t len)
 	uint8_t jtx[xfer_len];
 	uint8_t jrx[xfer_len];
 	if (tx != NULL) {
-		for (int i=0; i < len; i++)
+		for (uint32_t i=0; i < len; i++)
 			jtx[i] = McsParser::reverseByte(tx[i]);
 	}
 	/* addr BSCAN user1 */
@@ -261,7 +261,7 @@ int Xilinx::spi_put(uint8_t *tx, uint8_t *rx, uint32_t len)
 	_jtag->shiftDR(jtx, (rx == NULL)? NULL: jrx, 8*xfer_len);
 
 	if (rx != NULL) {
-		for (int i=0; i < len; i++)
+		for (uint32_t i=0; i < len; i++)
 			rx[i] = McsParser::reverseByte(jrx[i] >> 1) | (jrx[i+1] & 0x01);
 	}
 	return 0;

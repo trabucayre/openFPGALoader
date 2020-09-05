@@ -919,7 +919,7 @@ int Lattice::spi_put(uint8_t cmd, uint8_t *tx, uint8_t *rx, uint32_t len)
 	jtx[0] = LatticeBitParser::reverseByte(cmd);
 
 	if (tx != NULL) {
-		for (int i=0; i < len; i++)
+		for (uint32_t i=0; i < len; i++)
 			jtx[i+1] = LatticeBitParser::reverseByte(tx[i]);
 	}
 
@@ -930,7 +930,7 @@ int Lattice::spi_put(uint8_t cmd, uint8_t *tx, uint8_t *rx, uint32_t len)
 	_jtag->shiftDR(jtx, (rx == NULL)? NULL: jrx, 8*xfer_len);
 
 	if (rx != NULL) {
-		for (int i=0; i < len; i++)
+		for (uint32_t i=0; i < len; i++)
 			rx[i] = LatticeBitParser::reverseByte(jrx[i+1]);
 	}
 	return 0;
@@ -943,7 +943,7 @@ int Lattice::spi_put(uint8_t *tx, uint8_t *rx, uint32_t len)
 	uint8_t jrx[xfer_len];
 
 	if (tx != NULL) {
-		for (int i=0; i < len; i++)
+		for (uint32_t i=0; i < len; i++)
 			jtx[i] = LatticeBitParser::reverseByte(tx[i]);
 	}
 
@@ -954,7 +954,7 @@ int Lattice::spi_put(uint8_t *tx, uint8_t *rx, uint32_t len)
 	_jtag->shiftDR(jtx, (rx == NULL)? NULL: jrx, 8*xfer_len);
 
 	if (rx != NULL) {
-		for (int i=0; i < len; i++)
+		for (uint32_t i=0; i < len; i++)
 			rx[i] = LatticeBitParser::reverseByte(jrx[i]);
 	}
 	return 0;
