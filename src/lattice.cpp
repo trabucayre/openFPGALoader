@@ -29,6 +29,7 @@
 #include "latticeBitParser.hpp"
 #include "mcsParser.hpp"
 #include "progressBar.hpp"
+#include "rawParser.hpp"
 #include "display.hpp"
 #include "spiFlash.hpp"
 
@@ -77,12 +78,13 @@ Lattice::Lattice(Jtag *jtag, const string filename,
 				_mode = Device::FLASH_MODE;
 			else
 				_mode = Device::MEM_MODE;
+		} else if (flash_wr) {  // for raw bin to flash at offset != 0
+			_mode = Device::FLASH_MODE;
 		} else {
 			throw std::exception();
 		}
 	}
 }
-
 
 void displayFeabits(uint16_t _featbits)
 {
@@ -389,8 +391,15 @@ bool Lattice::program_extFlash(unsigned int offset)
 	ConfigBitstreamParser *_bit;
 	if (_file_extension == "mcs")
 		_bit = new McsParser(_filename, true, _verbose);
-	else
+	else if (_file_extension == "bit")
 		_bit = new LatticeBitParser(_filename, _verbose);
+	else {
+		if (offset == 0) {
+			printError("Error: can't write raw data at the beginning of the flash");
+			throw std::exception();
+		}
+		_bit = new RawParser(_filename, false);
+	}
 
 	printInfo("Open file " + _filename + " ", false);
 	printSuccess("DONE");
