@@ -89,6 +89,6 @@ class UsbBlaster : public JtagInterface {
 	uint8_t _tdi_pin; /*!< tdi pin: 1 << pin id */
 	int _nb_bit;
 	uint8_t _curr_tms;
-	uint8_t _buffer_size;
+	uint16_t _buffer_size;
 };
 #endif

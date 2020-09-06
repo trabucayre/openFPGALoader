@@ -50,7 +50,7 @@ using namespace std;
 
 UsbBlaster::UsbBlaster(bool verbose):
 			_verbose(verbose), _nb_bit(0),
-			_curr_tms(0), _buffer_size(64)
+			_curr_tms(0), _buffer_size(4096)
 {
 	init_internal();
 }
@@ -100,6 +100,17 @@ void UsbBlaster::init_internal()
 	_tdi_pin = (1 << 4);
 
 	_in_buf = (unsigned char *)malloc(sizeof(unsigned char) * _buffer_size);
+
+	/* Force flush internal FT245 internal buffer */
+	uint8_t val = DEFAULT | DO_WRITE | DO_BITBB | _tms_pin;
+	for (_nb_bit = 0; _nb_bit < _buffer_size; _nb_bit += 2) {
+		_in_buf[_nb_bit    ] = val;
+		_in_buf[_nb_bit + 1] = val | _tck_pin;
+	}
+
+	ftdi_write_data(_ftdi, _in_buf, _nb_bit);
+
+	_nb_bit = 0;
 	memset(_in_buf, 0, _buffer_size);
 }
 
