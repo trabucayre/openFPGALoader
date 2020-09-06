@@ -50,7 +50,7 @@ using namespace std;
 
 UsbBlaster::UsbBlaster(bool verbose):
 			_verbose(verbose), _nb_bit(0),
-			_curr_tms(0), _buffer_size(4096)
+			_curr_tms(0), _buffer_size(64)
 {
 	init_internal();
 }
@@ -103,12 +103,13 @@ void UsbBlaster::init_internal()
 
 	/* Force flush internal FT245 internal buffer */
 	uint8_t val = DEFAULT | DO_WRITE | DO_BITBB | _tms_pin;
-	for (_nb_bit = 0; _nb_bit < _buffer_size; _nb_bit += 2) {
-		_in_buf[_nb_bit    ] = val;
-		_in_buf[_nb_bit + 1] = val | _tck_pin;
+	uint8_t tmp_buf[4096];
+	for (_nb_bit = 0; _nb_bit < 4096; _nb_bit += 2) {
+		tmp_buf[_nb_bit    ] = val;
+		tmp_buf[_nb_bit + 1] = val | _tck_pin;
 	}
 
-	ftdi_write_data(_ftdi, _in_buf, _nb_bit);
+	ftdi_write_data(_ftdi, tmp_buf, _nb_bit);
 
 	_nb_bit = 0;
 	memset(_in_buf, 0, _buffer_size);
@@ -175,7 +176,7 @@ int UsbBlaster::writeTDI(uint8_t *tx, uint8_t *rx, uint32_t len, bool end)
 
 	uint32_t real_len = (end) ? len -1 : len;
 	uint32_t nb_byte = real_len >> 3;
-	uint32_t nb_bit = (real_len & 0x03);
+	uint32_t nb_bit = (real_len & 0x07);
 	uint8_t mode = (rx != NULL)? DO_RDWR : DO_WRITE;
 
 	uint8_t *tx_ptr = tx;
@@ -260,6 +261,9 @@ int UsbBlaster::writeTDI(uint8_t *tx, uint8_t *rx, uint32_t len, bool end)
 			return -EXIT_FAILURE;
 		if (rx)
 			*rx_ptr |= ((tmp & 0x80) << (7 - nb_bit));
+		_in_buf[_nb_bit++] = mask | mode;
+		if (writeBit(NULL, 0) < 0)
+			return -EXIT_FAILURE;
 	}
 
 	return len;
