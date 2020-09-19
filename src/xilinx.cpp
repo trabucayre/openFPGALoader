@@ -3,9 +3,12 @@
 
 #include "jtag.hpp"
 #include "bitparser.hpp"
+#include "configBitstreamParser.hpp"
 #include "mcsParser.hpp"
 #include "spiFlash.hpp"
+#include "rawParser.hpp"
 
+#include "display.hpp"
 #include "xilinx.hpp"
 #include "part.hpp"
 #include "progressBar.hpp"
@@ -91,10 +94,32 @@ void Xilinx::program_spi(unsigned int offset)
 	program_mem(bitfile);
 
 	/* last: read file and erase/flash spi flash */
-	McsParser mcs(_filename, false, _verbose);
-	mcs.parse();
+	ConfigBitstreamParser *_bit;
+	if (_file_extension == "mcs")
+		_bit = new McsParser(_filename, false, _verbose);
+	else {
+		if (offset == 0) {
+			printError("Error: can't write raw data at the beginning of the flash");
+			throw std::exception();
+		}
+		_bit = new RawParser(_filename, false);
+	}
+
+	int err = _bit->parse();
+	printInfo("Parse file ", false);
+	if (err == EXIT_FAILURE) {
+		printError("FAIL");
+		return;
+	} else {
+		printSuccess("DONE");
+	}
+
 	SPIFlash spiFlash(this, _verbose);
-	spiFlash.erase_and_prog(offset, mcs.getData(), mcs.getLength()/8);
+	spiFlash.reset();
+	spiFlash.read_id();
+	spiFlash.read_status_reg();
+	spiFlash.erase_and_prog(offset, _bit->getData(), _bit->getLength()/8);
+	delete _bit;
 }
 
 void Xilinx::program_mem(BitParser &bitfile)
