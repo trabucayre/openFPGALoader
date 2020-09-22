@@ -1,5 +1,5 @@
 VIVADO := vivado -nolog -nojournal -mode batch -source
-MODELS := xc7a35 xc7s50
+MODELS := xc7a35 xc7a100 xc7s50
 BIT_FILES := $(addsuffix .bit,$(addprefix spiOverJtag_, $(MODELS)))
 
 all: $(BIT_FILES)
