@@ -116,15 +116,13 @@ int main(int argc, char **argv)
 	cable = select_cable->second;
 
 	if (args.ftdi_channel != -1) {
-		if (args.ftdi_channel < 0 or args.ftdi_channel > 3) {
-			printError("Error: valid FTDI channels are 0-3.");
+		if (cable.type != MODE_FTDI_SERIAL && cable.type != MODE_FTDI_BITBANG){
+			printError("Error: FTDI channel param is for FTDI cables.");
 			return EXIT_FAILURE;
 		}
 
-		if (ftdi_update_channel(cable, args.ftdi_channel)) {
-			printError("Error: FTDI channel param is invalid. Is it a FTDI cable?");
-			return EXIT_FAILURE;
-		}
+		int mapping[] = {INTERFACE_A, INTERFACE_B, INTERFACE_C, INTERFACE_D};
+		cable.config.interface = mapping[args.ftdi_channel];
 	}
 
 	/* jtag base */
@@ -262,7 +260,7 @@ int parse_opt(int argc, char **argv, struct arguments *args, jtag_pins_conf_t *p
 			("b,board",     "board name, may be used instead of cable",
 				cxxopts::value<string>(args->board))
 			("c,cable", "jtag interface", cxxopts::value<string>(args->cable))
-			("ftdi_channel", "FTDI chip channel number (channels 0-3 map to A-D)", cxxopts::value<int>(args->ftdi_channel))
+			("ftdi-channel", "FTDI chip channel number (channels 0-3 map to A-D)", cxxopts::value<int>(args->ftdi_channel))
 #ifdef USE_UDEV
 			("d,device",  "device to use (/dev/ttyUSBx)",
 				cxxopts::value<string>(args->device))
@@ -329,6 +327,13 @@ int parse_opt(int argc, char **argv, struct arguments *args, jtag_pins_conf_t *p
 				throw std::exception();
 			}
 			args->freq = static_cast<uint32_t>(freq);
+		}
+
+		if (result.count("ftdi-channel")) {
+			if (args->ftdi_channel < 0 || args->ftdi_channel > 3) {
+				printError("Error: valid FTDI channels are 0-3.");
+				throw std::exception();
+			}
 		}
 
 		if (result.count("pins")) {
