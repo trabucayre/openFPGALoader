@@ -22,6 +22,20 @@ typedef struct {
 	FTDIpp_MPSSE::mpsse_bit_config config;
 } cable_t;
 
+inline int ftdi_update_channel(cable_t &cable, unsigned int channel_num)
+{
+	int mapping[] = {INTERFACE_A,INTERFACE_B, INTERFACE_C, INTERFACE_D};
+	
+	if (cable.type != MODE_FTDI_SERIAL && cable.type != MODE_FTDI_BITBANG)
+		return -1;
+
+	if (channel_num > 3)
+		return -2;
+
+	cable.config.interface = mapping[channel_num];
+	return 0;
+}
+
 static std::map <std::string, cable_t> cable_list = {
 	// last 4 bytes are ADBUS7-0 value, ADBUS7-0 direction, ACBUS7-0 value, ACBUS7-0 direction
 	// some cables requires explicit values on some of the I/Os
