@@ -111,6 +111,7 @@ openFPGALoader -- a program to flash cyclone10 LP FPGA
   -b, --board=BOARD          board name, may be used instead of cable
   -c, --cable=CABLE          jtag interface
   -d, --device=DEVICE        device to use (/dev/ttyUSBx)
+      --ftdi-channel=CHANNEL FTDI chip channel number (channels 0-3 map to A-D)
       --detect               detect FPGA
       --freq=FREQ            jtag frequency (Hz)
   -f, --write-flash          write bitstream in flash (default: false, only for
