@@ -176,7 +176,8 @@ int main(int argc, char **argv)
 
 	Device *fpga;
 	if (fab == "xilinx") {
-		fpga = new Xilinx(jtag, args.bit_file, args.verbose);
+		fpga = new Xilinx(jtag, args.bit_file, args.write_flash, args.write_sram,
+			args.verbose);
 	} else if (fab == "altera") {
 		fpga = new Altera(jtag, args.bit_file, args.verbose);
 	} else if (fab == "anlogic") {

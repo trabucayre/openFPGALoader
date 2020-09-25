@@ -13,14 +13,25 @@
 #include "part.hpp"
 #include "progressBar.hpp"
 
-Xilinx::Xilinx(Jtag *jtag, const std::string &filename, bool verbose):
+Xilinx::Xilinx(Jtag *jtag, const std::string &filename,
+	bool flash_wr, bool sram_wr, bool verbose):
 	Device(jtag, filename, verbose)
 {
 	if (_filename != ""){
-		if (_file_extension == "bit")
-			_mode = Device::MEM_MODE;
-		else
+		if (flash_wr && sram_wr) {
+			printError("both write-flash and write-sram can't be set");
+			throw std::exception();
+		}
+		if (_file_extension == "mcs") {
 			_mode = Device::SPI_MODE;
+		} else if (_file_extension == "bit") {
+			if (sram_wr)
+				_mode = Device::MEM_MODE;
+			else
+				_mode = Device::SPI_MODE;
+		} else {
+			_mode = Device::SPI_MODE;
+		}
 	}
 }
 Xilinx::~Xilinx() {}
@@ -97,6 +108,8 @@ void Xilinx::program_spi(unsigned int offset)
 	ConfigBitstreamParser *_bit;
 	if (_file_extension == "mcs")
 		_bit = new McsParser(_filename, false, _verbose);
+	else if (_file_extension == "bit")
+		_bit = new BitParser(_filename, false, _verbose);
 	else {
 		if (offset == 0) {
 			printError("Error: can't write raw data at the beginning of the flash");
