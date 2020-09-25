@@ -14,10 +14,10 @@ using namespace std;
 #define display(...) \
 	do { if (_verbose) fprintf(stdout, __VA_ARGS__);} while(0)
 
-BitParser::BitParser(const string &filename, bool verbose):
+BitParser::BitParser(const string &filename, bool reverseOrder, bool verbose):
 	ConfigBitstreamParser(filename, ConfigBitstreamParser::BIN_MODE,
 	verbose), fieldA(), part_name(), date(), hour(),
-	design_name(), userID(), toolVersion()
+	design_name(), userID(), toolVersion(), _reverseOrder(reverseOrder)
 {
 }
 BitParser::~BitParser() 
@@ -126,9 +126,14 @@ int BitParser::parse()
 		return -1;
 	}
 
-	for (int i = 0; i < _bit_length; i++) {
-		_bit_data[i] = reverseByte(_bit_data[i]);
+	if (_reverseOrder) {
+		for (int i = 0; i < _bit_length; i++) {
+			_bit_data[i] = reverseByte(_bit_data[i]);
+		}
 	}
+
+	/* convert size to bit */
+	_bit_length *= 8;
 
 	return 0;
 }

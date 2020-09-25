@@ -8,7 +8,7 @@
 
 class BitParser: public ConfigBitstreamParser {
 	public:
-		BitParser(const std::string &filename, bool verbose = false);
+		BitParser(const std::string &filename, bool reverseOrder, bool verbose = false);
 		~BitParser();
 		int parse() override;
 
@@ -21,6 +21,7 @@ class BitParser: public ConfigBitstreamParser {
 		std::string design_name;
 		std::string userID;
 		std::string toolVersion;
+		bool _reverseOrder;
 };
 
 #endif
