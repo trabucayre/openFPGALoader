@@ -75,7 +75,7 @@ void Xilinx::program(unsigned int offset)
 			reset();
 			break;
 		case Device::MEM_MODE:
-			BitParser bitfile(_filename, _verbose);
+			BitParser bitfile(_filename, true, _verbose);
 			bitfile.parse();
 			program_mem(bitfile);
 			break;
@@ -89,7 +89,7 @@ void Xilinx::program_spi(unsigned int offset)
 	bitname += fpga_list[idCode()].model + ".bit";
 
 	/* first: load spi over jtag */
-	BitParser bitfile(bitname, _verbose);
+	BitParser bitfile(bitname, true, _verbose);
 	bitfile.parse();
 	program_mem(bitfile);
 
@@ -181,7 +181,7 @@ void Xilinx::program_mem(BitParser &bitfile)
 	 *     EXIT1-DR.
 	 */
 	/* GGM: TODO */
-	int byte_length = bitfile.getLength();
+	int byte_length = bitfile.getLength() / 8;
 	uint8_t *data = bitfile.getData();
 	int tx_len, tx_end;
 	int burst_len = byte_length / 100;
