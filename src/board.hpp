@@ -39,6 +39,7 @@ typedef struct {
 static std::map <std::string, target_cable_t> board_list = {
 	{"arty",       {"digilent",   {}}},
 	{"colorlight", {"",           {}}},
+	{"crosslinknx_evn", {"ft2232",     {}}},
 	{"cyc1000",    {"ft2232",     {}}},
 	{"de0nano",    {"usb-blaster",{}}},
 	{"ecp5_evn",   {"ft2232",     {}}},
