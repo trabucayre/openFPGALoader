@@ -86,8 +86,22 @@ int LatticeBitParser::parse()
 {
 	uint8_t dummy[2];
 
-	/* bit file start with 0xff00 */
 	_fd.read(reinterpret_cast<char*>(&dummy), 2*sizeof(uint8_t));
+
+	/* radiant .bit start with LSCC */
+	if (dummy[0] == 'L') {
+		uint8_t dummy2[2];
+		_fd.read(reinterpret_cast<char*>(&dummy2), 2*sizeof(uint8_t));
+		if (!(dummy[1] == 'S' && dummy2[0] == 'C' && dummy2[1] == 'C')) {
+			printf("Wrong File %c%c%c%c\n",
+				dummy[0], dummy[1],
+				dummy2[0], dummy2[1]);
+			return EXIT_FAILURE;
+		}
+		_fd.read(reinterpret_cast<char*>(&dummy), 2*sizeof(uint8_t));
+	}
+
+	/* bit file comment area start with 0xff00 */
 	if (dummy[0] != 0xff || dummy[1] != 0x00) {
 		printf("Wrong File %02x%02x\n", dummy[0], dummy[1]);
 		return EXIT_FAILURE;
