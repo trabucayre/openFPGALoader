@@ -9,6 +9,7 @@ __Current support kits:__
 * [Digilent Arty S7 xc7s50](https://reference.digilentinc.com/reference/programmable-logic/arty-s7/start) (memory and spi flash)
 * [Lattice MachXO2 Breakout Board Evaluation Kit (LCMXO2-7000HE)](https://www.latticesemi.com/products/developmentboardsandkits/machxo2breakoutboard) (memory and flash)
 * Lattice MachXO3LF Starter Kit LCMX03LF-6900C (memory and flash)
+* [Lattice CrossLink-NX Evaluation Board (LIFCL-40-EVN)](https://www.latticesemi.com/en/Products/DevelopmentBoardsAndKits/CrossLink-NXEvaluationBoard) (memory and spi flash)
 * [Lattice ECP5 5G Evaluation Board (LFE5UM5G-85F-EVN)](https://www.latticesemi.com/en/Products/DevelopmentBoardsAndKits/ECP5EvaluationBoard) (memory and spi flash)
 * [Trenz Gowin LittleBee (TEC0117)](https://shop.trenz-electronic.de/en/TEC0117-01-FPGA-Module-with-GOWIN-LittleBee-and-8-MByte-internal-SDRAM)
 * [Saanlima Pipistrello LX45](http://pipistrello.saanlima.com/index.php?title=Welcome_to_Pipistrello) (memory)
@@ -25,6 +26,7 @@ __Supported (tested) FPGA:__
 * Lattice [MachXO2](https://www.latticesemi.com/en/Products/FPGAandCPLD/MachXO2) (SRAM and Flash)
 * Lattice [MachXO3LF](http://www.latticesemi.com/en/Products/FPGAandCPLD/MachXO3.aspx) (SRAM and Flash)
 * Lattice [ECP5 (25F, 5G 85F](http://www.latticesemi.com/Products/FPGAandCPLD/ECP5) (SRAM and Flash)
+* Lattice [ECP5 (25F, 5G 85F, CrossLink-NX (LIFCL-40)](https://www.latticesemi.com/en/Products/FPGAandCPLD/CrossLink-NX) (SRAM and Flash)
 * Xilinx Artix 7 [xc7a35ti, xc7a100t](https://www.xilinx.com/products/silicon-devices/fpga/artix-7.html) (memory (all) and spi flash (xc7a35ti)
 * Xilinx Spartan 6 [xc6slx45](https://www.xilinx.com/products/silicon-devices/fpga/spartan-6.html) (memory)
 * Xilinx Spartan 7 [xc7s15, xc7s50](https://www.xilinx.com/products/silicon-devices/fpga/spartan-7.html) (memory (all) and spi flash (xc7s50))
@@ -306,7 +308,7 @@ where *yourboard* may be:
 * *machX02EVN*
 * *machXO3SK*
 
-### Lattice ECP5 (Colorlight 5A-75b, Lattice ECP5 5G Evaluation board, ULX3S)
+### Lattice ECP5 (Colorlight 5A-75b, Lattice ECP5 5G Evaluation board, ULX3S) CrossLink-NX
 
 #### SRAM:
 
