@@ -49,6 +49,16 @@ class Lattice: public Device, SPIInterface {
 				uint32_t timeout, bool verbose=false) override;
 
 	private:
+		enum lattice_family_t {
+			MACHXO2_FAMILY = 0,
+			MACHXO3_FAMILY = 1,
+			ECP5_FAMILY = 2,
+			NEXUS_FAMILY = 3,
+			UNKNOWN_FAMILY = 999
+		};
+
+		lattice_family_t _fpga_family;
+
 		bool program_intFlash();
 		bool program_extFlash(unsigned int offset);
 		bool wr_rd(uint8_t cmd, uint8_t *tx, int tx_len,

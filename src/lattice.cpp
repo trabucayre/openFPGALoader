@@ -31,6 +31,7 @@
 #include "progressBar.hpp"
 #include "rawParser.hpp"
 #include "display.hpp"
+#include "part.hpp"
 #include "spiFlash.hpp"
 
 using namespace std;
@@ -68,7 +69,7 @@ using namespace std;
 
 Lattice::Lattice(Jtag *jtag, const string filename,
 	bool flash_wr, bool sram_wr, bool verbose):
-		Device(jtag, filename, verbose)
+		Device(jtag, filename, verbose), _fpga_family(UNKNOWN_FAMILY)
 {
 	if (_filename != "") {
 		if (_file_extension == "jed" || _file_extension == "mcs") {
@@ -83,6 +84,23 @@ Lattice::Lattice(Jtag *jtag, const string filename,
 		} else {
 			throw std::exception();
 		}
+	}
+	/* check device family */
+	uint32_t idcode = idCode();
+	string family = fpga_list[idcode].family;
+	if (family == "MachXO2")
+		_fpga_family = MACHXO2_FAMILY;
+	else if (family == "MachXO3")
+		_fpga_family = MACHXO3_FAMILY;
+	else if (family == "ECP5")
+		_fpga_family = ECP5_FAMILY;
+	else if (family == "CrosslinkNX")
+		_fpga_family = NEXUS_FAMILY;
+	else if (family == "CertusNX")
+		_fpga_family = NEXUS_FAMILY;
+	else {
+		printError("Unknown device family");
+		throw std::exception();
 	}
 }
 
@@ -649,50 +667,41 @@ bool Lattice::wr_rd(uint8_t cmd,
 
 void Lattice::displayReadReg(uint32_t dev)
 {
+	uint8_t err;
 	printf("displayReadReg\n");
-	if (dev & 1<<0)
-		printf("\tTRAN Mode\n");
+	if (dev & 1<<0) printf("\tTRAN Mode\n");
 	printf("\tConfig Target Selection : %x\n", (dev >> 1) & 0x07);
-	if (dev & 1<<4)
-		printf("\tJTAG Active\n");
-	if (dev & 1<<5)
-		printf("\tPWD Protect\n");
-	if (dev & 1<<6)
-		printf("\tOTP\n");
-	if (dev & 1<<7)
-		printf("\tDecrypt Enable\n");
-	if (dev & REG_STATUS_DONE)
-		printf("\tDone Flag\n");
-	if (dev & REG_STATUS_ISC_EN)
-		printf("\tISC Enable\n");
-	if (dev & 1 << 10)
-		printf("\tWrite Enable\n");
-	if (dev & 1 << 11)
-		printf("\tRead Enable\n");
-	if (dev & REG_STATUS_BUSY)
-		printf("\tBusy Flag\n");
-	if (dev & REG_STATUS_FAIL)
-		printf("\tFail Flag\n");
-	if (dev & 1 << 14)
-		printf("\tFFEA OTP\n");
-	if (dev & 1 << 15)
-		printf("\tDecrypt Only\n");
-	if (dev & 1 << 16)
-		printf("\tPWD Enable\n");
-	if (dev & 1 << 17)
-		printf("\tUFM OTP\n");
-	if (dev & 1 << 18)
-		printf("\tASSP\n");
-	if (dev & 1 << 19)
-		printf("\tSDM Enable\n");
-	if (dev & 1 << 20)
-		printf("\tEncryption PreAmble\n");
-	if (dev & 1 << 21)
-		printf("\tStd PreAmble\n");
-	if (dev & 1 << 22)
-		printf("\tSPIm Fail1\n");
+	if (dev & 1<<4) printf("\tJTAG Active\n");
+	if (dev & 1<<5) printf("\tPWD Protect\n");
+	if (dev & 1<<6) printf("\tOTP\n");
+	if (dev & 1<<7) printf("\tDecrypt Enable\n");
+	if (dev & REG_STATUS_DONE) printf("\tDone Flag\n");
+	if (dev & REG_STATUS_ISC_EN) printf("\tISC Enable\n");
+	if (dev & 1 << 10) printf("\tWrite Enable\n");
+	if (dev & 1 << 11) printf("\tRead Enable\n");
+	if (dev & REG_STATUS_BUSY) printf("\tBusy Flag\n");
+	if (dev & REG_STATUS_FAIL) printf("\tFail Flag\n");
+	if (dev & 1 << 14) printf("\tFFEA OTP\n");
+	if (dev & 1 << 15) printf("\tDecrypt Only\n");
+	if (dev & 1 << 16) printf("\tPWD Enable\n");
+	if (_fpga_family == NEXUS_FAMILY) {
+		if (dev & 1 << 17) printf("\tPWD All\n");
+		if (dev & 1 << 18) printf("\tCID En\n");
+		if (dev & 1 << 19) printf("\tinternal use\n");
+		if (dev & 1 << 21) printf("\tEncryption PreAmble\n");
+		if (dev & 1 << 22) printf("\tStd PreAmble\n");
+		if (dev & 1 << 23) printf("\tSPIm Fail1\n");
+		err = (dev >> 24)&0x0f;
+	} else {
+		if (dev & 1 << 17) printf("\tUFM OTP\n");
+		if (dev & 1 << 18) printf("\tASSP\n");
+		if (dev & 1 << 19) printf("\tSDM Enable\n");
+		if (dev & 1 << 20) printf("\tEncryption PreAmble\n");
+		if (dev & 1 << 21) printf("\tStd PreAmble\n");
+		if (dev & 1 << 22) printf("\tSPIm Fail1\n");
+		err = (dev >> 23)&0x07;
+	}
 
-	uint8_t err = (dev >> 23)&0x07;
 	printf("\t");
 	switch (err) {
 		case 0:
@@ -722,15 +731,90 @@ void Lattice::displayReadReg(uint32_t dev)
 		default:
 			printf("unknown %x\n", err);
 	}
-	if (dev & REG_STATUS_EXEC_ERR)
-		printf("\tEXEC Error\n");
-	if (dev & 1 << 27)
-		printf("\tDevice failed to verify\n");
-	if (dev & 1 << 28)
-		printf("\tInvalid Command\n");
-	if (dev & 1 << 29) printf("\tSED Error\n");
-	if (dev & 1 << 30) printf("\tBypass Mode\n");
-	if (dev & ((uint32_t)1 << 31)) printf("\tFT Mode\n");
+
+	if (_fpga_family == NEXUS_FAMILY) {
+		if ((dev >> 28) & 0x01) printf("\tEXEC Error\n");
+		if ((dev >> 29) & 0x01) printf("\tID Error\n");
+		if ((dev >> 30) & 0x01) printf("\tInvalid Command\n");
+		if ((dev >> 31) & 0x01) printf("\tWDT Busy\n");
+	} else {
+		if (dev & REG_STATUS_EXEC_ERR) printf("\tEXEC Error\n");
+		if ((dev >> 27) & 0x01) printf("\tDevice failed to verify\n");
+		if ((dev >> 28) & 0x01) printf("\tInvalid Command\n");
+		if ((dev >> 29) & 0x01) printf("\tSED Error\n");
+		if ((dev >> 30) & 0x01) printf("\tBypass Mode\n");
+		if ((dev >> 31) & 0x01) printf("\tFT Mode\n");
+	}
+
+#if 0
+	if (_fpga_family == NEXUS_FAMILY) {
+		if ((dev >> 33) & 0x01) printf("\tDry Run Done\n");
+		err = (dev >> 34)&0x0f;
+		printf("\tBSE Error 1 Code for previous bitstream execution\n");
+		printf("\t\t");
+		switch (err) {
+			case 0:
+				printf("No err\n");
+				break;
+			case 1:
+				printf("ID ERR\n");
+				break;
+			case 2:
+				printf("CMD ERR\n");
+				break;
+			case 3:
+				printf("CRC ERR\n");
+				break;
+			case 4:
+				printf("Preamble ERR\n");
+				break;
+			case 5:
+				printf("Abort ERR\n");
+				break;
+			case 6:
+				printf("Overflow ERR\n");
+				break;
+			case 7:
+				printf("SDM EOF\n");
+				break;
+			case 8:
+				printf("Authentification ERR\n");
+				break;
+			case 9:
+				printf("Authentification Setup ERR\n");
+				break;
+			case 10:
+				printf("Bitstream Engine Timeout ERR\n");
+				break;
+			default:
+				printf("unknown %x\n", err);
+		}
+		if ((dev >> 38) & 0x01) printf("\tBypass Mode\n");
+		if ((dev >> 39) & 0x01) printf("\tFlow Through Mode\n");
+		if ((dev >> 42) & 0x01) printf("\tSFDP Timeout\n");
+		if ((dev >> 43) & 0x01) printf("\tKey Destroy pass\n");
+		if ((dev >> 44) & 0x01) printf("\tINITN\n");
+		if ((dev >> 45) & 0x01) printf("\tI3C Parity Error2\n");
+		if ((dev >> 46) & 0x01) printf("\tINIT Bus ID Error\n");
+		if ((dev >> 47) & 0x01) printf("\tI3C Parity Error1\n");
+		err = (dev >> 48) & 0x03;
+		printf("\tAuthentification mode:\n");
+		printf("\t\t");
+		switch (err) {
+			case 3:
+			case 0:
+				printf("No Auth\n");
+				break;
+			case 1:
+				printf("ECDSA\n");
+				break;
+			case 2:
+				printf("HMAC\n");
+				break;
+		}
+		if ((dev >> 50) & 0x01) printf("\tAuthentification Done\n");
+		if ((dev >> 51) & 0x01) printf("\tDry Run Authentification Done\n");
+#endif
 }
 
 bool Lattice::pollBusyFlag(bool verbose)
