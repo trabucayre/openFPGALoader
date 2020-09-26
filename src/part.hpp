@@ -22,6 +22,13 @@ static std::map <int, fpga_model> fpga_list = {
 
 	{0x020f30dd, {"altera", "cyclone 10 LP", "10CL025"}},
 
+	{0x010F0043, {"lattice", "CrosslinkNX", "LIFCL-17"}},
+	{0x010F1043, {"lattice", "CrosslinkNX", "LIFCL-40-ES"}},
+	{0x110F1043, {"lattice", "CrosslinkNX", "LIFCL-40"}},
+
+	{0x310F0043, {"lattice", "CertusNX", "LFD2NX-17"}},
+	{0x310F1043, {"lattice", "CertusNX", "LFD2NX-40"}},
+
 	{0x012bd043, {"lattice", "MachXO2",   "LCMXO2-7000HC"}},
 	{0x012b5043, {"lattice", "MachXO2",   "LCMXO2-7000HE"}},
 
