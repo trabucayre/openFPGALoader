@@ -195,9 +195,10 @@ void Gowin::program(unsigned int offset)
 
 	/* check if file checksum == checksum in FPGA */
 	status = readUserCode();
-	if (_fs->checksum() != status)
+	if (_fs->checksum() != status) {
 		printError("SRAM Flash: FAIL");
-	else
+		printf("%04x %04x\n", _fs->checksum(), status);
+	} else
 		printSuccess("SRAM Flash: Success");
 	if (_verbose)
 		displayReadReg(readStatusReg());
