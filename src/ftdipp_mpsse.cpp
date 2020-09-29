@@ -20,7 +20,8 @@ using namespace std;
 	do { if (_verbose) fprintf(stdout, __VA_ARGS__);}while(0)
 
 FTDIpp_MPSSE::FTDIpp_MPSSE(const mpsse_bit_config &cable, const string &dev,
-			   uint32_t clkHZ, bool verbose):_verbose(verbose), _vid(0),
+				const std::string &serial, uint32_t clkHZ, bool verbose):
+				_verbose(verbose), _vid(0),
 				_pid(0), _bus(-1), _addr(-1),
 				_interface(cable.interface),
 				_clkHZ(clkHZ), _buffer_size(2*32768), _num(0)
@@ -36,24 +37,7 @@ FTDIpp_MPSSE::FTDIpp_MPSSE(const mpsse_bit_config &cable, const string &dev,
 		_pid = cable.pid;
 	}
 
-	open_device(115200);
-	_buffer_size = _ftdi->max_packet_size;
-
-	_buffer = (unsigned char *)malloc(sizeof(unsigned char) * _buffer_size);
-	if (!_buffer) {
-		cout << "_buffer malloc failed" << endl;
-		throw std::exception();
-	}
-}
-
-FTDIpp_MPSSE::FTDIpp_MPSSE(const mpsse_bit_config &cable,
-			   uint32_t clkHZ, bool verbose):_verbose(verbose),
-			   _vid(cable.vid), _pid(cable.pid), _bus(-1),
-			   _addr(-1), _interface(cable.interface),
-			   _clkHZ(clkHZ), _buffer_size(2*32768), _num(0)
-{
-	sprintf(_product, "");
-	open_device(115200);
+	open_device(serial, 115200);
 	_buffer_size = _ftdi->max_packet_size;
 
 	_buffer = (unsigned char *)malloc(sizeof(unsigned char) * _buffer_size);
@@ -72,7 +56,7 @@ FTDIpp_MPSSE::~FTDIpp_MPSSE()
 	free(_buffer);
 }
 
-void FTDIpp_MPSSE::open_device(unsigned int baudrate)
+void FTDIpp_MPSSE::open_device(const std::string &serial, unsigned int baudrate)
 {
 	int ret;
 
@@ -86,7 +70,7 @@ void FTDIpp_MPSSE::open_device(unsigned int baudrate)
 
 	ftdi_set_interface(_ftdi, (ftdi_interface)_interface);
 	if (_bus == -1 || _addr == -1)
-		ret = ftdi_usb_open_desc(_ftdi, _vid, _pid, NULL, NULL);
+		ret = ftdi_usb_open_desc(_ftdi, _vid, _pid, NULL, serial.empty() ? NULL : serial.c_str());
 	else
 #if (OLD_FTDI_VERSION == 1)
 		ret = ftdi_usb_open_desc(_ftdi, _vid, _pid, _product, NULL);

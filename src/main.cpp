@@ -44,6 +44,7 @@ struct arguments {
 	string bit_file;
 	string device;
 	string cable;
+	string ftdi_serial;
 	int ftdi_channel;
 	uint32_t freq;
 	string board;
@@ -66,7 +67,7 @@ int main(int argc, char **argv)
 	jtag_pins_conf_t pins_config = {0, 0, 0, 0};
 
 	/* command line args. */
-	struct arguments args = {false, false, false, 0, "", "-", "-", -1, 6000000, "-",
+	struct arguments args = {false, false, false, 0, "", "", "-", "", -1, 6000000, "-",
 			false, false, false, false, false, true, false};
 	/* parse arguments */
 	try {
@@ -125,13 +126,17 @@ int main(int argc, char **argv)
 		cable.config.interface = mapping[args.ftdi_channel];
 	}
 
+	if (args.ftdi_serial != "-") {
+		if (cable.type != MODE_FTDI_SERIAL && cable.type != MODE_FTDI_BITBANG){
+			printError("Error: FTDI serial param is for FTDI cables.");
+			return EXIT_FAILURE;
+		}
+	}
+
 	/* jtag base */
 	Jtag *jtag;
 	try {
-		if (args.device == "-")
-			jtag = new Jtag(cable, &pins_config, args.freq, false);
-		else
-			jtag = new Jtag(cable, &pins_config, args.device, args.freq, false);
+		jtag = new Jtag(cable, &pins_config, args.device, args.ftdi_serial, args.freq, false);
 	} catch (std::exception &e) {
 		printError("Error: Failed to claim cable");
 		return EXIT_FAILURE;
@@ -261,6 +266,7 @@ int parse_opt(int argc, char **argv, struct arguments *args, jtag_pins_conf_t *p
 			("b,board",     "board name, may be used instead of cable",
 				cxxopts::value<string>(args->board))
 			("c,cable", "jtag interface", cxxopts::value<string>(args->cable))
+			("ftdi-serial", "FTDI chip serial number", cxxopts::value<string>(args->ftdi_serial))
 			("ftdi-channel", "FTDI chip channel number (channels 0-3 map to A-D)", cxxopts::value<int>(args->ftdi_channel))
 #ifdef USE_UDEV
 			("d,device",  "device to use (/dev/ttyUSBx)",

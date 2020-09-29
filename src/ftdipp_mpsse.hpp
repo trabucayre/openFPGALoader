@@ -16,9 +16,7 @@ class FTDIpp_MPSSE {
 		} mpsse_bit_config;
 
 		FTDIpp_MPSSE(const mpsse_bit_config &cable, const std::string &dev,
-			uint32_t clkHZ, bool verbose = false);
-		FTDIpp_MPSSE(const mpsse_bit_config &cablen,
-			uint32_t clkHZ, bool verbose = false);
+			const std::string &serial, uint32_t clkHZ, bool verbose = false);
 		~FTDIpp_MPSSE();
 
 		int init(unsigned char latency, unsigned char bitmask_mode, unsigned char mode,
@@ -30,7 +28,7 @@ class FTDIpp_MPSSE {
 		int pid() {return _pid;}
 
 	protected:
-		void open_device(unsigned int baudrate);
+		void open_device(const std::string &serial, unsigned int baudrate);
 		void ftdi_usb_close_internal();
 		int close_device();
 		int mpsse_write();

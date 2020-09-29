@@ -41,15 +41,8 @@ using namespace std;
 #endif
 
 FtdiJtagMPSSE::FtdiJtagMPSSE(const FTDIpp_MPSSE::mpsse_bit_config &cable,
-			string dev, uint32_t clkHZ, bool verbose):
-			FTDIpp_MPSSE(cable, dev, clkHZ, verbose), _ch552WA(false)
-{
-	init_internal(cable);
-}
-
-FtdiJtagMPSSE::FtdiJtagMPSSE(const FTDIpp_MPSSE::mpsse_bit_config &cable,
-		   uint32_t clkHZ, bool verbose):
-		   FTDIpp_MPSSE(cable, clkHZ, verbose), _ch552WA(false)
+			string dev, const string &serial, uint32_t clkHZ, bool verbose):
+			FTDIpp_MPSSE(cable, dev, serial, clkHZ, verbose), _ch552WA(false)
 {
 	init_internal(cable);
 }

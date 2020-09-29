@@ -30,9 +30,7 @@
 class Jtag {
  public:
 	Jtag(cable_t &cable, const jtag_pins_conf_t *pin_conf, std::string dev,
-		uint32_t clkHZ, bool verbose = false);
-	Jtag(cable_t &cable, const jtag_pins_conf_t *pin_conf,
-		uint32_t clkHZ, bool verbose);
+		const std::string &serial, uint32_t clkHZ, bool verbose = false);
 	~Jtag();
 
 	/* maybe to update */
@@ -82,7 +80,7 @@ class Jtag {
 	void setVerbose(bool verbose){_verbose = verbose;}
 
  private:
-	void init_internal(cable_t &cable, const std::string &dev,
+	void init_internal(cable_t &cable, const std::string &dev, const std::string &serial,
 		const jtag_pins_conf_t *pin_conf, uint32_t clkHZ);
 	bool _verbose;
 	int _state;
