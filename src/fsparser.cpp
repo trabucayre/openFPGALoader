@@ -102,9 +102,14 @@ int FsParser::parse()
 	 * if true 0 -> 0, 1 -> 1
 	 */
 
+	uint32_t idcode = 0;
+
 	for (auto &&line: vectTmp) {
+		/* store bit for checksum */
 		if ((int)line.size() == max)
 			tmp += line.substr(padding, addr_length);
+		/* store header for futher informations */
+		string data_line;
 		for (int i = 0; i < (int)line.size(); i+=8) {
 			data = 0;
 			for (int ii = 0; ii < 8; ii++) {
@@ -115,13 +120,55 @@ int FsParser::parse()
 					data |= val << (7-ii);
 			}
 			_bit_data += data;
+			data_line += (_reverseByte)? reverseByte(data): data;
+		}
+		if (line.size() < max) {
+			if (data_line[0] == 0x06) {
+				string str = data_line.substr(data_line.size()-4, 4);
+				for (auto it = str.begin(); it != str.end(); it++)
+					idcode = idcode << 8 | (uint8_t)(*it);
+			}
 		}
 	}
 	_bit_length = (int)_bit_data.size() * 8;
-	printf("%02x\n", _checksum);
-	uint32_t sum = 0;
 
-	for (int pos = 0; pos < (int)tmp.size(); pos+=16) {
+	if (idcode == 0)
+		printf("IDCODE not found\n");
+
+	/* use idcode to determine Count of Address */
+	unsigned nb_line = 0;
+	switch (idcode) {
+		case 0x0900281b: /* GW1N-1    */
+		case 0x0900381b: /* GW1N-1S   */
+		case 0x0100681b: /* GW1NZ-1   */
+			nb_line = 274;
+			break;
+		case 0x0100181b: /* GW1N-2    */
+		case 0x1100181b: /* GW1N-2B   */
+		case 0x0300081b: /* GW1NS-2   */
+		case 0x0300181b: /* GW1NSx-2C */
+		case 0x1100381b: /* GW1N-4B   */
+			nb_line = 494;
+			break;
+		case 0x0100481b: /* GW1N-6    */
+		case 0x1100581b: /* GW1N-9    */
+			nb_line = 712;
+			break;
+		case 0x0000081b: /* GW2A-18   */
+			nb_line = 1342;
+			break;
+		case 0x0000281b: /* GW2A-55    */
+			nb_line = 2038;
+			break;
+	}
+
+	printf("%02x\n", _checksum);
+
+	/* checksum */
+	uint32_t sum = 0;
+	uint32_t max_pos = (idcode == 0) ? tmp.size() : addr_length * nb_line;
+
+	for (int pos = 0; pos < max_pos; pos+=16) {
 		int16_t data16 = 0;
 		for (int offset = 0; offset < 16; offset ++) {
 			uint16_t val = (tmp[pos+offset] == '1'?1:0);
