@@ -90,7 +90,7 @@ Lattice::Lattice(Jtag *jtag, const string filename,
 	string family = fpga_list[idcode].family;
 	if (family == "MachXO2")
 		_fpga_family = MACHXO2_FAMILY;
-	else if (family == "MachXO3")
+	else if (family == "MachXO3LF")
 		_fpga_family = MACHXO3_FAMILY;
 	else if (family == "ECP5")
 		_fpga_family = ECP5_FAMILY;
