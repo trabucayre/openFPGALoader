@@ -36,10 +36,8 @@
 class FtdiJtagBitBang : public JtagInterface, private FTDIpp_MPSSE {
  public:
 	FtdiJtagBitBang(const FTDIpp_MPSSE::mpsse_bit_config &cable,
-		const jtag_pins_conf_t *pin_conf, std::string dev,
+		const jtag_pins_conf_t *pin_conf, std::string dev, const std::string &serial,
 		uint32_t clkHZ, bool verbose = false);
-	FtdiJtagBitBang(const FTDIpp_MPSSE::mpsse_bit_config &cable,
-		const jtag_pins_conf_t *pin_conf, uint32_t clkHZ, bool verbose);
 	virtual ~FtdiJtagBitBang();
 
 	int setClkFreq(uint32_t clkHZ) override;

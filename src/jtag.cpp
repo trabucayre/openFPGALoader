@@ -67,23 +67,13 @@ using namespace std;
  */
 
 Jtag::Jtag(cable_t &cable, const jtag_pins_conf_t *pin_conf, string dev,
-			uint32_t clkHZ, bool verbose):
+			const string &serial, uint32_t clkHZ, bool verbose):
 			_verbose(verbose),
 			_state(RUN_TEST_IDLE),
 			_tms_buffer_size(128), _num_tms(0),
 			_board_name("nope")
 {
-	init_internal(cable, dev, pin_conf, clkHZ);
-}
-
-Jtag::Jtag(cable_t &cable, const jtag_pins_conf_t *pin_conf,
-			uint32_t clkHZ, bool verbose):
-		   _verbose(verbose),
-		   _state(RUN_TEST_IDLE),
-		   _tms_buffer_size(128), _num_tms(0),
-		   _board_name("nope")
-{
-	init_internal(cable, "", pin_conf, clkHZ);
+	init_internal(cable, dev, serial, pin_conf, clkHZ);
 }
 
 Jtag::~Jtag()
@@ -92,7 +82,7 @@ Jtag::~Jtag()
 	delete _jtag;
 }
 
-void Jtag::init_internal(cable_t &cable, const string &dev,
+void Jtag::init_internal(cable_t &cable, const string &dev, const string &serial,
 	const jtag_pins_conf_t *pin_conf, uint32_t clkHZ)
 {
 	switch (cable.type) {
@@ -102,10 +92,10 @@ void Jtag::init_internal(cable_t &cable, const string &dev,
 	case MODE_FTDI_BITBANG:
 		if (pin_conf == NULL)
 			throw std::exception();
-		_jtag = new FtdiJtagBitBang(cable.config, pin_conf, dev, clkHZ, _verbose);
+		_jtag = new FtdiJtagBitBang(cable.config, pin_conf, dev, serial, clkHZ, _verbose);
 		break;
 	case MODE_FTDI_SERIAL:
-		_jtag = new FtdiJtagMPSSE(cable.config, dev, clkHZ, _verbose);
+		_jtag = new FtdiJtagMPSSE(cable.config, dev, serial, clkHZ, _verbose);
 		break;
 	case MODE_DIRTYJTAG:
 		_jtag = new DirtyJtag(clkHZ, _verbose);

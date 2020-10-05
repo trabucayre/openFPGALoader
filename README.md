@@ -108,28 +108,34 @@ After that you need to unplug and replug your device.
 ```bash
 openFPGALoader --help
 Usage: openFPGALoader [OPTION...] BIT_FILE
-openFPGALoader -- a program to flash cyclone10 LP FPGA
+openFPGALoader -- a program to flash FPGA
 
-  -b, --board=BOARD          board name, may be used instead of cable
-  -c, --cable=CABLE          jtag interface
-  -d, --device=DEVICE        device to use (/dev/ttyUSBx)
-      --ftdi-channel=CHANNEL FTDI chip channel number (channels 0-3 map to A-D)
-      --detect               detect FPGA
-      --freq=FREQ            jtag frequency (Hz)
-  -f, --write-flash          write bitstream in flash (default: false, only for
-                             Gowin and ECP5 devices)
-      --list-boards          list all supported boards
-      --list-cables          list all supported cables
-      --list-fpga            list all supported FPGA
-  -m, --write-sram           write bitstream in SRAM (default: true, only for
-                             Gowin and ECP5 devices)
-  -o, --offset=OFFSET        start offset in EEPROM
-      --pins arg             pin config (only for bitbang) TDI:TDO:TCK:TMS
-  -r, --reset                reset FPGA after operations
-  -v, --verbose              Produce verbose output
-  -h, --help                 Give this help list
-  -V, --version              Print program version
+      --bitstream arg     bitstream
+  -b, --board arg         board name, may be used instead of cable
+  -c, --cable arg         jtag interface
+      --ftdi-serial arg   FTDI chip serial number
+      --ftdi-channel arg  FTDI chip channel number (channels 0-3 map to A-D)
+  -d, --device arg        device to use (/dev/ttyUSBx)
+      --detect            detect FPGA
+      --freq arg          jtag frequency (Hz)
+  -f, --write-flash       write bitstream in flash (default: false, only for
+                          Gowin and ECP5 devices)
+      --list-boards       list all supported boards
+      --list-cables       list all supported cables
+      --list-fpga         list all supported FPGA
+  -m, --write-sram        write bitstream in SRAM (default: true, only for
+                          Gowin and ECP5 devices)
+  -o, --offset arg        start offset in EEPROM
+      --pins arg          pin config (only for ft232R) TDI:TDO:TCK:TMS
+  -r, --reset             reset FPGA after operations
+  -v, --verbose           Produce verbose output
+  -h, --help              Give this help list
+  -V, --Version           Print program version
 
+Mandatory or optional arguments to long options are also mandatory or optional
+for any corresponding short options.
+
+Report bugs to <gwenhael.goavec-merou@trabucayre.com>.
 ```
 To have complete help
 
