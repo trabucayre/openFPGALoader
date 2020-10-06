@@ -45,14 +45,14 @@ void EPCQ::wait_wel()
 {
 	uint8_t cmd = RD_STATUS_REG, recv;
 
-	_spi.setCSmode(SPI_CS_MANUAL);
+	_spi.setCSmode(FtdiSpi::SPI_CS_MANUAL);
 	_spi.clearCs();
 	_spi.ft2232_spi_wr_and_rd(1, &cmd, NULL);
 	do {
 		_spi.ft2232_spi_wr_and_rd(1, NULL, &recv);
 	} while(!(recv & STATUS_REG_WEL));
 	_spi.setCs();
-	_spi.setCSmode(SPI_CS_AUTO);
+	_spi.setCSmode(FtdiSpi::SPI_CS_AUTO);
 }
 
 /* wait for WIP goes low by reading
@@ -62,14 +62,14 @@ void EPCQ::wait_wip()
 {
 	uint8_t cmd = RD_STATUS_REG, recv;
 
-	_spi.setCSmode( SPI_CS_MANUAL);
+	_spi.setCSmode( FtdiSpi::SPI_CS_MANUAL);
 	_spi.clearCs();
 	_spi.ft2232_spi_wr_and_rd(1, &cmd, NULL);
 	do {
 		_spi.ft2232_spi_wr_and_rd(1, NULL, &recv);
 	} while(0x00 != (recv & STATUS_REG_WIP));
 	_spi.setCs();
-	_spi.setCSmode( SPI_CS_AUTO);
+	_spi.setCSmode( FtdiSpi::SPI_CS_AUTO);
 }
 
 /* enable write enable */

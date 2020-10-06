@@ -7,12 +7,15 @@
 
 class FtdiSpi : public FTDIpp_MPSSE, SPIInterface {
  public:
-	#define SPI_MSB_FIRST 0
-	#define SPI_LSB_FIRST 1
+	enum SPI_endianness {
+		SPI_MSB_FIRST = 0,
+		SPI_LSB_FIRST = 1
+	};
 
-	#define SPI_CS_AUTO   0
-	#define SPI_CS_MANUAL 1
-
+	enum SPI_CS_mode {
+		SPI_CS_AUTO   = 0,
+		SPI_CS_MANUAL = 1
+	};
 
 	FtdiSpi(int vid, int pid, unsigned char interface, uint32_t clkHZ,
 		bool verbose);
