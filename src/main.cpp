@@ -30,10 +30,12 @@
 #include "cable.hpp"
 #include "device.hpp"
 #include "display.hpp"
+#include "ftdispi.hpp"
 #include "gowin.hpp"
 #include "lattice.hpp"
 #include "jtag.hpp"
 #include "part.hpp"
+#include "spiFlash.hpp"
 #include "xilinx.hpp"
 
 using namespace std;
@@ -55,6 +57,7 @@ struct arguments {
 	bool write_flash;
 	bool write_sram;
 	bool is_list_command;
+	bool spi;
 };
 
 int parse_opt(int argc, char **argv, struct arguments *args, jtag_pins_conf_t *pins_config);
@@ -68,7 +71,7 @@ int main(int argc, char **argv)
 
 	/* command line args. */
 	struct arguments args = {false, false, false, 0, "", "", "-", "", -1, 6000000, "-",
-			false, false, false, false, false, true, false};
+			false, false, false, false, false, true, false, false};
 	/* parse arguments */
 	try {
 		if (parse_opt(argc, argv, &args, &pins_config))
@@ -80,6 +83,22 @@ int main(int argc, char **argv)
 
 	if (args.is_list_command) {
 		displaySupported(args);
+		return EXIT_SUCCESS;
+	}
+
+	/* FLASH direct access */
+	if (args.spi) {
+		FTDIpp_MPSSE::mpsse_bit_config spi_cable = cable_list["ft2232"].config;
+		int mapping[] = {INTERFACE_A, INTERFACE_B, INTERFACE_C, INTERFACE_D};
+		spi_cable.interface = mapping[args.ftdi_channel];
+		cout << spi_cable.interface << endl;
+		FtdiSpi *spi = new FtdiSpi(spi_cable, 6000000, args.verbose);
+		SPIFlash flash((SPIInterface *)spi, args.verbose);
+		flash.power_up();
+		flash.reset();
+		flash.read_id();
+
+		delete spi;
 		return EXIT_SUCCESS;
 	}
 
@@ -291,6 +310,8 @@ int parse_opt(int argc, char **argv, struct arguments *args, jtag_pins_conf_t *p
 				cxxopts::value<vector<string>>(pins))
 			("r,reset",   "reset FPGA after operations",
 				cxxopts::value<bool>(args->reset))
+			("spi",   "SPI mode (only for FTDI in serial mode)",
+				cxxopts::value<bool>(args->spi))
 			("v,verbose", "Produce verbose output", cxxopts::value<bool>(args->verbose))
 			("h,help", "Give this help list")
 			("V,Version", "Print program version");

@@ -128,6 +128,7 @@ openFPGALoader -- a program to flash FPGA
   -o, --offset arg        start offset in EEPROM
       --pins arg          pin config (only for ft232R) TDI:TDO:TCK:TMS
   -r, --reset             reset FPGA after operations
+      --spi               SPI mode (only for FTDI in serial mode)
   -v, --verbose           Produce verbose output
   -h, --help              Give this help list
   -V, --Version           Print program version
