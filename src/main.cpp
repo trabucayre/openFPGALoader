@@ -36,6 +36,7 @@
 #include "jtag.hpp"
 #include "part.hpp"
 #include "spiFlash.hpp"
+#include "rawParser.hpp"
 #include "xilinx.hpp"
 
 using namespace std;
@@ -83,22 +84,6 @@ int main(int argc, char **argv)
 
 	if (args.is_list_command) {
 		displaySupported(args);
-		return EXIT_SUCCESS;
-	}
-
-	/* FLASH direct access */
-	if (args.spi) {
-		FTDIpp_MPSSE::mpsse_bit_config spi_cable = cable_list["ft2232"].config;
-		int mapping[] = {INTERFACE_A, INTERFACE_B, INTERFACE_C, INTERFACE_D};
-		spi_cable.interface = mapping[args.ftdi_channel];
-		cout << spi_cable.interface << endl;
-		FtdiSpi *spi = new FtdiSpi(spi_cable, 6000000, args.verbose);
-		SPIFlash flash((SPIInterface *)spi, args.verbose);
-		flash.power_up();
-		flash.reset();
-		flash.read_id();
-
-		delete spi;
 		return EXIT_SUCCESS;
 	}
 
@@ -150,6 +135,52 @@ int main(int argc, char **argv)
 			printError("Error: FTDI serial param is for FTDI cables.");
 			return EXIT_FAILURE;
 		}
+	}
+
+	/* FLASH direct access */
+	if (args.spi) {
+		FtdiSpi *spi = NULL;
+		RawParser *bit = NULL;
+
+		try {
+			spi = new FtdiSpi(cable.config, args.freq, args.verbose);
+		} catch (std::exception &e) {
+			printError("Error: Failed to claim cable");
+			return EXIT_FAILURE;
+		}
+
+		SPIFlash flash((SPIInterface *)spi, args.verbose);
+		flash.power_up();
+		flash.reset();
+		flash.read_id();
+
+		if (!args.bit_file.empty()) {
+			printInfo("Open file " + args.bit_file + " ", false);
+			try {
+				bit = new RawParser(args.bit_file, false);
+				printSuccess("DONE");
+			} catch (std::exception &e) {
+				printError("FAIL");
+				delete spi;
+				return EXIT_FAILURE;
+			}
+
+			printInfo("Parse file ", false);
+			if (bit->parse() == EXIT_FAILURE) {
+				printError("FAIL");
+				delete spi;
+				return EXIT_FAILURE;
+			} else {
+				printSuccess("DONE");
+			}
+
+			flash.erase_and_prog(args.offset, bit->getData(), bit->getLength()/8);
+		}
+
+		delete bit;
+		delete spi;
+
+		return EXIT_SUCCESS;
 	}
 
 	/* jtag base */
