@@ -70,7 +70,7 @@ int main(int argc, char **argv)
 	jtag_pins_conf_t pins_config = {0, 0, 0, 0};
 
 	/* command line args. */
-	struct arguments args = {false, false, false, 0, "", "", "-", "-", -1, 6000000, "-",
+	struct arguments args = {false, false, false, 0, "", "", "-", "", -1, 6000000, "-",
 			false, false, false, false, false, true, false, false};
 	/* parse arguments */
 	try {
@@ -145,7 +145,7 @@ int main(int argc, char **argv)
 		cable.config.interface = mapping[args.ftdi_channel];
 	}
 
-	if (args.ftdi_serial != "-") {
+	if (!args.ftdi_serial.empty()) {
 		if (cable.type != MODE_FTDI_SERIAL && cable.type != MODE_FTDI_BITBANG){
 			printError("Error: FTDI serial param is for FTDI cables.");
 			return EXIT_FAILURE;
