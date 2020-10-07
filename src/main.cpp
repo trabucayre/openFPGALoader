@@ -70,7 +70,7 @@ int main(int argc, char **argv)
 	jtag_pins_conf_t pins_config = {0, 0, 0, 0};
 
 	/* command line args. */
-	struct arguments args = {false, false, false, 0, "", "", "-", "", -1, 6000000, "-",
+	struct arguments args = {false, false, false, 0, "", "", "-", "-", -1, 6000000, "-",
 			false, false, false, false, false, true, false, false};
 	/* parse arguments */
 	try {
