@@ -265,6 +265,7 @@ bool Gowin::wr_rd(uint8_t cmd,
 	if (rx || tx) {
 		_jtag->shiftDR(xfer_tx, (rx) ? xfer_rx : NULL, 8 * xfer_len);
 		_jtag->toggleClk(6);
+		_jtag->flush();
 	}
 	if (rx) {
 		if (verbose) {
