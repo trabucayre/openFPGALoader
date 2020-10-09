@@ -212,8 +212,8 @@ int FtdiJtagMPSSE::writeTDI(uint8_t *tdi, uint8_t *tdo, uint32_t len, bool last)
 	unsigned char c[len];
 	unsigned char *rx_ptr = (unsigned char *)tdo;
 	unsigned char *tx_ptr = (unsigned char *)tdi;
-	unsigned char tx_buf[3] = {(unsigned char)(MPSSE_LSB | MPSSE_WRITE_NEG |
-						((tdi) ? MPSSE_DO_WRITE : 0) |
+	unsigned char tx_buf[3] = {(unsigned char)(MPSSE_LSB |
+						((tdi) ? (MPSSE_DO_WRITE | MPSSE_WRITE_NEG) : 0) |
 						((tdo) ? MPSSE_DO_READ : 0)),
 						static_cast<unsigned char>((xfer - 1) & 0xff),       // low
 						static_cast<unsigned char>((((xfer - 1) >> 8) & 0xff))}; // high
