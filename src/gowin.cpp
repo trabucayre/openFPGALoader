@@ -468,7 +468,8 @@ bool Gowin::flashSRAM(uint8_t *data, int length)
  */
 bool Gowin::eraseFLASH()
 {
-	uint8_t tt[37500];
+	uint8_t tt[37500 * 8];
+	memset(tt, 0, 37500 * 8);
 	unsigned char tx[4] = {0, 0, 0, 0};
 	printInfo("erase Flash ", false);
 	wr_rd(EFLASH_ERASE, NULL, 0, NULL, 0);
