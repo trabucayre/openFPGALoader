@@ -132,6 +132,7 @@ int Jtag::detectChain(vector<int> &devices, int max_dev)
 			devices.push_back(tmp);
 	}
 	go_test_logic_reset();
+	flushTMS(true);
 	return devices.size();
 }
 
@@ -139,7 +140,7 @@ void Jtag::setTMS(unsigned char tms)
 {
 	display("%s %x %d %d\n", __func__, tms, _num_tms, (_num_tms >> 3));
 	if (_num_tms+1 == _tms_buffer_size * 8)
-		flushTMS();
+		flushTMS(false);
 	if (tms != 0)
 		_tms_buffer[_num_tms>>3] |= (0x1) << (_num_tms & 0x7);
 	_num_tms++;
@@ -175,13 +176,13 @@ void Jtag::go_test_logic_reset()
 	/* idenpendly to current state 5 clk with TMS high is enough */
 	for (int i = 0; i < 6; i++)
 		setTMS(0x01);
-	flushTMS(true);
+	flushTMS(false);
 	_state = TEST_LOGIC_RESET;
 }
 
 int Jtag::read_write(unsigned char *tdi, unsigned char *tdo, int len, char last)
 {
-	flushTMS(true);
+	flushTMS(false);
 	_jtag->writeTDI(tdi, tdo, len, last);
 	if (last == 1)
 		_state = (_state == SHIFT_DR) ? EXIT1_DR : EXIT1_IR;
@@ -191,7 +192,7 @@ int Jtag::read_write(unsigned char *tdi, unsigned char *tdo, int len, char last)
 void Jtag::toggleClk(int nb)
 {
 	unsigned char c = (TEST_LOGIC_RESET == _state) ? 1 : 0;
-	flushTMS(true);
+	flushTMS(false);
 	if (_jtag->toggleClk(c, 0, nb) >= 0)
 		return;
 	throw std::exception();
@@ -202,7 +203,7 @@ int Jtag::shiftDR(unsigned char *tdi, unsigned char *tdo, int drlen, int end_sta
 {
 	set_state(SHIFT_DR);
 	// force transmit tms state
-	flushTMS(true);
+	flushTMS(false);
 	// currently don't care about multiple device in the chain
 	read_write(tdi, tdo, drlen, 1);// 1 since only one device
 
@@ -223,7 +224,7 @@ int Jtag::shiftIR(unsigned char *tdi, unsigned char *tdo, int irlen, int end_sta
 {
 	display("%s: avant shiftIR\n", __func__);
 	set_state(SHIFT_IR);
-	flushTMS(true);
+	flushTMS(false);
 	// currently don't care about multiple device in the chain
 
 	display("%s: envoi ircode\n", __func__);
@@ -421,7 +422,7 @@ void Jtag::set_state(int newState)
 			_tms_buffer[(_num_tms-1) / 8]);
 	}
 	/* force write buffer */
-	flushTMS();
+	flushTMS(false);
 }
 
 const char *Jtag::getStateName(tapState_t s)
