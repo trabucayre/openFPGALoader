@@ -88,14 +88,12 @@ int FsParser::parse()
 			max = (int) buffer.size();
 	}
 
-	/* we know each data size finished with checksum (16bits) + 6 x 0xff */
-	int addr_length = max - 8 * 8;
-	int padding = 0;
+	/* we know each data size finished with 6 x 0xff
+	 * and an optional checksum
+	 * */
+	int addr_length;
 	/* GW1N-6 and GW1N(R)-9 are address length not multiple of byte */
-	if (addr_length % 16 != 0) {
-		padding = 4;
-		addr_length -= 4;
-	}
+	int padding = 0;
 
 	/* Fs file format is MSB first
 	 * so if reverseByte = false bit 0 -> 7, 1 -> 6,
@@ -105,9 +103,6 @@ int FsParser::parse()
 	uint32_t idcode = 0;
 
 	for (auto &&line: vectTmp) {
-		/* store bit for checksum */
-		if ((int)line.size() == max)
-			tmp += line.substr(padding, addr_length);
 		/* store header for futher informations */
 		string data_line;
 		for (int i = 0; i < (int)line.size(); i+=8) {
@@ -123,7 +118,7 @@ int FsParser::parse()
 			data_line += (_reverseByte)? reverseByte(data): data;
 		}
 		if (line.size() < max) {
-			if (data_line[0] == 0x06) {
+			if ((0x7F & data_line[0]) == 0x06) {
 				string str = data_line.substr(data_line.size()-4, 4);
 				for (auto it = str.begin(); it != str.end(); it++)
 					idcode = idcode << 8 | (uint8_t)(*it);
@@ -142,6 +137,7 @@ int FsParser::parse()
 		case 0x0900381b: /* GW1N-1S   */
 		case 0x0100681b: /* GW1NZ-1   */
 			nb_line = 274;
+			addr_length = 1216;
 			break;
 		case 0x0100181b: /* GW1N-2    */
 		case 0x1100181b: /* GW1N-2B   */
@@ -149,20 +145,31 @@ int FsParser::parse()
 		case 0x0300181b: /* GW1NSx-2C */
 		case 0x1100381b: /* GW1N-4B   */
 			nb_line = 494;
+			addr_length = 2296;
 			break;
 		case 0x0100481b: /* GW1N-6    */
 		case 0x1100581b: /* GW1N-9    */
 			nb_line = 712;
+			addr_length = 2836;
+			padding = 4;
 			break;
 		case 0x0000081b: /* GW2A-18   */
 			nb_line = 1342;
+			addr_length = 3376;
 			break;
 		case 0x0000281b: /* GW2A-55    */
 			nb_line = 2038;
+			addr_length = 5536;
 			break;
+		default:
+			nb_line = 0;
 	}
 
-	printf("%02x\n", _checksum);
+	for (auto &&line: vectTmp) {
+		/* store bit for checksum */
+		if ((int)line.size() == max)
+			tmp += line.substr(padding, addr_length);
+	}
 
 	/* checksum */
 	uint32_t sum = 0;
@@ -178,6 +185,7 @@ int FsParser::parse()
 	}
 
 	_checksum = sum;
+	printf("checksum 0x%02x\n", _checksum);
 
 	printSuccess("Done");
 
