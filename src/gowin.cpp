@@ -139,15 +139,15 @@ void Gowin::programFlash()
 	wr_rd(NOOP, NULL, 0, NULL, 0);
 
 	/* wait for reload */
-	usleep(150*1000);
+	usleep(2*150*1000);
 
 	/* check if file checksum == checksum in FPGA */
 	status = readUserCode();
 	if (_fs->checksum() != status) {
-		printError("SRAM Flash: FAIL");
+		printError("CRC check : FAIL");
 		printf("%04x %04x\n", _fs->checksum(), status);
 	} else
-		printSuccess("SRAM Flash: Success");
+		printSuccess("CRC check: Success");
 
 	if (_verbose)
 		displayReadReg(readStatusReg());
@@ -376,7 +376,7 @@ bool Gowin::flashFLASH(uint8_t *data, int length)
 	memcpy(buffer+6*4, data, byte_length);
 
 
-	ProgressBar progress("Flash SRAM", buffer_length, 50);
+	ProgressBar progress("write Flash", buffer_length, 50);
 
 	for (int i=0, xpage=0; xpage < nb_xpage; i+=(nb_iter*4), xpage++) {
 		wr_rd(CONFIG_ENABLE, NULL, 0, NULL, 0);
