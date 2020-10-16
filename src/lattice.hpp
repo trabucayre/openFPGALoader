@@ -52,8 +52,9 @@ class Lattice: public Device, SPIInterface {
 		enum lattice_family_t {
 			MACHXO2_FAMILY = 0,
 			MACHXO3_FAMILY = 1,
-			ECP5_FAMILY = 2,
-			NEXUS_FAMILY = 3,
+			MACHXO3D_FAMILY = 2,
+			ECP5_FAMILY = 3,
+			NEXUS_FAMILY = 4,
 			UNKNOWN_FAMILY = 999
 		};
 

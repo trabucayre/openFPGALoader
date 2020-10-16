@@ -92,6 +92,8 @@ Lattice::Lattice(Jtag *jtag, const string filename,
 		_fpga_family = MACHXO2_FAMILY;
 	else if (family == "MachXO3LF")
 		_fpga_family = MACHXO3_FAMILY;
+	else if (family == "MachXO3D")
+	        _fpga_family = MACHXO3D_FAMILY;
 	else if (family == "ECP5")
 		_fpga_family = ECP5_FAMILY;
 	else if (family == "CrosslinkNX")
