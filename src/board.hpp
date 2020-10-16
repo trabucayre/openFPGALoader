@@ -45,6 +45,7 @@ static std::map <std::string, target_cable_t> board_list = {
 	{"ecp5_evn",   {"ft2232",     {}}},
 	{"machXO2EVN", {"ft2232",     {}}},
 	{"machXO3SK",  {"ft2232",     {}}},
+	{"machXO3EVN",  {"ft2232",     {}}},
 	{"licheeTang", {"anlogicCable", {}}},
 	{"littleBee",  {"ft2232",     {}}},
 	{"spartanEdgeAccelBoard", {"",{}}},

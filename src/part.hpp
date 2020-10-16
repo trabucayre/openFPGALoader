@@ -43,6 +43,8 @@ static std::map <int, fpga_model> fpga_list = {
 	{0x612BE043, {"lattice", "MachXO3LF", "LCMX03LF-9400C"}},
 	{0x612B6043, {"lattice", "MachXO3LF", "LCMX03LF-9400E"}},
 
+	{0x212e3043, {"lattice", "MachXO3D", "LCMX03D-9400HC"}},
+
 	{0x21111043, {"lattice", "ECP5", "LFE5U-12"}},
 	{0x41111043, {"lattice", "ECP5", "LFE5U-25"}},
 	{0x41112043, {"lattice", "ECP5", "LFE5U-45"}},
