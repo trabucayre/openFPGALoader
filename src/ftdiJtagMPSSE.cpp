@@ -209,7 +209,7 @@ int FtdiJtagMPSSE::writeTDI(uint8_t *tdi, uint8_t *tdo, uint32_t len, bool last)
 	int nb_byte = real_len >> 3;    // number of byte to send
 	int nb_bit = (real_len & 0x07); // residual bits
 	int xfer = tx_buff_size - 3;
-	unsigned char c[len];
+	unsigned char c[xfer];
 	unsigned char *rx_ptr = (unsigned char *)tdo;
 	unsigned char *tx_ptr = (unsigned char *)tdi;
 	unsigned char tx_buf[3] = {(unsigned char)(MPSSE_LSB |
