@@ -13,6 +13,7 @@ __Current support kits:__
 * [Lattice MachXO3D Development Board (LCMXO3D-9400HC)](https://www.latticesemi.com/products/developmentboardsandkits/machxo3d_development_board)
 * [Lattice CrossLink-NX Evaluation Board (LIFCL-40-EVN)](https://www.latticesemi.com/en/Products/DevelopmentBoardsAndKits/CrossLink-NXEvaluationBoard) (memory and spi flash)
 * [Lattice ECP5 5G Evaluation Board (LFE5UM5G-85F-EVN)](https://www.latticesemi.com/en/Products/DevelopmentBoardsAndKits/ECP5EvaluationBoard) (memory and spi flash)
+* [QMTech CycloneV Core Board](https://fr.aliexpress.com/i/1000006622149.html) (memory)
 * [Trenz Gowin LittleBee (TEC0117)](https://shop.trenz-electronic.de/en/TEC0117-01-FPGA-Module-with-GOWIN-LittleBee-and-8-MByte-internal-SDRAM)
 * [Saanlima Pipistrello LX45](http://pipistrello.saanlima.com/index.php?title=Welcome_to_Pipistrello) (memory)
 * [SeeedStudio Spartan Edge Accelerator Board](http://wiki.seeedstudio.com/Spartan-Edge-Accelerator-Board) (memory)
@@ -34,6 +35,7 @@ __Supported (tested) FPGA:__
 * Xilinx Spartan 6 [xc6slx45](https://www.xilinx.com/products/silicon-devices/fpga/spartan-6.html) (memory)
 * Xilinx Spartan 7 [xc7s15, xc7s50](https://www.xilinx.com/products/silicon-devices/fpga/spartan-7.html) (memory (all) and spi flash (xc7s50))
 * Intel Cyclone IV CE [EP4CE22](https://www.intel.com/content/www/us/en/products/programmable/fpga/cyclone-iv/features.html) (memory. See note below)
+* Intel Cyclone V E [5CEA2](https://www.intel.com/content/www/us/en/products/programmable/fpga/cyclone-v.html)
 * Intel Cyclone 10 LP [10CL025](https://www.intel.com/content/www/us/en/products/programmable/fpga/cyclone-10.html)
 
 **Note**: cyclone IV and cyclone 10 have same idcode. A WA is mandatory to
