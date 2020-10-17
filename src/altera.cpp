@@ -1,19 +1,26 @@
-#include <string.h>
 #include "altera.hpp"
+
+#include <string.h>
+
+#include <string>
+
 #include "jtag.hpp"
 #include "device.hpp"
 #include "epcq.hpp"
+#include "progressBar.hpp"
+#include "rawParser.hpp"
 
 #define IDCODE 6
+#define BYPASS 0x3FF
 #define IRLENGTH 10
 // DATA_DIR is defined at compile time.
 #define BIT_FOR_FLASH (DATA_DIR "/openFPGALoader/test_sfl.svf")
 
-Altera::Altera(Jtag *jtag, std::string filename, bool verbose):
+Altera::Altera(Jtag *jtag, const std::string &filename, bool verbose):
 	Device(jtag, filename, verbose), _svf(_jtag, _verbose)
 {
 	if (_filename != "") {
-		if (_file_extension == "svf")
+		if (_file_extension == "svf" || _file_extension == "rbf")
 			_mode = Device::MEM_MODE;
 		else
 			_mode = Device::SPI_MODE;
@@ -31,6 +38,87 @@ void Altera::reset()
 	_jtag->set_state(Jtag::TEST_LOGIC_RESET);
 }
 
+void Altera::programMem()
+{
+	RawParser _bit(_filename, false);
+	_bit.parse();
+	int byte_length = _bit.getLength()/8;
+	uint8_t *data = _bit.getData();
+
+	unsigned char cmd[2];
+	unsigned char tx[864/8], rx[864/8];
+
+	memset(tx, 0, 864/8);
+	/* enddr idle
+	 * endir irpause
+	 * state idle
+	 */
+	/* ir 0x02 IRLENGTH */
+	*reinterpret_cast<uint16_t *>(cmd) = 0x02;
+	_jtag->shiftIR(cmd, NULL, IRLENGTH, Jtag::PAUSE_IR);
+	/* RUNTEST IDLE 12000 TCK ENDSTATE IDLE; */
+	_jtag->set_state(Jtag::RUN_TEST_IDLE);
+	_jtag->toggleClk(12000);
+	/* write */
+	ProgressBar progress("Flash SRAM", byte_length, 50);
+
+	/* 2.2.6.5 */
+	_jtag->set_state(Jtag::SHIFT_DR);
+
+	int xfer_len = 512;
+	int tx_len;
+	int tx_end;
+
+	for (int i=0; i < byte_length; i+=xfer_len) {
+		if (i + xfer_len > byte_length) {  // last packet with some size
+			tx_len = (byte_length - i) * 8;
+			tx_end = 1;  // to move in EXIT1_DR
+		} else {
+			tx_len = xfer_len * 8;
+			tx_end = 0;
+		}
+		_jtag->read_write(data+i, NULL, tx_len, tx_end);
+		progress.display(i);
+	}
+	progress.done();
+
+	/* reboot */
+	/* SIR 10 TDI (004); */
+	*reinterpret_cast<uint16_t *>(cmd) = 0x04;
+	_jtag->shiftIR(cmd, NULL, IRLENGTH, Jtag::PAUSE_IR);
+	/* RUNTEST 60 TCK; */
+	_jtag->set_state(Jtag::RUN_TEST_IDLE);
+	_jtag->toggleClk(60);
+	/*
+	 * SDR 864 TDI
+	 * (000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000)
+	 * TDO (00000000000000000000
+	 *     0000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000080000000000000000000000000000000000000000)
+	 *     MASK (00000000000000000000000000000000000000000000000000
+	 *         0000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000080000000000000000000000000000000000000000);
+	 */
+	_jtag->shiftDR(tx, rx, 864, Jtag::RUN_TEST_IDLE);
+	/* TBD -> something to check */
+	/* SIR 10 TDI (003); */
+	*reinterpret_cast<uint16_t *>(cmd) = 0x003;
+	_jtag->shiftIR(cmd, NULL, IRLENGTH, Jtag::PAUSE_IR);
+	/* RUNTEST 49152 TCK; */
+	_jtag->set_state(Jtag::RUN_TEST_IDLE);
+	_jtag->toggleClk(49152);
+	/* RUNTEST 512 TCK; */
+	_jtag->set_state(Jtag::RUN_TEST_IDLE);
+	_jtag->toggleClk(512);
+	 /* SIR 10 TDI (3FF); */
+	*reinterpret_cast<uint16_t *>(cmd) = BYPASS;
+	_jtag->shiftIR(cmd, NULL, IRLENGTH, Jtag::PAUSE_IR);
+
+	/* RUNTEST 12000 TCK; */
+	_jtag->set_state(Jtag::RUN_TEST_IDLE);
+	_jtag->toggleClk(12000);
+	/* -> idle */
+	_jtag->set_state(Jtag::RUN_TEST_IDLE);
+}
+
 void Altera::program(unsigned int offset)
 {
 	if (_mode == Device::NONE_MODE)
@@ -43,7 +131,10 @@ void Altera::program(unsigned int offset)
 	 */
 	/* mem mode -> svf */
 	if (_mode == Device::MEM_MODE) {
-		_svf.parse(_filename);
+		if (_file_extension == "svf")
+			_svf.parse(_filename);
+		else
+			programMem();
 	} else if (_mode == Device::SPI_MODE) {
 		/* GGM: TODO: fix this issue */
 		EPCQ epcq(0x403, 0x6010/*_jtag->vid(), _jtag->pid()*/, 2, 6000000);
