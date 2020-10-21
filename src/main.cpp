@@ -103,8 +103,13 @@ int main(int argc, char **argv)
 		if (t == cable_list.end()) {
 			args.cable = "-";
 			cout << "Board " << args.board << " has not default cable" << endl;
-		} else
-			args.cable = (*t).first;
+		} else {
+			if (args.cable[0] == '-') { // no use selection
+				args.cable = (*t).first; // use board default cable
+			} else {
+				cout << "Board default cable overridden with " << args.cable << endl;
+			}
+		}
 	}
 
 	if (args.cable[0] == '-') { /* if no board and no cable */
