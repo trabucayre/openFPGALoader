@@ -101,7 +101,6 @@ int main(int argc, char **argv)
 		/* search for cable */
 		auto t = cable_list.find(board_list[args.board].cable_name);
 		if (t == cable_list.end()) {
-			args.cable = "-";
 			cout << "Board " << args.board << " has not default cable" << endl;
 		} else {
 			if (args.cable[0] == '-') { // no use selection
