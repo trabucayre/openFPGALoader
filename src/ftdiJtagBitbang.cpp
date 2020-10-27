@@ -68,8 +68,7 @@ void FtdiJtagBitBang::init_internal(const FTDIpp_MPSSE::mpsse_bit_config &cable,
 
 	_in_buf = (unsigned char *)malloc(sizeof(unsigned char) * _buffer_size);
 	memset(_in_buf, 0, _buffer_size);
-	init(1, _tck_pin | _tms_pin | _tdi_pin, BITMODE_BITBANG,
-		(FTDIpp_MPSSE::mpsse_bit_config &)cable);
+	init(1, _tck_pin | _tms_pin | _tdi_pin, BITMODE_BITBANG);
 	setBitmode(BITMODE_BITBANG);
 }
 

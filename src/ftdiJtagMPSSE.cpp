@@ -94,7 +94,7 @@ void FtdiJtagMPSSE::init_internal(const FTDIpp_MPSSE::mpsse_bit_config &cable)
 	display("%x\n", cable.bit_high_val);
 	display("%x\n", cable.bit_high_dir);
 
-	init(5, 0xfb, BITMODE_MPSSE, (FTDIpp_MPSSE::mpsse_bit_config &)cable);
+	init(5, 0xfb, BITMODE_MPSSE);
 }
 
 int FtdiJtagMPSSE::writeTMS(uint8_t *tms, int len, bool flush_buffer)

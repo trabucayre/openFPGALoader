@@ -21,7 +21,7 @@ using namespace std;
 
 FTDIpp_MPSSE::FTDIpp_MPSSE(const mpsse_bit_config &cable, const string &dev,
 				const std::string &serial, uint32_t clkHZ, bool verbose):
-				_verbose(verbose), _vid(0),
+				_verbose(verbose), _cable(cable), _vid(0),
 				_pid(0), _bus(-1), _addr(-1),
 				_interface(cable.interface),
 				_clkHZ(clkHZ), _buffer_size(2*32768), _num(0)
@@ -134,8 +134,7 @@ int FTDIpp_MPSSE::close_device()
 
 
 int FTDIpp_MPSSE::init(unsigned char latency, unsigned char bitmask_mode,
-				unsigned char mode,
-			   mpsse_bit_config & bit_conf)
+				unsigned char mode)
 {
 	unsigned char buf_cmd[6] = { SET_BITS_LOW, 0, 0,
 		SET_BITS_HIGH, 0, 0
@@ -172,11 +171,11 @@ int FTDIpp_MPSSE::init(unsigned char latency, unsigned char bitmask_mode,
 		if (setClkFreq(_clkHZ, 0) < 0)
 			return -1;
 
-		buf_cmd[1] = bit_conf.bit_low_val;  // 0xe8;
-		buf_cmd[2] = bit_conf.bit_low_dir;  // 0xeb;
+		buf_cmd[1] = _cable.bit_low_val;  // 0xe8;
+		buf_cmd[2] = _cable.bit_low_dir;  // 0xeb;
 
-		buf_cmd[4] = bit_conf.bit_high_val;  // 0x00;
-		buf_cmd[5] = bit_conf.bit_high_dir;  // 0x60;
+		buf_cmd[4] = _cable.bit_high_val;  // 0x00;
+		buf_cmd[5] = _cable.bit_high_dir;  // 0x60;
 		mpsse_store(buf_cmd, 6);
 		mpsse_write();
 	}

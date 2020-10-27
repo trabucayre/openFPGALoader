@@ -19,8 +19,8 @@ class FTDIpp_MPSSE {
 			const std::string &serial, uint32_t clkHZ, bool verbose = false);
 		~FTDIpp_MPSSE();
 
-		int init(unsigned char latency, unsigned char bitmask_mode, unsigned char mode,
-				mpsse_bit_config &bit_conf);
+		int init(unsigned char latency, unsigned char bitmask_mode,
+			unsigned char mode);
 		int setClkFreq(uint32_t clkHZ);
 		int setClkFreq(uint32_t clkHZ, char use_divide_by_5);
 
@@ -39,6 +39,7 @@ class FTDIpp_MPSSE {
 		unsigned int udevstufftoint(const char *udevstring, int base);
 		bool search_with_dev(const std::string &device);
 		bool _verbose;
+		mpsse_bit_config _cable;
 	private:
 		int _vid;
 		int _pid;

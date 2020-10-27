@@ -72,7 +72,7 @@ FtdiSpi::FtdiSpi(int vid, int pid, unsigned char interface, uint32_t clkHZ,
 	setCSmode(SPI_CS_AUTO);
 	setEndianness(SPI_MSB_FIRST);
 
-	init(1, 0x00, BITMODE_MPSSE, bit_conf);
+	init(1, 0x00, BITMODE_MPSSE);
 }
 
 FtdiSpi::FtdiSpi(const FTDIpp_MPSSE::mpsse_bit_config &conf, uint32_t clkHZ,
@@ -83,7 +83,7 @@ FtdiSpi::FtdiSpi(const FTDIpp_MPSSE::mpsse_bit_config &conf, uint32_t clkHZ,
 	setCSmode(SPI_CS_AUTO);
 	setEndianness(SPI_MSB_FIRST);
 
-	init(1, 0x00, BITMODE_MPSSE, bit_conf);
+	init(1, 0x00, BITMODE_MPSSE);
 }
 
 FtdiSpi::~FtdiSpi()
