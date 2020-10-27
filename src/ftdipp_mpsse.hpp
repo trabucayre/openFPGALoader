@@ -50,8 +50,8 @@ class FTDIpp_MPSSE {
 		int _clkHZ;
 		struct ftdi_context *_ftdi;
 		int _buffer_size;
-	private:
 		int _num;
+	private:
 		unsigned char *_buffer;
 };
 

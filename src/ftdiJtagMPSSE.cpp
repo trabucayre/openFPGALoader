@@ -139,7 +139,8 @@ int FtdiJtagMPSSE::writeTMS(uint8_t *tms, int len, bool flush_buffer)
 		}
 		xfer -= bit_to_send;
 	}
-	mpsse_write();
+	if (flush_buffer)
+		mpsse_write();
 	if (_ch552WA) {
 		uint8_t c[len/8+1];
 		ftdi_read_data(_ftdi, c, len/8+1);
@@ -166,9 +167,6 @@ int FtdiJtagMPSSE::toggleClk(uint8_t tms, uint8_t tdi, uint32_t clk_len)
 			buf[1] = ((len / 8)     ) & 0xff;
 			buf[2] = ((len / 8) >> 8) & 0xff;
 			mpsse_store(buf, 3);
-			ret = mpsse_write();
-			if (ret < 0)
-				return ret;
 			len %= 8;
 		}
 
@@ -176,16 +174,13 @@ int FtdiJtagMPSSE::toggleClk(uint8_t tms, uint8_t tdi, uint32_t clk_len)
 			buf[0] = 0x8E;
 			buf[1] = len - 1;
 			mpsse_store(buf, 2);
-			ret = mpsse_write();
-			if (ret < 0)
-				return ret;
 		}
 		ret = clk_len;
 	} else {
 		int byteLen = (len+7)/8;
 		uint8_t buf_tms[byteLen];
 		memset(buf_tms, (tms) ? 0xff : 0x00, byteLen);
-		ret = writeTMS(buf_tms, len, true);
+		ret = writeTMS(buf_tms, len, false);
 	}
 
 	return ret;
@@ -220,6 +215,9 @@ int FtdiJtagMPSSE::writeTDI(uint8_t *tdi, uint8_t *tdo, uint32_t len, bool last)
 
 	display("%s len : %d %d %d %d\n", __func__, len, real_len, nb_byte,
 		nb_bit);
+
+	if ((nb_byte + _num + 3) > _buffer_size)
+		mpsse_write();
 
 	if ((nb_byte * 8) + nb_bit != real_len) {
 		printf("pas cool\n");
