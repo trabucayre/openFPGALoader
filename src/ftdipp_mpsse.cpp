@@ -335,6 +335,140 @@ int FTDIpp_MPSSE::mpsse_read(unsigned char *rx_buff, int len)
 	return num_read;
 }
 
+/**
+ * Read GPIO (xCBUSy + xDBUSy) bank
+ * @return pins state
+ */
+uint16_t FTDIpp_MPSSE::gpio_get()
+{
+	uint8_t tx[2] = {GET_BITS_LOW, GET_BITS_HIGH};
+	uint8_t rx[2];
+	mpsse_store(tx, 2);
+	mpsse_read(rx, 2);
+
+	return (rx[1] << 8) | rx[0];
+}
+
+/**
+ * Read low (xCBUSy) or high (xDBUSy) pins.
+ * @param[in] low_pins: if true read low, read high otherwise
+ * @return pins state
+ */
+uint8_t FTDIpp_MPSSE::gpio_get(bool low_pins)
+{
+	uint8_t rx;
+
+	/* select between high and low pins */
+	mpsse_store((low_pins) ? GET_BITS_LOW : GET_BITS_HIGH);
+	mpsse_read(&rx, 1);
+	return rx;
+}
+
+/**
+ * Set one or more pins of the full bank (CBUS + DBUS).
+ * @param[in] pins bitmask
+ * @return false when error, true otherwise
+ */
+bool FTDIpp_MPSSE::gpio_set(uint16_t gpios)
+{
+	_cable.bit_high_val |= (0xff & (gpios >> 8));
+	_cable.bit_low_val |= (0xff & gpios);
+	__gpio_write(true);
+	__gpio_write(false);
+	return (mpsse_write() >= 0);
+}
+
+/**
+ * Set one or more pins of the given half bank (CBUS or BDUS).
+ * @param[in] pin bitmask
+ * @param[in] low/high half bank
+ * @return false when error, true otherwise
+ */
+bool FTDIpp_MPSSE::gpio_set(uint8_t gpios, bool low_pins)
+{
+	if (low_pins)
+		_cable.bit_low_val |= gpios;
+	else
+		_cable.bit_high_val |= gpios;
+	__gpio_write(low_pins);
+	return (mpsse_write() >= 0);
+}
+
+/**
+ * Clear one or more pins of the full bank (CBUS + DBUS).
+ * @param[in] pins bitmask
+ * @return false when error, true otherwise
+ */
+bool FTDIpp_MPSSE::gpio_clear(uint16_t gpios)
+{
+	_cable.bit_high_val &= ~(0xff & (gpios >> 8));
+	_cable.bit_low_val &= ~(0xff & gpios);
+	__gpio_write(true);
+	__gpio_write(false);
+	return (mpsse_write() >= 0);
+}
+
+/**
+ * Clear one or more pins of the given half bank (CBUS or BDUS).
+ * @param[in] pin bitmask
+ * @param[in] low/high half bank
+ * @return false when error, true otherwise
+ */
+bool FTDIpp_MPSSE::gpio_clear(uint8_t gpios, bool low_pins)
+{
+	if (low_pins)
+		_cable.bit_low_val &= ~(gpios);
+	else
+		_cable.bit_high_val &= ~(gpios);
+
+	__gpio_write(low_pins);
+	return (mpsse_write() >= 0);
+}
+
+/**
+ * Full bank write
+ * @param[in] GPIOs bitmask
+ * @return false when error, true otherwise
+ */
+bool FTDIpp_MPSSE::gpio_write(uint16_t gpio)
+{
+	_cable.bit_low_val = (0xff & gpio);
+	_cable.bit_high_val = (0xff & (gpio >> 8));
+	__gpio_write(true);
+	__gpio_write(false);
+	return (mpsse_write() >= 0);
+}
+
+/**
+ * Half bank write
+ * @param[in] gpio: pins values
+ * @param[in] low_pins: high/low half bank
+ * @return false when error, true otherwise
+ */
+bool FTDIpp_MPSSE::gpio_write(uint8_t gpio, bool low_pins)
+{
+	if (low_pins)
+		_cable.bit_low_val = gpio;
+	else
+		_cable.bit_high_val = gpio;
+
+	__gpio_write(low_pins);
+	return (mpsse_write() >= 0);
+}
+
+/**
+ * private method to write ftdi half bank GPIOs (pins state are in _cable)
+ * @param[in] low or high half bank
+ */
+bool FTDIpp_MPSSE::__gpio_write(bool low_pins)
+{
+	uint8_t tx[3];
+	tx[0] = ((low_pins) ? SET_BITS_LOW       : SET_BITS_HIGH);
+	tx[1] = ((low_pins) ? _cable.bit_low_val : _cable.bit_high_val);
+	tx[2] = ((low_pins) ? _cable.bit_low_dir : _cable.bit_high_dir);
+	return (mpsse_store(tx, 3) >= 0);
+}
+
 #ifdef USE_UDEV
 unsigned int FTDIpp_MPSSE::udevstufftoint(const char *udevstring, int base)
 {

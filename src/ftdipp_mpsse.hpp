@@ -27,6 +27,19 @@ class FTDIpp_MPSSE {
 		int vid() {return _vid;}
 		int pid() {return _pid;}
 
+		/* access gpio */
+		/* read gpio */
+		uint16_t gpio_get();
+		uint8_t gpio_get(bool low_pins);
+		/* update selected gpio */
+		bool gpio_set(uint16_t gpio);
+		bool gpio_set(uint8_t gpio, bool low_pins);
+		bool gpio_clear(uint16_t gpio);
+		bool gpio_clear(uint8_t gpio, bool low_pins);
+		/* full access */
+		bool gpio_write(uint16_t gpio);
+		bool gpio_write(uint8_t gpio, bool low_pins);
+
 	protected:
 		void open_device(const std::string &serial, unsigned int baudrate);
 		void ftdi_usb_close_internal();
@@ -54,6 +67,8 @@ class FTDIpp_MPSSE {
 		int _num;
 	private:
 		unsigned char *_buffer;
+		/* gpio */
+		bool __gpio_write(bool low_pins);
 };
 
 #endif
