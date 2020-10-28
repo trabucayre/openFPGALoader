@@ -28,10 +28,11 @@ class FtdiSpi : public FTDIpp_MPSSE, SPIInterface {
 		_endian =(endian == SPI_MSB_FIRST) ? 0 : MPSSE_LSB;
 	}
 
+	/* CS handling */
 	void setCSmode(uint8_t cs_mode) {_cs_mode = cs_mode;}
-	void confCs(char stat);
-	void setCs();
-	void clearCs();
+	bool confCs(char stat);
+	bool setCs();
+	bool clearCs();
 
 	int ft2232_spi_wr_then_rd(const uint8_t *tx_data, uint32_t tx_len,
 							uint8_t *rx_data, uint32_t rx_len);

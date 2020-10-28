@@ -6,7 +6,6 @@
 #include <string.h>
 #include "ftdipp_mpsse.hpp"
 #include "ftdispi.hpp"
-//#include "ftdi_handle.h"
 
 /*
  * SCLK -> ADBUS0
@@ -16,11 +15,6 @@
  */
 #define SPI_CLK (1 << 0)
 #define cs_bits 0x08
-#define pindir 0x0b
-
-
-//uint8_t buffer[1024];
-//int num = 0;
 
 /* GGM: Faut aussi definir l'etat des broches par defaut */
 /* necessaire en mode0 et 1, ainsi qu'entre 2 et 3
@@ -59,6 +53,11 @@ void FtdiSpi::setMode(uint8_t mode)
 		_rd_mode = 0;
 		break;
 	}
+	/* for clk pin in idle state */
+	if (_clk)
+		gpio_set(SPI_CLK, true);
+	else
+		gpio_clear(SPI_CLK, true);
 }
 
 static FTDIpp_MPSSE::mpsse_bit_config bit_conf =
@@ -90,218 +89,32 @@ FtdiSpi::~FtdiSpi()
 {
 }
 
-#if 0
-#define CLOCK 0x08
-#define LATENCY 16
-#define TIMEOUT 0
-#define SIZE 65536
-#define TX_BUFS (60000/8-3)
-
-int ftdi_spi_init_internal(struct ftdi_spi *spi, uint32_t clk_freq_hz);
-
-int ftdi_spi_init_by_name(struct ftdi_spi *spi, char *devname,
-			  uint8_t interface, uint32_t clk_freq_hz)
-{
-	spi->ftdic = open_device_by_name(devname, interface, 115200);
-	if (spi->ftdic == NULL) {
-		printf("opening error\n");
-		return EXIT_FAILURE;
-	}
-	return ftdi_spi_init_internal(spi, clk_freq_hz);
-}
-
-int ftdi_spi_init(struct ftdi_spi *spi, uint32_t vid, uint32_t pid,
-		  uint8_t interface, uint32_t clk_freq_hz)
-{
-	spi->ftdic = open_device(vid, pid, interface, 115200);
-	if (spi->ftdic == NULL) {
-		printf("opening error\n");
-		return EXIT_FAILURE;
-	}
-	return ftdi_spi_init_internal(spi, clk_freq_hz);
-}
-#endif
-#if 0
-int ftdi_spi_init_internal(struct ftdi_spi *spi, uint32_t clock_freq_hz)
-{
-	setCSmode(spi, SPI_CS_AUTO);
-	setEndianness(spi, SPI_MSB_FIRST);
-	spi->tx_buff = (uint8_t *)malloc(sizeof(uint8_t) * TX_BUFS);
-
-	if (ftdi_usb_reset(spi->ftdic) != 0) {
-		printf("reset error\n");
-		return -1;
-	}
-	if (ftdi_usb_purge_rx_buffer(spi->ftdic) != 0) {
-		printf("reset error\n");
-		return -1;
-	}
-	if (ftdi_usb_purge_tx_buffer(spi->ftdic) != 0) {
-		printf("reset error\n");
-		return -1;
-	}
-	if (ftdi_read_data_set_chunksize(spi->ftdic, SIZE) != 0) {
-		printf("reset error\n");
-		return -1;
-	}
-	if (ftdi_write_data_set_chunksize(spi->ftdic, SIZE) != 0) {
-		printf("reset error\n");
-		return -1;
-	}
-	if (ftdi_set_latency_timer(spi->ftdic, LATENCY) != 0) {
-		printf("reset error\n");
-		return -1;
-	}
-	if (ftdi_set_event_char(spi->ftdic, 0x00, 0) != 0) {
-		printf("reset error\n");
-		return -1;
-	}
-	if (ftdi_set_error_char(spi->ftdic, 0x00, 0) != 0) {
-		printf("reset error\n");
-		return -1;
-	}
-	// set the read timeouts in ms for the ft2232H
-	spi->ftdic->usb_read_timeout = TIMEOUT;
-	// set the write timeouts in ms for the ft2232H
-	spi->ftdic->usb_write_timeout = 5000;
-	if (ftdi_set_bitmode(spi->ftdic, 0x00, 0x00) != 0) {	// reset controller
-		printf("reset error\n");
-		return -1;
-	}
-
-	if (ftdi_set_bitmode(spi->ftdic, 0x00, 0x02) != 0) {	// enable mpsse mode
-		printf("reset error\n");
-		return -1;
-	}
-
-	if (ftdi_setClock(spi->ftdic, /*0x08,*/ clock_freq_hz) < 0)
-		return -1;
-	spi->tx_size = 0;
-
-	spi->tx_buff[spi->tx_size++] = 0x97;	// disable adaptive clocking
-	// devrait etre 8C pour enable et non 8D
-	spi->tx_buff[spi->tx_size++] = 0x8d;	//disable tri phase data clocking
-	if (ftdi_write_data(spi->ftdic, spi->tx_buff, spi->tx_size) != spi->tx_size) {
-		printf("write error for dis clock, adaptive, tri phase\n");
-		return -1;
-	}
-	spi->tx_size = 0;
-	spi->tx_buff[spi->tx_size++] = 0x85;	// disable loopback
-	if (ftdi_write_data(spi->ftdic, spi->tx_buff, spi->tx_size) != spi->tx_size) {
-		printf("disable loopback error\n");
-		return -1;
-	}
-
-	spi->tx_size = 0;
-	spi->tx_buff[spi->tx_size++] = 0x80;
-	spi->tx_buff[spi->tx_size++] = 0x08;
-	spi->tx_buff[spi->tx_size++] = 0x0B;
-	if (ftdi_write_data(spi->ftdic, spi->tx_buff, spi->tx_size) != spi->tx_size) {
-		printf("write set bit error\n");
-		return -1;
-	}
-	spi->tx_size = 0;
-	return 0;
-}
-#endif
-
-//FtdiSpi::~FtdiSpi()
-//int ftdi_spi_close(struct ftdi_spi *spi)
-//{
-	//struct ftdi_context *ftdic = spi->ftdic;
-	//free(spi->tx_buff);
-	//return close_device(ftdic);
-//}
-
-// mpsse_write
-/*static int send_buf(struct ftdi_context *ftdic, const unsigned char *buf,
-		    int size)
-{
-	int r;
-	r = ftdi_write_data(ftdic, (unsigned char *)buf, size);
-	if (r < 0) {
-		printf("ftdi_write_data: %d, %s\n", r,
-			 ftdi_get_error_string(ftdic));
-		return 1;
-	}
-	return 0;
-}
-
-static int ft_flush_buffer(struct ftdi_spi *spi)
-{
-	int ret = 0;
-	if (spi->tx_size != 0) {
-		ret = send_buf(spi->ftdic, spi->tx_buff, spi->tx_size);
-		spi->tx_size = 0;
-	}
-	return ret;
-}*/
-
-// mpsse_store
-/*static int ft_store_char(struct ftdi_spi *spi, uint8_t c)
-{
-	int ret = 0;
-	if (spi->tx_size == TX_BUFS)
-		ret = ft_flush_buffer(spi);
-	spi->tx_buff[spi->tx_size] = c;
-	spi->tx_size++;
-	return ret;
-}
-
-static int ft_store_star_char(struct ftdi_spi *spi, uint8_t *buff, int len)
-{
-	int ret = 0;
-	if (spi->tx_size + len + 1 == TX_BUFS)
-		ret = ft_flush_buffer(spi);
-	memcpy(spi->tx_buff + spi->tx_size, buff, len);
-	spi->tx_size += len;
-	return ret;
-}*/
-
-// mpsse read
-/*static int get_buf(struct ftdi_spi *spi, const unsigned char *buf,
-		   int size)
-{
-	int r;
-	ft_store_char(spi, SEND_IMMEDIATE);
-	ft_flush_buffer(spi);
-
-	while (size > 0) {
-		r = ftdi_read_data(spi->ftdic, (unsigned char *)buf, size);
-		if (r < 0) {
-			printf("ftdi_read_data: %d, %s\n", r,
-				 ftdi_get_error_string(spi->ftdic));
-			return 1;
-		}
-		buf += r;
-		size -= r;
-	}
-	return 0;
-}*/
-
 /* send two consecutive cs configuration */
-void FtdiSpi::confCs(char stat)
+bool FtdiSpi::confCs(char stat)
 {
-	uint8_t tx_buf[6] = {SET_BITS_LOW, _clk, pindir,
-						 SET_BITS_LOW, _clk, pindir};
-
-	tx_buf[1] |= (stat) ? cs_bits : 0;
-	tx_buf[4] |= (stat) ? cs_bits : 0;
-
-	if (mpsse_store(tx_buf, 6) != 0)
-		printf("error\n");
+	bool ret;
+	if (stat == 0) {
+		ret = gpio_clear(cs_bits, true);
+		ret |= gpio_clear(cs_bits, true);
+	} else {
+		ret = gpio_set(cs_bits, true);
+		ret |= gpio_set(cs_bits, true);
+	}
+	if (!ret)
+		printf("Error: CS update\n");
+	return ret;
 }
 
-void FtdiSpi::setCs()
+bool FtdiSpi::setCs()
 {
 	_cs = cs_bits;
-	confCs(_cs);
+	return confCs(_cs);
 }
 
-void FtdiSpi::clearCs()
+bool FtdiSpi::clearCs()
 {
 	_cs = 0x00;
-	confCs(_cs);
+	return confCs(_cs);
 }
 
 int FtdiSpi::ft2232_spi_wr_then_rd(
@@ -330,10 +143,8 @@ int FtdiSpi::ft2232_spi_wr_and_rd(//struct ftdi_spi *spi,
 			    const uint8_t * writearr, uint8_t * readarr)
 {
 #define TX_BUF (60000/8-3)
-	//struct ftdi_context *ftdic = spi->ftdic;
 	uint8_t buf[TX_BUF+3];//65536+9];
-	/* failed is special. We use bitwise ops, but it is essentially bool. */
-	int i = 0, failed = 0;
+	int i = 0;
 	int ret = 0;
 
 	uint8_t *rx_ptr = readarr;
@@ -342,11 +153,7 @@ int FtdiSpi::ft2232_spi_wr_and_rd(//struct ftdi_spi *spi,
 	uint32_t xfer;
 
 	if (_cs_mode == SPI_CS_AUTO) {
-		buf[i++] = SET_BITS_LOW;
-		buf[i++] = (0 & ~cs_bits) | _clk;	/* assertive */
-		buf[i++] = pindir;
-		mpsse_store(buf, i);
-		i=0;
+		clearCs();
 	}
 	mpsse_write();
 
@@ -359,10 +166,8 @@ int FtdiSpi::ft2232_spi_wr_and_rd(//struct ftdi_spi *spi,
 	while (len > 0) {
 		xfer = (len > TX_BUF) ? TX_BUF: len;
 
-		buf[i++] = /*(spi->endian == SPI_MSB_FIRST) ? 0 : MPSSE_LSB |*/
-					((readarr) ? (MPSSE_DO_READ | _rd_mode) : 0) |
-					((writearr) ? (MPSSE_DO_WRITE | _wr_mode) : 0);// |
-					/*MPSSE_DO_WRITE |*/// spi->wr_mode | spi->rd_mode;
+		buf[i++] = ((readarr) ? (MPSSE_DO_READ | _rd_mode) : 0) |
+					((writearr) ? (MPSSE_DO_WRITE | _wr_mode) : 0);
 		buf[i++] = (xfer - 1) & 0xff;
 		buf[i++] = ((xfer - 1) >> 8) & 0xff;
 		if (writearr) {
@@ -372,22 +177,19 @@ int FtdiSpi::ft2232_spi_wr_and_rd(//struct ftdi_spi *spi,
 		}
 
 		ret = mpsse_store(buf, i);
-		failed = ret;
 		if (ret)
-			printf("send_buf failed before read: %i %s\n", ret, "plop");// ftdi_get_error_string(ftdic));
+			printf("send_buf failed before read: %i %s\n", ret, ftdi_get_error_string(_ftdi));
 		i = 0;
 		if (readarr) {
 			//if (ret == 0) {
 			ret = mpsse_read(rx_ptr, xfer);
-			failed = ret;
-			if (ret != xfer)
+			if ((uint32_t)ret != xfer)
 				printf("get_buf failed: %i\n", ret);
 			//}
 			rx_ptr += xfer;
 		} else {
 			ret = mpsse_write();
-			failed = ret;
-			if (ret != xfer+3)
+			if ((uint32_t)ret != xfer+3)
 				printf("error %d %d\n", ret, i);
 		}
 		len -= xfer;
@@ -395,18 +197,11 @@ int FtdiSpi::ft2232_spi_wr_and_rd(//struct ftdi_spi *spi,
 	}
 
 	if (_cs_mode == SPI_CS_AUTO) {
-		buf[i++] = SET_BITS_LOW;
-		buf[i++] = cs_bits | _clk;
-		buf[i++] = pindir;
-		ret = mpsse_store(buf, i);
-		failed |= ret;
-		if (ret)
-			printf("send_buf failed at end: %i\n", ret);
-		if (3 != mpsse_write())
-			printf("send_buf failed at write\n");
+		if (!setCs())
+			printf("send_buf failed at write %d\n", ret);
 	}
 
-	return 0;//failed ? -1 : 0;
+	return 0;
 }
 
 /* method spiInterface::spi_put */
@@ -444,7 +239,6 @@ int FtdiSpi::spi_wait(uint8_t cmd, uint8_t mask, uint8_t cond,
 			uint32_t timeout, bool verbose)
 {
 	uint8_t rx;
-	uint8_t dummy[2];
 	uint32_t count = 0;
 
 	setCSmode(SPI_CS_MANUAL);
