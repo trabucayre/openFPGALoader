@@ -457,6 +457,29 @@ bool FTDIpp_MPSSE::gpio_write(uint8_t gpio, bool low_pins)
 }
 
 /**
+ * update half bank pins direction (no write is done at this time)
+ * @param[in] dir: pins direction (1 out, 0 in) for low or high bank
+ * @param[in] low_pins: high/low half bank
+ */
+void FTDIpp_MPSSE::gpio_set_dir(uint8_t dir, bool low_pins)
+{
+	if (low_pins)
+		_cable.bit_low_dir = dir;
+	else
+		_cable.bit_high_dir = dir;
+}
+
+/**
+ * update full bank pins direction (no write is done at this time)
+ * @param[in] dir: pins direction (1 out, 0 in) for low or high bank
+ */
+void FTDIpp_MPSSE::gpio_set_dir(uint16_t dir)
+{
+	_cable.bit_low_dir = dir & 0xff;
+	_cable.bit_high_dir = (dir >> 8) & 0xff;
+}
+
+/**
  * private method to write ftdi half bank GPIOs (pins state are in _cable)
  * @param[in] low or high half bank
  */
