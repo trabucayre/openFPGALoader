@@ -43,19 +43,8 @@ using namespace std;
 FtdiJtagBitBang::FtdiJtagBitBang(const FTDIpp_MPSSE::mpsse_bit_config &cable,
 			const jtag_pins_conf_t *pin_conf, string dev, const std::string &serial,
 			uint32_t clkHZ, bool verbose):
-			FTDIpp_MPSSE(cable, dev, serial, clkHZ, verbose), _bitmode(0), _nb_bit(0),
+			FTDIpp_MPSSE(cable, dev, serial, clkHZ, verbose), _bitmode(0),
 			_curr_tms(0)
-{
-	init_internal(cable, pin_conf);
-}
-
-FtdiJtagBitBang::~FtdiJtagBitBang()
-{
-	free(_in_buf);
-}
-
-void FtdiJtagBitBang::init_internal(const FTDIpp_MPSSE::mpsse_bit_config &cable,
-		  const jtag_pins_conf_t *pin_conf)
 {
 	_tck_pin = (1 << pin_conf->tck_pin);
 	_tms_pin = (1 << pin_conf->tms_pin);
@@ -66,10 +55,13 @@ void FtdiJtagBitBang::init_internal(const FTDIpp_MPSSE::mpsse_bit_config &cable,
 
 	setClkFreq(_clkHZ);
 
-	_in_buf = (unsigned char *)malloc(sizeof(unsigned char) * _buffer_size);
-	memset(_in_buf, 0, _buffer_size);
+	_buffer = (unsigned char *)realloc(_buffer, sizeof(char) * _buffer_size);
 	init(1, _tck_pin | _tms_pin | _tdi_pin, BITMODE_BITBANG);
 	setBitmode(BITMODE_BITBANG);
+}
+
+FtdiJtagBitBang::~FtdiJtagBitBang()
+{
 }
 
 int FtdiJtagBitBang::setClkFreq(uint32_t clkHZ)
@@ -109,7 +101,7 @@ int FtdiJtagBitBang::writeTMS(uint8_t *tms, int len, bool flush_buffer)
 	}
 
 	/* check for at least one bit space in buffer */
-	if (_nb_bit+2 > _buffer_size) {
+	if (_num+2 > _buffer_size) {
 		ret = flush();
 		if (ret < 0)
 			return ret;
@@ -119,10 +111,10 @@ int FtdiJtagBitBang::writeTMS(uint8_t *tms, int len, bool flush_buffer)
 	for (int i = 0; i < len; i++) {
 		_curr_tms = ((tms[i >> 3] & (1 << (i & 0x07)))? _tms_pin : 0);
 		uint8_t val = _tdi_pin | _curr_tms;
-		_in_buf[_nb_bit++] = val;
-		_in_buf[_nb_bit++] = val | _tck_pin;
+		_buffer[_num++] = val;
+		_buffer[_num++] = val | _tck_pin;
 
-		if (_nb_bit + 2 > _buffer_size) {
+		if (_num + 2 > _buffer_size) {
 			ret = write(NULL, 0);
 			if (ret < 0)
 				return ret;
@@ -165,10 +157,10 @@ int FtdiJtagBitBang::writeTDI(uint8_t *tx, uint8_t *rx, uint32_t len, bool end)
 
 		if (tx)
 			val |= ((tx[i >> 3] & (1 << (i & 0x07)))? _tdi_pin : 0);
-		_in_buf[_nb_bit    ] = val;
-		_in_buf[_nb_bit + 1] = val | _tck_pin;
+		_buffer[_num    ] = val;
+		_buffer[_num + 1] = val | _tck_pin;
 
-		_nb_bit += 2;
+		_num += 2;
 
 		pos++;
 		/* flush buffer */
@@ -181,8 +173,8 @@ int FtdiJtagBitBang::writeTDI(uint8_t *tx, uint8_t *rx, uint32_t len, bool end)
 	}
 
 	/* security check: try to flush buffer */
-	if (_nb_bit != 0) {
-		write((rx && _nb_bit > 1) ? rx_ptr : NULL, _nb_bit / 2);
+	if (_num != 0) {
+		write((rx && _num > 1) ? rx_ptr : NULL, _num / 2);
 	}
 
 	return len;
@@ -194,11 +186,11 @@ int FtdiJtagBitBang::toggleClk(uint8_t tms, uint8_t tdi, uint32_t clk_len)
 
 	int val = ((tms) ? _tms_pin : 0) | ((tdi) ? _tdi_pin : 0);
 	while (xfer_len > 0) {
-		if (_nb_bit + 2 > _buffer_size)
+		if (_num + 2 > _buffer_size)
 			if (write(NULL, 0) < 0)
 				return -EXIT_FAILURE;
-		_in_buf[_nb_bit++] = val | _tck_pin;
-		_in_buf[_nb_bit++] = val;
+		_buffer[_num++] = val | _tck_pin;
+		_buffer[_num++] = val;
 
 		xfer_len--;
 	}
@@ -217,20 +209,20 @@ int FtdiJtagBitBang::flush()
 int FtdiJtagBitBang::write(uint8_t *tdo, int nb_bit)
 {
 	int ret = 0;
-	if (_nb_bit == 0)
+	if (_num == 0)
 		return 0;
 
 	setBitmode((tdo) ? BITMODE_SYNCBB : BITMODE_BITBANG);
 
-	ret = ftdi_write_data(_ftdi, _in_buf, _nb_bit);
-	if (ret != _nb_bit) {
+	ret = ftdi_write_data(_ftdi, _buffer, _num);
+	if (ret != _num) {
 		printf("problem %d written\n", ret);
 		return ret;
 	}
 
 	if (tdo) {
-		ret = ftdi_read_data(_ftdi, _in_buf, _nb_bit);
-		if (ret != _nb_bit) {
+		ret = ftdi_read_data(_ftdi, _buffer, _num);
+		if (ret != _num) {
 			printf("problem %d read\n", ret);
 			return ret;
 		}
@@ -241,11 +233,11 @@ int FtdiJtagBitBang::write(uint8_t *tdo, int nb_bit)
 		 * the buffer may contains some tms bit, so start with i
 		 * equal to fill exactly nb_bit bits
 		 * */
-		for (int i = (_nb_bit-(nb_bit *2) + 1), offset=0; i < _nb_bit; i+=2, offset++) {
-			tdo[offset >> 3] = (((_in_buf[i] & _tdo_pin) ? 0x80 : 0x00) |
+		for (int i = (_num-(nb_bit *2) + 1), offset=0; i < _num; i+=2, offset++) {
+			tdo[offset >> 3] = (((_buffer[i] & _tdo_pin) ? 0x80 : 0x00) |
 							(tdo[offset >> 3] >> 1));
 		}
 	}
-	_nb_bit = 0;
+	_num = 0;
 	return ret;
 }
