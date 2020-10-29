@@ -62,15 +62,14 @@ class FTDIpp_MPSSE {
 		int _addr;
 		char _product[64];
 		unsigned char _interface;
+		/* gpio */
+		bool __gpio_write(bool low_pins);
 	protected:
 		int _clkHZ;
 		struct ftdi_context *_ftdi;
 		int _buffer_size;
 		int _num;
-	private:
 		unsigned char *_buffer;
-		/* gpio */
-		bool __gpio_write(bool low_pins);
 };
 
 #endif
