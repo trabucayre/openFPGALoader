@@ -55,9 +55,9 @@ class FTDIpp_MPSSE {
 		bool search_with_dev(const std::string &device);
 		bool _verbose;
 		mpsse_bit_config _cable;
-	private:
 		int _vid;
 		int _pid;
+	private:
 		int _bus;
 		int _addr;
 		char _product[64];
