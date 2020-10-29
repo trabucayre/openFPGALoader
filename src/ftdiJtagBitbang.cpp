@@ -23,6 +23,7 @@
 #include <map>
 #include <vector>
 #include <string>
+#include <stdexcept>
 
 #include "ftdiJtagBitbang.hpp"
 #include "ftdipp_mpsse.hpp"
@@ -44,18 +45,38 @@ FtdiJtagBitBang::FtdiJtagBitBang(const FTDIpp_MPSSE::mpsse_bit_config &cable,
 			const jtag_pins_conf_t *pin_conf, string dev, const std::string &serial,
 			uint32_t clkHZ, bool verbose):
 			FTDIpp_MPSSE(cable, dev, serial, clkHZ, verbose), _bitmode(0),
-			_curr_tms(0)
+			_curr_tms(0), _rx_size(0)
 {
+	unsigned char *ptr;
+
 	_tck_pin = (1 << pin_conf->tck_pin);
 	_tms_pin = (1 << pin_conf->tms_pin);
 	_tdi_pin = (1 << pin_conf->tdi_pin);
 	_tdo_pin = (1 << pin_conf->tdo_pin);
 
-	_buffer_size = 512;  // TX Fifo size
+	/* store FTDI TX Fifo size */
+	if (_pid == 0x6001)  // FT232R
+		_rx_size = 256;
+	else if (_pid == 0x6015)  // FT231X
+		_rx_size = 512;
+	else
+		_rx_size = _buffer_size;
+
+	/* RX Fifo size (rx: USB -> FTDI)
+	 * is 128 or 256 Byte and MaxPacketSize ~= 64Byte
+	 * but we let subsystem (libftdi, libusb, linux)
+	 * sending with the correct size -> this reduce hierarchical calls
+	 */
+	_buffer_size = 4096;
+
+	/* _buffer_size has changed -> resize buffer */
+	ptr = (unsigned char *)realloc(_buffer, sizeof(char) * _buffer_size);
+	if (!ptr)
+		throw std::runtime_error("_buffer realloc failed\n");
+	_buffer = ptr;
 
 	setClkFreq(_clkHZ);
 
-	_buffer = (unsigned char *)realloc(_buffer, sizeof(char) * _buffer_size);
 	init(1, _tck_pin | _tms_pin | _tdi_pin, BITMODE_BITBANG);
 	setBitmode(BITMODE_BITBANG);
 }
@@ -134,10 +155,11 @@ int FtdiJtagBitBang::writeTMS(uint8_t *tms, int len, bool flush_buffer)
 int FtdiJtagBitBang::writeTDI(uint8_t *tx, uint8_t *rx, uint32_t len, bool end)
 {
 	uint32_t iter;
-	if (len * 2 + 1 < (uint32_t)_buffer_size) {
+	uint32_t xfer_size = (rx) ? _rx_size : _buffer_size;
+	if (len * 2 + 1 < xfer_size) {
 		iter = len;
 	} else {
-		iter = _buffer_size >> 1;  // two tx / bit
+		iter = xfer_size >> 1;  // two tx / bit
 		iter = (iter / 8) * 8;
 	}
 

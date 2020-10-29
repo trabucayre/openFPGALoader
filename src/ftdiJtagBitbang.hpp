@@ -58,21 +58,20 @@ class FtdiJtagBitBang : public JtagInterface, private FTDIpp_MPSSE {
 	 */
 	int get_buffer_size() override { return _buffer_size/8/2; }
 
-	bool isFull() override { return _nb_bit == 8*get_buffer_size();}
+	bool isFull() override { return _num == 8*get_buffer_size();}
 
 	int flush() override;
 
  private:
 	int write(uint8_t *tdo, int nb_bit);
 	int setBitmode(uint8_t mode);
-	uint8_t *_in_buf;
 
 	uint8_t _bitmode;
 	uint8_t _tck_pin; /*!< tck pin: 1 << pin id */
 	uint8_t _tms_pin; /*!< tms pin: 1 << pin id */
 	uint8_t _tdo_pin; /*!< tdo pin: 1 << pin id */
 	uint8_t _tdi_pin; /*!< tdi pin: 1 << pin id */
-	int _nb_bit;
 	uint8_t _curr_tms;
+	int _rx_size;
 };
 #endif
