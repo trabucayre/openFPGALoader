@@ -27,6 +27,15 @@ typedef struct {
 	uint8_t tdo_pin; /*! TDO pin offset */
 } jtag_pins_conf_t;
 
+typedef struct {
+	uint8_t cs_pin;    /*! CS pin offset */
+	uint8_t sck_pin;   /*! SCK pin offset */
+	uint8_t miso_pin;  /*! MISO pin offset */
+	uint8_t mosi_pin;  /*! MOSI pin offset */
+	uint8_t holdn_pin; /*! HOLDN pin offset */
+	uint8_t wpn_pin;   /*! WPN pin offset */
+} spi_pins_conf_t;
+
 /*!
  * \brief a board has a target cable and optionnally a pin configuration
  * (bitbang mode)
