@@ -147,7 +147,7 @@ int main(int argc, char **argv)
 		RawParser *bit = NULL;
 
 		try {
-			spi = new FtdiSpi(cable.config, args.freq, args.verbose);
+			spi = new FtdiSpi(cable.config, {}, args.freq, args.verbose);
 		} catch (std::exception &e) {
 			printError("Error: Failed to claim cable");
 			return EXIT_FAILURE;

@@ -4,6 +4,7 @@
 #include <ftdi.h>
 #include <unistd.h>
 #include <string.h>
+#include "board.hpp"
 #include "ftdipp_mpsse.hpp"
 #include "ftdispi.hpp"
 
@@ -13,8 +14,6 @@
  * MISO -> ADBUS2
  * CS	-> ADBUS3
  */
-#define SPI_CLK (1 << 0)
-#define cs_bits 0x08
 
 /* GGM: Faut aussi definir l'etat des broches par defaut */
 /* necessaire en mode0 et 1, ainsi qu'entre 2 et 3
@@ -33,31 +32,31 @@ void FtdiSpi::setMode(uint8_t mode)
 {
 	switch (mode) {
 	case 0:
-		_clk = 0;
+		_clk_idle = 0;
 		_wr_mode = MPSSE_WRITE_NEG;
 		_rd_mode = 0;
 		break;
 	case 1:
-		_clk = 0;
+		_clk_idle = 0;
 		_wr_mode = 0;
 		_rd_mode = MPSSE_READ_NEG;
 		break;
 	case 2:
-		_clk = SPI_CLK;
+		_clk_idle = _clk;
 		_wr_mode = 0; //POS
 		_rd_mode = MPSSE_READ_NEG;
 		break;
 	case 3:
-		_clk = SPI_CLK;
+		_clk_idle = _clk;
 		_wr_mode = MPSSE_WRITE_NEG;
 		_rd_mode = 0;
 		break;
 	}
 	/* for clk pin in idle state */
-	if (_clk)
-		gpio_set(SPI_CLK, true);
+	if (_clk_idle)
+		gpio_set(_clk, true);
 	else
-		gpio_clear(SPI_CLK, true);
+		gpio_clear(_clk, true);
 }
 
 static FTDIpp_MPSSE::mpsse_bit_config bit_conf =
@@ -74,10 +73,30 @@ FtdiSpi::FtdiSpi(int vid, int pid, unsigned char interface, uint32_t clkHZ,
 	init(1, 0x00, BITMODE_MPSSE);
 }
 
-FtdiSpi::FtdiSpi(const FTDIpp_MPSSE::mpsse_bit_config &conf, uint32_t clkHZ,
-	bool verbose):
-	FTDIpp_MPSSE(conf, "", "", clkHZ, verbose)
+FtdiSpi::FtdiSpi(const FTDIpp_MPSSE::mpsse_bit_config &conf,
+		spi_pins_conf_t spi_config,
+		uint32_t clkHZ, bool verbose):
+		FTDIpp_MPSSE(conf, "", "", clkHZ, verbose),
+		_cs_bits(1 << 3), _clk(1 << 0)
 {
+	/* if cs not provided use pin 4 */
+	/*if (_cs == 0)
+		_cs = (1<<4);
+	_cable.low_dir |= _cs;*/
+
+	printf("cs pin : %d\n", spi_config.cs_pin);
+	if (spi_config.cs_pin)
+		_cs_bits = spi_config.cs_pin;
+	if (spi_config.sck_pin)
+		_clk = spi_config.sck_pin;
+
+	/* clk is fixed by MPSSE engine
+	 * but CS is free -> update bit direction
+	 */
+
+	gpio_set_output(_cs_bits, true);
+	gpio_set(_cs_bits, true);
+
 	setMode(0);
 	setCSmode(SPI_CS_AUTO);
 	setEndianness(SPI_MSB_FIRST);
@@ -94,11 +113,11 @@ bool FtdiSpi::confCs(char stat)
 {
 	bool ret;
 	if (stat == 0) {
-		ret = gpio_clear(cs_bits, true);
-		ret |= gpio_clear(cs_bits, true);
+		ret = gpio_clear(_cs_bits, true);
+		ret |= gpio_clear(_cs_bits, true);
 	} else {
-		ret = gpio_set(cs_bits, true);
-		ret |= gpio_set(cs_bits, true);
+		ret = gpio_set(_cs_bits, true);
+		ret |= gpio_set(_cs_bits, true);
 	}
 	if (!ret)
 		printf("Error: CS update\n");
@@ -107,7 +126,7 @@ bool FtdiSpi::confCs(char stat)
 
 bool FtdiSpi::setCs()
 {
-	_cs = cs_bits;
+	_cs = _cs_bits;
 	return confCs(_cs);
 }
 
