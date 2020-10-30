@@ -480,6 +480,32 @@ void FTDIpp_MPSSE::gpio_set_dir(uint16_t dir)
 }
 
 /**
+ * configure low or high pins as input
+ * @param[in] gpio: pins bitmask
+ * @param[int] low_pins: select between CBUS or DBUS
+ */
+void FTDIpp_MPSSE::gpio_set_input(uint16_t gpio, bool low_pins)
+{
+	if (low_pins)
+		_cable.bit_low_dir &= ~gpio;
+	else
+		_cable.bit_high_dir &= ~gpio;
+}
+
+/**
+ * configure low or high pins as output
+ * @param[in] gpio: pins bitmask
+ * @param[int] low_pins: select between CBUS or DBUS
+ */
+void FTDIpp_MPSSE::gpio_set_output(uint16_t gpio, bool low_pins)
+{
+	if (low_pins)
+		_cable.bit_low_dir |= gpio;
+	else
+		_cable.bit_high_dir |= gpio;
+}
+
+/**
  * private method to write ftdi half bank GPIOs (pins state are in _cable)
  * @param[in] low or high half bank
  */

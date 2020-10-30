@@ -39,8 +39,11 @@ class FTDIpp_MPSSE {
 		/* full access */
 		bool gpio_write(uint16_t gpio);
 		bool gpio_write(uint8_t gpio, bool low_pins);
+		/* gpio direction */
 		void gpio_set_dir(uint8_t dir, bool low_pins);
 		void gpio_set_dir(uint16_t dir);
+		void gpio_set_input(uint16_t gpio, bool low_pins);
+		void gpio_set_output(uint16_t gpio, bool low_pins);
 
 	protected:
 		void open_device(const std::string &serial, unsigned int baudrate);
