@@ -30,6 +30,7 @@
 #include "cable.hpp"
 #include "device.hpp"
 #include "display.hpp"
+#include "efinix.hpp"
 #include "ftdispi.hpp"
 #include "gowin.hpp"
 #include "lattice.hpp"
@@ -149,7 +150,6 @@ int main(int argc, char **argv)
 	/* FLASH direct access */
 	if (args.spi || (board && board->mode == COMM_SPI)) {
 		FtdiSpi *spi = NULL;
-		RawParser *bit = NULL;
 		spi_pins_conf_t pins_config = board->spi_pins_config;
 
 		try {
@@ -159,43 +159,48 @@ int main(int argc, char **argv)
 			return EXIT_FAILURE;
 		}
 
-		if (board->reset_pin) {
-			spi->gpio_set_output(board->reset_pin, true);
-			spi->gpio_clear(board->reset_pin, true);
-		}
-
-		SPIFlash flash((SPIInterface *)spi, args.verbose);
-		flash.power_up();
-		flash.reset();
-		flash.read_id();
-
-		if (!args.bit_file.empty()) {
-			printInfo("Open file " + args.bit_file + " ", false);
-			try {
-				bit = new RawParser(args.bit_file, false);
-				printSuccess("DONE");
-			} catch (std::exception &e) {
-				printError("FAIL");
-				delete spi;
-				return EXIT_FAILURE;
+		if (board->manufacturer == "efinix") {
+			Efinix target(spi, args.bit_file, board->reset_pin, board->done_pin,
+				args.verbose);
+			target.program(args.offset);
+		} else {
+			RawParser *bit = NULL;
+			if (board->reset_pin) {
+				spi->gpio_set_output(board->reset_pin, true);
+				spi->gpio_clear(board->reset_pin, true);
 			}
 
-			printInfo("Parse file ", false);
-			if (bit->parse() == EXIT_FAILURE) {
-				printError("FAIL");
-				delete spi;
-				return EXIT_FAILURE;
-			} else {
-				printSuccess("DONE");
+			SPIFlash flash((SPIInterface *)spi, args.verbose);
+			flash.power_up();
+			flash.reset();
+			flash.read_id();
+
+			if (!args.bit_file.empty()) {
+				printInfo("Open file " + args.bit_file + " ", false);
+				try {
+					bit = new RawParser(args.bit_file, false);
+					printSuccess("DONE");
+				} catch (std::exception &e) {
+					printError("FAIL");
+					delete spi;
+					return EXIT_FAILURE;
+				}
+
+				printInfo("Parse file ", false);
+				if (bit->parse() == EXIT_FAILURE) {
+					printError("FAIL");
+					delete spi;
+					return EXIT_FAILURE;
+				} else {
+					printSuccess("DONE");
+				}
+
+				flash.erase_and_prog(args.offset, bit->getData(), bit->getLength()/8);
+
+				delete bit;
 			}
-
-			flash.erase_and_prog(args.offset, bit->getData(), bit->getLength()/8);
-
-			delete bit;
-		}
-
-		if (board->reset_pin) {
-			spi->gpio_set(board->reset_pin, true);
+			if (board->reset_pin)
+				spi->gpio_set(board->reset_pin, true);
 		}
 
 		delete spi;
