@@ -68,6 +68,7 @@ void displaySupported(const struct arguments &args);
 int main(int argc, char **argv)
 {
 	cable_t cable;
+	target_cable_t *board = NULL;
 	jtag_pins_conf_t pins_config = {0, 0, 0, 0};
 
 	/* command line args. */
@@ -87,19 +88,23 @@ int main(int argc, char **argv)
 		return EXIT_SUCCESS;
 	}
 
-	/* if a board name is specified try to use this to determine cable */
 	if (args.board[0] != '-' && board_list.find(args.board) != board_list.end()) {
+		board = &(board_list[args.board]);
+	}
+
+	/* if a board name is specified try to use this to determine cable */
+	if (board) {
 		/* set pins config (only when user has not already provided
 		 * configuration
 		 */
 		if (!args.pin_config) {
-			pins_config.tdi_pin = board_list[args.board].pins_config.tdi_pin;
-			pins_config.tdo_pin = board_list[args.board].pins_config.tdo_pin;
-			pins_config.tms_pin = board_list[args.board].pins_config.tms_pin;
-			pins_config.tck_pin = board_list[args.board].pins_config.tck_pin;
+			pins_config.tdi_pin = board->jtag_pins_config.tdi_pin;
+			pins_config.tdo_pin = board->jtag_pins_config.tdo_pin;
+			pins_config.tms_pin = board->jtag_pins_config.tms_pin;
+			pins_config.tck_pin = board->jtag_pins_config.tck_pin;
 		}
 		/* search for cable */
-		auto t = cable_list.find(board_list[args.board].cable_name);
+		auto t = cable_list.find(board->cable_name);
 		if (t == cable_list.end()) {
 			cout << "Board " << args.board << " has not default cable" << endl;
 		} else {
@@ -142,15 +147,21 @@ int main(int argc, char **argv)
 	}
 
 	/* FLASH direct access */
-	if (args.spi) {
+	if (args.spi || (board && board->mode == COMM_SPI)) {
 		FtdiSpi *spi = NULL;
 		RawParser *bit = NULL;
+		spi_pins_conf_t pins_config = board->spi_pins_config;
 
 		try {
-			spi = new FtdiSpi(cable.config, {}, args.freq, args.verbose);
+			spi = new FtdiSpi(cable.config, pins_config, args.freq, args.verbose);
 		} catch (std::exception &e) {
 			printError("Error: Failed to claim cable");
 			return EXIT_FAILURE;
+		}
+
+		if (board->reset_pin) {
+			spi->gpio_set_output(board->reset_pin, true);
+			spi->gpio_clear(board->reset_pin, true);
 		}
 
 		SPIFlash flash((SPIInterface *)spi, args.verbose);
@@ -179,9 +190,14 @@ int main(int argc, char **argv)
 			}
 
 			flash.erase_and_prog(args.offset, bit->getData(), bit->getLength()/8);
+
+			delete bit;
 		}
 
-		delete bit;
+		if (board->reset_pin) {
+			spi->gpio_set(board->reset_pin, true);
+		}
+
 		delete spi;
 
 		return EXIT_SUCCESS;

@@ -49,10 +49,10 @@ FtdiJtagBitBang::FtdiJtagBitBang(const FTDIpp_MPSSE::mpsse_bit_config &cable,
 {
 	unsigned char *ptr;
 
-	_tck_pin = (1 << pin_conf->tck_pin);
-	_tms_pin = (1 << pin_conf->tms_pin);
-	_tdi_pin = (1 << pin_conf->tdi_pin);
-	_tdo_pin = (1 << pin_conf->tdo_pin);
+	_tck_pin = pin_conf->tck_pin;
+	_tms_pin = pin_conf->tms_pin;
+	_tdi_pin = pin_conf->tdi_pin;
+	_tdo_pin = pin_conf->tdo_pin;
 
 	/* store FTDI TX Fifo size */
 	if (_pid == 0x6001)  // FT232R

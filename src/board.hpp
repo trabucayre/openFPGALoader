@@ -7,69 +7,102 @@
 
 /* AN_232R-01_Bit_Bang_Mode_Available_For_FT232R_and_Ft245R */
 enum {
-	FT232RL_TXD = 0,
-	FT232RL_RXD = 1,
-	FT232RL_RTS = 2,
-	FT232RL_CTS = 3,
-	FT232RL_DTR = 4,
-	FT232RL_DSR = 5,
-	FT232RL_DCD = 6,
-	FT232RL_RI  = 7
+	FT232RL_TXD = (1 << 0),
+	FT232RL_RXD = (1 << 1),
+	FT232RL_RTS = (1 << 2),
+	FT232RL_CTS = (1 << 3),
+	FT232RL_DTR = (1 << 4),
+	FT232RL_DSR = (1 << 5),
+	FT232RL_DCD = (1 << 6),
+	FT232RL_RI  = (1 << 7)
+};
+
+/* AN_108_Command_Processor_for_MPSSE_and_MCU_Host_Bus_Emulation_Modes */
+enum {
+	CBUS0 = (1 <<  0),
+	CBUS1 = (1 <<  1),
+	CBUS2 = (1 <<  2),
+	CBUS3 = (1 <<  3),
+	CBUS4 = (1 <<  4),
+	CBUS5 = (1 <<  5),
+	CBUS6 = (1 <<  6),
+	CBUS7 = (1 <<  7),
+	DBUS0 = (1 <<  8),
+	DBUS1 = (1 <<  9),
+	DBUS2 = (1 << 10),
+	DBUS3 = (1 << 11),
+	DBUS4 = (1 << 12),
+	DBUS5 = (1 << 13),
+	DBUS6 = (1 << 14),
+	DBUS7 = (1 << 15)
 };
 
 /*!
- * \brief for bitbang mode this structure provide offset for each JTAG signals
+ * \brief for bitbang mode this structure provide value for each JTAG signals
  */
 typedef struct {
-	uint8_t tms_pin; /*! TMS pin offset */
-	uint8_t tck_pin; /*! TCK pin offset */
-	uint8_t tdi_pin; /*! TDI pin offset */
-	uint8_t tdo_pin; /*! TDO pin offset */
+	uint8_t tms_pin; /*! TMS pin value */
+	uint8_t tck_pin; /*! TCK pin value */
+	uint8_t tdi_pin; /*! TDI pin value */
+	uint8_t tdo_pin; /*! TDO pin value */
 } jtag_pins_conf_t;
 
 typedef struct {
-	uint8_t cs_pin;    /*! CS pin offset */
-	uint8_t sck_pin;   /*! SCK pin offset */
-	uint8_t miso_pin;  /*! MISO pin offset */
-	uint8_t mosi_pin;  /*! MOSI pin offset */
-	uint8_t holdn_pin; /*! HOLDN pin offset */
-	uint8_t wpn_pin;   /*! WPN pin offset */
+	uint16_t cs_pin;    /*! CS pin value */
+	uint16_t sck_pin;   /*! SCK pin value */
+	uint16_t miso_pin;  /*! MISO pin value */
+	uint16_t mosi_pin;  /*! MOSI pin value */
+	uint16_t holdn_pin; /*! HOLDN pin value */
+	uint16_t wpn_pin;   /*! WPN pin value */
 } spi_pins_conf_t;
+
+enum {
+	COMM_JTAG = (1 << 0),
+	COMM_SPI  = (1 << 1)
+};
 
 /*!
  * \brief a board has a target cable and optionnally a pin configuration
  * (bitbang mode)
  */
 typedef struct {
+	std::string manufacturer;
 	std::string cable_name; /*! provide name of one entry in cable_list */
-	jtag_pins_conf_t pins_config; /*! for bitbang, provide struct with pins offset */
+	uint8_t reset_pin;      /*! reset pin value */
+	uint8_t done_pin;       /*! done pin value */
+	uint8_t mode;           /*! communication type (JTAG or SPI) */
+	jtag_pins_conf_t jtag_pins_config; /*! for bitbang, provide struct with pins value */
+	spi_pins_conf_t spi_pins_config; /*! for SPI, provide struct with pins value */
 } target_cable_t;
 
-#define JTAG_BOARD(_name, _cable) \
-	{_name, {_cable, {}}}
-#define JTAG_BITBANG_BOARD(_name, _cable, _tms, _tck, _tdi, _tdo) \
-	{_name, {_cable, { _tms, _tck, _tdi, _tdo }}}
+#define JTAG_BOARD(_name, _cable, _rst, _done) \
+	{_name, {"", _cable, _rst, _done, COMM_JTAG, {}}}
+#define JTAG_BITBANG_BOARD(_name, _cable, _rst, _done, _tms, _tck, _tdi, _tdo) \
+	{_name, {"", _cable, _rst, _done, COMM_JTAG, { _tms, _tck, _tdi, _tdo }}}
+#define SPI_BOARD(_name, _manufacturer, _cable, _rst, _done, _cs, _sck, _si, _so, _holdn, _wpn) \
+	{_name, {_manufacturer, _cable, _rst, _done, COMM_SPI, {}, \
+		{_cs, _sck, _so, _si, _holdn, _wpn}}}
 
 static std::map <std::string, target_cable_t> board_list = {
-	JTAG_BOARD("arty",       "digilent"  ),
-	JTAG_BOARD("nexysVideo", "digilent_b"),
-	JTAG_BOARD("colorlight", ""          ),
-	JTAG_BOARD("crosslinknx_evn", "ft2232"),
-	JTAG_BOARD("cyc1000",    "ft2232"     ),
-	JTAG_BOARD("de0nano",    "usb-blaster"),
-	JTAG_BOARD("ecp5_evn",   "ft2232"     ),
-	JTAG_BOARD("machXO2EVN", "ft2232"     ),
-	JTAG_BOARD("machXO3SK",  "ft2232"     ),
-	JTAG_BOARD("machXO3EVN", "ft2232"     ),
-	JTAG_BOARD("licheeTang", "anlogicCable"),
-	JTAG_BOARD("littleBee",  "ft2232"      ),
-	JTAG_BOARD("spartanEdgeAccelBoard", "" ),
-	JTAG_BOARD("pipistrello", "ft2232"     ),
-	JTAG_BOARD("qmtechCycloneV", ""        ),
-	JTAG_BOARD("tangnano",   "ft2232"      ),
-	JTAG_BITBANG_BOARD("ulx2s", "ft232RL", FT232RL_RI, FT232RL_DSR, FT232RL_CTS, FT232RL_DCD),
-	JTAG_BITBANG_BOARD("ulx3s", "ft231X",  FT232RL_DCD, FT232RL_DSR, FT232RL_RI, FT232RL_CTS),
-	JTAG_BOARD("ecpix5",     "ecpix5-debug"),
+	JTAG_BOARD("arty",       "digilent",   0, 0),
+	JTAG_BOARD("nexysVideo", "digilent_b", 0, 0),
+	JTAG_BOARD("colorlight", "",           0, 0),
+	JTAG_BOARD("crosslinknx_evn", "ft2232", 0, 0),
+	JTAG_BOARD("cyc1000",    "ft2232",     0, 0),
+	JTAG_BOARD("de0nano",    "usb-blaster",0, 0),
+	JTAG_BOARD("ecp5_evn",   "ft2232",     0, 0),
+	JTAG_BOARD("machXO2EVN", "ft2232",     0, 0),
+	JTAG_BOARD("machXO3SK",  "ft2232",     0, 0),
+	JTAG_BOARD("machXO3EVN", "ft2232",     0, 0),
+	JTAG_BOARD("licheeTang", "anlogicCable", 0, 0),
+	JTAG_BOARD("littleBee",  "ft2232",     0, 0),
+	JTAG_BOARD("spartanEdgeAccelBoard", "",0, 0),
+	JTAG_BOARD("pipistrello", "ft2232",    0, 0),
+	JTAG_BOARD("qmtechCycloneV", "",       0, 0),
+	JTAG_BOARD("tangnano",   "ft2232",     0, 0),
+	JTAG_BITBANG_BOARD("ulx2s", "ft232RL", 0, 0, FT232RL_RI, FT232RL_DSR, FT232RL_CTS, FT232RL_DCD),
+	JTAG_BITBANG_BOARD("ulx3s", "ft231X",  0, 0, FT232RL_DCD, FT232RL_DSR, FT232RL_RI, FT232RL_CTS),
+	JTAG_BOARD("ecpix5",     "ecpix5-debug", 0, 0),
 };
 
 #endif
