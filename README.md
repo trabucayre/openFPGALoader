@@ -8,6 +8,7 @@ __Current support kits:__
 * [Digilent Arty A7 xc7a35ti](https://reference.digilentinc.com/reference/programmable-logic/arty-a7/start) (memory and spi flash)
 * [Digilent Arty S7 xc7s50](https://reference.digilentinc.com/reference/programmable-logic/arty-s7/start) (memory and spi flash)
 * [Digilent Nexys Video xc7a200t](https://reference.digilentinc.com/reference/programmable-logic/nexys-video/start) (memory and spi flash)
+* [Fireant Trion T8](https://www.crowdsupply.com/jungle-elec/fireant) (spi flash active mode)
 * [Lattice MachXO2 Breakout Board Evaluation Kit (LCMXO2-7000HE)](https://www.latticesemi.com/products/developmentboardsandkits/machxo2breakoutboard) (memory and flash)
 * Lattice MachXO3LF Starter Kit LCMX03LF-6900C (memory and flash)
 * [Lattice MachXO3D Development Board (LCMXO3D-9400HC)](https://www.latticesemi.com/products/developmentboardsandkits/machxo3d_development_board)
@@ -25,6 +26,7 @@ __Current support kits:__
 __Supported (tested) FPGA:__
 
 * Anlogic [EG4S20](http://www.anlogic.com/prod_view.aspx?TypeId=10&Id=168&FId=t3:10:3) (SRAM and Flash)
+* Efinix [Trion T8](https://www.efinixinc.com/products-trion.html) (active mode)
 * Gowin [GW1N (GW1N-1, GW1N-4, GW1NR-9)](https://www.gowinsemi.com/en/product/detail/2/) (SRAM and Flash)
 * Lattice [MachXO2](https://www.latticesemi.com/en/Products/FPGAandCPLD/MachXO2) (SRAM and Flash)
 * Lattice [MachXO3LF](http://www.latticesemi.com/en/Products/FPGAandCPLD/MachXO3.aspx) (SRAM and Flash)
