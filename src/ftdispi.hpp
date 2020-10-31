@@ -53,15 +53,15 @@ class FtdiSpi : public FTDIpp_MPSSE, SPIInterface {
 
  private:
 	uint8_t _cs;
-	uint8_t _cs_bits;
+	uint16_t _cs_bits;
 	uint8_t _clk;
 	uint8_t _clk_idle;
 	uint8_t _wr_mode;
 	uint8_t _rd_mode;
 	unsigned char _endian;
 	uint8_t _cs_mode;
-	uint8_t _holdn;
-	uint8_t _wpn;
+	uint16_t _holdn;
+	uint16_t _wpn;
 };
 
 #endif  // SRC_FTDISPI_HPP_
