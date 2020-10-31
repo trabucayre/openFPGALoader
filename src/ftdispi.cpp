@@ -54,9 +54,9 @@ void FtdiSpi::setMode(uint8_t mode)
 	}
 	/* for clk pin in idle state */
 	if (_clk_idle)
-		gpio_set(_clk, true);
+		gpio_set(_clk);
 	else
-		gpio_clear(_clk, true);
+		gpio_clear(_clk);
 }
 
 static FTDIpp_MPSSE::mpsse_bit_config bit_conf =
@@ -77,25 +77,22 @@ FtdiSpi::FtdiSpi(const FTDIpp_MPSSE::mpsse_bit_config &conf,
 		spi_pins_conf_t spi_config,
 		uint32_t clkHZ, bool verbose):
 		FTDIpp_MPSSE(conf, "", "", clkHZ, verbose),
-		_cs_bits(1 << 3), _clk(1 << 0)
+		_cs_bits(1 << 3), _clk(1 << 0), _holdn(0), _wpn(0)
 {
-	/* if cs not provided use pin 4 */
-	/*if (_cs == 0)
-		_cs = (1<<4);
-	_cable.low_dir |= _cs;*/
-
-	printf("cs pin : %d\n", spi_config.cs_pin);
 	if (spi_config.cs_pin)
 		_cs_bits = spi_config.cs_pin;
 	if (spi_config.sck_pin)
 		_clk = spi_config.sck_pin;
+	if (spi_config.holdn_pin)
+		_holdn = spi_config.holdn_pin;
+	if (spi_config.wpn_pin)
+		_holdn = spi_config.wpn_pin;
 
 	/* clk is fixed by MPSSE engine
-	 * but CS is free -> update bit direction
+	 * but CS, holdn, wpn are free -> update bits direction
 	 */
-
-	gpio_set_output(_cs_bits, true);
-	gpio_set(_cs_bits, true);
+	gpio_set_output(_cs_bits | _holdn | _wpn);
+	gpio_set(_cs_bits | _holdn | _wpn);
 
 	setMode(0);
 	setCSmode(SPI_CS_AUTO);
@@ -113,11 +110,11 @@ bool FtdiSpi::confCs(char stat)
 {
 	bool ret;
 	if (stat == 0) {
-		ret = gpio_clear(_cs_bits, true);
-		ret |= gpio_clear(_cs_bits, true);
+		ret = gpio_clear(_cs_bits);
+		ret |= gpio_clear(_cs_bits);
 	} else {
-		ret = gpio_set(_cs_bits, true);
-		ret |= gpio_set(_cs_bits, true);
+		ret = gpio_set(_cs_bits);
+		ret |= gpio_set(_cs_bits);
 	}
 	if (!ret)
 		printf("Error: CS update\n");

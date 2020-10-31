@@ -1,3 +1,6 @@
+#ifndef SRC_FTDISPI_HPP_
+#define SRC_FTDISPI_HPP_
+
 #include <ftdi.h>
 #include <iostream>
 #include <vector>
@@ -57,4 +60,8 @@ class FtdiSpi : public FTDIpp_MPSSE, SPIInterface {
 	uint8_t _rd_mode;
 	unsigned char _endian;
 	uint8_t _cs_mode;
+	uint8_t _holdn;
+	uint8_t _wpn;
 };
+
+#endif  // SRC_FTDISPI_HPP_
