@@ -45,26 +45,31 @@ typedef struct {
 	jtag_pins_conf_t pins_config; /*! for bitbang, provide struct with pins offset */
 } target_cable_t;
 
+#define JTAG_BOARD(_name, _cable) \
+	{_name, {_cable, {}}}
+#define JTAG_BITBANG_BOARD(_name, _cable, _tms, _tck, _tdi, _tdo) \
+	{_name, {_cable, { _tms, _tck, _tdi, _tdo }}}
+
 static std::map <std::string, target_cable_t> board_list = {
-	{"arty",       {"digilent",   {}}},
-	{"nexysVideo", {"digilent_b", {}}},
-	{"colorlight", {"",           {}}},
-	{"crosslinknx_evn", {"ft2232",     {}}},
-	{"cyc1000",    {"ft2232",     {}}},
-	{"de0nano",    {"usb-blaster",{}}},
-	{"ecp5_evn",   {"ft2232",     {}}},
-	{"machXO2EVN", {"ft2232",     {}}},
-	{"machXO3SK",  {"ft2232",     {}}},
-	{"machXO3EVN",  {"ft2232",     {}}},
-	{"licheeTang", {"anlogicCable", {}}},
-	{"littleBee",  {"ft2232",     {}}},
-	{"spartanEdgeAccelBoard", {"",{}}},
-	{"pipistrello", {"ft2232",    {}}},
-	{"qmtechCycloneV", {"",       {}}},
-	{"tangnano",   {"ft2232",     {}}},
-	{"ulx2s",      {"ft232RL",  {FT232RL_RI, FT232RL_DSR, FT232RL_CTS, FT232RL_DCD}}},
-	{"ulx3s",      {"ft231X",   {FT232RL_DCD, FT232RL_DSR, FT232RL_RI, FT232RL_CTS}}},
-	{"ecpix5",     {"ecpix5-debug",   {}}},
+	JTAG_BOARD("arty",       "digilent"  ),
+	JTAG_BOARD("nexysVideo", "digilent_b"),
+	JTAG_BOARD("colorlight", ""          ),
+	JTAG_BOARD("crosslinknx_evn", "ft2232"),
+	JTAG_BOARD("cyc1000",    "ft2232"     ),
+	JTAG_BOARD("de0nano",    "usb-blaster"),
+	JTAG_BOARD("ecp5_evn",   "ft2232"     ),
+	JTAG_BOARD("machXO2EVN", "ft2232"     ),
+	JTAG_BOARD("machXO3SK",  "ft2232"     ),
+	JTAG_BOARD("machXO3EVN", "ft2232"     ),
+	JTAG_BOARD("licheeTang", "anlogicCable"),
+	JTAG_BOARD("littleBee",  "ft2232"      ),
+	JTAG_BOARD("spartanEdgeAccelBoard", "" ),
+	JTAG_BOARD("pipistrello", "ft2232"     ),
+	JTAG_BOARD("qmtechCycloneV", ""        ),
+	JTAG_BOARD("tangnano",   "ft2232"      ),
+	JTAG_BITBANG_BOARD("ulx2s", "ft232RL", FT232RL_RI, FT232RL_DSR, FT232RL_CTS, FT232RL_DCD),
+	JTAG_BITBANG_BOARD("ulx3s", "ft231X",  FT232RL_DCD, FT232RL_DSR, FT232RL_RI, FT232RL_CTS),
+	JTAG_BOARD("ecpix5",     "ecpix5-debug"),
 };
 
 #endif
