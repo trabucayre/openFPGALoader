@@ -371,10 +371,14 @@ uint8_t FTDIpp_MPSSE::gpio_get(bool low_pins)
  */
 bool FTDIpp_MPSSE::gpio_set(uint16_t gpios)
 {
-	_cable.bit_high_val |= (0xff & (gpios >> 8));
-	_cable.bit_low_val |= (0xff & gpios);
-	__gpio_write(true);
-	__gpio_write(false);
+	if (gpios & 0x00ff) {
+		_cable.bit_low_val |= (0xff & gpios);
+		__gpio_write(true);
+	}
+	if (gpios & 0xff00) {
+		_cable.bit_high_val |= (0xff & (gpios >> 8));
+		__gpio_write(false);
+	}
 	return (mpsse_write() >= 0);
 }
 
@@ -401,10 +405,14 @@ bool FTDIpp_MPSSE::gpio_set(uint8_t gpios, bool low_pins)
  */
 bool FTDIpp_MPSSE::gpio_clear(uint16_t gpios)
 {
-	_cable.bit_high_val &= ~(0xff & (gpios >> 8));
-	_cable.bit_low_val &= ~(0xff & gpios);
-	__gpio_write(true);
-	__gpio_write(false);
+	if (gpios & 0x00ff) {
+		_cable.bit_low_val &= ~(0xff & gpios);
+		__gpio_write(true);
+	}
+	if (gpios & 0xff00) {
+		_cable.bit_high_val &= ~(0xff & (gpios >> 8));
+		__gpio_write(false);
+	}
 	return (mpsse_write() >= 0);
 }
 
