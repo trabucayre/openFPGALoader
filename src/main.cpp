@@ -33,6 +33,7 @@
 #include "efinix.hpp"
 #include "ftdispi.hpp"
 #include "gowin.hpp"
+#include "ice40.hpp"
 #include "lattice.hpp"
 #include "jtag.hpp"
 #include "part.hpp"
@@ -161,6 +162,10 @@ int main(int argc, char **argv)
 
 		if (board->manufacturer == "efinix") {
 			Efinix target(spi, args.bit_file, board->reset_pin, board->done_pin,
+				args.verbose);
+			target.program(args.offset);
+		} else if (board->manufacturer == "lattice") {
+			Ice40 target(spi, args.bit_file, board->reset_pin, board->done_pin,
 				args.verbose);
 			target.program(args.offset);
 		} else {
