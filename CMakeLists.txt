@@ -44,6 +44,8 @@ set(OPENFPGALOADER_SOURCE
 	src/anlogicBitParser.cpp
 	src/anlogicCable.cpp
 	src/dirtyJtag.cpp
+	src/efinix.cpp
+	src/efinixHexParser.cpp
 	src/spiFlash.cpp
 	src/rawParser.cpp
 	src/usbBlaster.cpp
@@ -77,6 +79,8 @@ set(OPENFPGALOADER_HEADERS
 	src/anlogicCable.hpp
 	src/cxxopts.hpp
 	src/dirtyJtag.hpp
+	src/efinix.hpp
+	src/efinixHexParser.hpp
 	src/progressBar.hpp
 	src/rawParser.hpp
 	src/usbBlaster.hpp
