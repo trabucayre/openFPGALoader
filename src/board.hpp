@@ -68,9 +68,9 @@ enum {
 typedef struct {
 	std::string manufacturer;
 	std::string cable_name; /*! provide name of one entry in cable_list */
-	uint8_t reset_pin;      /*! reset pin value */
-	uint8_t done_pin;       /*! done pin value */
-	uint8_t mode;           /*! communication type (JTAG or SPI) */
+	uint16_t reset_pin;      /*! reset pin value */
+	uint16_t done_pin;       /*! done pin value */
+	uint16_t mode;           /*! communication type (JTAG or SPI) */
 	jtag_pins_conf_t jtag_pins_config; /*! for bitbang, provide struct with pins value */
 	spi_pins_conf_t spi_pins_config; /*! for SPI, provide struct with pins value */
 } target_cable_t;
