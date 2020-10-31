@@ -19,22 +19,22 @@ enum {
 
 /* AN_108_Command_Processor_for_MPSSE_and_MCU_Host_Bus_Emulation_Modes */
 enum {
-	CBUS0 = (1 <<  0),
-	CBUS1 = (1 <<  1),
-	CBUS2 = (1 <<  2),
-	CBUS3 = (1 <<  3),
-	CBUS4 = (1 <<  4),
-	CBUS5 = (1 <<  5),
-	CBUS6 = (1 <<  6),
-	CBUS7 = (1 <<  7),
-	DBUS0 = (1 <<  8),
-	DBUS1 = (1 <<  9),
-	DBUS2 = (1 << 10),
-	DBUS3 = (1 << 11),
-	DBUS4 = (1 << 12),
-	DBUS5 = (1 << 13),
-	DBUS6 = (1 << 14),
-	DBUS7 = (1 << 15)
+	DBUS0 = (1 <<  0),
+	DBUS1 = (1 <<  1),
+	DBUS2 = (1 <<  2),
+	DBUS3 = (1 <<  3),
+	DBUS4 = (1 <<  4),
+	DBUS5 = (1 <<  5),
+	DBUS6 = (1 <<  6),
+	DBUS7 = (1 <<  7),
+	CBUS0 = (1 <<  8),
+	CBUS1 = (1 <<  9),
+	CBUS2 = (1 << 10),
+	CBUS3 = (1 << 11),
+	CBUS4 = (1 << 12),
+	CBUS5 = (1 << 13),
+	CBUS6 = (1 << 14),
+	CBUS7 = (1 << 15)
 };
 
 /*!
