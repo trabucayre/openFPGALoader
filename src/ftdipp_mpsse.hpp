@@ -42,8 +42,14 @@ class FTDIpp_MPSSE {
 		/* gpio direction */
 		void gpio_set_dir(uint8_t dir, bool low_pins);
 		void gpio_set_dir(uint16_t dir);
-		void gpio_set_input(uint16_t gpio, bool low_pins);
-		void gpio_set_output(uint16_t gpio, bool low_pins);
+		/* configure as input low/high pins */
+		void gpio_set_input(uint8_t gpio, bool low_pins);
+		/* configure as input pins */
+		void gpio_set_input(uint16_t gpio);
+		/* configure as output low/high pins */
+		void gpio_set_output(uint8_t gpio, bool low_pins);
+		/* configure as output pins */
+		void gpio_set_output(uint16_t gpio);
 
 	protected:
 		void open_device(const std::string &serial, unsigned int baudrate);

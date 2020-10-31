@@ -484,7 +484,7 @@ void FTDIpp_MPSSE::gpio_set_dir(uint16_t dir)
  * @param[in] gpio: pins bitmask
  * @param[int] low_pins: select between CBUS or DBUS
  */
-void FTDIpp_MPSSE::gpio_set_input(uint16_t gpio, bool low_pins)
+void FTDIpp_MPSSE::gpio_set_input(uint8_t gpio, bool low_pins)
 {
 	if (low_pins)
 		_cable.bit_low_dir &= ~gpio;
@@ -493,16 +493,40 @@ void FTDIpp_MPSSE::gpio_set_input(uint16_t gpio, bool low_pins)
 }
 
 /**
+ * configure pins as input
+ * @param[in] gpio: pins bitmask
+ */
+void FTDIpp_MPSSE::gpio_set_input(uint16_t gpio)
+{
+	if (gpio & 0x00ff)
+		_cable.bit_low_dir &= ~(gpio & 0x00ff);
+	if (gpio & 0xff00)
+		_cable.bit_high_dir &= ~((gpio >> 8) & 0x00ff);
+}
+
+/**
  * configure low or high pins as output
  * @param[in] gpio: pins bitmask
  * @param[int] low_pins: select between CBUS or DBUS
  */
-void FTDIpp_MPSSE::gpio_set_output(uint16_t gpio, bool low_pins)
+void FTDIpp_MPSSE::gpio_set_output(uint8_t gpio, bool low_pins)
 {
 	if (low_pins)
 		_cable.bit_low_dir |= gpio;
 	else
 		_cable.bit_high_dir |= gpio;
+}
+
+/**
+ * configure pins as output
+ * @param[in] gpio: pins bitmask
+ */
+void FTDIpp_MPSSE::gpio_set_output(uint16_t gpio)
+{
+	if (gpio & 0x00ff)
+		_cable.bit_low_dir |= (gpio & 0x00ff);
+	if (gpio & 0xff00)
+		_cable.bit_high_dir |= ((gpio >> 8) & 0x00ff);
 }
 
 /**
