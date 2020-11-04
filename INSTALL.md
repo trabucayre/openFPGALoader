@@ -11,3 +11,11 @@ $ cmake --build .
 or
 $ make -j$(nproc)
 ```
+
+## Install
+
+As root:
+
+```
+$ make install
+```
