@@ -1,5 +1,11 @@
 # Install instructions
 
+## Get the code from git project
+
+```
+$ git clone https://github.com/trabucayre/openFPGALoader.git
+```
+
 ## Compile from source
 
 ```
