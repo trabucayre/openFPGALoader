@@ -1,5 +1,11 @@
 # Install instructions
 
+## Get the code from git project
+
+```
+$ git clone https://github.com/trabucayre/openFPGALoader.git
+```
+
 ## Compile from source
 
 ```
@@ -10,4 +16,12 @@ $ cmake ../ # add -DBUILD_STATIC=ON to build a static version
 $ cmake --build .
 or
 $ make -j$(nproc)
+```
+
+## Install
+
+As root:
+
+```
+$ make install
 ```
