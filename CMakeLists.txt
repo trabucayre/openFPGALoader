@@ -175,6 +175,8 @@ install(TARGETS openFPGALoader DESTINATION bin)
 install(FILES 
 	test_sfl.svf
 	spiOverJtag/spiOverJtag_xc7a35.bit
+	spiOverJtag/spiOverJtag_xc7a100.bit
+	spiOverJtag/spiOverJtag_xc7a200.bit
 	spiOverJtag/spiOverJtag_xc7s50.bit
 	DESTINATION ${CMAKE_INSTALL_DATAROOTDIR}/openFPGALoader
 )
