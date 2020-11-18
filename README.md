@@ -40,7 +40,7 @@ __Supported (tested) FPGA:__
 * Lattice [ECP5 (25F, 5G 85F, CrossLink-NX (LIFCL-40)](https://www.latticesemi.com/en/Products/FPGAandCPLD/CrossLink-NX) (SRAM and Flash)
 * Xilinx Artix 7 [xc7a35ti, xc7a100t, xc7a200t](https://www.xilinx.com/products/silicon-devices/fpga/artix-7.html) (memory and spi flash)
 * Xilinx Spartan 6 [xc6slx45](https://www.xilinx.com/products/silicon-devices/fpga/spartan-6.html) (memory)
-* Xilinx Spartan 7 [xc7s15, xc7s50](https://www.xilinx.com/products/silicon-devices/fpga/spartan-7.html) (memory (all) and spi flash (xc7s50))
+* Xilinx Spartan 7 [xc7s15, xc7s25, xc7s50](https://www.xilinx.com/products/silicon-devices/fpga/spartan-7.html) (memory (all) and spi flash (xc7s50))
 * Intel Cyclone IV CE [EP4CE22](https://www.intel.com/content/www/us/en/products/programmable/fpga/cyclone-iv/features.html) (memory. See note below)
 * Intel Cyclone V E [5CEA2](https://www.intel.com/content/www/us/en/products/programmable/fpga/cyclone-v.html)
 * Intel Cyclone 10 LP [10CL025](https://www.intel.com/content/www/us/en/products/programmable/fpga/cyclone-10.html)
