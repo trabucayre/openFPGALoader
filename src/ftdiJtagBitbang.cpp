@@ -170,6 +170,10 @@ int FtdiJtagBitBang::writeTDI(uint8_t *tx, uint8_t *rx, uint32_t len, bool end)
 	if (rx)
 		memset(rx, 0, len/8);
 
+	/* quick fix: use an empty buffer */
+	if (_num != 0)
+		flush();
+
 	for (uint32_t i = 0, pos = 0; i < len; i++) {
 		/* keep tms or
 		 * set tms high if it's last bit and end true */
