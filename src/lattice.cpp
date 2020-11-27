@@ -625,6 +625,8 @@ uint32_t Lattice::readStatusReg()
 {
 	uint32_t reg;
 	uint8_t rx[4], tx[4];
+	/* valgrind warn */
+	memset(tx, 0, 4);
 	wr_rd(0x3C, tx, 4, rx, 4);
 	_jtag->set_state(Jtag::RUN_TEST_IDLE);
 	_jtag->toggleClk(1000);
