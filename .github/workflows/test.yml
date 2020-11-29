@@ -1,0 +1,49 @@
+name: test
+
+on:
+  push:
+  pull_request:
+
+jobs:
+
+  test:
+    runs-on: windows-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        include: [
+          { msystem: MINGW64, arch: x86_64 },
+          { msystem: MINGW32, arch: i686   }
+        ]
+    defaults:
+      run:
+        shell: msys2 {0}
+    env:
+      MINGW_INSTALLS: ${{ matrix.msystem }}
+    steps:
+
+    - run: git config --global core.autocrlf input
+      shell: bash
+
+    - uses: actions/checkout@v2
+
+    - uses: msys2/setup-msys2@v2
+      with:
+        msystem: ${{ matrix.msystem }}
+        install: >
+          git
+          base-devel
+          mingw-w64-${{ matrix.arch }}-toolchain
+        update: true
+
+    - name: Build
+      run: |
+        cd msys2
+        makepkg-mingw --noconfirm --noprogressbar -sCLf
+
+    - name: Install
+      run: pacman -U --noconfirm msys2/*.zst
+
+    - uses: actions/upload-artifact@v2
+      with:
+        path: msys2/*.zst
