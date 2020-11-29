@@ -9,6 +9,7 @@ url="https://github.com/trabucayre/openFPGALoader"
 license=('AGPLv3.0')
 depends=("${MINGW_PACKAGE_PREFIX}-libftdi")
 makedepends=("${MINGW_PACKAGE_PREFIX}-gcc"
+             "${MINGW_PACKAGE_PREFIX}-make"
              "${MINGW_PACKAGE_PREFIX}-cmake")
 
 source=()
@@ -18,9 +19,9 @@ build() {
   cd "${srcdir}"/../..
   mkdir build
   cd build
-  cmake \
+  MSYS2_ARG_CONV_EXCL=- cmake \
     -G "MinGW Makefiles" \
-    -DCMAKE_INSTALL_PREFIX="${pkgdir}${MINGW_PREFIX}" \
+    -DCMAKE_INSTALL_PREFIX="${MINGW_PREFIX}" \
     ../
   cmake --build .
 }
@@ -30,20 +31,10 @@ check() {
 }
 
 package() {
-  # FIXME: `make install` opens an interactive prompt locally and does nothing in CI
-  #cd "${srcdir}/${_realname}"/build
-  #mkdir -p "${pkgdir}${MINGW_PREFIX}"
-  #make install
+  cd "${srcdir}"/../../build
+  mingw32-make DESTDIR="${pkgdir}" install
 
-  cd "${srcdir}"/../..
-
-  _bin="${pkgdir}${MINGW_PREFIX}"/bin
   _licenses="${pkgdir}${MINGW_PREFIX}/share/licenses/${_realname}"
-  _data="${pkgdir}${MINGW_PREFIX}/share/data/${_realname}"
-  mkdir -p "${_bin}" "${_licenses}" "${_data}"
-
-  install -m 744 build/openFPGALoader.exe "${_bin}"
-  install -m 644 LICENSE "${_licenses}"
-  install -m 644 test_sfl.svf "${_data}"
-  install -m 644 spiOverJtag/*.bit "${_data}"
+  mkdir -p "${_licenses}"
+  install -m 644 ../LICENSE "${_licenses}"
 }
