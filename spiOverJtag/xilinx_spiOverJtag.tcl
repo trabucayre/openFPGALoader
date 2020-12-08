@@ -8,6 +8,7 @@ file delete -force $build_path
 # Project creation
 set parts [dict create \
 	xc7a35  xc7a35ticsg324-1L \
+	xc7a50t xc7a50tcpg236-2 \
 	xc7s50  xc7s50csga324-1 \
 	xc7a100 xc7a100tfgg484-2 \
 	xc7a200 xc7a200tsbg484-1 \
