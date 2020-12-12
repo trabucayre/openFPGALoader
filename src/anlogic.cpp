@@ -37,6 +37,7 @@ Anlogic::Anlogic(Jtag *jtag, const std::string &filename,
 	bool flash_wr, bool sram_wr, bool verbose):
 	Device(jtag, filename, verbose), _svf(_jtag, _verbose)
 {
+	(void)flash_wr;
 	if (_filename != "") {
 		if (_file_extension == "svf")
 			_mode = Device::MEM_MODE;

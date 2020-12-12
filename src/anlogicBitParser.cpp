@@ -112,7 +112,7 @@ int AnlogicBitParser::parse()
 	data.resize(size_data);
 	_fd.read(reinterpret_cast<char *>(&(data[0])), size_data);
 
-	int pos = 0;
+	unsigned int pos = 0;
 	std::vector<std::vector<uint8_t>> blocks;
     do {
         uint16_t len = (data[pos++] << 8);

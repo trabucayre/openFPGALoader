@@ -76,9 +76,9 @@ typedef struct {
 } target_cable_t;
 
 #define JTAG_BOARD(_name, _cable, _rst, _done) \
-	{_name, {"", _cable, _rst, _done, COMM_JTAG, {}}}
+	{_name, {"", _cable, _rst, _done, COMM_JTAG, {}, {}}}
 #define JTAG_BITBANG_BOARD(_name, _cable, _rst, _done, _tms, _tck, _tdi, _tdo) \
-	{_name, {"", _cable, _rst, _done, COMM_JTAG, { _tms, _tck, _tdi, _tdo }}}
+	{_name, {"", _cable, _rst, _done, COMM_JTAG, { _tms, _tck, _tdi, _tdo }, {}}}
 #define SPI_BOARD(_name, _manufacturer, _cable, _rst, _done, _cs, _sck, _si, _so, _holdn, _wpn) \
 	{_name, {_manufacturer, _cable, _rst, _done, COMM_SPI, {}, \
 		{_cs, _sck, _so, _si, _holdn, _wpn}}}

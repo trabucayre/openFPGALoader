@@ -309,7 +309,7 @@ int JedParser::parse()
 	int size = 0;
 	for (size_t i = 0; i < _data_list.size(); i++) {
 		if (_verbose) {
-			printf("area[%ld] %d %d ", i, _data_list[i].offset, _data_list[i].len);
+			printf("area[%zd] %d %d ", i, _data_list[i].offset, _data_list[i].len);
 			printf("%s\n", _data_list[i].associatedPrevNote.c_str());
 		}
 		size += _data_list[i].len;
@@ -331,7 +331,7 @@ int JedParser::parse()
 	}
 
 	if (_verbose)
-		printf("array size %ld\n", _data_list[0].data.size());
+		printf("array size %zd\n", _data_list[0].data.size());
 
 	if (_fuse_count != size) {
 		cerr << "Not all fuses are programmed" << endl;

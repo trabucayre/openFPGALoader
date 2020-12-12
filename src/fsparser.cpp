@@ -74,7 +74,7 @@ int FsParser::parse()
 
 	parseHeader();
 	_fd.seekg(0, _fd.beg);
-	int max = 0;
+	size_t max = 0;
 
 	while (1) {
 		std::getline(_fd, buffer, '\n');
@@ -84,8 +84,8 @@ int FsParser::parse()
 			continue;
 		vectTmp.push_back(buffer);
 		/* needed to determine data used for checksum */
-		if ((int)buffer.size() > max)
-			max = (int) buffer.size();
+		if (buffer.size() > max)
+			max = buffer.size();
 	}
 
 	/* we know each data size finished with 6 x 0xff
@@ -167,7 +167,7 @@ int FsParser::parse()
 
 	for (auto &&line: vectTmp) {
 		/* store bit for checksum */
-		if ((int)line.size() == max)
+		if (line.size() == max)
 			tmp += line.substr(padding, addr_length);
 	}
 
@@ -175,7 +175,7 @@ int FsParser::parse()
 	uint32_t sum = 0;
 	uint32_t max_pos = (idcode == 0) ? tmp.size() : addr_length * nb_line;
 
-	for (int pos = 0; pos < max_pos; pos+=16) {
+	for (uint32_t pos = 0; pos < max_pos; pos+=16) {
 		int16_t data16 = 0;
 		for (int offset = 0; offset < 16; offset ++) {
 			uint16_t val = (tmp[pos+offset] == '1'?1:0);

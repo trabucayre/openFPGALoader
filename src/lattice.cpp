@@ -71,6 +71,7 @@ Lattice::Lattice(Jtag *jtag, const string filename,
 	bool flash_wr, bool sram_wr, bool verbose):
 		Device(jtag, filename, verbose), _fpga_family(UNKNOWN_FAMILY)
 {
+	(void)sram_wr;
 	if (_filename != "") {
 		if (_file_extension == "jed" || _file_extension == "mcs") {
 			_mode = Device::FLASH_MODE;
@@ -899,7 +900,7 @@ bool Lattice::Verify(std::vector<std::string> data, bool unlock)
 		_jtag->shiftDR(tx_buf, rx_buf, 16*8, Jtag::PAUSE_DR);
 		for (size_t i = 0; i < data[line].size(); i++) {
 			if (rx_buf[i] != (unsigned char)data[line][i]) {
-				printf("%3lu %3lu %02x -> %02x\n", line, i,
+				printf("%3zu %3zu %02x -> %02x\n", line, i,
 						rx_buf[i], (unsigned char)data[line][i]);
 				failure = true;
 			}
