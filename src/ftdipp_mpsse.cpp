@@ -26,7 +26,7 @@ FTDIpp_MPSSE::FTDIpp_MPSSE(const mpsse_bit_config &cable, const string &dev,
 				_interface(cable.interface),
 				_clkHZ(clkHZ), _buffer_size(2*32768), _num(0)
 {
-	sprintf(_product, "");
+	strcpy(_product, "");
 	if (!dev.empty()) {
 		if (!search_with_dev(dev)) {
 			cerr << "No cable found" << endl;

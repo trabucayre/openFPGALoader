@@ -203,7 +203,7 @@ void EPCQ::dumpJICFile(char *jic_file, char *out_file, size_t max_len)
 	fseek(jic, offset, SEEK_SET);
 	FILE *out = fopen(out_file, "w");
 	for (i=0; i < max_len && (1 == fread(&c, 1, 1, jic)); i++) {
-		fprintf(out, "%lx %x\n", i, c);
+		fprintf(out, "%zx %x\n", i, c);
 	}
 	fclose(jic);
 	fclose(out);
