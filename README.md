@@ -8,6 +8,7 @@ __Current support kits:__
 * [Digilent Arty A7 xc7a35ti](https://reference.digilentinc.com/reference/programmable-logic/arty-a7/start) (memory and spi flash)
 * [Digilent Arty S7 xc7s50](https://reference.digilentinc.com/reference/programmable-logic/arty-s7/start) (memory and spi flash)
 * [Digilent Nexys Video xc7a200t](https://reference.digilentinc.com/reference/programmable-logic/nexys-video/start) (memory and spi flash)
+* [FairWaves XTRXPro](https://www.crowdsupply.com/fairwaves/xtrx) (memory and flash)
 * [Fireant Trion T8](https://www.crowdsupply.com/jungle-elec/fireant) (spi flash active mode)
 * [iCEBreaker](https://1bitsquared.com/collections/fpga/products/icebreaker)
 * [icestick](https://www.latticesemi.com/icestick)

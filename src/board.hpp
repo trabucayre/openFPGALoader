@@ -110,6 +110,7 @@ static std::map <std::string, target_cable_t> board_list = {
 	JTAG_BITBANG_BOARD("ulx2s", "ft232RL", 0, 0, FT232RL_RI, FT232RL_DSR, FT232RL_CTS, FT232RL_DCD),
 	JTAG_BITBANG_BOARD("ulx3s", "ft231X",  0, 0, FT232RL_DCD, FT232RL_DSR, FT232RL_RI, FT232RL_CTS),
 	JTAG_BOARD("ecpix5",     "ecpix5-debug", 0, 0),
+	JTAG_BOARD("xtrx",       ""            , 0, 0),
 };
 
 #endif
