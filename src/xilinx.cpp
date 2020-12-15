@@ -110,13 +110,8 @@ void Xilinx::program_spi(unsigned int offset)
 		_bit = new McsParser(_filename, false, _verbose);
 	else if (_file_extension == "bit")
 		_bit = new BitParser(_filename, false, _verbose);
-	else {
-		if (offset == 0) {
-			printError("Error: can't write raw data at the beginning of the flash");
-			throw std::exception();
-		}
+	else
 		_bit = new RawParser(_filename, false);
-	}
 
 	int err = _bit->parse();
 	printInfo("Parse file ", false);
