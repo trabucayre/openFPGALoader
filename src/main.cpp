@@ -386,7 +386,7 @@ int parse_opt(int argc, char **argv, struct arguments *args, jtag_pins_conf_t *p
 		}
 
 		if (result.count("Version")) {
-			cout << "openFPGALoader v0.1" << endl;
+			cout << "openFPGALoader " << VERSION << endl;
 			return 1;
 		}
 

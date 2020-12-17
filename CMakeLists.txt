@@ -2,7 +2,8 @@
 cmake_minimum_required(VERSION 3.0)
 
 # set the project name
-project(openFPGALoader VERSION 0.1 LANGUAGES CXX)
+project(openFPGALoader VERSION "0.2.1" LANGUAGES CXX)
+add_definitions(-DVERSION=\"v${PROJECT_VERSION}\")
 
 option(BUILD_STATIC "Whether or not to build with static libraries" OFF)
 option(ENABLE_UDEV "use udev to search JTAG adapter from /dev/xx" ON)
