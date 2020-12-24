@@ -23,7 +23,7 @@
 class ProgressBar {
 	public:
 		ProgressBar(std::string mess, int maxValue, int progressLen);
-		void display(int value);
+		void display(int value, char force = 0);
 		void done();
 		void fail();
 	private:

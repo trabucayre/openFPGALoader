@@ -17,6 +17,7 @@
 
 #include <stdio.h>
 #include <stdlib.h>
+#include "time.h"
 #include "progressBar.hpp"
 #include "display.hpp"
 
@@ -24,9 +25,15 @@ ProgressBar::ProgressBar(std::string mess, int maxValue, int progressLen):
 		_mess(mess), _maxValue(maxValue), _progressLen(progressLen)
 {
 }
-
-void ProgressBar::display(int value)
+static time_t last_time; 
+void ProgressBar::display(int value, char force)
 {
+	clock_t this_time = clock();
+	if (!force && ((((float)(this_time - last_time))/CLOCKS_PER_SEC) < 0.2))
+	{
+		return;
+	}
+	last_time = this_time;
 	float percent = ((float)value * 100.0f)/(float)_maxValue;
 	float nbEq = (percent * (float) _progressLen)/100.0f;
 
@@ -41,13 +48,13 @@ void ProgressBar::display(int value)
 }
 void ProgressBar::done()
 {
-	display(_maxValue);
+	display(_maxValue, true);
 	//fprintf(stderr, "\nDone\n");
 	printSuccess("\nDone");
 }
 void ProgressBar::fail()
 {
-	display(_maxValue);
+	display(_maxValue, true);
 	//fprintf(stderr, "\nDone\n");
 	printError("\nFail");
 }
