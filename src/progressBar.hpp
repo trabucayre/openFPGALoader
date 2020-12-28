@@ -17,7 +17,7 @@
 
 #ifndef PROGRESSBARE_HPP
 #define PROGRESSBARE_HPP
-
+#include <time.h>
 #include <iostream>
 
 class ProgressBar {
@@ -30,6 +30,7 @@ class ProgressBar {
 		std::string _mess;
 		int _maxValue;
 		int _progressLen;
+		clock_t last_time; //records the time of last progress bar update 
 };
 
 #endif

@@ -17,15 +17,14 @@
 
 #include <stdio.h>
 #include <stdlib.h>
-#include "time.h"
 #include "progressBar.hpp"
 #include "display.hpp"
 
 ProgressBar::ProgressBar(std::string mess, int maxValue, int progressLen):
 		_mess(mess), _maxValue(maxValue), _progressLen(progressLen)
 {
+	last_time = clock();
 }
-static time_t last_time; 
 void ProgressBar::display(int value, char force)
 {
 	clock_t this_time = clock();
