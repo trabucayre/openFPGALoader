@@ -17,19 +17,20 @@
 
 #ifndef PROGRESSBARE_HPP
 #define PROGRESSBARE_HPP
-
+#include <time.h>
 #include <iostream>
 
 class ProgressBar {
 	public:
 		ProgressBar(std::string mess, int maxValue, int progressLen);
-		void display(int value);
+		void display(int value, char force = 0);
 		void done();
 		void fail();
 	private:
 		std::string _mess;
 		int _maxValue;
 		int _progressLen;
+		clock_t last_time; //records the time of last progress bar update 
 };
 
 #endif
