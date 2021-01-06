@@ -33,6 +33,10 @@
 #include "dirtyJtag.hpp"
 #include "usbBlaster.hpp"
 
+#ifdef ENABLE_FX2
+#include "fx2.hpp"
+#endif
+
 using namespace std;
 
 #define DEBUG 0
@@ -103,6 +107,11 @@ void Jtag::init_internal(cable_t &cable, const string &dev, const string &serial
 	case MODE_USBBLASTER:
 		_jtag = new UsbBlaster(_verbose);
 		break;
+#ifdef ENABLE_FX2
+	case MODE_FX2:
+		_jtag = new FX2Cable(_verbose, pin_conf);
+		break;
+#endif
 	default:
 		std::cerr << "Jtag: unknown cable type" << std::endl;
 		throw std::exception();

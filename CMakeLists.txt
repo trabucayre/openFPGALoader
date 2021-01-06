@@ -7,6 +7,7 @@ add_definitions(-DVERSION=\"v${PROJECT_VERSION}\")
 
 option(BUILD_STATIC "Whether or not to build with static libraries" OFF)
 option(ENABLE_UDEV "use udev to search JTAG adapter from /dev/xx" ON)
+option(ENABLE_FPGALINK "enable fx2 cable support through libfpgalink" ON)
 option(USE_PKGCONFIG "Use pkgconfig to find libraries" ON)
 option(LINK_CMAKE_THREADS "Use CMake find_package to link the threading library" OFF)
 
@@ -113,6 +114,9 @@ set(OPENFPGALOADER_HEADERS
 	src/ftdispi.hpp
 	src/lattice.hpp
 	src/latticeBitParser.hpp
+	src/fx2.hpp
+	src/makestuff/common.h
+	src/makestuff/libfpgalink.h
 )
 
 add_executable(openFPGALoader
@@ -139,7 +143,20 @@ else()
 target_link_libraries(openFPGALoader
 	${LIBUSB_LIBRARIES}
 	${LIBFTDI_LIBRARIES}
+	
 )
+
+if (ENABLE_FPGALINK)
+	find_library(LIBFPGALINK libfpgalink.dll.a)
+	if (${LIBFPGALINK} STREQUAL "LIBFPGALINK-NOTFOUND")
+		message("libfpgalink not found, disabling fx2 support")
+		set(ENABLE_FPGALINK OFF)
+	else()
+		add_definitions(-DENABLE_FX2)
+		target_link_libraries(openFPGALoader ${LIBFPGALINK})
+		target_sources(openFPGALoader PRIVATE src/fx2.cpp )
+	endif()
+endif()
 
 if (${CMAKE_SYSTEM_NAME} MATCHES "Windows")
 	# winsock provides ntohs
