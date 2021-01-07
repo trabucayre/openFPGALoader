@@ -14,8 +14,8 @@ enum communication_type {
 	MODE_FTDI_BITBANG = 1, /*! used with ft232RL/ft231x */
 	MODE_FTDI_SERIAL  = 2, /*! ft2232, ft232H */
 	MODE_DIRTYJTAG    = 3, /*! JTAG probe firmware for STM32F1 */
-	MODE_USBBLASTER   = 4,  /*! JTAG probe firmware for USBBLASTER */
-	MODE_FX2 = 5,          /* FX2 support through libFPGAlink */
+	MODE_USBBLASTER   = 4, /*! JTAG probe firmware for USBBLASTER */
+	MODE_FX2          = 5, /* FX2 support through libFPGAlink */
 };
 
 typedef struct {

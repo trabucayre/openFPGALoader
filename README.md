@@ -260,6 +260,15 @@ allowed values are:
 |  DCD  | 6  |
 |  RI   | 7  |
 
+#### FX2 cables and pins configuration
+
+FX2 cables need to have their pin mapping provided
+
+```bash
+openFPGALoader [options] -cfx2 --pins=TDI:TDO:TCK:TMS /path/to/bitstream.ext
+```
+where:
+* TDI:TDO:TCK:TMS may be the pin ID (A0 <= id <= D7) for pins PA0...PD7
 
 ### CYC1000 and de0nano
 
