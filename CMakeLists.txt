@@ -7,7 +7,7 @@ add_definitions(-DVERSION=\"v${PROJECT_VERSION}\")
 
 option(BUILD_STATIC "Whether or not to build with static libraries" OFF)
 option(ENABLE_UDEV "use udev to search JTAG adapter from /dev/xx" ON)
-option(ENABLE_FPGALINK "enable fx2 cable support through libfpgalink" ON)
+option(ENABLE_FPGALINK "enable fx2 cable support through libfpgalink" OFF)
 option(USE_PKGCONFIG "Use pkgconfig to find libraries" ON)
 option(LINK_CMAKE_THREADS "Use CMake find_package to link the threading library" OFF)
 
@@ -114,9 +114,6 @@ set(OPENFPGALOADER_HEADERS
 	src/ftdispi.hpp
 	src/lattice.hpp
 	src/latticeBitParser.hpp
-	src/fx2.hpp
-	src/makestuff/common.h
-	src/makestuff/libfpgalink.h
 )
 
 add_executable(openFPGALoader
@@ -154,7 +151,11 @@ if (ENABLE_FPGALINK)
 	else()
 		add_definitions(-DENABLE_FX2)
 		target_link_libraries(openFPGALoader ${LIBFPGALINK})
-		target_sources(openFPGALoader PRIVATE src/fx2.cpp )
+		target_sources(openFPGALoader PRIVATE 
+			src/fx2.cpp
+			src/fx2.hpp 
+			src/makestuff/common.h
+			src/makestuff/libfpgalink.h)
 	endif()
 endif()
 
