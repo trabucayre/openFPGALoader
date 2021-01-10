@@ -33,6 +33,7 @@ jobs:
         install: >
           git
           base-devel
+          tree
           mingw-w64-${{ matrix.arch }}-toolchain
         update: true
 
@@ -47,3 +48,10 @@ jobs:
     - uses: actions/upload-artifact@v2
       with:
         path: msys2/*.zst
+
+    - name: Show package content
+      run: |
+        mkdir tmp
+        cd tmp
+        tar -xf ../msys2/*.zst
+        tree .
