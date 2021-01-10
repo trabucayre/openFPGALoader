@@ -8,9 +8,10 @@ arch=('any')
 url="https://github.com/trabucayre/openFPGALoader"
 license=('AGPLv3.0')
 depends=("${MINGW_PACKAGE_PREFIX}-libftdi")
-makedepends=("${MINGW_PACKAGE_PREFIX}-gcc"
-             "${MINGW_PACKAGE_PREFIX}-make"
-             "${MINGW_PACKAGE_PREFIX}-cmake")
+makedepends=(
+  "${MINGW_PACKAGE_PREFIX}-gcc"
+  "${MINGW_PACKAGE_PREFIX}-cmake"
+)
 
 source=()
 sha256sums=()
@@ -20,7 +21,7 @@ build() {
   mkdir build
   cd build
   MSYS2_ARG_CONV_EXCL=- cmake \
-    -G "MinGW Makefiles" \
+    -G "MSYS Makefiles" \
     -DCMAKE_INSTALL_PREFIX="${MINGW_PREFIX}" \
     ../
   cmake --build .
@@ -32,7 +33,7 @@ check() {
 
 package() {
   cd "${srcdir}"/../../build
-  mingw32-make DESTDIR="${pkgdir}" install
+  make DESTDIR="${pkgdir}" install
 
   _licenses="${pkgdir}${MINGW_PREFIX}/share/licenses/${_realname}"
   mkdir -p "${_licenses}"
