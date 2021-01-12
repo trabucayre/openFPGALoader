@@ -5,7 +5,7 @@
 ```
 $ git clone https://github.com/trabucayre/openFPGALoader.git
 ```
-## For FX2 cable support add the following steps
+## For libfpgalink support (fx2 cable and more) add the following steps
 
 ```
 $ git clone https://github.com/makestuff/fpgalink.git
@@ -23,7 +23,7 @@ $ mkdir build
 $ cd build
 $ cmake ../ # add -DBUILD_STATIC=ON to build a static version
             # add -DENABLE_UDEV=OFF to disable udev support and -d /dev/xxx
-            # add -DENABLE_FX2=OFF to disable FX2 cable support 
+            # add -DENABLE_LIBFPGALINK=ON to enable libfpgalink support 
 $ cmake --build .
 or
 $ make -j$(nproc)

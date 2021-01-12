@@ -33,7 +33,7 @@
 #include "dirtyJtag.hpp"
 #include "usbBlaster.hpp"
 
-#ifdef ENABLE_FX2
+#ifdef USE_LIBFPGALINK
 #include "fx2.hpp"
 #endif
 
@@ -107,7 +107,7 @@ void Jtag::init_internal(cable_t &cable, const string &dev, const string &serial
 	case MODE_USBBLASTER:
 		_jtag = new UsbBlaster(_verbose);
 		break;
-#ifdef ENABLE_FX2
+#ifdef USE_LIBFPGALINK
 	case MODE_FX2:
 		_jtag = new FX2Cable(_verbose, pin_conf);
 		break;

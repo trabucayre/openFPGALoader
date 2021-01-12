@@ -475,7 +475,7 @@ int parse_opt(int argc, char **argv, struct arguments *args, jtag_pins_conf_t *p
 					}
 					pin_num = pins_list[pins[i]];
 				}
-#ifdef ENABLE_FX2
+#ifdef USE_LIBFPGALINK
 				if ((pin_num > 7 || pin_num < 0) &&
 					(pin_num > 0xD7 || pin_num < 0xD0) &&
 					(pin_num > 0xC7 || pin_num < 0xC0) &&
