@@ -30,11 +30,10 @@
  * \brief concrete class between jtag implementation and FX2 cable
  */
 
-class FX2Cable : public JtagInterface {
- public:
-	FX2Cable(bool verbose, const jtag_pins_conf_t *pin_conf, const char *ivp = NULL, const char *vp = NULL);
-	virtual ~FX2Cable();
+class FpgaLink : public JtagInterface{
 
+public:
+	FpgaLink(bool verbose);
 	int setClkFreq(uint32_t clkHZ) override{(void)clkHZ; return 0;}
 	int setClkFreq(uint32_t clkHZ, char use_divide_by_5) override {(void)clkHZ; (void)use_divide_by_5;return 0;}
 
@@ -56,11 +55,18 @@ class FX2Cable : public JtagInterface {
 
 	int flush() override;
 
- private:
+ protected:
 	bool _verbose;
-
-	int write(uint8_t *in_buf, uint8_t *out_buf, int len, int rd_len);
-	void transcode_pin_config(const jtag_pins_conf_t *pin_conf, char* buffer);
 	struct FLContext *handle = NULL;
+};
+
+
+class FX2Cable : public FpgaLink {
+ public:
+	FX2Cable(bool verbose, const jtag_pins_conf_t *pin_conf, const char *ivp = NULL, const char *vp = NULL);
+	virtual ~FX2Cable();
+
+ private:
+	void transcode_pin_config(const jtag_pins_conf_t *pin_conf, char* buffer);
 };
 #endif  // SRC_FX2CABLE_HPP_

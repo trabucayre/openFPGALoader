@@ -146,7 +146,7 @@ target_link_libraries(openFPGALoader
 if (ENABLE_FPGALINK)
 	find_library(LIBFPGALINK libfpgalink)
 	if (${LIBFPGALINK} STREQUAL "LIBFPGALINK-NOTFOUND")
-		message("libfpgalink not found, disabling fx2 support")
+		message("libfpgalink not found, disabling fpgalink support")
 		set(ENABLE_FPGALINK OFF)
 	else()
 		message("libfpgalink found: ${LIBFPGALINK}")
@@ -155,8 +155,8 @@ if (ENABLE_FPGALINK)
 		target_include_directories(openFPGALoader PRIVATE ${INC_DIR})
 		target_link_libraries(openFPGALoader ${LIBFPGALINK})
 		target_sources(openFPGALoader PRIVATE 
-			src/fx2.cpp
-			src/fx2.hpp)
+			src/fpgalink.cpp
+			src/fpgalink.hpp)
 	endif()
 endif()
 

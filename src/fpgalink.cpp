@@ -23,8 +23,10 @@
 #include <map>
 #include <vector>
 #include <string>
+#include <cstdio>
 
-#include "FX2.hpp"
+#include "display.hpp"
+#include "fpgalink.hpp"
 #include "makestuff/libfpgalink.h"
 
 
@@ -36,7 +38,8 @@ using namespace std;
 #define CHECK_STATUS(fStatus)\
     if (fStatus) \
 	{ \
-		cerr << error << endl;\
+		printError("Error: ", false);\
+		printError(error);\
 		flFreeError(error);\
 		fStatus = progClose(handle, &error);\
 		if (error)\
@@ -46,9 +49,73 @@ using namespace std;
 		throw std::exception();\
 	}
 
+FpgaLink::FpgaLink(bool verbose):
+			_verbose(verbose)
+{
+
+}
+
+
+int FpgaLink::writeTMS(uint8_t *tms, int len, bool flush_buffer)
+{
+	(void)flush_buffer;
+	FLStatus fStatus;
+	const char *error = NULL;
+	uint32_t bitPattern = 0;
+	int ulen = len;
+	int i = 0; 
+	while (ulen > 0)
+	{
+		{bitPattern = tms[i++];} 
+		ulen-=8;
+		if (ulen > 0) {bitPattern |= tms[i++] << 8;}
+		ulen-=8;
+		if (ulen > 0) {bitPattern |= tms[i++] << 16;}
+		ulen-=8;
+		if (ulen > 0) {bitPattern |= tms[i++] << 24;}
+		ulen-=8;
+		fStatus = jtagClockFSM(handle, bitPattern, (ulen > 0) ? 32 : 32 + ulen, &error);
+		CHECK_STATUS(fStatus);
+	}
+
+	return len;
+}
+
+int FpgaLink::toggleClk(uint8_t tms, uint8_t tdi, uint32_t clk_len)
+{
+	(void)tms;
+	(void)tdi;
+	FLStatus fStatus;
+	const char *error = NULL;
+	fStatus = jtagClocks(handle, clk_len, &error);
+	CHECK_STATUS(fStatus);
+	return EXIT_SUCCESS;
+}
+
+int FpgaLink::flush()
+{
+	return 0;
+}
+
+int FpgaLink::writeTDI(uint8_t *tx, uint8_t *rx, uint32_t len, bool end)
+{
+	FLStatus fStatus;
+	const char *error = NULL;
+	if (rx)
+		fStatus = jtagShiftInOut(handle, len, tx, rx, end, &error);
+	else
+	{
+		fStatus = jtagShiftInOnly(handle, len, tx, end, &error);
+	}
+		
+	CHECK_STATUS(fStatus);
+
+	return EXIT_SUCCESS;
+}
+
 
 FX2Cable::FX2Cable(bool verbose, const jtag_pins_conf_t *pin_conf, const char *ivp, const char *vp):
-			_verbose(verbose)
+			FpgaLink::FpgaLink(verbose)
 {
 	FLStatus fStatus;
 	const char *error = NULL;
@@ -57,22 +124,24 @@ FX2Cable::FX2Cable(bool verbose, const jtag_pins_conf_t *pin_conf, const char *i
 	char portConfig[10];
 
 	vp = "1D50:602B";
+	std::string svp(vp); 
 
-	printf("Attempting to open connection to FPGALink device %s...\n", vp);
+	printInfo("Attempting to open connection to FPGALink device " + svp +"...", false);
 	fStatus = flOpen(vp, &handle, NULL);
 	if ( fStatus ) {
 		{
 			int count = 60;
 			uint8 flag;
 			ivp = "04b4:8613";
-			printf("Loading firmware into %s...\n", ivp);
+			std::string sivp(ivp);
+			printInfo("Loading firmware into " + sivp, true);
 			fStatus = flLoadStandardFirmware(ivp, vp, &error);
 			CHECK_STATUS(fStatus);
 			
-			printf("Awaiting renumeration");
+			printInfo("Awaiting renumeration");
 			flSleep(1000);
 			do {
-				printf(".");
+				printInfo(".", false);
 				fflush(stdout);
 				fStatus = flIsDeviceAvailable(vp, &flag, &error);
 				CHECK_STATUS(fStatus);
@@ -81,17 +150,20 @@ FX2Cable::FX2Cable(bool verbose, const jtag_pins_conf_t *pin_conf, const char *i
 			} while ( !flag && count );
 			printf("\n");
 			if ( !flag ) {
-				fprintf(stderr, "FPGALink device did not renumerate properly as %s\n", vp);
+				printError("Error: FPGALink device did not renumerate properly as " + svp, true);
 				flClose(handle);
 				handle = NULL;
 				throw std::exception();
 			}
 
-			printf("Attempting to open connection to FPGLink device %s again...\n", vp);
+			printInfo("Attempting to open connection to FPGLink device " + svp + " again...", false);
 			fStatus = flOpen(vp, &handle, &error);
 			CHECK_STATUS(fStatus);
+			printInfo("success", true);
 		}
-	}
+	} else {
+		printInfo("success", true);
+	} 
 
 	transcode_pin_config(pin_conf, portConfig);
 	fStatus = progOpen(handle, portConfig, &error);
@@ -117,59 +189,3 @@ FX2Cable::~FX2Cable()
 	}
 }
 
-int FX2Cable::writeTMS(uint8_t *tms, int len, bool flush_buffer)
-{
-	(void)flush_buffer;
-	FLStatus fStatus;
-	const char *error = NULL;
-	uint32_t bitPattern = 0;
-	int ulen = len;
-	int i = 0; 
-	while (ulen > 0)
-	{
-		{bitPattern = tms[i++];} 
-		ulen-=8;
-		if (ulen > 0) {bitPattern |= tms[i++] << 8;}
-		ulen-=8;
-		if (ulen > 0) {bitPattern |= tms[i++] << 16;}
-		ulen-=8;
-		if (ulen > 0) {bitPattern |= tms[i++] << 24;}
-		ulen-=8;
-		fStatus = jtagClockFSM(handle, bitPattern, (ulen > 0) ? 32 : 32 + ulen, &error);
-		CHECK_STATUS(fStatus);
-	}
-
-	return len;
-}
-
-int FX2Cable::toggleClk(uint8_t tms, uint8_t tdi, uint32_t clk_len)
-{
-	(void)tms;
-	(void)tdi;
-	FLStatus fStatus;
-	const char *error = NULL;
-	fStatus = jtagClocks(handle, clk_len, &error);
-	CHECK_STATUS(fStatus);
-	return EXIT_SUCCESS;
-}
-
-int FX2Cable::flush()
-{
-	return 0;
-}
-
-int FX2Cable::writeTDI(uint8_t *tx, uint8_t *rx, uint32_t len, bool end)
-{
-	FLStatus fStatus;
-	const char *error = NULL;
-	if (rx)
-		fStatus = jtagShiftInOut(handle, len, tx, rx, end, &error);
-	else
-	{
-		fStatus = jtagShiftInOnly(handle, len, tx, end, &error);
-	}
-		
-	CHECK_STATUS(fStatus);
-
-	return EXIT_SUCCESS;
-}

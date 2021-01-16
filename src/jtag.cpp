@@ -34,7 +34,7 @@
 #include "usbBlaster.hpp"
 
 #ifdef USE_LIBFPGALINK
-#include "fx2.hpp"
+#include "fpgalink.hpp"
 #endif
 
 using namespace std;
