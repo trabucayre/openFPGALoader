@@ -171,12 +171,17 @@ int FTDIpp_MPSSE::init(unsigned char latency, unsigned char bitmask_mode,
 		if (setClkFreq(_clkHZ, 0) < 0)
 			return -1;
 
+		int to_wr = 3;
+
 		buf_cmd[1] = _cable.bit_low_val;  // 0xe8;
 		buf_cmd[2] = _cable.bit_low_dir;  // 0xeb;
 
-		buf_cmd[4] = _cable.bit_high_val;  // 0x00;
-		buf_cmd[5] = _cable.bit_high_dir;  // 0x60;
-		mpsse_store(buf_cmd, 6);
+		if (_ftdi->type != TYPE_4232H && _ftdi->type != TYPE_232H) {
+			buf_cmd[4] = _cable.bit_high_val;  // 0x00;
+			buf_cmd[5] = _cable.bit_high_dir;  // 0x60;
+			to_wr = 6;
+		}
+		mpsse_store(buf_cmd, to_wr);
 		mpsse_write();
 	}
 
