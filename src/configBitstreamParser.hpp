@@ -29,6 +29,7 @@ class ConfigBitstreamParser {
 		bool _verbose;
 		std::ifstream _fd;
 		std::string _bit_data;
+		std::string _raw_data; /**< unprocessed file content */
 		std::map<std::string, std::string> _hdr;
 };
 

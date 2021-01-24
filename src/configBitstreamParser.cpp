@@ -10,7 +10,7 @@ ConfigBitstreamParser::ConfigBitstreamParser(const string &filename, int mode,
 			bool verbose):
 			_filename(filename), _bit_length(0),
 			_file_size(0), _verbose(verbose), _fd(filename,
-			ifstream::in | (ios_base::openmode)mode), _bit_data(), _hdr()
+			ifstream::in | (ios_base::openmode)mode), _bit_data(), _raw_data(), _hdr()
 {
 	if (!_fd.is_open()) {
 		cerr << "Error: fail to open " << _filename << endl;
@@ -20,6 +20,7 @@ ConfigBitstreamParser::ConfigBitstreamParser(const string &filename, int mode,
 	_file_size = _fd.tellg();
 	_fd.seekg(0, _fd.beg);
 
+	_raw_data.resize(_file_size);
 	_bit_data.reserve(_file_size);
 }
 
