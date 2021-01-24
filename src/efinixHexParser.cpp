@@ -30,17 +30,18 @@ EfinixHexParser::EfinixHexParser(const string &filename, bool reverseOrder):
 
 int EfinixHexParser::parse()
 {
-	char *c = new char[_file_size];
-	_fd.read(c, sizeof(char) * _file_size);
+	_fd.read((char *)&_raw_data[0], sizeof(char) * _file_size);
+	if (_fd.gcount() != _file_size) {
+		printError("Error: fails to read full file content");
+		return EXIT_FAILURE;
+	}
 
 	for (int offset = 0; offset < _file_size; offset += 3) {
 		char val;
-		sscanf(&c[offset], "%hhx", &val);
+		sscanf(&_raw_data[offset], "%hhx", &val);
 		_bit_data += val;
 	}
 	_bit_length = _bit_data.size() * 8;
-
-	delete c;
 
 	return EXIT_SUCCESS;
 }
