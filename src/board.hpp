@@ -103,11 +103,13 @@ static std::map <std::string, target_cable_t> board_list = {
 	JTAG_BOARD("machXO3SK",  "ft2232",     0, 0),
 	JTAG_BOARD("machXO3EVN", "ft2232",     0, 0),
 	JTAG_BOARD("licheeTang", "anlogicCable", 0, 0),
+	/* left for backward compatibility, use tec0117 instead */
 	JTAG_BOARD("littleBee",  "ft2232",     0, 0),
 	JTAG_BOARD("spartanEdgeAccelBoard", "",0, 0),
 	JTAG_BOARD("pipistrello", "ft2232",    0, 0),
 	JTAG_BOARD("qmtechCycloneV", "",       0, 0),
 	JTAG_BOARD("tangnano",   "ft2232",     0, 0),
+	JTAG_BOARD("tec0117",    "ft2232",     0, 0),
 	JTAG_BITBANG_BOARD("ulx2s", "ft232RL", 0, 0, FT232RL_RI, FT232RL_DSR, FT232RL_CTS, FT232RL_DCD),
 	JTAG_BITBANG_BOARD("ulx3s", "ft231X",  0, 0, FT232RL_DCD, FT232RL_DSR, FT232RL_RI, FT232RL_CTS),
 	JTAG_BOARD("ecpix5",     "ecpix5-debug", 0, 0),
