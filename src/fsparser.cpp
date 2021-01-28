@@ -70,7 +70,7 @@ int FsParser::parse()
 	vector<string> vectTmp;
 	string buffer, tmp;
 
-	printInfo("Parse " + _filename + ": ", true);
+	printInfo("Parse " + _filename + ": ", false);
 
 	parseHeader();
 	_fd.seekg(0, _fd.beg);
@@ -128,7 +128,7 @@ int FsParser::parse()
 	_bit_length = (int)_bit_data.size() * 8;
 
 	if (idcode == 0)
-		printf("IDCODE not found\n");
+		printWarn("Warning: IDCODE not found\n");
 
 	/* use idcode to determine Count of Address */
 	unsigned nb_line = 0;
@@ -163,6 +163,7 @@ int FsParser::parse()
 			addr_length = 5536;
 			break;
 		default:
+			printWarn("Warning: Unknown IDCODE");
 			nb_line = 0;
 	}
 
@@ -186,7 +187,8 @@ int FsParser::parse()
 	}
 
 	_checksum = sum;
-	printf("checksum 0x%02x\n", _checksum);
+	if (_verbose)
+		printf("checksum 0x%02x\n", _checksum);
 
 	printSuccess("Done");
 
