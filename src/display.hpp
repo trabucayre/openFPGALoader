@@ -22,6 +22,7 @@
 #include <string>
 
 void printError(std::string err, bool eol = true);
+void printWarn(std::string warn, bool eol = true);
 void printInfo(std::string info, bool eol = true);
 void printSuccess(std::string success, bool eol = true);
 

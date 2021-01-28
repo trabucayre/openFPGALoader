@@ -42,6 +42,17 @@ void printError(std::string err, bool eol)
 		std::cerr << std::endl;
 }
 
+void printWarn(std::string warn, bool eol)
+{
+	if (isatty(STDOUT_FILENO))
+		std::cout << KYEL << warn << "\e[0m" << std::flush;
+	else
+		std::cout << warn;
+	std::cout << std::flush;
+	if (eol)
+		std::cout << std::endl;
+}
+
 void printInfo(std::string info, bool eol)
 {
 	if (isatty(STDOUT_FILENO))
