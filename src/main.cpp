@@ -260,22 +260,28 @@ int main(int argc, char **argv)
 	string fab = fpga_list[idcode].manufacturer;
 
 	Device *fpga;
-	if (fab == "xilinx") {
-		fpga = new Xilinx(jtag, args.bit_file, args.write_flash, args.write_sram,
-			args.verbose);
-	} else if (fab == "altera") {
-		fpga = new Altera(jtag, args.bit_file, args.verbose);
-	} else if (fab == "anlogic") {
-		fpga = new Anlogic(jtag, args.bit_file, args.write_flash, args.write_sram,
-			args.verbose);
-	} else if (fab == "Gowin") {
-		fpga = new Gowin(jtag, args.bit_file, args.write_flash, args.write_sram,
-			args.verbose);
-	} else if (fab == "lattice") {
-		fpga = new Lattice(jtag, args.bit_file, args.write_flash, args.write_sram,
-			args.verbose);
-	} else {
-		printError("Error: manufacturer " + fab + " not supported");
+	try {
+		if (fab == "xilinx") {
+			fpga = new Xilinx(jtag, args.bit_file, args.write_flash, args.write_sram,
+				args.verbose);
+		} else if (fab == "altera") {
+			fpga = new Altera(jtag, args.bit_file, args.verbose);
+		} else if (fab == "anlogic") {
+			fpga = new Anlogic(jtag, args.bit_file, args.write_flash, args.write_sram,
+				args.verbose);
+		} else if (fab == "Gowin") {
+			fpga = new Gowin(jtag, args.bit_file, args.write_flash, args.write_sram,
+				args.verbose);
+		} else if (fab == "lattice") {
+			fpga = new Lattice(jtag, args.bit_file, args.write_flash, args.write_sram,
+				args.verbose);
+		} else {
+			printError("Error: manufacturer " + fab + " not supported");
+			delete(jtag);
+			return EXIT_FAILURE;
+		}
+	} catch (std::exception &e) {
+		printError("Error: Failed to claim FPGA device");
 		delete(jtag);
 		return EXIT_FAILURE;
 	}
