@@ -29,7 +29,7 @@
 class Anlogic: public Device, SPIInterface {
 	public:
 		Anlogic(Jtag *jtag, const std::string &filename,
-			bool flash_wr, bool sram_wr, bool verbose);
+			bool flash_wr, bool sram_wr, int8_t verbose);
 		~Anlogic();
 
 		void program(unsigned int offset = 0) override;

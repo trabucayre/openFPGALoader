@@ -16,7 +16,7 @@
 // DATA_DIR is defined at compile time.
 #define BIT_FOR_FLASH (DATA_DIR "/openFPGALoader/test_sfl.svf")
 
-Altera::Altera(Jtag *jtag, const std::string &filename, bool verbose):
+Altera::Altera(Jtag *jtag, const std::string &filename, int8_t verbose):
 	Device(jtag, filename, verbose), _svf(_jtag, _verbose)
 {
 	if (_filename != "") {
@@ -60,7 +60,7 @@ void Altera::programMem()
 	_jtag->set_state(Jtag::RUN_TEST_IDLE);
 	_jtag->toggleClk(12000);
 	/* write */
-	ProgressBar progress("Flash SRAM", byte_length, 50);
+	ProgressBar progress("Flash SRAM", byte_length, 50, _quiet);
 
 	/* 2.2.6.5 */
 	_jtag->set_state(Jtag::SHIFT_DR);

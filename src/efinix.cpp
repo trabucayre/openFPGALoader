@@ -32,7 +32,7 @@
 
 Efinix::Efinix(FtdiSpi* spi, const std::string &filename,
 			uint16_t rst_pin, uint16_t done_pin,
-			bool verbose):
+			int8_t verbose):
 	Device(NULL, filename, verbose), _rst_pin(rst_pin),
 		_done_pin(done_pin)
 {

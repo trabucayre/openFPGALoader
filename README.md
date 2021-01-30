@@ -149,6 +149,7 @@ openFPGALoader -- a program to flash FPGA
                           Gowin and ECP5 devices)
   -o, --offset arg        start offset in EEPROM
       --pins arg          pin config (only for ft232R) TDI:TDO:TCK:TMS
+      --quiet             Produce quiet output (no progress bar)
   -r, --reset             reset FPGA after operations
       --spi               SPI mode (only for FTDI in serial mode)
   -v, --verbose           Produce verbose output

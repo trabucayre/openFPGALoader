@@ -22,7 +22,7 @@
 
 class SPIFlash {
 	public:
-		SPIFlash(SPIInterface *spi, bool verbose);
+		SPIFlash(SPIInterface *spi, int8_t verbose);
 		/* power */
 		void power_up();
 		void power_down();
@@ -48,7 +48,7 @@ class SPIFlash {
 		uint16_t readVolatileCfgReg();
 	private:
 		SPIInterface *_spi;
-		bool _verbose;
+		int8_t _verbose;
 };
 
 #endif

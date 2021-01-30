@@ -60,7 +60,7 @@
 #define FLASH_WRVECR   0x61
 #define FLASH_RDVECR   0x65
 
-SPIFlash::SPIFlash(SPIInterface *spi, bool verbose):_spi(spi), _verbose(verbose)
+SPIFlash::SPIFlash(SPIInterface *spi, int8_t verbose):_spi(spi), _verbose(verbose)
 {
 }
 
@@ -85,20 +85,32 @@ int SPIFlash::sector_erase(int addr)
 
 int SPIFlash::sectors_erase(int base_addr, int size)
 {
+	int ret = 0;
 	int start_addr = base_addr;
 	int end_addr = (base_addr + size + 0xffff) & ~0xffff;
-	ProgressBar progress("Erasing", end_addr, 50);
+	ProgressBar progress("Erasing", end_addr, 50, _verbose < 0);
+
 	for (int addr = start_addr; addr < end_addr; addr += 0x10000) {
-		if (write_enable() == -1)
-			return -1;
-		if (sector_erase(addr) == -1)
-			return -1;
-		if (_spi->spi_wait(FLASH_RDSR, FLASH_RDSR_WIP, 0x00, 100000, false) == -1)
-			return -1;
+		if (write_enable() == -1) {
+			ret = -1;
+			break;
+		}
+		if (sector_erase(addr) == -1) {
+			ret = -1;
+			break;
+		}
+		if (_spi->spi_wait(FLASH_RDSR, FLASH_RDSR_WIP, 0x00, 100000, false) == -1) {
+			ret = -1;
+			break;
+		}
 		progress.display(addr);
 	}
-	progress.done();
-	return 0;
+	if (ret == 0)
+		progress.done();
+	else
+		progress.fail();
+
+	return ret;
 }
 
 int SPIFlash::write_page(int addr, uint8_t *data, int len)
@@ -143,7 +155,7 @@ int SPIFlash::erase_and_prog(int base_addr, uint8_t *data, int len)
 		if (disable_protection() != 0)
 			return -1;
 	}
-	ProgressBar progress("Writing", len, 50);
+	ProgressBar progress("Writing", len, 50, _verbose < 0);
 	if (sectors_erase(base_addr, len) == -1)
 		return -1;
 
@@ -177,11 +189,11 @@ void SPIFlash::read_id()
 	for (int i=0; i < 4; i++) {
 		d = d << 8;
 		d |= (0x00ff & (int)rx[i]);
-		if (_verbose)
+		if (_verbose > 0)
 			printf("%x ", rx[i]);
 	}
 
-	if (_verbose)
+	if (_verbose > 0)
 		printf("read %x\n", d);
 
 	/* read extented */
@@ -201,7 +213,7 @@ void SPIFlash::read_id()
 		printf("EDID + CFD length : %02x\n", rx[3]);
 		printf("EDID              : %02x%02x\n", rx[5], rx[4]);
 		printf("CFD               : ");
-		if (_verbose) {
+		if (_verbose > 0) {
 			for (int i = 6; i < len; i++)
 				printf("%02x ", rx[i]);
 			printf("\n");
@@ -215,7 +227,7 @@ uint8_t SPIFlash::read_status_reg()
 {
 	uint8_t rx;
 	_spi->spi_put(FLASH_RDSR, NULL, &rx, 1);
-	if (_verbose) {
+	if (_verbose > 0) {
 		printf("RDSR : %02x\n", rx);
 		printf("WIP  : %d\n", rx&0x01);
 		printf("WEL  : %d\n", (rx>>1)&0x01);
@@ -230,7 +242,7 @@ uint16_t SPIFlash::readNonVolatileCfgReg()
 {
 	uint8_t rx[2];
 	_spi->spi_put(FLASH_RDNVCR, NULL, rx, 2);
-	if (_verbose)
+	if (_verbose > 0)
 		printf("Non Volatile %x %x\n", rx[0], rx[1]);
 	return (rx[1] << 8) | rx[0];
 }
@@ -239,7 +251,7 @@ uint16_t SPIFlash::readVolatileCfgReg()
 {
 	uint8_t rx[2];
 	_spi->spi_put(FLASH_RDVCR, NULL, rx, 2);
-	if (_verbose)
+	if (_verbose > 0)
 		printf("Volatile %x %x\n", rx[0], rx[1]);
 	return (rx[1] << 8) | rx[0];
 }
@@ -273,7 +285,7 @@ int SPIFlash::write_disable()
 	int ret = _spi->spi_wait(FLASH_RDSR, FLASH_RDSR_WEL, 0x00, 1000);
 	if (ret == -1)
 		printf("write disable: Error\n");
-	else if (_verbose)
+	else if (_verbose > 0)
 		printf("write disable: Success\n");
 	return ret;
 }

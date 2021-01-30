@@ -22,7 +22,8 @@
 
 class ProgressBar {
 	public:
-		ProgressBar(std::string mess, int maxValue, int progressLen);
+		ProgressBar(std::string mess, int maxValue, int progressLen,
+				bool quiet = false);
 		void display(int value, char force = 0);
 		void done();
 		void fail();
@@ -31,6 +32,8 @@ class ProgressBar {
 		int _maxValue;
 		int _progressLen;
 		clock_t last_time; //records the time of last progress bar update 
+		bool _quiet;
+		bool _first;
 };
 
 #endif

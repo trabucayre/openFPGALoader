@@ -70,7 +70,7 @@ using namespace std;
 #define EFLASH_ERASE		0x75
 
 Gowin::Gowin(Jtag *jtag, const string filename, bool flash_wr, bool sram_wr,
-		bool verbose): Device(jtag, filename, verbose), is_gw1n1(false)
+		int8_t verbose): Device(jtag, filename, verbose), is_gw1n1(false)
 {
 	_fs = NULL;
 	if (_filename != "") {
@@ -376,7 +376,7 @@ bool Gowin::flashFLASH(uint8_t *data, int length)
 	memcpy(buffer+6*4, data, byte_length);
 
 
-	ProgressBar progress("write Flash", buffer_length, 50);
+	ProgressBar progress("write Flash", buffer_length, 50, _quiet);
 
 	for (int i=0, xpage=0; xpage < nb_xpage; i+=(nb_iter*4), xpage++) {
 		wr_rd(CONFIG_ENABLE, NULL, 0, NULL, 0);
@@ -427,7 +427,7 @@ bool Gowin::flashSRAM(uint8_t *data, int length)
 	int tx_len, tx_end;
 	int byte_length = length / 8;
 
-	ProgressBar progress("Flash SRAM", byte_length, 50);
+	ProgressBar progress("Flash SRAM", byte_length, 50, _quiet);
 
 	/* 2.2.6.4 */
 	wr_rd(XFER_WRITE, NULL, 0, NULL, 0);

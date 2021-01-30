@@ -34,7 +34,7 @@
 #define IRLENGTH 8
 
 Anlogic::Anlogic(Jtag *jtag, const std::string &filename,
-	bool flash_wr, bool sram_wr, bool verbose):
+	bool flash_wr, bool sram_wr, int8_t verbose):
 	Device(jtag, filename, verbose), _svf(_jtag, _verbose)
 {
 	(void)flash_wr;
@@ -140,7 +140,7 @@ void Anlogic::program(unsigned int offset)
 		_jtag->toggleClk(15);
 
 		_jtag->set_state(Jtag::SHIFT_DR);
-		ProgressBar progress("Loading", len, 50);
+		ProgressBar progress("Loading", len, 50, _quiet);
 		int pos = 0;
 		uint8_t *ptr = data;
 		while (len > 0) {

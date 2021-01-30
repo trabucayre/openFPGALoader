@@ -31,7 +31,7 @@
 class Gowin: public Device {
 	public:
 		Gowin(Jtag *jtag, std::string filename, bool flash_wr, bool sram_wr,
-				bool verbose);
+				int8_t verbose);
 		~Gowin();
 		int idCode() override;
 		void reset() override;

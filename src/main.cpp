@@ -44,7 +44,8 @@
 using namespace std;
 
 struct arguments {
-	bool verbose, reset, detect;
+	int8_t verbose;
+	bool reset, detect;
 	unsigned int offset;
 	string bit_file;
 	string device;
@@ -74,7 +75,7 @@ int main(int argc, char **argv)
 	jtag_pins_conf_t pins_config = {0, 0, 0, 0};
 
 	/* command line args. */
-	struct arguments args = {false, false, false, 0, "", "", "-", "", -1, 6000000, "-",
+	struct arguments args = {0, false, false, 0, "", "", "-", "", -1, 6000000, "-",
 			false, false, false, false, false, true, false, false};
 	/* parse arguments */
 	try {
@@ -119,7 +120,7 @@ int main(int argc, char **argv)
 	}
 
 	if (args.cable[0] == '-') { /* if no board and no cable */
-		if (args.verbose)
+		if (args.verbose > 0)
 			cout << "No cable or board specified: using direct ft2232 interface" << endl;
 		args.cable = "ft2232";
 	}
@@ -154,7 +155,7 @@ int main(int argc, char **argv)
 		spi_pins_conf_t pins_config = board->spi_pins_config;
 
 		try {
-			spi = new FtdiSpi(cable.config, pins_config, args.freq, args.verbose);
+			spi = new FtdiSpi(cable.config, pins_config, args.freq, args.verbose > 0);
 		} catch (std::exception &e) {
 			printError("Error: Failed to claim cable");
 			return EXIT_FAILURE;
@@ -226,7 +227,7 @@ int main(int argc, char **argv)
 	vector<int> listDev;
 	int found = jtag->detectChain(listDev, 5);
 
-	if (args.verbose)
+	if (args.verbose > 0)
 		cout << "found " << std::to_string(found) << " devices" << endl;
 	if (found > 1) {
 		printError("Error: currently only one device is supported");
@@ -244,7 +245,7 @@ int main(int argc, char **argv)
 		cerr << "Error: device " << hex << idcode << " not supported" << endl;
 		delete(jtag);
 		return EXIT_FAILURE;
-	} else if (args.verbose || args.detect) {
+	} else if (args.verbose > 0 || args.detect) {
 		printf("idcode 0x%x\nmanufacturer %s\nmodel  %s\nfamily %s\n",
 			idcode,
 			fpga_list[idcode].manufacturer.c_str(),
@@ -338,6 +339,7 @@ int parse_opt(int argc, char **argv, struct arguments *args, jtag_pins_conf_t *p
 
 	string freqo;
 	vector<string> pins;
+	bool verbose, quiet;
 	try {
 		cxxopts::Options options(argv[0], "openFPGALoader -- a program to flash FPGA",
 			"<gwenhael.goavec-merou@trabucayre.com>");
@@ -375,11 +377,13 @@ int parse_opt(int argc, char **argv, struct arguments *args, jtag_pins_conf_t *p
 				cxxopts::value<unsigned int>(args->offset))
 			("pins", "pin config (only for ft232R) TDI:TDO:TCK:TMS",
 				cxxopts::value<vector<string>>(pins))
+			("quiet", "Produce quiet output (no progress bar)",
+				cxxopts::value<bool>(quiet))
 			("r,reset",   "reset FPGA after operations",
 				cxxopts::value<bool>(args->reset))
 			("spi",   "SPI mode (only for FTDI in serial mode)",
 				cxxopts::value<bool>(args->spi))
-			("v,verbose", "Produce verbose output", cxxopts::value<bool>(args->verbose))
+			("v,verbose", "Produce verbose output", cxxopts::value<bool>(verbose))
 			("h,help", "Give this help list")
 			("V,Version", "Print program version");
 
@@ -390,6 +394,15 @@ int parse_opt(int argc, char **argv, struct arguments *args, jtag_pins_conf_t *p
 			cout << options.help() << endl;
 			return 1;
 		}
+
+		if (verbose && quiet) {
+			printError("Error: can't select quiet and verbose mode in same time");
+			throw std::exception();
+		}
+		if (verbose)
+			args->verbose = 1;
+		if (quiet)
+			args->verbose = -1;
 
 		if (result.count("Version")) {
 			cout << "openFPGALoader " << VERSION << endl;

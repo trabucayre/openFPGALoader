@@ -68,7 +68,7 @@ using namespace std;
 #	define REG_STATUS_EXEC_ERR	(1 << 26)
 
 Lattice::Lattice(Jtag *jtag, const string filename,
-	bool flash_wr, bool sram_wr, bool verbose):
+	bool flash_wr, bool sram_wr, int8_t verbose):
 		Device(jtag, filename, verbose), _fpga_family(UNKNOWN_FAMILY)
 {
 	(void)sram_wr;
@@ -225,7 +225,7 @@ bool Lattice::program_mem()
 	uint8_t tmp[1024];
 	int size = 1024;
 
-	ProgressBar progress("Loading", length, 50);
+	ProgressBar progress("Loading", length, 50, _quiet);
 
 	for (int i = 0; i < length; i += size) {
 		progress.display(i);
@@ -864,7 +864,7 @@ bool Lattice::flashErase(uint8_t mask)
 bool Lattice::flashProg(uint32_t start_addr, const string &name, vector<string> data)
 {
 	(void)start_addr;
-	ProgressBar progress("Writing " + name, data.size(), 50);
+	ProgressBar progress("Writing " + name, data.size(), 50, _quiet);
 	for (uint32_t line = 0; line < data.size(); line++) {
 		wr_rd(PROG_CFG_FLASH, (uint8_t *)data[line].c_str(),
 				16, NULL, 0);
@@ -893,7 +893,7 @@ bool Lattice::Verify(std::vector<std::string> data, bool unlock)
 
 	memset(tx_buf, 0, 16);
 	bool failure = false;
-	ProgressBar progress("Verifying", data.size(), 50);
+	ProgressBar progress("Verifying", data.size(), 50, _quiet);
 	for (size_t line = 0;  line< data.size(); line++) {
 		_jtag->set_state(Jtag::RUN_TEST_IDLE);
 		_jtag->toggleClk(2);
@@ -914,9 +914,12 @@ bool Lattice::Verify(std::vector<std::string> data, bool unlock)
 	if (unlock)
 		DisableISC();
 
-	progress.done();
+	if (failure)
+		progress.fail();
+	else
+		progress.done();
 
-	return true;
+	return !failure;
 }
 
 uint64_t Lattice::readFeaturesRow()

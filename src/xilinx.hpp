@@ -11,7 +11,7 @@
 class Xilinx: public Device, SPIInterface {
 	public:
 		Xilinx(Jtag *jtag, const std::string &filename,
-				bool flash_wr, bool sram_wr, bool verbose);
+				bool flash_wr, bool sram_wr, int8_t verbose);
 		~Xilinx();
 
 		void program(unsigned int offset = 0) override;

@@ -27,7 +27,7 @@ class Ice40: public Device {
 	public:
 		Ice40(FtdiSpi *spi, const std::string &filename,
 			uint16_t rst_pin, uint16_t done_pin,
-			bool verbose);
+			int8_t verbose);
 		~Ice40();
 
 		void program(unsigned int offset = 0) override;

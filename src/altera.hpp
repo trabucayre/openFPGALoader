@@ -9,7 +9,7 @@
 
 class Altera: public Device {
 	public:
-		Altera(Jtag *jtag, const std::string &filename, bool verbose);
+		Altera(Jtag *jtag, const std::string &filename, int8_t verbose);
 		~Altera();
 
 		void programMem();

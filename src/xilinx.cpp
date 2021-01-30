@@ -14,7 +14,7 @@
 #include "progressBar.hpp"
 
 Xilinx::Xilinx(Jtag *jtag, const std::string &filename,
-	bool flash_wr, bool sram_wr, bool verbose):
+	bool flash_wr, bool sram_wr, int8_t verbose):
 	Device(jtag, filename, verbose)
 {
 	if (_filename != ""){
@@ -122,7 +122,7 @@ void Xilinx::program_spi(unsigned int offset)
 		printSuccess("DONE");
 	}
 
-	SPIFlash spiFlash(this, _verbose);
+	SPIFlash spiFlash(this, (_verbose ? 1 : (_quiet ? -1 : 0)));
 	spiFlash.reset();
 	spiFlash.read_id();
 	spiFlash.read_status_reg();
@@ -194,7 +194,7 @@ void Xilinx::program_mem(BitParser &bitfile)
 	int tx_len, tx_end;
 	int burst_len = byte_length / 100;
 
-	ProgressBar progress("Flash SRAM", byte_length, 50);
+	ProgressBar progress("Flash SRAM", byte_length, 50, _quiet);
 
 	for (int i=0; i < byte_length; i+=burst_len) {
 		if (i + burst_len > byte_length) {

@@ -20,13 +20,22 @@
 #include "progressBar.hpp"
 #include "display.hpp"
 
-ProgressBar::ProgressBar(std::string mess, int maxValue, int progressLen):
-		_mess(mess), _maxValue(maxValue), _progressLen(progressLen)
+ProgressBar::ProgressBar(std::string mess, int maxValue, int progressLen,
+		bool quiet): _mess(mess), _maxValue(maxValue),
+		_progressLen(progressLen), _quiet(quiet), _first(true)
 {
 	last_time = clock();
 }
 void ProgressBar::display(int value, char force)
 {
+	if (_quiet) {
+		if (_first) {
+			printInfo(_mess + ": ", false);
+			_first = false;
+		}
+		return;
+	}
+
 	clock_t this_time = clock();
 	if (!force && ((((float)(this_time - last_time))/CLOCKS_PER_SEC) < 0.2))
 	{
@@ -36,24 +45,28 @@ void ProgressBar::display(int value, char force)
 	float percent = ((float)value * 100.0f)/(float)_maxValue;
 	float nbEq = (percent * (float) _progressLen)/100.0f;
 
-	//fprintf(stderr, "\r%s: [", _mess.c_str());
 	printInfo("\r" + _mess + ": [", false);
 	for (int z=0; z < nbEq; z++) {
 		fputc('=', stderr);
 	}
 	fprintf(stderr, "%*s", (int)(_progressLen-nbEq), "");
-	//fprintf(stderr, "] %3.2f%%", percent);
 	printInfo("] " + std::to_string(percent) + "%", false);
 }
 void ProgressBar::done()
 {
-	display(_maxValue, true);
-	//fprintf(stderr, "\nDone\n");
-	printSuccess("\nDone");
+	if (_quiet) {
+		printSuccess("Done");
+	} else {
+		display(_maxValue, true);
+		printSuccess("\nDone");
+	}
 }
 void ProgressBar::fail()
 {
-	display(_maxValue, true);
-	//fprintf(stderr, "\nDone\n");
-	printError("\nFail");
+	if (_quiet) {
+		printError("\nFail");
+	} else {
+		display(_maxValue, true);
+		printError("\nFail");
+	}
 }
