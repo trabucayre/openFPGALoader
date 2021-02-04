@@ -165,6 +165,9 @@ To have complete help
 
 ### Generic usage
 
+- when a bitstream file is compatible with both memory load and FLASH write, the default behavior is to load bitstream in memory
+- with FPGA using an external SPI flash (*xilinx*, *lattice ECP5/nexus/ice40*, *anlogic*, *efinix*) option  **-o** allows one to write raw binary file to an arbitrary adress in FLASH.
+
 #### display FPGA
 
 With board name:
