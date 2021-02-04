@@ -24,7 +24,7 @@ Xilinx::Xilinx(Jtag *jtag, const std::string &filename,
 		}
 		if (_file_extension == "mcs") {
 			_mode = Device::SPI_MODE;
-		} else if (_file_extension == "bit") {
+		} else if (_file_extension == "bit" || _file_extension == "bin") {
 			if (sram_wr)
 				_mode = Device::MEM_MODE;
 			else
@@ -77,60 +77,70 @@ int Xilinx::idCode()
 
 void Xilinx::program(unsigned int offset)
 {
-	switch (_mode) {
-		case Device::NONE_MODE:
-			return;
-			break;
-		case Device::SPI_MODE:
-			program_spi(offset);
-			reset();
-			break;
-		case Device::MEM_MODE:
-			BitParser bitfile(_filename, true, _verbose);
-			bitfile.parse();
-			program_mem(bitfile);
-			break;
+	ConfigBitstreamParser *bit;
+	bool reverse = false;
+
+	/* nothing to do */
+	if (_mode == Device::NONE_MODE)
+		return;
+
+	if (_mode == Device::MEM_MODE)
+		reverse = true;
+
+	printInfo("Open file " + _filename + " ", false);
+	try {
+		if (_file_extension == "bit")
+			bit = new BitParser(_filename, reverse, _verbose);
+		else if (_file_extension == "mcs")
+			bit = new McsParser(_filename, reverse, _verbose);
+		else
+			bit = new RawParser(_filename, reverse);
+	} catch (std::exception &e) {
+		printError("FAIL");
+		return;
 	}
+
+	printSuccess("DONE");
+
+	int err = bit->parse();
+	printInfo("Parse file ", false);
+	if (err == EXIT_FAILURE) {
+		printError("FAIL");
+		delete bit;
+		return;
+	} else {
+		printSuccess("DONE");
+	}
+
+	if (_mode == Device::SPI_MODE) {
+		program_spi(bit, offset);
+		reset();
+	} else {
+		program_mem(bit);
+	}
+
+	delete bit;
 }
 
-void Xilinx::program_spi(unsigned int offset)
+void Xilinx::program_spi(ConfigBitstreamParser * bit, unsigned int offset)
 {
 	// DATA_DIR is defined at compile time.
 	std::string bitname = DATA_DIR "/openFPGALoader/spiOverJtag_";
 	bitname += fpga_list[idCode()].model + ".bit";
 
 	/* first: load spi over jtag */
-	BitParser bitfile(bitname, true, _verbose);
-	bitfile.parse();
-	program_mem(bitfile);
-
-	/* last: read file and erase/flash spi flash */
-	ConfigBitstreamParser *_bit;
-	if (_file_extension == "mcs")
-		_bit = new McsParser(_filename, false, _verbose);
-	else if (_file_extension == "bit")
-		_bit = new BitParser(_filename, false, _verbose);
-	else
-		_bit = new RawParser(_filename, false);
-
-	int err = _bit->parse();
-	printInfo("Parse file ", false);
-	if (err == EXIT_FAILURE) {
-		printError("FAIL");
-		return;
-	} else {
-		printSuccess("DONE");
-	}
+	BitParser bridge(bitname, true, _verbose);
+	bridge.parse();
+	program_mem(&bridge);
 
 	SPIFlash spiFlash(this, (_verbose ? 1 : (_quiet ? -1 : 0)));
 	spiFlash.reset();
 	spiFlash.read_id();
 	spiFlash.read_status_reg();
-	spiFlash.erase_and_prog(offset, _bit->getData(), _bit->getLength()/8);
-	delete _bit;
+	spiFlash.erase_and_prog(offset, bit->getData(), bit->getLength()/8);
 }
 
-void Xilinx::program_mem(BitParser &bitfile)
+void Xilinx::program_mem(ConfigBitstreamParser *bitfile)
 {
 	if (_filename == "") return;
 	std::cout << "load program" << std::endl;
@@ -189,8 +199,8 @@ void Xilinx::program_mem(BitParser &bitfile)
 	 *     EXIT1-DR.
 	 */
 	/* GGM: TODO */
-	int byte_length = bitfile.getLength() / 8;
-	uint8_t *data = bitfile.getData();
+	int byte_length = bitfile->getLength() / 8;
+	uint8_t *data = bitfile->getData();
 	int tx_len, tx_end;
 	int burst_len = byte_length / 100;
 

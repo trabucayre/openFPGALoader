@@ -3,7 +3,7 @@
 
 #include <string>
 
-#include "bitparser.hpp"
+#include "configBitstreamParser.hpp"
 #include "device.hpp"
 #include "jtag.hpp"
 #include "spiInterface.hpp"
@@ -15,8 +15,8 @@ class Xilinx: public Device, SPIInterface {
 		~Xilinx();
 
 		void program(unsigned int offset = 0) override;
-		void program_spi(unsigned int offset = 0);
-		void program_mem(BitParser &bitfile);
+		void program_spi(ConfigBitstreamParser * bit, unsigned int offset = 0);
+		void program_mem(ConfigBitstreamParser *bitfile);
 		int idCode() override;
 		void reset() override;
 
