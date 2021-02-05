@@ -118,6 +118,7 @@ void UsbBlaster::init_internal()
 int UsbBlaster::setClkFreq(uint32_t clkHZ)
 {
 	(void) clkHZ;
+	printWarn("USB-Blaster has a 24MHz fixed frequency");
 	return 1;
 }
 

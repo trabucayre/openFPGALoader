@@ -25,6 +25,7 @@
 #include <string>
 #include <stdexcept>
 
+#include "display.hpp"
 #include "ftdiJtagBitbang.hpp"
 #include "ftdipp_mpsse.hpp"
 
@@ -87,8 +88,13 @@ FtdiJtagBitBang::~FtdiJtagBitBang()
 
 int FtdiJtagBitBang::setClkFreq(uint32_t clkHZ)
 {
-	if (clkHZ > 3000000)
+	uint32_t user_clk = clkHZ;
+	if (clkHZ > 3000000) {
+		printWarn("Jtag probe limited to 3MHz");
 		clkHZ = 3000000;
+	}
+	printInfo("Jtag frequency : requested " + std::to_string(user_clk) +
+			"Hz -> real " + std::to_string(clkHZ) + "Hz");
 	int ret = ftdi_set_baudrate(_ftdi, clkHZ);
 	printf("ret %d\n", ret);
 	return ret;

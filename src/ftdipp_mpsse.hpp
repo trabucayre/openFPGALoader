@@ -74,7 +74,7 @@ class FTDIpp_MPSSE {
 		/* gpio */
 		bool __gpio_write(bool low_pins);
 	protected:
-		int _clkHZ;
+		uint32_t _clkHZ;
 		struct ftdi_context *_ftdi;
 		int _buffer_size;
 		int _num;

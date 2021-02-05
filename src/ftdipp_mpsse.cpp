@@ -11,6 +11,7 @@
 #endif
 #include <libusb.h>
 
+#include "display.hpp"
 #include "ftdipp_mpsse.hpp"
 
 using namespace std;
@@ -222,31 +223,40 @@ int FTDIpp_MPSSE::setClkFreq(uint32_t clkHZ, char use_divide_by_5)
 		use_divide_by_5 = false;
 	}
 
-    if ((use_divide_by_5 && _clkHZ > 6000000) || _clkHZ > 30000000) {
-        fprintf(stderr, "Error: too fast frequency\n");
-        return -1;
-    }
+	if (use_divide_by_5) {
+		if (_clkHZ > 6000000) {
+			printWarn("Jtag probe limited to 60MHz");
+			_clkHZ = 6000000;
+		}
+	} else {
+		if (_clkHZ > 30000000) {
+			printWarn("Jtag probe limited to 30MHz");
+			_clkHZ = 3000000;
+		}
+	}
 
-    presc = (base_freq /(_clkHZ * 2)) -1;
-    real_freq = base_freq / ((1+presc)*2);
-	if (real_freq > clkHZ)
+	presc = (base_freq /(_clkHZ * 2)) -1;
+	real_freq = base_freq / ((1+presc)*2);
+	if (real_freq > _clkHZ)
 		presc ++;
-    real_freq = base_freq / ((1+presc)*2);
-    display("presc : %d input freq : %d requested freq : %d real freq : %d\n",
+	real_freq = base_freq / ((1+presc)*2);
+	printInfo("Jtag frequency : requested " + std::to_string(clkHZ) +
+			"Hz -> real " + std::to_string(real_freq) + "Hz");
+	display("presc : %d input freq : %d requested freq : %d real freq : %d\n",
 			presc, base_freq, _clkHZ, real_freq);
-    buffer[1] = presc & 0xff;
-    buffer[2] = (presc >> 8) & 0xff;
+	buffer[1] = presc & 0xff;
+	buffer[2] = (presc >> 8) & 0xff;
 
 	mpsse_store(buffer, 3);
 	ret = mpsse_write();
-    if (ret < 0) {
-        fprintf(stderr, "Error: write for frequency return %d\n", ret);
-        return -1;
-    }
+	if (ret < 0) {
+		fprintf(stderr, "Error: write for frequency return %d\n", ret);
+		return -1;
+	}
 	ret = ftdi_read_data(_ftdi, buffer, 4);
 	ftdi_usb_purge_buffers(_ftdi);
 
-    return real_freq;
+	return real_freq;
 }
 
 int FTDIpp_MPSSE::mpsse_store(unsigned char c)
@@ -622,11 +632,11 @@ bool FTDIpp_MPSSE::search_with_dev(const string &device)
 
 	/* Get closest usb device parent (we need VIP/PID)  */
 	usbdeviceparent =
-	    udev_device_get_parent_with_subsystem_devtype(dev, "usb",
+		udev_device_get_parent_with_subsystem_devtype(dev, "usb",
 							  "usb_device");
 	if (!usbdeviceparent) {
 		printf
-		    ("Unable to find parent usb device! Is this actually an USB device ?\n");
+			("Unable to find parent usb device! Is this actually an USB device ?\n");
 		udev_device_unref(dev);
 		udev_unref(udev);
 		return false;

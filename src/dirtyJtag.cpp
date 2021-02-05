@@ -79,10 +79,6 @@ DirtyJtag::DirtyJtag(uint32_t clkHZ, bool verbose):
 		throw std::exception();
 	}
 
-	if (clkHZ > 600000) {
-		printInfo("DirtyJTAG probe limited to 600kHz");
-		clkHZ = 600000;
-	}
 	if (setClkFreq(clkHZ) < 0) {
 		cerr << "Fail to set frequency" << endl;
 		throw std::exception();
@@ -100,7 +96,16 @@ DirtyJtag::~DirtyJtag()
 int DirtyJtag::setClkFreq(uint32_t clkHZ)
 {
 	int actual_length;
-	int ret;
+	int ret, req_freq = clkHZ;
+
+	if (clkHZ > 600000) {
+		printWarn("DirtyJTAG probe limited to 600kHz");
+		clkHZ = 600000;
+	}
+
+	printInfo("Jtag frequency : requested " + std::to_string(req_freq) +
+			"Hz -> real " + std::to_string(clkHZ) + "Hz");
+
 	uint8_t buf[] = {CMD_FREQ,
 					static_cast<uint8_t>(0xff & ((clkHZ / 1000) >> 8)),
 					static_cast<uint8_t>(0xff & ((clkHZ / 1000)     )),

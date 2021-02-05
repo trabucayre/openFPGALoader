@@ -83,10 +83,6 @@ AnlogicCable::AnlogicCable(uint32_t clkHZ, bool verbose):
 		throw std::exception();
 	}
 
-	if (clkHZ > 6000000) {
-		printInfo("Anlogic JTAG probe limited to 6MHz");
-		clkHZ = 6000000;
-	}
 	if (setClkFreq(clkHZ) < 0) {
 		cerr << "Fail to set frequency" << endl;
 		throw std::exception();
@@ -104,30 +100,50 @@ AnlogicCable::~AnlogicCable()
 int AnlogicCable::setClkFreq(uint32_t clkHZ)
 {
 	int actual_length;
-	int ret;
+	int ret, req_freq = clkHZ;
+
 	uint8_t buf[] = {ANLOGICCABLE_FREQ_CMD, 0};
-	if (clkHZ >= 6000000)
+
+	if (clkHZ > 6000000) {
+		printWarn("Anlogic JTAG probe limited to 6MHz");
+		clkHZ = 6000000;
+	}
+
+	if (clkHZ >= 6000000) {
 		buf[1] = ANLOGICCABLE_FREQ_6M;
-	else if (clkHZ >= 3000000)
+		clkHZ = 6000000;
+	} else if (clkHZ >= 3000000) {
 		buf[1] = ANLOGICCABLE_FREQ_3M;
-	else if (clkHZ >= 1000000)
+		clkHZ = 3000000;
+	} else if (clkHZ >= 1000000) {
 		buf[1] = ANLOGICCABLE_FREQ_1M;
-	else if (clkHZ >= 600000)
+		clkHZ = 1000000;
+	} else if (clkHZ >= 600000) {
 		buf[1] = ANLOGICCABLE_FREQ_600K;
-	else if (clkHZ >= 400000)
+		clkHZ = 600000;
+	} else if (clkHZ >= 400000) {
 		buf[1] = ANLOGICCABLE_FREQ_400K;
-	else if (clkHZ >= 200000)
+		clkHZ = 400000;
+	} else if (clkHZ >= 200000) {
 		buf[1] = ANLOGICCABLE_FREQ_200K;
-	else if (clkHZ >= 100000)
+		clkHZ = 200000;
+	} else if (clkHZ >= 100000) {
 		buf[1] = ANLOGICCABLE_FREQ_100K;
-	else if (clkHZ >= 90000)
+		clkHZ = 100000;
+	} else if (clkHZ >= 90000) {
 		buf[1] = ANLOGICCABLE_FREQ_90K;
+		clkHZ = 90000;
+	}
+
 	ret = libusb_bulk_transfer(dev_handle, ANLOGICCABLE_CONF_EP,
 			        buf, 2, &actual_length, 1000);
 	if (ret < 0) {
 		cerr << "setClkFreq: usb bulk write failed " << ret << endl;
 		return -EXIT_FAILURE;
 	}
+
+	printWarn("Jtag frequency : requested " + std::to_string(req_freq) +
+			"Hz -> real " + std::to_string(clkHZ) + "Hz");
 
 	return clkHZ;
 }
