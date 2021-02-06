@@ -30,17 +30,15 @@ RawParser::RawParser(const string &filename, bool reverseOrder):
 
 int RawParser::parse()
 {
-	//cout << "parsing " << _file_size << endl;
-	char *c = new char[_file_size];
-	_fd.read(c, sizeof(char) * _file_size);
-	if (!_fd) {
+	_fd.read((char *)&_raw_data[0], sizeof(char) * _file_size);
+	if (_fd.gcount() != _file_size) {
 		printError("Error: fail to read " + _filename);
 		return EXIT_FAILURE;
 	}
 	//cout << _bit_data << endl;
 	_bit_data.resize(_file_size);
 	for (int i = 0; i < _file_size; i++)
-		_bit_data[i] = (_reverseOrder) ? reverseByte(c[i]): c[i];
+		_bit_data[i] = (_reverseOrder) ? reverseByte(_raw_data[i]): _raw_data[i];
 	_bit_length = _bit_data.size() * 8;
 	//cout << "file length " << _bit_length << endl;
 	delete(c);
