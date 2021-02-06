@@ -23,6 +23,7 @@
 #include <functional>
 #include <cctype>
 #include <iostream>
+#include <sstream>
 #include <locale>
 #include <vector>
 
@@ -54,17 +55,14 @@ void AnlogicBitParser::displayHeader()
  */
 int AnlogicBitParser::parseHeader()
 {
-	int ret = EXIT_SUCCESS;
+	int ret = 0;
 	printInfo("parseHeader");
 
-	while(1) {
-		string buffer;
-		std::getline(_fd, buffer, '\n');
+	string buffer;
+	istringstream lineStream(_raw_data);
 
-		if (_fd.eof()) {
-			printError("End of file before start of data");
-			return EXIT_FAILURE;
-		}
+	while (std::getline(lineStream, buffer, '\n')) {
+		ret += buffer.size() + 1;
 
 		if (buffer.empty()) {
 			printInfo("header end");
@@ -76,7 +74,7 @@ int AnlogicBitParser::parseHeader()
 			return EXIT_FAILURE;
 		}
 
-		string content = buffer.substr(2);
+		string content = buffer.substr(2); // drop '# '
 		size_t pos = content.find(':');
 		if (pos == string::npos) {
 			_hdr["tool"] = content;
@@ -87,52 +85,51 @@ int AnlogicBitParser::parseHeader()
 		}
 	}
 
+	if (_raw_data[ret] != 0x00) {
+		printError("Header must end with 0x00 (binary) bit");
+		ret = -1;
+	}
+
 	return ret;
 }
 
 int AnlogicBitParser::parse()
 {
-	if (parseHeader() == EXIT_FAILURE)
-		return EXIT_FAILURE;
-
-	uint8_t dummy = _fd.get();
-	if (dummy != 0x00) {
-		printError("Header must end with 0x00 (binary) bit");
+	int end_header = 0;
+	/* fill raw buffer with file content */
+	_fd.read((char *)&_raw_data[0], sizeof(char) * _file_size);
+	if (_fd.gcount() != _file_size) {
+		printError("Error: fails to read full file content");
 		return EXIT_FAILURE;
 	}
 
-	size_t start_data = _fd.tellg();
-	start_data--;
+	/* parse header */
+	if ((end_header = parseHeader()) == -1)
+		return EXIT_FAILURE;
 
-	_fd.seekg(0, _fd.end);
-	size_t size_data = (size_t)_fd.tellg() - start_data;
-	_fd.seekg(start_data, _fd.beg);
-
-	vector<uint8_t> data;
-	data.resize(size_data);
-	_fd.read(reinterpret_cast<char *>(&(data[0])), size_data);
-
-	unsigned int pos = 0;
+	unsigned int pos = end_header;
 	std::vector<std::vector<uint8_t>> blocks;
-    do {
-        uint16_t len = (data[pos++] << 8);
-        len += data[pos++];
-        if ((len & 7) != 0) {
+	do {
+		uint16_t len = (((uint16_t)_raw_data[pos]) << 8) |
+			(0xff & (uint16_t)_raw_data[pos + 1]);
+
+		pos += 2;
+		if ((len & 7) != 0) {
 			printf("error\n");
 			return EXIT_FAILURE;
 		}
-        len >>= 3;
-        if ((pos + len) > data.size()) {
+		len >>= 3;
+		if ((pos + len) > _raw_data.size()) {
 			printf("error\n");
 			return EXIT_FAILURE;
 		}
 
-        std::vector<uint8_t> block = std::vector<uint8_t>(data.begin() + pos,
-			data.begin() + pos + len);
-        blocks.push_back(block);
+		std::vector<uint8_t> block = std::vector<uint8_t>(_raw_data.begin() + pos,
+			_raw_data.begin() + pos + len);
+		blocks.push_back(block);
 
-        pos += len;
-    } while (pos < data.size());
+		pos += len;
+	} while (pos < _raw_data.size());
 
 
 	_bit_data.clear();
