@@ -41,6 +41,5 @@ int RawParser::parse()
 		_bit_data[i] = (_reverseOrder) ? reverseByte(_raw_data[i]): _raw_data[i];
 	_bit_length = _bit_data.size() * 8;
 	//cout << "file length " << _bit_length << endl;
-	delete(c);
 	return EXIT_SUCCESS;
 }
