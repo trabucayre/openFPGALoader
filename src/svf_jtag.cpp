@@ -260,6 +260,10 @@ void SVF_jtag::parse(string filename)
 	}
 	
 	while (getline(fs, str)) {
+		/* sanity check: DOS CR */
+		if (str.back() == '\r')
+			str.pop_back();
+
 		is_complete = false;
 		if (str[0] == '!') // comment
 			continue;
