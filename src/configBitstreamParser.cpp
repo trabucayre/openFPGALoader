@@ -29,6 +29,14 @@ ConfigBitstreamParser::~ConfigBitstreamParser()
 	_fd.close();
 }
 
+string ConfigBitstreamParser::getHeaderVal(string key)
+{
+	auto val = _hdr.find(key);
+	if (val == _hdr.end())
+		throw std::runtime_error("Error key " + key + " not found");
+	return val->second;
+}
+
 uint8_t ConfigBitstreamParser::reverseByte(uint8_t src)
 {
 	uint8_t dst = 0;
