@@ -24,41 +24,99 @@
 
 using namespace std;
 
-FsParser::FsParser(string filename, bool reverseByte, bool verbose):
+FsParser::FsParser(const string &filename, bool reverseByte, bool verbose):
 			ConfigBitstreamParser(filename, ConfigBitstreamParser::ASCII_MODE,
-			verbose), _reverseByte(reverseByte),  _checksum(0)
+			verbose), _reverseByte(reverseByte), _end_header(0), _checksum(0),
+			_8Zero(0xff), _4Zero(0xff), _2Zero(0xff),
+			_idcode(0), _compressed(false)
 {
 }
+
 FsParser::~FsParser()
 {
+}
+
+uint64_t FsParser::bitToVal(const char *bits, int len)
+{
+	uint64_t val = 0;
+	for (int i = 0; i < len; i++)
+		val = (val << 1) | (bits[i] == '1' ? 1 : 0);
+	return val;
 }
 
 int FsParser::parseHeader()
 {
 	int ret = 1;
 	string buffer;
+	int line_index = 0;
 
 	while (1){
 		std::getline(_fd, buffer, '\n');
-		if (buffer[0] != '/')
+		if (buffer.empty())
 			break;
-		buffer = buffer.substr(2);
-		size_t pos = buffer.find(':');
-		if (pos == string::npos)
+		/* drop all comment, base analyze on header */
+		if (buffer[0] == '/')
 			continue;
-		string v1, v2;
-		v1 = buffer.substr(0, pos);
-		if (pos+2 == buffer.size())
-			v2 = "None";
-		else
-			v2 = buffer.substr(pos+2) + '\0';  // ':' + ' '
 
-		_hdr[v1] = v2;
-	}
+		/* store each line in dedicated buffer for futur use
+		 */
+		_lstRawData.push_back(buffer);
 
-	if (_verbose) {
-		for (auto &&t: _hdr)
-			printInfo("x" + t.first + ": " + t.second);
+		uint8_t c = bitToVal(buffer.substr(0, 8).c_str(), 8);
+		uint8_t key = c & 0x7F;
+		uint64_t val = bitToVal(buffer.c_str(), buffer.size());
+
+		switch (key) {
+			case 0x06:
+				_idcode = (0xffffffff & val);
+				_hdr["idcode"] = string(8, ' ');
+				snprintf(&_hdr["idcode"][0], 9, "%08x", _idcode);
+				break;
+			case 0x0A: /* user code or checksum ? */
+				_hdr["CheckSum"] = string(4, ' ');
+				snprintf(&_hdr["CheckSum"][0], 5, "%04x", (uint16_t)(0xffff & val));
+				break;
+			case 0x0B: /* only present when bit_security is set */
+				_hdr["SecurityBit"] = "ON";
+				break;
+			case 0x10:
+				/* unknown conversion */
+				_hdr["loading_rate"] = to_string(0xff & (val >> 16));
+				_compressed = 0x01 & (val >> 13);
+				_hdr["Compress"] = (_compressed) ? "ON" : "OFF";
+				_hdr["ProgramDoneBypass"] = (0x01 & (val >> 12))?"ON":"OFF";
+				break;
+			case 0x12: /* unknown */
+				break;
+			case 0x51:
+				/*
+				[23:16] : a value used to replace 8x 0x00 in compress mode
+				[15: 8] : a value used to replace 4x 0x00 in compress mode
+				[ 7: 0] : a value used to replace 2x 0x00 in compress mode
+				*/
+				_8Zero = 0xff & (val >> 16);
+				_4Zero = 0xff & (val >>  8);
+				_2Zero = 0xff & (val >>  0);
+				break;
+			case 0x52: /* documentation issue */
+				uint32_t flash_addr;
+				flash_addr = val & 0xffffffff;
+				_hdr["SPIAddr"] = string(8, ' ');
+				snprintf(&_hdr["SPIAddr"][0], 9, "%08x", flash_addr);
+
+				break;
+			case 0x3B: /* last header line with crc and cfg data length */
+						/* documentation issue */
+				uint8_t crc;
+				crc = 0x01 & (val >> 23);
+
+				_hdr["CRCCheck"] = (crc) ? "ON" : "OFF";
+				_hdr["ConfDataLength"] = to_string(0xffff & val);
+				_end_header = line_index;
+				break;
+		}
+
+		line_index++;
 	}
 
 	return ret;
@@ -66,78 +124,39 @@ int FsParser::parseHeader()
 
 int FsParser::parse()
 {
-	uint8_t data;
-	vector<string> vectTmp;
-	string buffer, tmp;
-
-	printInfo("Parse " + _filename + ": ", false);
-
-	parseHeader();
-	_fd.seekg(0, _fd.beg);
-	size_t max = 0;
-
-	while (1) {
-		std::getline(_fd, buffer, '\n');
-		if (buffer.size() == 0)
-			break;
-		if (buffer[0] == '/')
-			continue;
-		vectTmp.push_back(buffer);
-		/* needed to determine data used for checksum */
-		if (buffer.size() > max)
-			max = buffer.size();
-	}
-
-	/* we know each data size finished with 6 x 0xff
-	 * and an optional checksum
-	 * */
-	int addr_length;
+	string tmp;
 	/* GW1N-6 and GW1N(R)-9 are address length not multiple of byte */
 	int padding = 0;
+
+	printInfo("Parse " + _filename + ": ");
+
+	parseHeader();
 
 	/* Fs file format is MSB first
 	 * so if reverseByte = false bit 0 -> 7, 1 -> 6,
 	 * if true 0 -> 0, 1 -> 1
 	 */
 
-	uint32_t idcode = 0;
-
-	for (auto &&line: vectTmp) {
-		/* store header for futher informations */
-		string data_line;
-		for (int i = 0; i < (int)line.size(); i+=8) {
-			data = 0;
-			for (int ii = 0; ii < 8; ii++) {
-				uint8_t val = (line[i+ii] == '1'?1:0);
-				if (_reverseByte)
-					data |= val << ii;
-				else
-					data |= val << (7-ii);
-			}
-			_bit_data += data;
-			data_line += (_reverseByte)? reverseByte(data): data;
-		}
-		if (line.size() < max) {
-			if ((0x7F & data_line[0]) == 0x06) {
-				string str = data_line.substr(data_line.size()-4, 4);
-				for (auto it = str.begin(); it != str.end(); it++)
-					idcode = idcode << 8 | (uint8_t)(*it);
-			}
+	for (auto &&line : _lstRawData) {
+		for (size_t i = 0; i < line.size(); i+=8) {
+			uint8_t data = bitToVal(&line[i], 8);
+			_bit_data += (_reverseByte) ? reverseByte(data) : data;
 		}
 	}
-	_bit_length = (int)_bit_data.size() * 8;
 
-	if (idcode == 0)
+	_bit_length = static_cast<int>(_bit_data.size() * 8);
+
+
+	if (_idcode == 0)
 		printWarn("Warning: IDCODE not found\n");
 
 	/* use idcode to determine Count of Address */
 	unsigned nb_line = 0;
-	switch (idcode) {
+	switch (_idcode) {
 		case 0x0900281b: /* GW1N-1    */
 		case 0x0900381b: /* GW1N-1S   */
 		case 0x0100681b: /* GW1NZ-1   */
 			nb_line = 274;
-			addr_length = 1216;
 			break;
 		case 0x0100181b: /* GW1N-2    */
 		case 0x1100181b: /* GW1N-2B   */
@@ -146,51 +165,84 @@ int FsParser::parse()
 		case 0x0100381b: /* GW1N-4(ES)*/
 		case 0x1100381b: /* GW1N-4B   */
 			nb_line = 494;
-			addr_length = 2296;
 			break;
 		case 0x0100481b: /* GW1N-6    */
 		case 0x1100581b: /* GW1N-9    */
 			nb_line = 712;
-			addr_length = 2836;
 			padding = 4;
+			if (_compressed)
+				padding += 5 * 8;
 			break;
 		case 0x0000081b: /* GW2A-18   */
 			nb_line = 1342;
-			addr_length = 3376;
 			break;
 		case 0x0000281b: /* GW2A-55    */
 			nb_line = 2038;
-			addr_length = 5536;
 			break;
 		default:
 			printWarn("Warning: Unknown IDCODE");
 			nb_line = 0;
 	}
 
-	for (auto &&line: vectTmp) {
+	/* drop now useless header */
+	_lstRawData.erase(_lstRawData.begin(), _lstRawData.begin() + _end_header + 1);
+	_lstRawData.resize(nb_line);
+
+	/* line full length depends on
+	 * 1/ model
+	 * 2/ (un)compress
+	 * 3/ crc
+	 * 4/ padding before data
+	 * 5/ serie of 0xff at the end
+	 */
+
+	/* to compute checksum two situation
+	 * 1/ uncompressed bitstream -> go
+	 * 2/ compressed bitstream -> need to uncompress this before
+	 */
+	int drop = 6 * 8;
+	if (_hdr["CRCCheck"] == "ON")
+		drop += 2 * 8;
+	for (auto &&ll = _lstRawData.begin();
+			ll != _lstRawData.end(); ll++) {
+		string l = "";
+		string line = *ll;
+		if (_compressed) {
+			for (size_t i = 0; i < line.size()-drop; i+=8) {
+				uint8_t c = bitToVal((const char *)&line[i], 8);
+				if (c == _8Zero)
+					l += string(8*8, '0');
+				else if (c == _4Zero)
+					l += string(4*8, '0');
+				else if (c == _2Zero)
+					l += string(2*8, '0');
+				else
+					l += line.substr(i, 8);
+			}
+		} else {
+			l = line.substr(0, line.size() - drop);
+		}
+
 		/* store bit for checksum */
-		if (line.size() == max)
-			tmp += line.substr(padding, addr_length);
+		tmp += l.substr(padding, l.size() - padding);
 	}
 
 	/* checksum */
-	uint32_t sum = 0;
-	uint32_t max_pos = (idcode == 0) ? tmp.size() : addr_length * nb_line;
+	_checksum = 0;
+	for (uint32_t pos = 0; pos < tmp.size(); pos+=16)
+		_checksum += (uint16_t)bitToVal(&tmp[pos], 16);
 
-	for (uint32_t pos = 0; pos < max_pos; pos+=16) {
-		int16_t data16 = 0;
-		for (int offset = 0; offset < 16; offset ++) {
-			uint16_t val = (tmp[pos+offset] == '1'?1:0);
-			data16 |= val << (15-offset);
-		}
-		sum += data16;
-	}
-
-	_checksum = sum;
 	if (_verbose)
-		printf("checksum 0x%02x\n", _checksum);
+		printf("checksum 0x%04x\n", _checksum);
 
 	printSuccess("Done");
 
 	return 0;
+}
+
+void FsParser::displayHeader()
+{
+	cout << "bitstream header infos" << endl;
+	for (auto it = _hdr.begin(); it != _hdr.end(); it++)
+		cout << (*it).first << ": " << (*it).second << endl;
 }

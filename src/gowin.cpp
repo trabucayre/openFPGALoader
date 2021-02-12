@@ -83,6 +83,8 @@ Gowin::Gowin(Jtag *jtag, const string filename, bool flash_wr, bool sram_wr,
 				_mode = Device::MEM_MODE;
 			_fs = new FsParser(_filename, _mode == Device::MEM_MODE, _verbose);
 			_fs->parse();
+			if (_verbose)
+				_fs->displayHeader();
 		} else {
 			throw std::runtime_error("incompatible file format");
 		}
