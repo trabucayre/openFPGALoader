@@ -1,4 +1,5 @@
 #include "bitparser.hpp"
+#include "display.hpp"
 #include <stdio.h>
 #include <stdlib.h>
 #include <iostream>
@@ -16,8 +17,7 @@ using namespace std;
 
 BitParser::BitParser(const string &filename, bool reverseOrder, bool verbose):
 	ConfigBitstreamParser(filename, ConfigBitstreamParser::BIN_MODE,
-	verbose), fieldA(), part_name(), date(), hour(),
-	design_name(), userID(), toolVersion(), _reverseOrder(reverseOrder)
+	verbose), _reverseOrder(reverseOrder)
 {
 }
 BitParser::~BitParser() 
@@ -28,7 +28,7 @@ int BitParser::parseField()
 {
 	int ret = 1;
 	short length;
-	char tmp[64];
+	string tmp(64, ' ');
 	int pos, prev_pos;
 
 	/* type */
@@ -41,47 +41,38 @@ int BitParser::parseField()
 	} else {
 		length = 4;
 	}
-	_fd.read(tmp, sizeof(uint8_t)*length);
-	if (_verbose) {
-		for (int i = 0; i < length; i++)
-			printf("%c", tmp[i]);
-		printf("\n");
-	}
+	_fd.read(&tmp[0], sizeof(uint8_t)*length);
+
 	switch (type) {
 		case 'a': /* design name:userid:synthesize tool version */
-			fieldA=(tmp);
 			prev_pos = 0;
-			pos = fieldA.find(";");
-			design_name = fieldA.substr(prev_pos, pos);
-			display("%d %d %s\n", prev_pos, pos, design_name.c_str());
+			pos = tmp.find(";");
+			_hdr["design_name"] = tmp.substr(prev_pos, pos);
 			prev_pos = pos+1;
 
-			pos = fieldA.find(";", prev_pos);
-			userID = fieldA.substr(prev_pos, pos-prev_pos);
-			display("%d %d %s\n", prev_pos, pos, userID.c_str());
+			pos = tmp.find(";", prev_pos);
+			prev_pos = tmp.find("=", prev_pos) + 1;
+			_hdr["userID"] = tmp.substr(prev_pos, pos-prev_pos);
 			prev_pos = pos+1;
 
-			//pos = fieldA.find(";", prev_pos);
-			toolVersion = fieldA.substr(prev_pos);
-			display("%d %d %s\n", prev_pos, pos, toolVersion.c_str());
+			prev_pos = tmp.find("=", prev_pos) + 1;
+			_hdr["toolVersion"] = tmp.substr(prev_pos);
 			break;
 		case 'b': /* FPGA model */
-			part_name = (tmp);
+			_hdr["part_name"] = tmp;
 			break;
 		case 'c': /* buildDate */
-			date = (tmp);
+			_hdr["date"] = tmp;
 			break;
 		case 'd': /* buildHour */
-			hour = (tmp);
+			_hdr["hour"] = tmp;
 			break;
 		case 'e': /* file size */
 			_bit_length = 0;
 			for (int i = 0; i < 4; i++) {
-				display("%x %x\n", 0xff & tmp[i], _bit_length);
 				_bit_length <<= 8;
 				_bit_length |= 0xff & tmp[i];
 			}
-			display("    %x\n", _bit_length);
 			ret = 0;
 
 			break;
@@ -106,23 +97,19 @@ int BitParser::parse()
 	do {} while (parseField());
 
 	if (_verbose) {
-		display("results\n\n");
-
-		cout << "fieldA      : " << fieldA << endl;
-		cout << "            : " << design_name << ";" << userID << ";" << toolVersion << endl;
-		cout << "part name   : " << part_name << endl;
-		cout << "date        : " << date << endl;
-		cout << "hour        : " << hour << endl;
-		cout << "file length : " << _bit_length << endl;
+		cout << "bitstream header infos" << endl;
+		for (auto it = _hdr.begin(); it != _hdr.end(); it++) {
+				printInfo((*it).first + ": ", false);
+				printSuccess((*it).second);
+		}
+		cout << endl;
 	}
 
 	/* rest of the file is data to send */
-	int pos = _fd.tellg();
-	display("%d %d\n", pos, _bit_length);
 	_fd.read((char *)&_bit_data[0], sizeof(uint8_t) * _bit_length);
 	if (_fd.gcount() != _bit_length) {
-		cerr << "Error: data read different to asked length ";
-		cerr << to_string(_fd.gcount()) << " " << to_string(_bit_length) << endl;
+		printError("Error: data read different to asked length ", false);
+		printError(to_string(_fd.gcount()) + " " + to_string(_bit_length));
 		return -1;
 	}
 

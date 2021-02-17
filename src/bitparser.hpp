@@ -14,13 +14,13 @@ class BitParser: public ConfigBitstreamParser {
 
 	private:
 		int parseField();
-		std::string fieldA;
-		std::string part_name;
-		std::string date;
-		std::string hour;
-		std::string design_name;
-		std::string userID;
-		std::string toolVersion;
+		//std::string fieldA;
+		//std::string part_name;
+		//std::string date;
+		//std::string hour;
+		//std::string design_name;
+		//std::string userID;
+		//std::string toolVersion;
 		bool _reverseOrder;
 };
 
