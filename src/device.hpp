@@ -2,6 +2,7 @@
 #define DEVICE_HPP
 
 #include <iostream>
+#include <string>
 
 #include "jtag.hpp"
 
@@ -18,11 +19,18 @@ class Device {
 			FLASH_MODE = 1,
 			MEM_MODE = 2
 		};
+
+		typedef enum {
+			WR_SRAM = 0,
+			WR_FLASH = 1
+		} prog_type_t;
+
 		Device(Jtag *jtag, std::string filename, int8_t verbose = false);
 		virtual ~Device();
 		virtual void program(unsigned int offset = 0) = 0;
 		virtual int  idCode() = 0;
 		virtual void reset();
+
 	protected:
 		Jtag *_jtag;
 		std::string _filename;

@@ -14,18 +14,14 @@
 #include "progressBar.hpp"
 
 Xilinx::Xilinx(Jtag *jtag, const std::string &filename,
-	bool flash_wr, bool sram_wr, int8_t verbose):
+	Device::prog_type_t prg_type, int8_t verbose):
 	Device(jtag, filename, verbose)
 {
 	if (_filename != ""){
-		if (flash_wr && sram_wr) {
-			printError("both write-flash and write-sram can't be set");
-			throw std::exception();
-		}
 		if (_file_extension == "mcs") {
 			_mode = Device::SPI_MODE;
 		} else if (_file_extension == "bit" || _file_extension == "bin") {
-			if (sram_wr)
+			if (prg_type == Device::WR_SRAM)
 				_mode = Device::MEM_MODE;
 			else
 				_mode = Device::SPI_MODE;

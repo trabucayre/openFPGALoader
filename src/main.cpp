@@ -58,8 +58,7 @@ struct arguments {
 	bool list_cables;
 	bool list_boards;
 	bool list_fpga;
-	bool write_flash;
-	bool write_sram;
+	Device::prog_type_t prg_type;
 	bool is_list_command;
 	bool spi;
 };
@@ -76,7 +75,7 @@ int main(int argc, char **argv)
 
 	/* command line args. */
 	struct arguments args = {0, false, false, 0, "", "", "-", "", -1, 6000000, "-",
-			false, false, false, false, false, true, false, false};
+			false, false, false, false, Device::WR_SRAM, false, false};
 	/* parse arguments */
 	try {
 		if (parse_opt(argc, argv, &args, &pins_config))
@@ -90,6 +89,11 @@ int main(int argc, char **argv)
 		displaySupported(args);
 		return EXIT_SUCCESS;
 	}
+
+	if (args.prg_type == Device::WR_SRAM)
+		cout << "write to ram" << endl;
+	if (args.prg_type == Device::WR_FLASH)
+		cout << "write to flash" << endl;
 
 	if (args.board[0] != '-' && board_list.find(args.board) != board_list.end()) {
 		board = &(board_list[args.board]);
@@ -263,18 +267,18 @@ int main(int argc, char **argv)
 	Device *fpga;
 	try {
 		if (fab == "xilinx") {
-			fpga = new Xilinx(jtag, args.bit_file, args.write_flash, args.write_sram,
+			fpga = new Xilinx(jtag, args.bit_file, args.prg_type,
 				args.verbose);
 		} else if (fab == "altera") {
 			fpga = new Altera(jtag, args.bit_file, args.verbose);
 		} else if (fab == "anlogic") {
-			fpga = new Anlogic(jtag, args.bit_file, args.write_flash, args.write_sram,
+			fpga = new Anlogic(jtag, args.bit_file, args.prg_type,
 				args.verbose);
 		} else if (fab == "Gowin") {
-			fpga = new Gowin(jtag, args.bit_file, args.write_flash, args.write_sram,
+			fpga = new Gowin(jtag, args.bit_file, args.prg_type,
 				args.verbose);
 		} else if (fab == "lattice") {
-			fpga = new Lattice(jtag, args.bit_file, args.write_flash, args.write_sram,
+			fpga = new Lattice(jtag, args.bit_file, args.prg_type,
 				args.verbose);
 		} else {
 			printError("Error: manufacturer " + fab + " not supported");
@@ -414,15 +418,10 @@ int parse_opt(int argc, char **argv, struct arguments *args, jtag_pins_conf_t *p
 			throw std::exception();
 		}
 
-		if (result.count("write-flash")) {
-			args->write_flash = true;
-			args->write_sram = false;
-		}
-
-		if (result.count("write-sram")) {
-			args->write_flash = false;
-			args->write_sram = true;
-		}
+		if (result.count("write-flash"))
+			args->prg_type = Device::WR_FLASH;
+		else if (result.count("write-sram"))
+			args->prg_type = Device::WR_SRAM;
 
 		if (result.count("freq")) {
 			double freq;

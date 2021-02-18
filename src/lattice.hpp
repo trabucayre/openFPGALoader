@@ -31,7 +31,7 @@
 
 class Lattice: public Device, SPIInterface {
 	public:
-		Lattice(Jtag *jtag, std::string filename, bool flash_wr, bool sram_wr,
+		Lattice(Jtag *jtag, std::string filename, Device::prog_type_t prg_type,
 			int8_t verbose);
 		int idCode() override;
 		int userCode();

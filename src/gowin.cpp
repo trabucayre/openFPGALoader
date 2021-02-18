@@ -69,15 +69,13 @@ using namespace std;
 #define EF_PROGRAM			0x71
 #define EFLASH_ERASE		0x75
 
-Gowin::Gowin(Jtag *jtag, const string filename, bool flash_wr, bool sram_wr,
+Gowin::Gowin(Jtag *jtag, const string filename, Device::prog_type_t prg_type,
 		int8_t verbose): Device(jtag, filename, verbose), is_gw1n1(false)
 {
 	_fs = NULL;
 	if (_filename != "") {
 		if (_file_extension == "fs") {
-			if (flash_wr && sram_wr)
-				throw std::runtime_error("both write-flash and write-sram can't be set");
-			if (flash_wr)
+			if (prg_type == Device::WR_FLASH)
 				_mode = Device::FLASH_MODE;
 			else
 				_mode = Device::MEM_MODE;

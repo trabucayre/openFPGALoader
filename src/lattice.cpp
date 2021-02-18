@@ -68,19 +68,19 @@ using namespace std;
 #	define REG_STATUS_EXEC_ERR	(1 << 26)
 
 Lattice::Lattice(Jtag *jtag, const string filename,
-	bool flash_wr, bool sram_wr, int8_t verbose):
+	Device::prog_type_t prg_type, int8_t verbose):
 		Device(jtag, filename, verbose), _fpga_family(UNKNOWN_FAMILY)
 {
-	(void)sram_wr;
 	if (_filename != "") {
 		if (_file_extension == "jed" || _file_extension == "mcs") {
 			_mode = Device::FLASH_MODE;
 		} else if (_file_extension == "bit") {
-			if (flash_wr)
+			if (prg_type == Device::WR_FLASH)
 				_mode = Device::FLASH_MODE;
 			else
 				_mode = Device::MEM_MODE;
-		} else if (flash_wr) {  // for raw bin to flash at offset != 0
+		} else if (prg_type == Device::WR_FLASH) {
+			// for raw bin to flash at offset != 0
 			_mode = Device::FLASH_MODE;
 		} else {
 			throw std::exception();

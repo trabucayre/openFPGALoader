@@ -34,15 +34,14 @@
 #define IRLENGTH 8
 
 Anlogic::Anlogic(Jtag *jtag, const std::string &filename,
-	bool flash_wr, bool sram_wr, int8_t verbose):
+	Device::prog_type_t prg_type, int8_t verbose):
 	Device(jtag, filename, verbose), _svf(_jtag, _verbose)
 {
-	(void)flash_wr;
 	if (_filename != "") {
 		if (_file_extension == "svf")
 			_mode = Device::MEM_MODE;
 		else if (_file_extension == "bit") {
-			if (sram_wr)
+			if (prg_type == Device::WR_SRAM)
 				_mode = Device::MEM_MODE;
 			else
 				_mode = Device::SPI_MODE;
