@@ -87,7 +87,7 @@ Gowin::Gowin(Jtag *jtag, const string filename, Device::prog_type_t prg_type,
 			throw std::runtime_error("incompatible file format");
 		}
 	}
-	_jtag->setClkFreq(2500000, 0);
+	_jtag->setClkFreq(2500000);
 
 	/* erase and program flash differ for GW1N1 */
 	if (idCode() == 0x0900281B)

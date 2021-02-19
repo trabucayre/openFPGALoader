@@ -35,8 +35,6 @@ class DirtyJtag : public JtagInterface {
 	virtual ~DirtyJtag();
 
 	int setClkFreq(uint32_t clkHZ) override;
-	int setClkFreq(uint32_t clkHZ, char use_divide_by_5) override {
-		(void)use_divide_by_5; return setClkFreq(clkHZ);}
 
 	/* TMS */
 	int writeTMS(uint8_t *tms, int len, bool flush_buffer) override;

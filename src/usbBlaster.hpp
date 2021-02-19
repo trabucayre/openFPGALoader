@@ -39,9 +39,6 @@ class UsbBlaster : public JtagInterface {
 	virtual ~UsbBlaster();
 
 	int setClkFreq(uint32_t clkHZ) override;
-	int setClkFreq(uint32_t clkHZ, char use_divide_by_5) override {
-		(void)clkHZ; (void) use_divide_by_5;
-		return 1;}
 
 	/*!
 	 * \brief drive TMS to move in JTAG state machine

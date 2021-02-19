@@ -41,8 +41,6 @@ class FtdiJtagMPSSE : public JtagInterface, private FTDIpp_MPSSE {
 	int setClkFreq(uint32_t clkHZ) override {
 		return FTDIpp_MPSSE::setClkFreq(clkHZ);
 	}
-	int setClkFreq(uint32_t clkHZ, char use_divide_by_5) override {
-		return FTDIpp_MPSSE::setClkFreq(clkHZ, use_divide_by_5);}
 
 	/* TMS */
 	int writeTMS(uint8_t *tms, int len, bool flush_buffer) override;

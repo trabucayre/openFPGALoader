@@ -169,7 +169,7 @@ int FTDIpp_MPSSE::init(unsigned char latency, unsigned char bitmask_mode,
 		unsigned char buf1[5];
 		ftdi_read_data(_ftdi, buf1, 5);
 
-		if (setClkFreq(_clkHZ, 0) < 0)
+		if (setClkFreq(_clkHZ) < 0)
 			return -1;
 
 		int to_wr = 3;
@@ -194,29 +194,31 @@ int FTDIpp_MPSSE::init(unsigned char latency, unsigned char bitmask_mode,
 
 int FTDIpp_MPSSE::setClkFreq(uint32_t clkHZ)
 {
-	return setClkFreq(clkHZ, 0);
-}
-
-int FTDIpp_MPSSE::setClkFreq(uint32_t clkHZ, char use_divide_by_5)
-{
-	_clkHZ = clkHZ;
-
 	int ret;
+	bool use_divide_by_5;
 	uint8_t buffer[4] = { TCK_DIVISOR, 0x00, 0x00};
 	uint32_t base_freq;
-	uint32_t real_freq = 0;
+	float real_freq = 0;
 	uint16_t presc;
+
+	_clkHZ = clkHZ;
 
 	/* FT2232C has no divide by 5 instruction
 	 * and default freq is 12MHz
 	 */
 	if (_ftdi->type != TYPE_2232C) {
 		base_freq = 60000000;
-		if (use_divide_by_5) {
+		/* use full speed only when freq > 6MHz
+		 * => more freq resolution using
+		 * 2^16 to describe 0 -> 6MHz
+		 */
+		if (clkHZ > 6000000) {
+			use_divide_by_5 = false;
+			mpsse_store(DIS_DIV_5);
+		} else {
+			use_divide_by_5 = true;
 			base_freq /= 5;
 			mpsse_store(EN_DIV_5);
-		} else {
-			mpsse_store(DIS_DIV_5);
 		}
 	} else {
 		base_freq = 12000000;
@@ -240,10 +242,33 @@ int FTDIpp_MPSSE::setClkFreq(uint32_t clkHZ, char use_divide_by_5)
 	if (real_freq > _clkHZ)
 		presc ++;
 	real_freq = base_freq / ((1+presc)*2);
-	printInfo("Jtag frequency : requested " + std::to_string(clkHZ) +
-			"Hz -> real " + std::to_string(real_freq) + "Hz");
-	display("presc : %d input freq : %d requested freq : %d real freq : %d\n",
+
+	/* just to have a better display */
+	string clkHZ_str(10, ' ');
+	string real_freq_str(10, ' ');
+	if (clkHZ >= 1e6)
+		snprintf(&clkHZ_str[0], 9, "%2.2fMHz", clkHZ / 1e6);
+	else if (clkHZ >= 1e3)
+		snprintf(&clkHZ_str[0], 10, "%3.2fKHz", clkHZ / 1e3);
+	else
+		snprintf(&clkHZ_str[0], 10, "%3d.00Hz", clkHZ);
+	if (real_freq >= 1e6)
+		snprintf(&real_freq_str[0], 9, "%2.2fMHz", real_freq / 1e6);
+	else if (real_freq >= 1e3)
+		snprintf(&real_freq_str[0], 10, "%3.2fKHz", real_freq / 1e3);
+	else
+		snprintf(&real_freq_str[0], 10, "%3.2fHz", real_freq);
+
+
+	printInfo("Jtag frequency : requested " + clkHZ_str +
+			" -> real " + real_freq_str);
+	display("presc : %d input freq : %d requested freq : %d real freq : %f\n",
 			presc, base_freq, _clkHZ, real_freq);
+
+	/*printf("base freq %d div by 5 %c presc %d\n", base_freq, (use_divide_by_5)?'1':'0',
+			presc); */
+
+
 	buffer[1] = presc & 0xff;
 	buffer[2] = (presc >> 8) & 0xff;
 

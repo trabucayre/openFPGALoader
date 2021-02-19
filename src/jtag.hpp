@@ -35,8 +35,6 @@ class Jtag {
 
 	/* maybe to update */
 	int setClkFreq(uint32_t clkHZ) { return _jtag->setClkFreq(clkHZ);}
-	int setClkFreq(uint32_t clkHZ, char use_divide_by_5) {
-		return _jtag->setClkFreq(clkHZ, use_divide_by_5);}
 
 	int detectChain(std::vector<int> &devices, int max_dev);
 
