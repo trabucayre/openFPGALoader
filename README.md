@@ -62,9 +62,9 @@ __Supported cables:__
 * JTAG-HS3: jtag programmer cable from digilent
 * FT2232: generic programmer cable based on Ftdi FT2232
 * FT232RL and FT231X: generic USB<->UART converters in bitbang mode
-* Tang Nano USB-JTAG interface: FT2232C clone based on CH552 microcontroler
+* [Tang Nano USB-JTAG interface](https://github.com/diodep/ch55x_jtag): FT2232C clone based on CH552 microcontroler
   (with some limitations and workaround)
-* honeycomb USB-JTAG interface: FT2232C clone based on STM32F042 microcontroler
+* [honeycomb USB-JTAG interface](https://github.com/Disasm/f042-ftdi): FT2232C clone based on STM32F042 microcontroler
 
 ## compile and install
 
