@@ -139,6 +139,8 @@ openFPGALoader -- a program to flash FPGA
       --ftdi-channel arg  FTDI chip channel number (channels 0-3 map to A-D)
   -d, --device arg        device to use (/dev/ttyUSBx)
       --detect            detect FPGA
+      --file-type arg     provides file type instead of let's deduced by
+                          using extension
       --freq arg          jtag frequency (Hz)
   -f, --write-flash       write bitstream in flash (default: false, only for
                           Gowin and ECP5 devices)
@@ -204,6 +206,11 @@ openFPGALoader [options] -r
 ```bash
 openFPGALoader [options] /path/to/bitstream.ext
 ```
+
+#### Automatic file type detection bypass
+
+Default behavior is to use file extension to determine file parser. To avoid
+this mecanism `--file-type type` must be used.
 
 #### bitbang mode and pins configuration
 

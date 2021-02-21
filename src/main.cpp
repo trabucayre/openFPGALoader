@@ -61,6 +61,7 @@ struct arguments {
 	Device::prog_type_t prg_type;
 	bool is_list_command;
 	bool spi;
+	string file_type;
 };
 
 int parse_opt(int argc, char **argv, struct arguments *args, jtag_pins_conf_t *pins_config);
@@ -75,7 +76,7 @@ int main(int argc, char **argv)
 
 	/* command line args. */
 	struct arguments args = {0, false, false, 0, "", "", "-", "", -1, 6000000, "-",
-			false, false, false, false, Device::WR_SRAM, false, false};
+			false, false, false, false, Device::WR_SRAM, false, false, ""};
 	/* parse arguments */
 	try {
 		if (parse_opt(argc, argv, &args, &pins_config))
@@ -166,12 +167,12 @@ int main(int argc, char **argv)
 		}
 
 		if (board->manufacturer == "efinix") {
-			Efinix target(spi, args.bit_file, board->reset_pin, board->done_pin,
-				args.verbose);
+			Efinix target(spi, args.bit_file, args.file_type,
+				board->reset_pin, board->done_pin, args.verbose);
 			target.program(args.offset);
 		} else if (board->manufacturer == "lattice") {
-			Ice40 target(spi, args.bit_file, board->reset_pin, board->done_pin,
-				args.verbose);
+			Ice40 target(spi, args.bit_file, args.file_type,
+				board->reset_pin, board->done_pin, args.verbose);
 			target.program(args.offset);
 		} else {
 			RawParser *bit = NULL;
@@ -185,7 +186,7 @@ int main(int argc, char **argv)
 			flash.reset();
 			flash.read_id();
 
-			if (!args.bit_file.empty()) {
+			if (!args.bit_file.empty() || !args.file_type.empty()) {
 				printInfo("Open file " + args.bit_file + " ", false);
 				try {
 					bit = new RawParser(args.bit_file, false);
@@ -267,26 +268,27 @@ int main(int argc, char **argv)
 	Device *fpga;
 	try {
 		if (fab == "xilinx") {
-			fpga = new Xilinx(jtag, args.bit_file, args.prg_type,
-				args.verbose);
+			fpga = new Xilinx(jtag, args.bit_file, args.file_type,
+				args.prg_type, args.verbose);
 		} else if (fab == "altera") {
-			fpga = new Altera(jtag, args.bit_file, args.verbose);
+			fpga = new Altera(jtag, args.bit_file, args.file_type,
+				args.verbose);
 		} else if (fab == "anlogic") {
-			fpga = new Anlogic(jtag, args.bit_file, args.prg_type,
-				args.verbose);
+			fpga = new Anlogic(jtag, args.bit_file, args.file_type,
+				args.prg_type, args.verbose);
 		} else if (fab == "Gowin") {
-			fpga = new Gowin(jtag, args.bit_file, args.prg_type,
-				args.verbose);
+			fpga = new Gowin(jtag, args.bit_file, args.file_type,
+				args.prg_type, args.verbose);
 		} else if (fab == "lattice") {
-			fpga = new Lattice(jtag, args.bit_file, args.prg_type,
-				args.verbose);
+			fpga = new Lattice(jtag, args.bit_file, args.file_type,
+				args.prg_type, args.verbose);
 		} else {
 			printError("Error: manufacturer " + fab + " not supported");
 			delete(jtag);
 			return EXIT_FAILURE;
 		}
 	} catch (std::exception &e) {
-		printError("Error: Failed to claim FPGA device");
+		printError("Error: Failed to claim FPGA device: " + string(e.what()));
 		delete(jtag);
 		return EXIT_FAILURE;
 	}
@@ -366,6 +368,8 @@ int parse_opt(int argc, char **argv, struct arguments *args, jtag_pins_conf_t *p
 #endif
 			("detect",      "detect FPGA",
 				cxxopts::value<bool>(args->detect))
+			("file-type",   "provides file type instead of let's deduced by using extension",
+				cxxopts::value<string>(args->file_type))
 			("freq",        "jtag frequency (Hz)", cxxopts::value<string>(freqo))
 			("f,write-flash",
 				"write bitstream in flash (default: false, only for Gowin and ECP5 devices)")
@@ -499,6 +503,7 @@ int parse_opt(int argc, char **argv, struct arguments *args, jtag_pins_conf_t *p
 			args->is_list_command = true;
 
 		if (args->bit_file.empty() &&
+			args->file_type.empty() &&
 			!args->is_list_command &&
 			!args->detect &&
 			!args->reset) {

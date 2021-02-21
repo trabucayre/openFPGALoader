@@ -14,10 +14,11 @@
 #include "progressBar.hpp"
 
 Xilinx::Xilinx(Jtag *jtag, const std::string &filename,
+	const std::string &file_type,
 	Device::prog_type_t prg_type, int8_t verbose):
-	Device(jtag, filename, verbose)
+	Device(jtag, filename, file_type, verbose)
 {
-	if (_filename != ""){
+	if (!_file_extension.empty()) {
 		if (_file_extension == "mcs") {
 			_mode = Device::SPI_MODE;
 		} else if (_file_extension == "bit" || _file_extension == "bin") {
@@ -83,7 +84,7 @@ void Xilinx::program(unsigned int offset)
 	if (_mode == Device::MEM_MODE)
 		reverse = true;
 
-	printInfo("Open file " + _filename + " ", false);
+	printInfo("Open file ", false);
 	try {
 		if (_file_extension == "bit")
 			bit = new BitParser(_filename, reverse, _verbose);
@@ -138,7 +139,7 @@ void Xilinx::program_spi(ConfigBitstreamParser * bit, unsigned int offset)
 
 void Xilinx::program_mem(ConfigBitstreamParser *bitfile)
 {
-	if (_filename == "") return;
+	if (_file_extension.empty()) return;
 	std::cout << "load program" << std::endl;
 	unsigned char tx_buf, rx_buf;
 	/*            comment                                TDI   TMS TCK

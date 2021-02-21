@@ -69,11 +69,13 @@ using namespace std;
 #define EF_PROGRAM			0x71
 #define EFLASH_ERASE		0x75
 
-Gowin::Gowin(Jtag *jtag, const string filename, Device::prog_type_t prg_type,
-		int8_t verbose): Device(jtag, filename, verbose), is_gw1n1(false)
+Gowin::Gowin(Jtag *jtag, const string filename, const string &file_type,
+		Device::prog_type_t prg_type,
+		int8_t verbose): Device(jtag, filename, file_type, verbose),
+		is_gw1n1(false)
 {
 	_fs = NULL;
-	if (_filename != "") {
+	if (!_file_extension.empty()) {
 		if (_file_extension == "fs") {
 			if (prg_type == Device::WR_FLASH)
 				_mode = Device::FLASH_MODE;
@@ -161,7 +163,7 @@ void Gowin::program(unsigned int offset)
 	uint32_t status;
 	int length;
 
-	if (_filename == "" || !_fs)
+	if (_mode == NONE_MODE || !_fs)
 		return;
 
 	if (_mode == FLASH_MODE) {

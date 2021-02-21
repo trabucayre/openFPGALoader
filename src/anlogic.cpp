@@ -16,6 +16,9 @@
  */
 
 #include <string.h>
+
+#include <stdexcept>
+
 #include "anlogic.hpp"
 #include "anlogicBitParser.hpp"
 #include "jtag.hpp"
@@ -34,10 +37,11 @@
 #define IRLENGTH 8
 
 Anlogic::Anlogic(Jtag *jtag, const std::string &filename,
+	const std::string &file_type,
 	Device::prog_type_t prg_type, int8_t verbose):
-	Device(jtag, filename, verbose), _svf(_jtag, _verbose)
+	Device(jtag, filename, file_type, verbose), _svf(_jtag, _verbose)
 {
-	if (_filename != "") {
+	if (!_file_extension.empty()) {
 		if (_file_extension == "svf")
 			_mode = Device::MEM_MODE;
 		else if (_file_extension == "bit") {
@@ -46,7 +50,7 @@ Anlogic::Anlogic(Jtag *jtag, const std::string &filename,
 			else
 				_mode = Device::SPI_MODE;
 		} else
-			throw std::exception();
+			throw std::runtime_error("incompatible file format");
 	}
 }
 Anlogic::~Anlogic()

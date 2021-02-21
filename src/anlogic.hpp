@@ -29,6 +29,7 @@
 class Anlogic: public Device, SPIInterface {
 	public:
 		Anlogic(Jtag *jtag, const std::string &filename,
+			const std::string &file_type,
 			Device::prog_type_t prg_type, int8_t verbose);
 		~Anlogic();
 

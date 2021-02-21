@@ -16,10 +16,11 @@
 // DATA_DIR is defined at compile time.
 #define BIT_FOR_FLASH (DATA_DIR "/openFPGALoader/test_sfl.svf")
 
-Altera::Altera(Jtag *jtag, const std::string &filename, int8_t verbose):
-	Device(jtag, filename, verbose), _svf(_jtag, _verbose)
+Altera::Altera(Jtag *jtag, const std::string &filename,
+	const std::string &file_type, int8_t verbose):
+	Device(jtag, filename, file_type, verbose), _svf(_jtag, _verbose)
 {
-	if (_filename != "") {
+	if (!_file_extension.empty()) {
 		if (_file_extension == "svf" || _file_extension == "rbf")
 			_mode = Device::MEM_MODE;
 		else

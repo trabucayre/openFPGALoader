@@ -30,9 +30,10 @@
 #include "spiFlash.hpp"
 
 Ice40::Ice40(FtdiSpi* spi, const std::string &filename,
+			const std::string &file_type,
 			uint16_t rst_pin, uint16_t done_pin,
 			int8_t verbose):
-	Device(NULL, filename, verbose), _rst_pin(rst_pin),
+	Device(NULL, filename, file_type, verbose), _rst_pin(rst_pin),
 		_done_pin(done_pin)
 {
 	_spi = spi;
@@ -64,7 +65,7 @@ void Ice40::program(unsigned int offset)
 {
 	uint32_t timeout = 1000;
 
-	if (_filename == "")
+	if (_file_extension.empty())
 		return;
 
 	RawParser bit(_filename, false);

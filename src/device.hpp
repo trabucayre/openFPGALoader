@@ -25,7 +25,8 @@ class Device {
 			WR_FLASH = 1
 		} prog_type_t;
 
-		Device(Jtag *jtag, std::string filename, int8_t verbose = false);
+		Device(Jtag *jtag, std::string filename, const std::string &file_type,
+				int8_t verbose = false);
 		virtual ~Device();
 		virtual void program(unsigned int offset = 0) = 0;
 		virtual int  idCode() = 0;

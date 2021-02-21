@@ -23,6 +23,7 @@
 #include <unistd.h>
 
 #include <iostream>
+#include <stdexcept>
 
 #include "jtag.hpp"
 #include "lattice.hpp"
@@ -67,11 +68,11 @@ using namespace std;
 #	define REG_STATUS_CNF_CHK_MASK	(0x7 << 23)
 #	define REG_STATUS_EXEC_ERR	(1 << 26)
 
-Lattice::Lattice(Jtag *jtag, const string filename,
+Lattice::Lattice(Jtag *jtag, const string filename, const string &file_type,
 	Device::prog_type_t prg_type, int8_t verbose):
-		Device(jtag, filename, verbose), _fpga_family(UNKNOWN_FAMILY)
+		Device(jtag, filename, file_type, verbose), _fpga_family(UNKNOWN_FAMILY)
 {
-	if (_filename != "") {
+	if (!_file_extension.empty()) {
 		if (_file_extension == "jed" || _file_extension == "mcs") {
 			_mode = Device::FLASH_MODE;
 		} else if (_file_extension == "bit") {
@@ -83,7 +84,7 @@ Lattice::Lattice(Jtag *jtag, const string filename,
 			// for raw bin to flash at offset != 0
 			_mode = Device::FLASH_MODE;
 		} else {
-			throw std::exception();
+			throw std::runtime_error("incompatible file format");
 		}
 	}
 	/* check device family */
@@ -162,7 +163,7 @@ bool Lattice::program_mem()
 	bool err;
 	LatticeBitParser _bit(_filename, _verbose);
 
-	printInfo("Open file " + _filename + " ", false);
+	printInfo("Open file ", false);
 	printSuccess("DONE");
 
 	err = _bit.parse();
@@ -280,12 +281,12 @@ bool Lattice::program_intFlash()
 	bool err;
 	uint64_t featuresRow;
 	uint16_t feabits;
-	uint8_t eraseMode;
+	uint8_t eraseMode = 0;
 	vector<string> ufm_data, cfg_data, ebr_data;
 
 	JedParser _jed(_filename, _verbose);
 
-	printInfo("Open file " + _filename + " ", false);
+	printInfo("Open file ", false);
 	printSuccess("DONE");
 
 	err = _jed.parse();
@@ -422,7 +423,7 @@ bool Lattice::program_extFlash(unsigned int offset)
 		_bit = new RawParser(_filename, false);
 	}
 
-	printInfo("Open file " + _filename + " ", false);
+	printInfo("Open file ", false);
 	printSuccess("DONE");
 
 	int err = _bit->parse();
@@ -430,6 +431,7 @@ bool Lattice::program_extFlash(unsigned int offset)
 	printInfo("Parse file ", false);
 	if (err == EXIT_FAILURE) {
 		printError("FAIL");
+		delete _bit;
 		return false;
 	} else {
 		printSuccess("DONE");

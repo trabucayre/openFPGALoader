@@ -26,6 +26,7 @@
 class Efinix: public Device {
 	public:
 		Efinix(FtdiSpi *spi, const std::string &filename,
+			const std::string &file_type,
 			uint16_t rst_pin, uint16_t done_pin,
 			int8_t verbose);
 		~Efinix();
