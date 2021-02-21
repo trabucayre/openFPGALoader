@@ -30,12 +30,13 @@ __Current support kits:__
 * [Terasic de0nano](https://www.terasic.com.tw/cgi-bin/page/archive.pl?No=593) (memory)
 * LambdaConcept ECPIX-5 (memory and flash)
 * [Efinix Xyloni](https://www.efinixinc.com/products-devkits-xyloni.html) (spi flash (*xyloni_spi*))
+* [honeycomb](https://github.com/Disasm/honeycomb-pcb) (memory and internal flash)
 
 __Supported (tested) FPGA:__
 
 * Anlogic [EG4S20](http://www.anlogic.com/prod_view.aspx?TypeId=10&Id=168&FId=t3:10:3) (SRAM and Flash)
 * Efinix [Trion T8](https://www.efinixinc.com/products-trion.html) (active mode)
-* Gowin [GW1N (GW1N-1, GW1N-4, GW1NR-9)](https://www.gowinsemi.com/en/product/detail/2/) (SRAM and Flash)
+* Gowin [GW1N (GW1N-1, GW1N-4, GW1NR-9, GW1NS-2C)](https://www.gowinsemi.com/en/product/detail/2/) (SRAM and Flash)
 * Lattice [iCE40 (HX1K,HX8K, UP5K)](https://www.latticesemi.com/en/Products/FPGAandCPLD/iCE40)
 * Lattice [MachXO2](https://www.latticesemi.com/en/Products/FPGAandCPLD/MachXO2) (SRAM and Flash)
 * Lattice [MachXO3LF](http://www.latticesemi.com/en/Products/FPGAandCPLD/MachXO3.aspx) (SRAM and Flash)
@@ -63,6 +64,7 @@ __Supported cables:__
 * FT232RL and FT231X: generic USB<->UART converters in bitbang mode
 * Tang Nano USB-JTAG interface: FT2232C clone based on CH552 microcontroler
   (with some limitations and workaround)
+* honeycomb USB-JTAG interface: FT2232C clone based on STM32F042 microcontroler
 
 ## compile and install
 
