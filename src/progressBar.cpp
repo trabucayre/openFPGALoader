@@ -17,6 +17,8 @@
 
 #include <stdio.h>
 #include <stdlib.h>
+#include <chrono>
+#include <string>
 #include "progressBar.hpp"
 #include "display.hpp"
 
@@ -24,7 +26,7 @@ ProgressBar::ProgressBar(std::string mess, int maxValue, int progressLen,
 		bool quiet): _mess(mess), _maxValue(maxValue),
 		_progressLen(progressLen), _quiet(quiet), _first(true)
 {
-	last_time = clock();
+	last_time = std::chrono::system_clock::now();
 }
 void ProgressBar::display(int value, char force)
 {
@@ -36,8 +38,11 @@ void ProgressBar::display(int value, char force)
 		return;
 	}
 
-	clock_t this_time = clock();
-	if (!force && ((((float)(this_time - last_time))/CLOCKS_PER_SEC) < 0.2))
+	std::chrono::time_point<std::chrono::system_clock> this_time;
+	this_time = std::chrono::system_clock::now();
+	std::chrono::duration<double> diff = this_time - last_time;
+
+	if (!force && diff.count() < 1)
 	{
 		return;
 	}
@@ -64,7 +69,7 @@ void ProgressBar::done()
 void ProgressBar::fail()
 {
 	if (_quiet) {
-		printError("\nFail");
+		printError("Fail");
 	} else {
 		display(_maxValue, true);
 		printError("\nFail");
