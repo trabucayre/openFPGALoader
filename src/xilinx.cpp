@@ -99,15 +99,17 @@ void Xilinx::program(unsigned int offset)
 
 	printSuccess("DONE");
 
-	int err = bit->parse();
 	printInfo("Parse file ", false);
-	if (err == EXIT_FAILURE) {
+	if (bit->parse() == EXIT_FAILURE) {
 		printError("FAIL");
 		delete bit;
 		return;
 	} else {
 		printSuccess("DONE");
 	}
+
+	if (_verbose)
+		bit->displayHeader();
 
 	if (_mode == Device::SPI_MODE) {
 		program_spi(bit, offset);

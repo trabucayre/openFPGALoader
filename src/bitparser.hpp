@@ -3,6 +3,7 @@
 
 #include <iostream>
 #include <fstream>
+#include <string>
 
 #include "configBitstreamParser.hpp"
 
@@ -13,14 +14,7 @@ class BitParser: public ConfigBitstreamParser {
 		int parse() override;
 
 	private:
-		int parseField();
-		//std::string fieldA;
-		//std::string part_name;
-		//std::string date;
-		//std::string hour;
-		//std::string design_name;
-		//std::string userID;
-		//std::string toolVersion;
+		int parseHeader();
 		bool _reverseOrder;
 };
 

@@ -77,14 +77,6 @@ DFUFileParser::DFUFileParser(const string &filename, bool verbose):
 		_dwCRC(0), _bLength(0)
 {}
 
-void DFUFileParser::displayHeader()
-{
-	cout << "bitstream header infos" << endl;
-	for (auto it = _hdr.begin(); it != _hdr.end(); it++) {
-		cout << (*it).first << ": " << (*it).second << endl;
-	}
-}
-
 /* USB Device firmware Upgrade Specification, Revision 1.1 B */
 /* p.40-47 */
 int DFUFileParser::parseHeader()
@@ -140,18 +132,12 @@ int DFUFileParser::parseHeader()
 
 int DFUFileParser::parse()
 {
-	_fd.read((char *)&_raw_data[0], sizeof(char) * _file_size);
-	if (_fd.gcount() != _file_size) {
-		printError("Error: fail to read " + _filename);
-		return EXIT_FAILURE;
-	}
-
 	int ret = parseHeader();
 	if (ret < 0)
 		return EXIT_FAILURE;
 
 	_bit_data.resize(_file_size - _bLength);
-	copy(_raw_data.begin(), _raw_data.end() - _bLength, _bit_data.begin());
+	std::move(_raw_data.begin(), _raw_data.end(), _bit_data.begin());
 
 	/* If file contains suffix check CRC */
 	if (ret != 0) {

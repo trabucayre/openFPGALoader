@@ -42,21 +42,12 @@ AnlogicBitParser::~AnlogicBitParser()
 {
 }
 
-void AnlogicBitParser::displayHeader()
-{
-	cout << "Anlogic bitstream header infos" << endl;
-	for (auto it = _hdr.begin(); it != _hdr.end(); it++) {
-		cout << (*it).first << ": " << (*it).second << endl;
-	}
-}
-
 /* read all ascii lines starting with '#'
  * stop when an empty line is found
  */
 int AnlogicBitParser::parseHeader()
 {
 	int ret = 0;
-	printInfo("parseHeader");
 
 	string buffer;
 	istringstream lineStream(_raw_data);
@@ -71,7 +62,7 @@ int AnlogicBitParser::parseHeader()
 
 		if (buffer[0] != '#') {
 			printError("header must start with #\n");
-			return EXIT_FAILURE;
+			return -1;
 		}
 
 		string content = buffer.substr(2); // drop '# '
@@ -96,12 +87,6 @@ int AnlogicBitParser::parseHeader()
 int AnlogicBitParser::parse()
 {
 	int end_header = 0;
-	/* fill raw buffer with file content */
-	_fd.read((char *)&_raw_data[0], sizeof(char) * _file_size);
-	if (_fd.gcount() != _file_size) {
-		printError("Error: fails to read full file content");
-		return EXIT_FAILURE;
-	}
 
 	/* parse header */
 	if ((end_header = parseHeader()) == -1)

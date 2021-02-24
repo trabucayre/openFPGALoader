@@ -18,6 +18,8 @@
 #ifndef MCSPARSER_HPP
 #define MCSPARSER_HPP
 
+#include <string>
+
 #include "configBitstreamParser.hpp"
 
 class McsParser: public ConfigBitstreamParser {
@@ -26,8 +28,6 @@ class McsParser: public ConfigBitstreamParser {
 		int parse() override;
 
 	private:
-		int parseLine(std::string buffer);
-
 		int _base_addr;
 		bool _reverseOrder;
 };

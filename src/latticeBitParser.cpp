@@ -23,6 +23,10 @@
 #include <cctype>
 #include <iostream>
 #include <locale>
+#include <sstream>
+#include <utility>
+
+#include "display.hpp"
 
 #include "latticeBitParser.hpp"
 
@@ -30,96 +34,75 @@ using namespace std;
 
 LatticeBitParser::LatticeBitParser(const string &filename, bool verbose):
 	ConfigBitstreamParser(filename, ConfigBitstreamParser::BIN_MODE, verbose),
-	_attribs(), _endHeader(0)
+	_endHeader(0)
 {}
 
 LatticeBitParser::~LatticeBitParser()
 {
 }
 
-void LatticeBitParser::displayHeader()
-{
-	cout << "Lattice bitstream header infos" << endl;
-	for (auto it = _attribs.begin(); it != _attribs.end(); it++) {
-		cout << (*it).first << ": " << (*it).second << endl;
-	}
-}
-
 int LatticeBitParser::parseHeader()
 {
-	int currPos = _fd.tellg();
-	char tmp[_file_size-currPos];
-	char field[256];
-	bool foundEndHeader = false;
-	uint32_t *d;
+	int currPos = 0;
 
-	_fd.read(tmp, (_file_size-currPos)*sizeof(char));
+	/* check header signature */
 
-	for (int i = 0; i < _file_size-currPos;) {
-		if ((unsigned char)tmp[i] == 0xff) {
-			d = (uint32_t*)(tmp+i);
-			if (d[0] != 0xBDffffff && (0xffffff00 & d[1]) != 0x3BFFFF00){
-				foundEndHeader = true;
-				_endHeader = i + currPos -1;
-				break;
-			}
-			i++;
-		} else {
-			strcpy(field, tmp+i);
-			string buff(field);
-			int pos = buff.find_first_of(':', 0);
-			if (pos != -1) {
-				string key(buff.substr(0, pos));
-				string val(buff.substr(pos+1, buff.size()));
-				int startPos = val.find_first_not_of(" ");
-				int endPos = val.find_last_not_of(" ")+1;
-				_attribs[key] = val.substr(startPos, endPos).c_str();
-			}
-			i+=strlen(field)+1;
+	/* radiant .bit start with LSCC */
+	if (_raw_data[0] == 'L') {
+		if (_raw_data.substr(0, 4) != "LSCC") {
+			printf("Wrong File %s\n", _raw_data.substr(0, 4).c_str());
+			return EXIT_FAILURE;
 		}
+		currPos += 4;
 	}
 
-	return (foundEndHeader) ? EXIT_SUCCESS : EXIT_FAILURE;
+	/* bit file comment area start with 0xff00 */
+	if ((uint8_t)_raw_data[currPos] != 0xff || (uint8_t)_raw_data[currPos + 1] != 0x00) {
+		printf("Wrong File %02x%02x\n", (uint8_t) _raw_data[currPos],
+			(uint8_t)_raw_data[currPos]);
+		return EXIT_FAILURE;
+	}
+	currPos+=2;
+
+
+	_endHeader = _raw_data.find(0xff, currPos);
+	if (_endHeader == string::npos) {
+		printError("Error: preamble not found\n");
+		return EXIT_FAILURE;
+	}
+
+	/* parse header */
+	istringstream lineStream(_raw_data.substr(currPos, _endHeader-currPos));
+	string buff;
+	while (std::getline(lineStream, buff, '\0')) {
+		size_t pos = buff.find_first_of(':', 0);
+		if (pos != string::npos) {
+			string key(buff.substr(0, pos));
+			string val(buff.substr(pos+1, buff.size()));
+			int startPos = val.find_first_not_of(" ");
+			int endPos = val.find_last_not_of(" ")+1;
+			_hdr[key] = val.substr(startPos, endPos).c_str();
+		}
+	}
+	return EXIT_SUCCESS;
 }
 
 int LatticeBitParser::parse()
 {
-	uint8_t dummy[2];
-
-	_fd.read(reinterpret_cast<char*>(&dummy), 2*sizeof(uint8_t));
-
-	/* radiant .bit start with LSCC */
-	if (dummy[0] == 'L') {
-		uint8_t dummy2[2];
-		_fd.read(reinterpret_cast<char*>(&dummy2), 2*sizeof(uint8_t));
-		if (!(dummy[1] == 'S' && dummy2[0] == 'C' && dummy2[1] == 'C')) {
-			printf("Wrong File %c%c%c%c\n",
-				dummy[0], dummy[1],
-				dummy2[0], dummy2[1]);
-			return EXIT_FAILURE;
-		}
-		_fd.read(reinterpret_cast<char*>(&dummy), 2*sizeof(uint8_t));
-	}
-
-	/* bit file comment area start with 0xff00 */
-	if (dummy[0] != 0xff || dummy[1] != 0x00) {
-		printf("Wrong File %02x%02x\n", dummy[0], dummy[1]);
-		return EXIT_FAILURE;
-	}
-
 	/* until 0xFFFFBDB3 0xFFFF */
-	if (parseHeader() == EXIT_FAILURE)
+	if (parseHeader() < 0)
 		return EXIT_FAILURE;
+
+	/* check preamble */
+	if ((*(uint32_t *)&_raw_data[_endHeader+1]) != 0xb3bdffff) {
+		printError("Error: missing preamble\n");
+		return EXIT_FAILURE;
+	}
 
 	/* read All data */
-	_fd.seekg(_endHeader, _fd.beg);
-	char buffer[_file_size];
-	int end = _file_size-_endHeader;
-	_fd.read(buffer, end);
-
-	for (int i = 0; i < end; i++)
-		_bit_data+=(buffer[i]);
-
+	_bit_data.resize(_raw_data.size() - _endHeader);
+	std::move(_raw_data.begin()+_endHeader, _raw_data.end(), _bit_data.begin());
 	_bit_length = _bit_data.size() * 8;
+
 	return 0;
 }

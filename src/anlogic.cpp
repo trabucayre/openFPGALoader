@@ -23,6 +23,7 @@
 #include "anlogicBitParser.hpp"
 #include "jtag.hpp"
 #include "device.hpp"
+#include "display.hpp"
 #include "progressBar.hpp"
 #include "spiFlash.hpp"
 
@@ -76,7 +77,18 @@ void Anlogic::program(unsigned int offset)
 	}
 
 	AnlogicBitParser bit(_filename, (_mode == Device::MEM_MODE), _verbose);
-	bit.parse();
+
+	printInfo("Parse file ", false);
+	if (bit.parse() == EXIT_FAILURE) {
+		printError("FAIL");
+		return;
+	} else {
+		printSuccess("DONE");
+	}
+
+	if (_verbose)
+		bit.displayHeader();
+
 	uint8_t *data = bit.getData();
 	int len = bit.getLength() / 8;
 

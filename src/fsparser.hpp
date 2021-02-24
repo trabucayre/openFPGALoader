@@ -33,8 +33,6 @@ class FsParser: public ConfigBitstreamParser {
 
 		uint16_t checksum() {return _checksum;}
 
-		void displayHeader();
-
 	private:
 		int parseHeader();
 		/**

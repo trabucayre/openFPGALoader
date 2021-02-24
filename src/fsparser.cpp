@@ -16,6 +16,7 @@
  */
 
 #include <iostream>
+#include <sstream>
 #include <vector>
 #include <cstdio>
 
@@ -46,12 +47,14 @@ uint64_t FsParser::bitToVal(const char *bits, int len)
 
 int FsParser::parseHeader()
 {
-	int ret = 1;
+	int ret = 0;
 	string buffer;
 	int line_index = 0;
 
-	while (1){
-		std::getline(_fd, buffer, '\n');
+	istringstream lineStream(_raw_data);
+
+	while (std::getline(lineStream, buffer, '\n')) {
+		ret += buffer.size() + 1;
 		if (buffer.empty())
 			break;
 		/* drop all comment, base analyze on header */
@@ -67,7 +70,7 @@ int FsParser::parseHeader()
 		uint64_t val = bitToVal(buffer.c_str(), buffer.size());
 
 		switch (key) {
-			case 0x06:
+			case 0x06: /* idCode */
 				_idcode = (0xffffffff & val);
 				_hdr["idcode"] = string(8, ' ');
 				snprintf(&_hdr["idcode"][0], 9, "%08x", _idcode);
@@ -238,11 +241,4 @@ int FsParser::parse()
 	printSuccess("Done");
 
 	return 0;
-}
-
-void FsParser::displayHeader()
-{
-	cout << "bitstream header infos" << endl;
-	for (auto it = _hdr.begin(); it != _hdr.end(); it++)
-		cout << (*it).first << ": " << (*it).second << endl;
 }

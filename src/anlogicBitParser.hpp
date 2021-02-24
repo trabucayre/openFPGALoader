@@ -34,7 +34,6 @@ class AnlogicBitParser: public ConfigBitstreamParser {
 			bool verbose = false);
 		~AnlogicBitParser();
 		int parse() override;
-		void displayHeader();
 
 	private:
 		int parseHeader();

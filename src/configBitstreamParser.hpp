@@ -1,9 +1,11 @@
 #ifndef CONFIGBITSTREAMPARSER_H
 #define CONFIGBITSTREAMPARSER_H
 
+#include <stdint.h>
+
 #include <iostream>
 #include <fstream>
-#include <stdint.h>
+#include <string>
 #include <map>
 
 class ConfigBitstreamParser {
@@ -14,6 +16,11 @@ class ConfigBitstreamParser {
 		virtual int parse() = 0;
 		uint8_t *getData() {return (uint8_t*)_bit_data.c_str();}
 		int getLength() {return _bit_length;}
+
+		/**
+		 * \brief display header informations
+		 */
+		virtual void displayHeader();
 
 		/**
 		 * \brief get header list of keys/values
@@ -27,7 +34,7 @@ class ConfigBitstreamParser {
 		 * \return associated value for the key
 		 */
 		std::string getHeaderVal(std::string key);
-	
+
 		enum {
 			ASCII_MODE = 0,
 			BIN_MODE = std::ifstream::binary
@@ -40,7 +47,6 @@ class ConfigBitstreamParser {
 		int _bit_length;
 		int _file_size;
 		bool _verbose;
-		std::ifstream _fd;
 		std::string _bit_data;
 		std::string _raw_data; /**< unprocessed file content */
 		std::map<std::string, std::string> _hdr;

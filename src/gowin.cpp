@@ -81,8 +81,21 @@ Gowin::Gowin(Jtag *jtag, const string filename, const string &file_type,
 				_mode = Device::FLASH_MODE;
 			else
 				_mode = Device::MEM_MODE;
-			_fs = new FsParser(_filename, _mode == Device::MEM_MODE, _verbose);
-			_fs->parse();
+			try {
+				_fs = new FsParser(_filename, _mode == Device::MEM_MODE, _verbose);
+			} catch (std::exception &e) {
+				throw std::runtime_error(e.what());
+			}
+
+			printInfo("Parse file ", false);
+			if (_fs->parse() == EXIT_FAILURE) {
+				printError("FAIL");
+				delete _fs;
+				throw std::runtime_error("can't parse file");
+			} else {
+				printSuccess("DONE");
+			}
+
 			if (_verbose)
 				_fs->displayHeader();
 		} else {

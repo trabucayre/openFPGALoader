@@ -24,10 +24,6 @@ class DFUFileParser: public ConfigBitstreamParser {
 		 */
 		DFUFileParser(const std::string &filename, bool verbose);
 		/*!
-		 * \brief display suffix infos
-		 */
-		void displayHeader();
-		/*!
 		 * \brief read full content of the file, fill the buffer
 		 * \return EXIT_SUCCESS is file is fully read, EXIT_FAILURE otherwhise
 		 */

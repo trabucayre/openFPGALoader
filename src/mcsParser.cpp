@@ -15,7 +15,11 @@
  * along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
 
+#include <sstream>
+#include <string>
+
 #include "configBitstreamParser.hpp"
+#include "display.hpp"
 #include "mcsParser.hpp"
 
 using namespace std;
@@ -50,61 +54,62 @@ McsParser::McsParser(const string &filename, bool reverseOrder, bool verbose):
 int McsParser::parse()
 {
 	string str;
-	int ret;
+	istringstream lineStream(_raw_data);
 
-	do {
-		getline(_fd, str);
-		ret = parseLine(str);
-	} while (ret == 0);
-	return (ret < 0) ? EXIT_FAILURE : EXIT_SUCCESS;
-}
+	while (std::getline(lineStream, str, '\n')) {
+		char *ptr;
+		uint8_t sum = 0;
+		uint16_t tmp, byteLen, type, checksum;
+		uint32_t addr, loc_addr;
 
-int McsParser::parseLine(string buffer)
-{
-	const char *buff = buffer.c_str();
-	uint16_t tmp, byteLen, type, checksum;
-	uint32_t addr, loc_addr;
-	uint8_t sum = 0;
+		/* if '\r' is present -> drop */
+		if (str.back() == '\r')
+			str.pop_back();
 
-	if (buff[0] != ':') {
-		cout << "Error: a line must start with ':'" << endl;
-		return -1;
-	}
-	/* len */
-	sscanf(buff + LEN_BASE, "%2hx", &byteLen);
-	/* address */
-	sscanf(buff + ADDR_BASE, "%4x", &addr);
-	/* type */
-	sscanf(buff + TYPE_BASE, "%2hx", &type);
-	/* checksum */
-	sscanf(buff + DATA_BASE + byteLen * 2, "%2hx", &checksum);
-
-	sum = byteLen + type + (addr & 0xff) + ((addr >> 8) & 0xff);
-
-	if (type == 0) {
-		loc_addr = _base_addr + addr;
-		char *ptr = (char *)(buff + DATA_BASE);
-		for (int i = 0; i < byteLen; i++, ptr += 2) {
-			sscanf(ptr, "%2hx", &tmp);
-			_bit_data[loc_addr + i] = (_reverseOrder)? reverseByte(tmp):tmp;
-			sum += tmp;
+		if (str[0] != ':') {
+			printError("Error: a line must start with ':'");
+			return EXIT_FAILURE;
 		}
-		_bit_length += (byteLen * 8);
-	} else if (type == 1) {
-		return 1;
-	} else if (type == 4) {
-		sscanf(buff + DATA_BASE, "%4x", &loc_addr);
-		_base_addr = (loc_addr << 16);
-		sum += (loc_addr & 0xff) + ((loc_addr >> 8) & 0xff);
-	} else {
-		cerr << "Error: unknown type" << endl;
-		return -1;
+		/* len */
+		sscanf((char *)&str[LEN_BASE], "%2hx", &byteLen);
+		/* address */
+		sscanf((char *)&str[ADDR_BASE], "%4x", &addr);
+		/* type */
+		sscanf((char *)&str[TYPE_BASE], "%2hx", &type);
+		/* checksum */
+		sscanf((char *)&str[DATA_BASE + byteLen * 2], "%2hx", &checksum);
+
+		sum = byteLen + type + (addr & 0xff) + ((addr >> 8) & 0xff);
+
+		switch (type) {
+		case 0:
+			loc_addr = _base_addr + addr;
+			ptr = (char *)&str[DATA_BASE];
+			for (int i = 0; i < byteLen; i++, ptr += 2) {
+				sscanf(ptr, "%2hx", &tmp);
+				_bit_data[loc_addr + i] = (_reverseOrder)? reverseByte(tmp):tmp;
+				sum += tmp;
+			}
+			_bit_length += (byteLen * 8);
+			break;
+		case 1:
+			return EXIT_SUCCESS;
+			break;
+		case 4:
+			sscanf((char*)&str[DATA_BASE], "%4x", &loc_addr);
+			_base_addr = (loc_addr << 16);
+			sum += (loc_addr & 0xff) + ((loc_addr >> 8) & 0xff);
+			break;
+		default:
+			printError("Error: unknown type");
+			return EXIT_FAILURE;
+		}
+
+		if (checksum != (0xff&((~sum)+1))) {
+			printError("Error: wrong checksum");
+			return EXIT_FAILURE;
+		}
 	}
 
-	if (checksum != (0xff&((~sum)+1))) {
-		cerr << "Error: wrong checksum" << endl;
-		return -1;
-	}
-
-	return 0;
+	return EXIT_SUCCESS;
 }

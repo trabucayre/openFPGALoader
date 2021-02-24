@@ -29,12 +29,10 @@ class LatticeBitParser: public ConfigBitstreamParser {
 		LatticeBitParser(const std::string &filename, bool verbose = false);
 		~LatticeBitParser();
 		int parse() override;
-		void displayHeader();
 
 	private:
 		int parseHeader();
-		std::map<std::string, std::string> _attribs;
-		int _endHeader;
+		size_t _endHeader;
 };
 
 #endif  // LATTICEBITPARSER_HPP_

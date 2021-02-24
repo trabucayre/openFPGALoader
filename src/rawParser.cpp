@@ -16,6 +16,7 @@
  */
 
 #include <stdexcept>
+#include <utility>
 
 #include "configBitstreamParser.hpp"
 #include "display.hpp"
@@ -30,16 +31,18 @@ RawParser::RawParser(const string &filename, bool reverseOrder):
 
 int RawParser::parse()
 {
-	_fd.read((char *)&_raw_data[0], sizeof(char) * _file_size);
-	if (_fd.gcount() != _file_size) {
-		printError("Error: fail to read " + _filename);
-		return EXIT_FAILURE;
-	}
-	//cout << _bit_data << endl;
 	_bit_data.resize(_file_size);
-	for (int i = 0; i < _file_size; i++)
-		_bit_data[i] = (_reverseOrder) ? reverseByte(_raw_data[i]): _raw_data[i];
-	_bit_length = _bit_data.size() * 8;
-	//cout << "file length " << _bit_length << endl;
+	std::move(_raw_data.begin(), _raw_data.end(), _bit_data.begin());
+	_bit_length = _bit_data.size();
+
+	if (_reverseOrder) {
+		for (int i = 0; i < _bit_length; i++) {
+			_bit_data[i] = reverseByte(_bit_data[i]);
+		}
+	}
+
+	/* convert size to bit */
+	_bit_length *= 8;
+
 	return EXIT_SUCCESS;
 }

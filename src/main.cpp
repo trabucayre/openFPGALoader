@@ -293,7 +293,7 @@ int main(int argc, char **argv)
 		return EXIT_FAILURE;
 	}
 
-	if (!args.bit_file.empty()) {
+	if (!args.bit_file.empty() || !args.file_type.empty()) {
 		try {
 			fpga->program(args.offset);
 		} catch (std::exception &e) {

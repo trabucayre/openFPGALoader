@@ -15,6 +15,7 @@
  * along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
 
+#include <sstream>
 #include <stdexcept>
 
 #include "configBitstreamParser.hpp"
@@ -30,16 +31,11 @@ EfinixHexParser::EfinixHexParser(const string &filename, bool reverseOrder):
 
 int EfinixHexParser::parse()
 {
-	_fd.read((char *)&_raw_data[0], sizeof(char) * _file_size);
-	if (_fd.gcount() != _file_size) {
-		printError("Error: fails to read full file content");
-		return EXIT_FAILURE;
-	}
+	string buffer;
+	istringstream lineStream(_raw_data);
 
-	for (int offset = 0; offset < _file_size; offset += 3) {
-		char val;
-		sscanf(&_raw_data[offset], "%hhx", &val);
-		_bit_data += val;
+	while (std::getline(lineStream, buffer, '\n')) {
+		_bit_data += std::stol(buffer, nullptr, 16);
 	}
 	_bit_length = _bit_data.size() * 8;
 

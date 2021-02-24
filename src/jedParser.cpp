@@ -32,6 +32,7 @@
 #include <utility>
 #include <vector>
 
+#include "display.hpp"
 #include "jedParser.hpp"
 
 /* GGM: TODO
@@ -56,10 +57,10 @@ JedParser::JedParser(string filename, bool verbose):
 string JedParser::readline()
 {
 	string buffer;
-	std::getline(_fd, buffer, '\n');
-	if (buffer.size() != 0) {
+	std::getline(_ss, buffer, '\n');
+	if (!buffer.empty()) {
 		/* if '\r' is present -> drop */
-		if (buffer[buffer.size() -1] == '\r')
+		if (buffer.back() == '\r')
 			buffer.pop_back();
 	}
 	return buffer;
@@ -75,10 +76,10 @@ vector<string> JedParser::readJEDLine()
 
 	do {
 		buffer = readline();
-		if (buffer.size() == 0)
+		if (buffer.empty())
 			break;
 
-		if (buffer[buffer.size()-1] == '*') {
+		if (buffer.back() == '*') {
 			inLine = false;
 			buffer.pop_back();
 		}
@@ -107,7 +108,7 @@ void JedParser::buildDataArray(const string &content, struct jed_data &jed)
 	jed.len += data_len;
 }
 
-void JedParser::display()
+void JedParser::displayHeader()
 {
 	printf("feabits :\n");
 	printf("%04x <-> %d\n", _feabits, _feabits);
@@ -147,13 +148,18 @@ void JedParser::display()
 
 	printf("Pin Count  : %d\n", _pin_count);
 	printf("Fuse Count : %d\n", _fuse_count);
+
+	for (size_t i = 0; i < _data_list.size(); i++) {
+		printf("area[%zd] %d %d ", i, _data_list[i].offset, _data_list[i].len);
+		printf("%s\n", _data_list[i].associatedPrevNote.c_str());
+	}
 }
 
 /* E field, for latice contains two sub-field
  * 1: Exxxx\n : feature Row
  * 2: yyyy*\n : feabits
  */
-void JedParser::parseEField(vector<string> content)
+void JedParser::parseEField(const vector<string> &content)
 {
 	_featuresRow = 0;
 	string featuresRow = content[0].substr(1);
@@ -166,7 +172,7 @@ void JedParser::parseEField(vector<string> content)
 	}
 }
 
-void JedParser::parseLField(vector<string> content)
+void JedParser::parseLField(const vector<string> &content)
 {
 	int start_offset;
 	sscanf(content[0].substr(1).c_str(), "%d", &start_offset);
@@ -176,7 +182,6 @@ void JedParser::parseLField(vector<string> content)
 	 * Lxxxx<EOF>
 	 */
 	struct jed_data d;
-	string buffer;
 	d.offset = start_offset;
 	d.len = 0;
 	if (content.size() > 1) {
@@ -199,39 +204,31 @@ int JedParser::parse()
 {
 	string previousNote;
 
-	if (!_fd.is_open()) {
-		_fd.open(_filename);
-		if (!_fd.is_open()) {
-			cerr << "error to opening jed file " << _filename << endl;
-			return EXIT_FAILURE;
-		}
-	}
+	_ss.str(_raw_data);
 
 	string content;
-
-	_fd.seekg(0, _fd.beg);
 
 	/* JED file may have some ASCII line before STX (0x02)
 	 * read until STX or EOF
 	 */
 	char c;
 	do {
-		_fd.read(&c, 1);
-	} while (_fd && c != 0x02);
+		_ss.read(&c, 1);
+	} while (_ss && c != 0x02);
 
 	/* if file descriptor == EOF
 	 * return an ERROR
 	 */
-	if (!_fd) {
-		cerr << "Error: STX not found: wrong file" << endl;
+	if (!_ss) {
+		printError("Error: STX not found: wrong file");
 		return EXIT_FAILURE;
 	}
 
 	/* the line starting with STX may contains
 	 * others informations */
-	_fd.read(&c, 1);
+	_ss.read(&c, 1);
 	if (c != '*')  // something to process
-		_fd.seekg(-1, _fd.cur);
+		_ss.seekg(-1, _ss.cur);
 	else  // STX in a dedicated line
 		content = readline();
 
@@ -307,16 +304,9 @@ int JedParser::parse()
 	} while (lines[0][0] != 0x03);
 
 	int size = 0;
-	for (size_t i = 0; i < _data_list.size(); i++) {
-		if (_verbose) {
-			printf("area[%zd] %d %d ", i, _data_list[i].offset, _data_list[i].len);
-			printf("%s\n", _data_list[i].associatedPrevNote.c_str());
-		}
-		size += _data_list[i].len;
-	}
-
 	uint16_t checksum = 0;
 	for (size_t area = 0; area < _data_list.size(); area++) {
+		size += _data_list[area].len;
 		for (size_t line = 0; line < _data_list[area].data.size(); line++) {
 			for (size_t col = 0; col < _data_list[area].data[line].size(); col++)
 				checksum += (uint8_t)_data_list[area].data[line][col];
@@ -326,7 +316,7 @@ int JedParser::parse()
 	if (_verbose)
 		printf("theorical checksum %x -> %x\n", _checksum, checksum);
 	if (_checksum != checksum) {
-		cerr << "Error: wrong checksum" << endl;
+		printError("Error: wrong checksum");
 		return EXIT_FAILURE;
 	}
 
@@ -334,7 +324,7 @@ int JedParser::parse()
 		printf("array size %zd\n", _data_list[0].data.size());
 
 	if (_fuse_count != size) {
-		cerr << "Not all fuses are programmed" << endl;
+		printError("Not all fuses are programmed");
 		return EXIT_FAILURE;
 	}
 

@@ -299,6 +299,9 @@ bool Lattice::program_intFlash()
 		printSuccess("DONE");
 	}
 
+	if (_verbose)
+		_jed.displayHeader();
+
 	/* bypass */
 	wr_rd(0xff, NULL, 0, NULL, 0);
 	/* ISC Enable 0xC6 followed by
@@ -436,6 +439,9 @@ bool Lattice::program_extFlash(unsigned int offset)
 	} else {
 		printSuccess("DONE");
 	}
+
+	if (_verbose)
+		_bit->displayHeader();
 
 	/*IR = 0h3A, DR=0hFE,0h68. Enter RUNTESTIDLE.
 	 * thank @GregDavill

@@ -70,22 +70,32 @@ void Efinix::program(unsigned int offset)
 		return;
 
 	ConfigBitstreamParser *bit;
-	if (_file_extension == "hex") {
-		bit = new EfinixHexParser(_filename, _verbose);
-	} else {
-		if (offset == 0) {
-			printError("Error: can't write raw data at the beginning of the flash");
-			throw std::exception();
+	try {
+		if (_file_extension == "hex") {
+			bit = new EfinixHexParser(_filename, _verbose);
+		} else {
+			if (offset == 0) {
+				printError("Error: can't write raw data at the beginning of the flash");
+				throw std::exception();
+			}
+			bit = new RawParser(_filename, false);
 		}
-		bit = new RawParser(_filename, false);
+	} catch (std::exception &e) {
+		printError("FAIL: " + std::string(e.what()));
+		return;
 	}
+
 	printInfo("Parse file ", false);
 	if (bit->parse() == EXIT_SUCCESS) {
 		printSuccess("DONE");
 	} else {
 		printError("FAIL");
+		delete bit;
 		return;
 	}
+
+	if (_verbose)
+		bit->displayHeader();
 
 	_spi->gpio_clear(_rst_pin);
 

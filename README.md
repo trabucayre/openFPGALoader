@@ -205,8 +205,26 @@ openFPGALoader [options] -r
 ```
 
 #### load bitstream device (memory or flash)
+
 ```bash
 openFPGALoader [options] /path/to/bitstream.ext
+```
+
+##### Using pipe
+
+```bash
+cat /path/to/bitstream.ext | openFPGALoader --file-type ext [options]
+```
+
+`--file-type` is required to detect file type
+
+Note: It's possible to load a bitstream through network:
+
+```bash
+# FPGA side
+nc -lp port | openFPGALoader --filetype xxx [option
+# Bitstream side
+nc -q 0 host port < /path/to/bitstream.ext
 ```
 
 #### Automatic file type detection bypass
