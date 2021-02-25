@@ -73,7 +73,7 @@ void FTDIpp_MPSSE::open_device(const std::string &serial, unsigned int baudrate)
 	if (_bus == -1 || _addr == -1)
 		ret = ftdi_usb_open_desc(_ftdi, _vid, _pid, NULL, serial.empty() ? NULL : serial.c_str());
 	else
-#if (OLD_FTDI_VERSION == 1)
+#if (FTDI_VERSION < 104)
 		ret = ftdi_usb_open_desc(_ftdi, _vid, _pid, _product, NULL);
 #else
 		ret = ftdi_usb_open_bus_addr(_ftdi, _bus, _addr);
@@ -105,8 +105,13 @@ int FTDIpp_MPSSE::close_device()
 		return EXIT_FAILURE;
 
 	/* purge FTDI */
+#if (FTDI_VERSION < 105)
 	ftdi_usb_purge_rx_buffer(_ftdi);
 	ftdi_usb_purge_tx_buffer(_ftdi);
+#else
+	ftdi_tciflush(_ftdi);
+	ftdi_tcoflush(_ftdi);
+#endif
 
 	/*
 	 * repompe de la fonction et des suivantes
@@ -151,7 +156,11 @@ int FTDIpp_MPSSE::init(unsigned char latency, unsigned char bitmask_mode,
 		return -1;
 	}
 
+#if (FTDI_VERSION < 105)
 	if (ftdi_usb_purge_buffers(_ftdi) != 0) {
+#else
+	if (ftdi_tcioflush(_ftdi) != 0) {
+#endif
 		cout << "reset error" << endl;
 		return -1;
 	}
@@ -279,7 +288,11 @@ int FTDIpp_MPSSE::setClkFreq(uint32_t clkHZ)
 		return -1;
 	}
 	ret = ftdi_read_data(_ftdi, buffer, 4);
+#if (FTDI_VERSION < 105)
 	ftdi_usb_purge_buffers(_ftdi);
+#else
+	ftdi_tcioflush(_ftdi);
+#endif
 
 	return real_freq;
 }
