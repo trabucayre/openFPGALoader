@@ -107,7 +107,12 @@ int FtdiJtagBitBang::setBitmode(uint8_t mode)
 	_bitmode = mode;
 
 	int ret = ftdi_set_bitmode(_ftdi, _tck_pin | _tms_pin | _tdi_pin, _bitmode);
+#if (FTDI_VERSION < 105)
+	ftdi_usb_purge_rx_buffer(_ftdi);
+	ftdi_usb_purge_tx_buffer(_ftdi);
+#else
 	ftdi_tcioflush(_ftdi);
+#endif
 	return ret;
 }
 
