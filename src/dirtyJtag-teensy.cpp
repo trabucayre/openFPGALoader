@@ -30,12 +30,25 @@
 
 using namespace std;
 
+//#define DIRTY_JTAG_TEENSY_4
+
+#ifdef DIRTY_JTAG_TEENSY_4
+
+#define DIRTYJTAG_VID 0x16C0 
+#define DIRTYJTAG_PID 0x1485 
+
+#define DIRTYJTAG_INTF		  0
+#define DIRTYJTAG_WRITE_EP    0x2 
+#define DIRTYJTAG_READ_EP     0x82
+
+#else
 #define DIRTYJTAG_VID 0x1209
 #define DIRTYJTAG_PID 0xC0CA
 
 #define DIRTYJTAG_INTF		  0
 #define DIRTYJTAG_WRITE_EP    0x01
 #define DIRTYJTAG_READ_EP     0x82
+#endif
 
 
 enum dirtyJtagCmd {
@@ -53,15 +66,6 @@ enum CommandModifier {
   EXTEND_LENGTH = 0x40,
   NO_READ       = 0x80
 };
-
-struct version_specific
-{
-	uint8_t no_read; //command modifer for xfer no read
-	uint16_t max_bits; //max bit count that can be transferred
-};
-
-static version_specific v_options[4] ={{0, 240}, {0, 240}, {NO_READ, 496}, {NO_READ, 4000}};
-
 
 enum dirtyJtagSig {
 	SIG_TCK =   (1 << 1),
@@ -233,8 +237,8 @@ int DirtyJtag::writeTDI(uint8_t *tx, uint8_t *rx, uint32_t len, bool end)
 		memset(tx_cpy, 0, real_byte_len);
 	tx_ptr = tx_cpy;
 
-	tx_buf[0] = CMD_XFER | (rx ? 0 : v_options[_version].no_read );
-	uint16_t max_bit_transfer_length = v_options[_version].max_bits;
+	tx_buf[0] = CMD_XFER | ((rx || (_version <= 1)) ? 0 : NO_READ);
+	uint16_t max_bit_transfer_length = (uint16_t[]){240, 496, 4000}[_version -1];
 	assert(max_bit_transfer_length %8 == 0);//need to cut the bits on byte size.
 	while (real_bit_len != 0) {
 		uint16_t bit_to_send = (real_bit_len > max_bit_transfer_length) ? max_bit_transfer_length : real_bit_len;
@@ -275,7 +279,7 @@ int DirtyJtag::writeTDI(uint8_t *tx, uint8_t *rx, uint32_t len, bool end)
 				if (ret < 0) {
 					cerr << "writeTDI: read: usb bulk read failed " << ret << endl;
 					return EXIT_FAILURE;
-				}
+				} 
 			} while (actual_length == 0);
 			assert((size_t)actual_length >= byte_to_send);
 		}
