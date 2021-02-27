@@ -75,14 +75,11 @@ Lattice::Lattice(Jtag *jtag, const string filename, const string &file_type,
 	if (!_file_extension.empty()) {
 		if (_file_extension == "jed" || _file_extension == "mcs") {
 			_mode = Device::FLASH_MODE;
-		} else if (_file_extension == "bit") {
+		} else if (_file_extension == "bit" || _file_extension == "bin") {
 			if (prg_type == Device::WR_FLASH)
 				_mode = Device::FLASH_MODE;
 			else
 				_mode = Device::MEM_MODE;
-		} else if (prg_type == Device::WR_FLASH) {
-			// for raw bin to flash at offset != 0
-			_mode = Device::FLASH_MODE;
 		} else {
 			throw std::runtime_error("incompatible file format");
 		}
@@ -418,13 +415,8 @@ bool Lattice::program_extFlash(unsigned int offset)
 		_bit = new McsParser(_filename, true, _verbose);
 	else if (_file_extension == "bit")
 		_bit = new LatticeBitParser(_filename, _verbose);
-	else {
-		if (offset == 0) {
-			printError("Error: can't write raw data at the beginning of the flash");
-			throw std::exception();
-		}
+	else
 		_bit = new RawParser(_filename, false);
-	}
 
 	printInfo("Open file ", false);
 	printSuccess("DONE");

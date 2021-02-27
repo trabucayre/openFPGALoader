@@ -402,7 +402,7 @@ openFPGALoader [-b yourBoard] [-c yourCable] -m project_name/*.bit
 ##### bit
 
 ```bash
-openFPGALoader [-b yourBoard] [-c yourCable] -f project_name/*.bit
+openFPGALoader [-b yourBoard] [-c yourCable] -f project_name/*.bit # or *.bin
 ```
 
 ##### mcs
