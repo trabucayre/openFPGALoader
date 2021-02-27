@@ -30,25 +30,12 @@
 
 using namespace std;
 
-//#define DIRTY_JTAG_TEENSY_4
-
-#ifdef DIRTY_JTAG_TEENSY_4
-
-#define DIRTYJTAG_VID 0x16C0 
-#define DIRTYJTAG_PID 0x1485 
-
-#define DIRTYJTAG_INTF		  0
-#define DIRTYJTAG_WRITE_EP    0x2 
-#define DIRTYJTAG_READ_EP     0x82
-
-#else
 #define DIRTYJTAG_VID 0x1209
 #define DIRTYJTAG_PID 0xC0CA
 
 #define DIRTYJTAG_INTF		  0
 #define DIRTYJTAG_WRITE_EP    0x01
 #define DIRTYJTAG_READ_EP     0x82
-#endif
 
 
 enum dirtyJtagCmd {
