@@ -54,6 +54,15 @@ enum CommandModifier {
   NO_READ       = 0x80
 };
 
+struct version_specific
+{
+	uint8_t no_read; //command modifer for xfer no read
+	uint16_t max_bits; //max bit count that can be transferred
+};
+
+static version_specific v_options[4] ={{0, 240}, {0, 240}, {NO_READ, 496}, {NO_READ, 4000}};
+
+
 enum dirtyJtagSig {
 	SIG_TCK =   (1 << 1),
 	SIG_TDI =   (1 << 2),
@@ -224,8 +233,8 @@ int DirtyJtag::writeTDI(uint8_t *tx, uint8_t *rx, uint32_t len, bool end)
 		memset(tx_cpy, 0, real_byte_len);
 	tx_ptr = tx_cpy;
 
-	tx_buf[0] = CMD_XFER | ((rx || (_version <= 1)) ? 0 : NO_READ);
-	uint16_t max_bit_transfer_length = (uint16_t[]){240, 496, 4000}[_version -1];
+	tx_buf[0] = CMD_XFER | (rx ? 0 : v_options[_version].no_read );
+	uint16_t max_bit_transfer_length = v_options[_version].max_bits;
 	assert(max_bit_transfer_length %8 == 0);//need to cut the bits on byte size.
 	while (real_bit_len != 0) {
 		uint16_t bit_to_send = (real_bit_len > max_bit_transfer_length) ? max_bit_transfer_length : real_bit_len;
