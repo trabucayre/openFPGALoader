@@ -65,6 +65,5 @@ class DirtyJtag : public JtagInterface {
 	uint8_t _tdi;
 	uint8_t _tms;
 	uint8_t _version;
-
 };
 #endif  // SRC_DIRTYJTAG_HPP_

@@ -61,6 +61,7 @@ enum dirtyJtagCmd {
 	CMD_CLK =    0x06
 };
 
+//Modifiers applicable only to DirtyJTAG2
 enum CommandModifier {
   EXTEND_LENGTH = 0x40,
   NO_READ       = 0x80
@@ -134,8 +135,8 @@ void DirtyJtag::getVersion()
 		ret = libusb_bulk_transfer(dev_handle, DIRTYJTAG_READ_EP,
 						rx_buf, 64, &actual_length, 1000);
 		if (ret < 0) {
-					cerr << "getVersion: read: usb bulk read failed " << ret << endl;
-					return;
+			cerr << "getVersion: read: usb bulk read failed " << ret << endl;
+			return;
 		}
 	} while (actual_length == 0);
 	if (!strncmp("DJTAG1\n", (char*)rx_buf, 7)) {
@@ -148,7 +149,6 @@ void DirtyJtag::getVersion()
 		cerr << "dirtyJtag version unknown" << endl;
 		_version = 0;
 	}
-
 }
 
 
@@ -261,12 +261,12 @@ int DirtyJtag::writeTDI(uint8_t *tx, uint8_t *rx, uint32_t len, bool end)
 		for (int i = 0; i < bit_to_send; i++)
 			if (tx_ptr[i >> 3] & (1 << (i & 0x07)))
 				tx_buf[header_offset + (i >> 3)] |= (0x80 >> (i & 0x07));
-		
+
 		actual_length = 0;
 		int ret = libusb_bulk_transfer(dev_handle, DIRTYJTAG_WRITE_EP,
 		        (unsigned char *)tx_buf, (byte_to_send + header_offset), &actual_length, 1000);
 		if ((ret < 0) || (actual_length != (int)(byte_to_send + header_offset))) {
-			cerr << "writeTDI: fill: usb bulk write failed " << actual_length << endl;
+			cerr << "writeTDI: fill: usb bulk write failed " << ret << "actual length: " << actual_length << endl;
 			return EXIT_FAILURE;
 		}
 		//cerr << actual_length << ", " << bit_to_send << endl;
@@ -315,7 +315,6 @@ int DirtyJtag::writeTDI(uint8_t *tx, uint8_t *rx, uint32_t len, bool end)
 			}
 		}
 	}
-
 	return EXIT_SUCCESS;
 }
 
