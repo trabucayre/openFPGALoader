@@ -58,10 +58,12 @@ class DirtyJtag : public JtagInterface {
 	bool _verbose;
 
 	int sendBitBang(uint8_t mask, uint8_t val, uint8_t *read, bool last);
+	void getVersion();
 
     libusb_device_handle *dev_handle;
 	libusb_context *usb_ctx;
 	uint8_t _tdi;
 	uint8_t _tms;
+	uint8_t _version;
 };
 #endif  // SRC_DIRTYJTAG_HPP_
