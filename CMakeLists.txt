@@ -7,6 +7,7 @@ add_definitions(-DVERSION=\"v${PROJECT_VERSION}\")
 
 option(BUILD_STATIC "Whether or not to build with static libraries" OFF)
 option(ENABLE_UDEV "use udev to search JTAG adapter from /dev/xx" ON)
+option(ENABLE_FPGALINK "enable fx2 cable support through libfpgalink" OFF)
 option(USE_PKGCONFIG "Use pkgconfig to find libraries" ON)
 option(LINK_CMAKE_THREADS "Use CMake find_package to link the threading library" OFF)
 
@@ -139,7 +140,25 @@ else()
 target_link_libraries(openFPGALoader
 	${LIBUSB_LIBRARIES}
 	${LIBFTDI_LIBRARIES}
+	
 )
+
+if (ENABLE_FPGALINK)
+	find_library(LIBFPGALINK libfpgalink)
+	if (${LIBFPGALINK} STREQUAL "LIBFPGALINK-NOTFOUND")
+		message("libfpgalink not found, disabling fpgalink support")
+		set(ENABLE_FPGALINK OFF)
+	else()
+		message("libfpgalink found: ${LIBFPGALINK}")
+		file(REAL_PATH  "../../include" INC_DIR BASE_DIRECTORY ${LIBFPGALINK})
+		add_definitions(-DUSE_LIBFPGALINK)
+		target_include_directories(openFPGALoader PRIVATE ${INC_DIR})
+		target_link_libraries(openFPGALoader ${LIBFPGALINK})
+		target_sources(openFPGALoader PRIVATE 
+			src/fpgalink.cpp
+			src/fpgalink.hpp)
+	endif()
+endif()
 
 if (${CMAKE_SYSTEM_NAME} MATCHES "Windows")
 	# winsock provides ntohs

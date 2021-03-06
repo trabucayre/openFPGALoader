@@ -383,7 +383,7 @@ int parse_opt(int argc, char **argv, struct arguments *args, jtag_pins_conf_t *p
 				"write bitstream in SRAM (default: true, only for Gowin and ECP5 devices)")
 			("o,offset",  "start offset in EEPROM",
 				cxxopts::value<unsigned int>(args->offset))
-			("pins", "pin config (only for ft232R) TDI:TDO:TCK:TMS",
+			("pins", "pin config (only for ft232R and fx2) TDI:TDO:TCK:TMS",
 				cxxopts::value<vector<string>>(pins))
 			("quiet", "Produce quiet output (no progress bar)",
 				cxxopts::value<bool>(quiet))
@@ -467,7 +467,7 @@ int parse_opt(int argc, char **argv, struct arguments *args, jtag_pins_conf_t *p
 			for (int i = 0; i < 4; i++) {
 				int pin_num;
 				try {
-					pin_num = std::stoi(pins[i], nullptr, 0);
+					pin_num = std::stoi(pins[i], nullptr, 16);
 				} catch (std::exception &e) {
 					if (pins_list.find(pins[i]) == pins_list.end()) {
 						printError("Invalid pin name");
@@ -475,8 +475,16 @@ int parse_opt(int argc, char **argv, struct arguments *args, jtag_pins_conf_t *p
 					}
 					pin_num = pins_list[pins[i]];
 				}
-
+#ifdef USE_LIBFPGALINK
+				if ((pin_num > 7 || pin_num < 0) &&
+					(pin_num > 0xD7 || pin_num < 0xD0) &&
+					(pin_num > 0xC7 || pin_num < 0xC0) &&
+					(pin_num > 0xB7 || pin_num < 0xB0) &&
+					(pin_num > 0xA7 || pin_num < 0xA0)) {
+#else 
 				if (pin_num > 7 || pin_num < 0) {
+#endif 
+
 					printError("Invalid pin ID");
 					throw std::exception();
 				}
