@@ -28,6 +28,7 @@ __Current support kits:__
 * [SeeedStudio Spartan Edge Accelerator Board](http://wiki.seeedstudio.com/Spartan-Edge-Accelerator-Board) (memory)
 * [Sipeed Tang Nano](https://tangnano.sipeed.com/en/) (memory)
 * [Sipeed Lichee Tang](https://tang.sipeed.com/en/hardware-overview/lichee-tang/) (memory and spi flash)
+* [Terasic DE0](https://www.terasic.com.tw/cgi-bin/page/archive.pl?No=364) (memory)
 * [Terasic de0nano](https://www.terasic.com.tw/cgi-bin/page/archive.pl?No=593) (memory)
 * LambdaConcept ECPIX-5 (memory and flash)
 * [Efinix Xyloni](https://www.efinixinc.com/products-devkits-xyloni.html) (spi flash (*xyloni_spi*))
@@ -47,6 +48,7 @@ __Supported (tested) FPGA:__
 * Xilinx Artix 7 [xc7a35ti, xc7a50t, xc7a100t, xc7a200t](https://www.xilinx.com/products/silicon-devices/fpga/artix-7.html) (memory and spi flash)
 * Xilinx Spartan 6 [xc6slx45](https://www.xilinx.com/products/silicon-devices/fpga/spartan-6.html) (memory)
 * Xilinx Spartan 7 [xc7s15, xc7s25, xc7s50](https://www.xilinx.com/products/silicon-devices/fpga/spartan-7.html) (memory (all) and spi flash (xc7s50))
+* Intel Cyclone III [EP3C16](https://www.intel.com/content/www/us/en/programmable/products/fpga/cyclone-series/cyclone-iii/support.html) (memory)
 * Intel Cyclone IV CE [EP4CE22](https://www.intel.com/content/www/us/en/products/programmable/fpga/cyclone-iv/features.html) (memory. See note below)
 * Intel Cyclone V E [5CEA2](https://www.intel.com/content/www/us/en/products/programmable/fpga/cyclone-v.html)
 * Intel Cyclone 10 LP [10CL025](https://www.intel.com/content/www/us/en/products/programmable/fpga/cyclone-10.html)
@@ -124,7 +126,7 @@ when a converter is plugged.
 
 ```bash
 $ sudo cp 99-openfpgaloader.rules /etc/udev/rules.d/
-$ sudo udevadm control --reload-rules && udevadm trigger # force udev to take new rule
+$ sudo udevadm control --reload-rules && sudo udevadm trigger # force udev to take new rule
 $ sudo usermod -a YourUserName -G plugdev # add user to plugdev group
 ```
 After that you need to unplug and replug your device.
@@ -261,7 +263,7 @@ allowed values are:
 |  RI   | 7  |
 
 
-### CYC1000 and de0nano
+### CYC1000, DE0, de0nano
 
 #### loading in memory:
 
@@ -272,6 +274,10 @@ quartus_cpf -c -q -g 3.3 -n 12.0MHz p project_name.sof project_name.svf
 file load:
 ```bash
 openFPGALoader -b cyc1000 project_name.svf
+```
+
+```bash
+openFPGALoader -b de0 -b project_name.svf
 ```
 
 ```bash

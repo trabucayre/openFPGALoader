@@ -90,6 +90,7 @@ static std::map <std::string, target_cable_t> board_list = {
 	JTAG_BOARD("colorlight", "",           0, 0),
 	JTAG_BOARD("crosslinknx_evn", "ft2232", 0, 0),
 	JTAG_BOARD("cyc1000",    "ft2232",     0, 0),
+	JTAG_BOARD("de0",        "usb-blaster",0, 0),
 	JTAG_BOARD("de0nano",    "usb-blaster",0, 0),
 	JTAG_BOARD("ecp5_evn",   "ft2232",     0, 0),
 	SPI_BOARD("fireant", "efinix", "ft232",
