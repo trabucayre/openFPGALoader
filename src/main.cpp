@@ -467,7 +467,7 @@ int parse_opt(int argc, char **argv, struct arguments *args, jtag_pins_conf_t *p
 			for (int i = 0; i < 4; i++) {
 				int pin_num;
 				try {
-					pin_num = std::stoi(pins[i], nullptr, 0);
+					pin_num = 1 << std::stoi(pins[i], nullptr, 0);
 				} catch (std::exception &e) {
 					if (pins_list.find(pins[i]) == pins_list.end()) {
 						printError("Invalid pin name");
@@ -476,7 +476,7 @@ int parse_opt(int argc, char **argv, struct arguments *args, jtag_pins_conf_t *p
 					pin_num = pins_list[pins[i]];
 				}
 
-				if (pin_num > 7 || pin_num < 0) {
+				if (pin_num > FT232RL_RI || pin_num < FT232RL_TXD) {
 					printError("Invalid pin ID");
 					throw std::exception();
 				}
