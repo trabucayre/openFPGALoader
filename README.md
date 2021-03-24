@@ -45,6 +45,7 @@ __Supported (tested) FPGA:__
 * Lattice [MachXO3D](http://www.latticesemi.com/en/Products/FPGAandCPLD/MachXO3D.aspx) (SRAM and Flash)
 * Lattice [ECP5 (25F, 5G 85F](http://www.latticesemi.com/Products/FPGAandCPLD/ECP5) (SRAM and Flash)
 * Lattice [ECP5 (25F, 5G 85F, CrossLink-NX (LIFCL-40)](https://www.latticesemi.com/en/Products/FPGAandCPLD/CrossLink-NX) (SRAM and Flash)
+* Xilinx Kintex 7 [xc7k325t](https://www.xilinx.com/products/silicon-devices/fpga/kintex-7.html#productTable) (SRAM)
 * Xilinx Artix 7 [xc7a35ti, xc7a50t, xc7a100t, xc7a200t](https://www.xilinx.com/products/silicon-devices/fpga/artix-7.html) (memory and spi flash)
 * Xilinx Spartan 6 [xc6slx45](https://www.xilinx.com/products/silicon-devices/fpga/spartan-6.html) (memory)
 * Xilinx Spartan 7 [xc7s15, xc7s25, xc7s50](https://www.xilinx.com/products/silicon-devices/fpga/spartan-7.html) (memory (all) and spi flash (xc7s50))
