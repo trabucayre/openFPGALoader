@@ -52,7 +52,7 @@ __Supported (tested) FPGA:__
 * Xilinx Spartan 7 [xc7s15, xc7s25, xc7s50](https://www.xilinx.com/products/silicon-devices/fpga/spartan-7.html) (memory (all) and spi flash (xc7s50))
 * Intel Cyclone III [EP3C16](https://www.intel.com/content/www/us/en/programmable/products/fpga/cyclone-series/cyclone-iii/support.html) (memory)
 * Intel Cyclone IV CE [EP4CE22](https://www.intel.com/content/www/us/en/products/programmable/fpga/cyclone-iv/features.html) (memory. See note below)
-* Intel Cyclone V E [5CEA2](https://www.intel.com/content/www/us/en/products/programmable/fpga/cyclone-v.html)
+* Intel Cyclone V E [5CEA2, 5CEBA4](https://www.intel.com/content/www/us/en/products/programmable/fpga/cyclone-v.html)
 * Intel Cyclone 10 LP [10CL025](https://www.intel.com/content/www/us/en/products/programmable/fpga/cyclone-10.html)
 
 **Note**: cyclone IV and cyclone 10 have same idcode. A WA is mandatory to
