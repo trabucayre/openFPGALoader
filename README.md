@@ -70,6 +70,7 @@ __Supported cables:__
 * FT232RL and FT231X: generic USB<->UART converters in bitbang mode
 * [Tang Nano USB-JTAG interface](https://github.com/diodep/ch55x_jtag): FT2232C clone based on CH552 microcontroler
   (with some limitations and workaround)
+* [Tigard](https://www.crowdsupply.com/securinghw/tigard): SWD/JTAG/UART/SPI programmer based on Ftdi FT2232HQ
 * [honeycomb USB-JTAG interface](https://github.com/Disasm/f042-ftdi): FT2232C clone based on STM32F042 microcontroler
 
 ## compile and install
