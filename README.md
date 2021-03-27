@@ -33,6 +33,7 @@ __Current support kits:__
 * LambdaConcept ECPIX-5 (memory and flash)
 * [Efinix Xyloni](https://www.efinixinc.com/products-devkits-xyloni.html) (spi flash (*xyloni_spi*))
 * [honeycomb](https://github.com/Disasm/honeycomb-pcb) (memory and internal flash)
+* [Xilinx KC705](https://www.xilinx.com/products/boards-and-kits/ek-k7-kc705-g.html) (memory)
 
 __Supported (tested) FPGA:__
 
