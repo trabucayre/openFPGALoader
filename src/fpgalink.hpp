@@ -35,7 +35,7 @@ class FpgaLink : public JtagInterface{
 public:
 	FpgaLink(bool verbose);
 	int setClkFreq(uint32_t clkHZ) override{(void)clkHZ; return 0;}
-	int setClkFreq(uint32_t clkHZ, char use_divide_by_5) override {(void)clkHZ; (void)use_divide_by_5;return 0;}
+	int setClkFreq(uint32_t clkHZ, char use_divide_by_5) {(void)clkHZ; (void)use_divide_by_5;return 0;}
 
 	/* TMS */
 	int writeTMS(uint8_t *tms, int len, bool flush_buffer) override;
