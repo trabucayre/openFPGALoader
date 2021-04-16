@@ -85,6 +85,7 @@ typedef struct {
 
 static std::map <std::string, target_cable_t> board_list = {
 	JTAG_BOARD("acornCle215", "",          0, 0),
+	JTAG_BOARD("alchitry_au", "ft2232",    0, 0),
 	JTAG_BOARD("arty",       "digilent",   0, 0),
 	JTAG_BOARD("nexysVideo", "digilent_b", 0, 0),
 	JTAG_BOARD("kc705", "digilent", 0, 0),
