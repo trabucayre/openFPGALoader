@@ -128,9 +128,14 @@ void Xilinx::program_spi(ConfigBitstreamParser * bit, unsigned int offset)
 	bitname += fpga_list[idCode()].model + ".bit";
 
 	/* first: load spi over jtag */
-	BitParser bridge(bitname, true, _verbose);
-	bridge.parse();
-	program_mem(&bridge);
+	try {
+		BitParser bridge(bitname, true, _verbose);
+		bridge.parse();
+		program_mem(&bridge);
+	} catch (std::exception &e) {
+		printError(e.what());
+		throw std::runtime_error(e.what());
+	}
 
 	SPIFlash spiFlash(this, (_verbose ? 1 : (_quiet ? -1 : 0)));
 	spiFlash.reset();
