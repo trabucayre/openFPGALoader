@@ -62,6 +62,7 @@ struct arguments {
 	bool is_list_command;
 	bool spi;
 	string file_type;
+	string fpga_part;
 };
 
 int parse_opt(int argc, char **argv, struct arguments *args, jtag_pins_conf_t *pins_config);
@@ -71,12 +72,13 @@ void displaySupported(const struct arguments &args);
 int main(int argc, char **argv)
 {
 	cable_t cable;
-	target_cable_t *board = NULL;
+	target_board_t *board = NULL;
 	jtag_pins_conf_t pins_config = {0, 0, 0, 0};
 
 	/* command line args. */
 	struct arguments args = {0, false, false, 0, "", "", "-", "", -1, 6000000, "-",
-			false, false, false, false, Device::WR_SRAM, false, false, ""};
+			false, false, false, false, Device::WR_SRAM, false, false, "",
+			""};
 	/* parse arguments */
 	try {
 		if (parse_opt(argc, argv, &args, &pins_config))
@@ -122,6 +124,12 @@ int main(int argc, char **argv)
 				cout << "Board default cable overridden with " << args.cable << endl;
 			}
 		}
+
+		/* Xilinx only: to write flash exact fpga model must be provided */
+		if (!board->fpga_part.empty() && !args.fpga_part.empty())
+			printInfo("Board default fpga part overridden with " + args.fpga_part);
+		else if (!board->fpga_part.empty() && args.fpga_part.empty())
+			args.fpga_part = board->fpga_part;
 	}
 
 	if (args.cable[0] == '-') { /* if no board and no cable */
@@ -269,7 +277,7 @@ int main(int argc, char **argv)
 	try {
 		if (fab == "xilinx") {
 			fpga = new Xilinx(jtag, args.bit_file, args.file_type,
-				args.prg_type, args.verbose);
+				args.prg_type, args.fpga_part, args.verbose);
 		} else if (fab == "altera") {
 			fpga = new Altera(jtag, args.bit_file, args.file_type,
 				args.verbose);
@@ -370,6 +378,7 @@ int parse_opt(int argc, char **argv, struct arguments *args, jtag_pins_conf_t *p
 				cxxopts::value<bool>(args->detect))
 			("file-type",   "provides file type instead of let's deduced by using extension",
 				cxxopts::value<string>(args->file_type))
+			("fpga-part",   "fpga model flavor + package", cxxopts::value<string>(args->fpga_part))
 			("freq",        "jtag frequency (Hz)", cxxopts::value<string>(freqo))
 			("f,write-flash",
 				"write bitstream in flash (default: false, only for Gowin and ECP5 devices)")
@@ -543,7 +552,7 @@ void displaySupported(const struct arguments &args)
 		printSuccess(t.str());
 		for (auto b = board_list.begin(); b != board_list.end(); b++) {
 			stringstream ss;
-			target_cable_t c = (*b).second;
+			target_board_t c = (*b).second;
 			ss << setw(15) << left << (*b).first << " " << c.cable_name;
 			printInfo(ss.str());
 		}

@@ -315,6 +315,9 @@ current directory.
 1. Spartan Edge Accelerator Board has only pinheader, so the cable must be provided
 2. a *JTAG* <-> *SPI* bridge (used to write bitstream in FLASH) is available for some device, see
 [spiOverJtag](https://github.com/trabucayre/openFPGALoader/tree/master/spiOverJtag) to check if your model is supported
+3. board provides the device/package model, but if the targeted board is not
+   officially supported but the FPGA yes, you can use --fpga-part to provides
+   model
 
 <span style="color:red">**Warning** *.bin* may be loaded in memory or in flash, but this extension is a classic extension
 for CPU firmware and, by default, *openFPGALoader* load file in memory, double check
@@ -367,9 +370,14 @@ vivado -nolog -nojournal -mode batch -source script.tcl -tclargs myproject
 
 __file load:__
 ```bash
-openFPGALoader -f -b arty *.runs/impl_1/*.mcs (or .bit / .bin)
+openFPGALoader [--fpga-part xxxx] -f -b arty *.runs/impl_1/*.mcs (or .bit / .bin)
 ```
 **Note: *-f* is required to write bitstream (without them *.bit* and *.bin* are loaded in memory)**
+
+Note: "--fpga-part" is only required if this information is not provided at
+board.hpp level or if the board is not officially supported. device/packagee
+format is something like xc7a35tcsg324 (arty model). See src/board.hpp, or
+spiOverJtag directory for examples.
 
 ### MachXO2/MachXO3 Starter Kit
 

@@ -1,5 +1,6 @@
 #include <iostream>
 #include <stdexcept>
+#include <string>
 
 #include "jtag.hpp"
 #include "bitparser.hpp"
@@ -15,8 +16,9 @@
 
 Xilinx::Xilinx(Jtag *jtag, const std::string &filename,
 	const std::string &file_type,
-	Device::prog_type_t prg_type, int8_t verbose):
-	Device(jtag, filename, file_type, verbose)
+	Device::prog_type_t prg_type,
+	std::string device_package, int8_t verbose):
+	Device(jtag, filename, file_type, verbose),_device_package(device_package)
 {
 	if (!_file_extension.empty()) {
 		if (_file_extension == "mcs") {
@@ -123,9 +125,16 @@ void Xilinx::program(unsigned int offset)
 
 void Xilinx::program_spi(ConfigBitstreamParser * bit, unsigned int offset)
 {
+	if (_device_package.empty()) {
+		printError("Can't program SPI flash: missing device-package information");
+		return;
+	}
+
 	// DATA_DIR is defined at compile time.
 	std::string bitname = DATA_DIR "/openFPGALoader/spiOverJtag_";
-	bitname += fpga_list[idCode()].model + ".bit";
+	bitname += _device_package + ".bit";
+
+	std::cout << "use: " << bitname << std::endl;
 
 	/* first: load spi over jtag */
 	try {
