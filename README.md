@@ -1,7 +1,7 @@
 # openFPGALoader
 Universal utility for programming FPGA
 
-__Current support kits:__
+__Current supported kits:__
 
 * [Acorn CLE 215+](http://squirrelsresearch.com/acorn-cle-215/) (memory and spi flash)
 * [Alchitry Au](https://alchitry.com/products/alchitry-au-fpga-development-board) (memory)
@@ -73,6 +73,25 @@ __Supported cables:__
   (with some limitations and workaround)
 * [Tigard](https://www.crowdsupply.com/securinghw/tigard): SWD/JTAG/UART/SPI programmer based on Ftdi FT2232HQ
 * [honeycomb USB-JTAG interface](https://github.com/Disasm/f042-ftdi): FT2232C clone based on STM32F042 microcontroler
+
+# Contents
+
+- [Compile and install](#compile-and-install)
+- [Access Right](#access-right)
+- [Usage](#usage)
+  - [Generic usage](#generic-usage)
+  - [display FPGA](#display-fpga)
+  - [Reset device](#reset-device)
+  - [Load bistream](#load-bitstream-device)
+  - [Bypass file type detection](#automatic-file-type-detection-bypass)
+  - [Bitbang mode and pins configuration](#bitbang-mode-and-pins-configuration)
+- [Altera](#cyc1000)
+- [Xilinx](#xilinx)
+- [Lattice machXO](#lattice-machxo)
+- [Lattice ECP5 and Nexus](#lattice-ecp5-nexus)
+- [Gowin](#gowin)
+- [Anlogic](#anlogic)
+- [ice40](#ice40)
 
 ## compile and install
 
