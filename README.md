@@ -5,6 +5,7 @@ __Current supported kits:__
 
 * [Acorn CLE 215+](http://squirrelsresearch.com/acorn-cle-215/) (memory and spi flash)
 * [Alchitry Au](https://alchitry.com/products/alchitry-au-fpga-development-board) (memory)
+* [Digilent Basys3](https://reference.digilentinc.com/reference/programmable-logic/basys-3/start) (memory and spi flash)
 * Trenz cyc1000 Cyclone 10 LP 10CL025 (memory and spi flash)
 * [Colorlight 5A-75B (version 7)](https://fr.aliexpress.com/item/32281130824.html) (memory and spi flash)
 * [Digilent Arty A7 xc7a35ti](https://reference.digilentinc.com/reference/programmable-logic/arty-a7/start) (memory and spi flash)

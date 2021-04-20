@@ -88,6 +88,7 @@ static std::map <std::string, target_board_t> board_list = {
 	JTAG_BOARD("acornCle215",     "xc7a200tsbg484", "",         0, 0),
 	JTAG_BOARD("alchitry_au",     "xc7a35tftg256",  "ft2232",   0, 0),
 	JTAG_BOARD("arty",            "xc7a35tcsg324",  "digilent", 0, 0),
+	JTAG_BOARD("basys3",          "xc7a35tcpg236",  "digilent", 0, 0),
 	JTAG_BOARD("nexysVideo",      "xc7a200tsbg484", "digilent_b", 0, 0),
 	JTAG_BOARD("kc705",           "", "digilent", 0, 0),
 	JTAG_BOARD("colorlight",      "", "",           0, 0),
