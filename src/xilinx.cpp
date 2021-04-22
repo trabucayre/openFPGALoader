@@ -344,11 +344,6 @@ int Xilinx::spi_wait(uint8_t cmd, uint8_t mask, uint8_t cond,
 			printf("timeout: %x %x %x\n", tmp, rx[0], rx[1]);
 			break;
 		}
-		if (tmp & ~0x3) {
-			printf("Error: rx %x %x %x\n", tmp, McsParser::reverseByte(rx[0]), rx[1]);
-			count = timeout;
-			break;
-		}
 		if (verbose) {
 			printf("%x %x %x %u\n", tmp, mask, cond, count);
 		}
