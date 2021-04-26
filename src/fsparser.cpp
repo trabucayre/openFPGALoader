@@ -187,6 +187,12 @@ int FsParser::parse()
 			nb_line = 0;
 	}
 
+	/* For configuration data checksum: number of lines can't be higher than
+	 * the number indicates in TN653 but may be smaller (seen with the GW1NS-2C).
+	 */
+	if (stoi(_hdr["ConfDataLength"]) < nb_line)
+		nb_line = stoi(_hdr["ConfDataLength"]);
+
 	/* drop now useless header */
 	_lstRawData.erase(_lstRawData.begin(), _lstRawData.begin() + _end_header + 1);
 	_lstRawData.resize(nb_line);
