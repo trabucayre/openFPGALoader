@@ -60,6 +60,12 @@
 #define FLASH_WRVECR   0x61
 #define FLASH_RDVECR   0x65
 
+/* microchip SST26VF032B / SST26VF032BA */
+/* Read Block Protection Register */
+#define FLASH_RBPR 0x72
+/* Global Block Protection unlock */
+#define FLASH_ULBPR 0x98
+
 SPIFlash::SPIFlash(SPIInterface *spi, int8_t verbose):_spi(spi), _verbose(verbose)
 {
 }
@@ -147,14 +153,23 @@ int SPIFlash::read(int base_addr, uint8_t *data, int len)
 
 int SPIFlash::erase_and_prog(int base_addr, uint8_t *data, int len)
 {
+	if (_jedec_id == 0)
+		read_id();
+
 	/* check Block Protect Bits */
-	uint8_t status = read_status_reg();
-	if ((status & 0x1c) !=0) {
-		if (write_enable() != 0)
+	if (_jedec_id == 0xbf2642bf) { // microchip SST26VF032B
+		if (!global_unlock())
 			return -1;
-		if (disable_protection() != 0)
-			return -1;
+	} else {
+		uint8_t status = read_status_reg();
+		if ((status & 0x1c) !=0) {
+			if (write_enable() != 0)
+				return -1;
+			if (disable_protection() != 0)
+				return -1;
+		}
 	}
+
 	ProgressBar progress("Writing", len, 50, _verbose < 0);
 	if (sectors_erase(base_addr, len) == -1)
 		return -1;
@@ -303,4 +318,29 @@ int SPIFlash::disable_protection()
 		return -1;
 	} else
 		return 0;
+}
+
+/* microchip SST26VF032B has a dedicated register
+ * to read sectors (un)lock status and another one to unlock
+ * sectors
+ */
+
+bool SPIFlash::global_unlock()
+{
+	if (write_enable() != 0)
+		return false;
+	_spi->spi_put(FLASH_ULBPR, NULL, NULL, 0);
+
+	if (_spi->spi_wait(FLASH_RDSR, 0xff, 0, 1000) < 0)
+		return false;
+
+	/* check if all sectors are unlocked */
+	uint8_t rx2[10];
+	_spi->spi_put(FLASH_RBPR, NULL, rx2, 10);
+	printf("Non Volatile\n");
+	for (int i = 0; i < 10; i++) {
+		if (rx2[i] != 0)
+			return false;
+	}
+	return true;
 }

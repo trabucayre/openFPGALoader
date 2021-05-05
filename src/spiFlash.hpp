@@ -31,6 +31,12 @@ class SPIFlash {
 		int write_enable();
 		int write_disable();
 		int disable_protection();
+		/*!
+		 * \brief unlock all sectors: specific to
+		 * Microchip SST26VF032B / SST26VF032BA
+		 * \return false if unlock fail
+		 */
+		bool global_unlock();
 		/* erase */
 		int bulk_erase();
 		int sector_erase(int addr);
