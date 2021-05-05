@@ -185,21 +185,21 @@ void SPIFlash::read_id()
 	bool has_edid = false;
 
 	_spi->spi_put(0x9F, NULL, rx, 4);
-	int d = 0;
+	_jedec_id = 0;
 	for (int i=0; i < 4; i++) {
-		d = d << 8;
-		d |= (0x00ff & (int)rx[i]);
+		_jedec_id = _jedec_id << 8;
+		_jedec_id |= (0x00ff & (int)rx[i]);
 		if (_verbose > 0)
 			printf("%x ", rx[i]);
 	}
 
 	if (_verbose > 0)
-		printf("read %x\n", d);
+		printf("read %x\n", _jedec_id);
 
 	/* read extented */
-	if ((d & 0xff) != 0) {
+	if ((_jedec_id & 0xff) != 0) {
 		has_edid = true;
-		len += (d & 0x0ff);
+		len += (_jedec_id & 0x0ff);
 		_spi->spi_put(0x9F, NULL, rx, len);
 	}
 

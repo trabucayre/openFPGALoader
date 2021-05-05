@@ -49,6 +49,7 @@ class SPIFlash {
 	private:
 		SPIInterface *_spi;
 		int8_t _verbose;
+		uint32_t _jedec_id; /**< CHIP ID */
 };
 
 #endif
