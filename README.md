@@ -354,6 +354,8 @@ task must be done to generates this bitstream.
 - **GUI**: *Tools* -> *Settings* -> *Bitstreams* -> check *-bin_file*
 - **TCL**: append your *TCL* file with `set_property STEPS.WRITE_BITSTREAM.ARGS.BIN_FILE true [get_runs impl_1]`
 
+<span style="color:red">**Warning: for alchitry board the bitstream must be configured with a buswidth of 1 or 2. Quad mode can't be used with alchitry's FLASH**</span>
+
 #### loading in memory:
 
 <span style="text-decoration:underline">*.bit* and *.bin* are allowed to be loaded in memory.</span>
