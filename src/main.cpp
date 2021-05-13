@@ -63,6 +63,7 @@ struct arguments {
 	bool spi;
 	string file_type;
 	string fpga_part;
+	string probe_firmware;
 };
 
 int parse_opt(int argc, char **argv, struct arguments *args, jtag_pins_conf_t *pins_config);
@@ -78,7 +79,7 @@ int main(int argc, char **argv)
 	/* command line args. */
 	struct arguments args = {0, false, false, 0, "", "", "-", "", -1, 6000000, "-",
 			false, false, false, false, Device::WR_SRAM, false, false, "",
-			""};
+			"", ""};
 	/* parse arguments */
 	try {
 		if (parse_opt(argc, argv, &args, &pins_config))
@@ -230,7 +231,8 @@ int main(int argc, char **argv)
 	/* jtag base */
 	Jtag *jtag;
 	try {
-		jtag = new Jtag(cable, &pins_config, args.device, args.ftdi_serial, args.freq, false);
+		jtag = new Jtag(cable, &pins_config, args.device, args.ftdi_serial,
+				args.freq, false, args.probe_firmware);
 	} catch (std::exception &e) {
 		printError("Error: Failed to claim cable");
 		return EXIT_FAILURE;
@@ -244,6 +246,8 @@ int main(int argc, char **argv)
 		cout << "found " << std::to_string(found) << " devices" << endl;
 	if (found > 1) {
 		printError("Error: currently only one device is supported");
+		for (int i = 0; i < found; i++)
+			printf("0x%08x\n", listDev[i]);
 		delete(jtag);
 		return EXIT_FAILURE;
 	} else if (found < 1) {
@@ -394,6 +398,8 @@ int parse_opt(int argc, char **argv, struct arguments *args, jtag_pins_conf_t *p
 				cxxopts::value<unsigned int>(args->offset))
 			("pins", "pin config (only for ft232R) TDI:TDO:TCK:TMS",
 				cxxopts::value<vector<string>>(pins))
+			("probe-firmware", "firmware for JTAG probe (usbBlasterII)",
+				cxxopts::value<string>(args->probe_firmware))
 			("quiet", "Produce quiet output (no progress bar)",
 				cxxopts::value<bool>(quiet))
 			("r,reset",   "reset FPGA after operations",

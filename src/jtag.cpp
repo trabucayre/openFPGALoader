@@ -67,13 +67,14 @@ using namespace std;
  */
 
 Jtag::Jtag(cable_t &cable, const jtag_pins_conf_t *pin_conf, string dev,
-			const string &serial, uint32_t clkHZ, bool verbose):
+			const string &serial, uint32_t clkHZ, bool verbose,
+			const string &firmware_path):
 			_verbose(verbose),
 			_state(RUN_TEST_IDLE),
 			_tms_buffer_size(128), _num_tms(0),
 			_board_name("nope")
 {
-	init_internal(cable, dev, serial, pin_conf, clkHZ);
+	init_internal(cable, dev, serial, pin_conf, clkHZ, firmware_path);
 }
 
 Jtag::~Jtag()
@@ -83,7 +84,7 @@ Jtag::~Jtag()
 }
 
 void Jtag::init_internal(cable_t &cable, const string &dev, const string &serial,
-	const jtag_pins_conf_t *pin_conf, uint32_t clkHZ)
+	const jtag_pins_conf_t *pin_conf, uint32_t clkHZ, const string &firmware_path)
 {
 	switch (cable.type) {
 	case MODE_ANLOGICCABLE:
@@ -101,7 +102,8 @@ void Jtag::init_internal(cable_t &cable, const string &dev, const string &serial
 		_jtag = new DirtyJtag(clkHZ, _verbose);
 		break;
 	case MODE_USBBLASTER:
-		_jtag = new UsbBlaster(_verbose);
+		_jtag = new UsbBlaster(cable.config.vid, cable.config.pid,
+				firmware_path, _verbose);
 		break;
 	default:
 		std::cerr << "Jtag: unknown cable type" << std::endl;

@@ -30,7 +30,8 @@
 class Jtag {
  public:
 	Jtag(cable_t &cable, const jtag_pins_conf_t *pin_conf, std::string dev,
-		const std::string &serial, uint32_t clkHZ, bool verbose = false);
+		const std::string &serial, uint32_t clkHZ, bool verbose = false,
+		const std::string &firmware_path="");
 	~Jtag();
 
 	/* maybe to update */
@@ -79,7 +80,8 @@ class Jtag {
 
  private:
 	void init_internal(cable_t &cable, const std::string &dev, const std::string &serial,
-		const jtag_pins_conf_t *pin_conf, uint32_t clkHZ);
+		const jtag_pins_conf_t *pin_conf, uint32_t clkHZ,
+		const std::string &firmware_path);
 	bool _verbose;
 	int _state;
 	int _tms_buffer_size;
