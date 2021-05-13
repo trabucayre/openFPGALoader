@@ -27,6 +27,7 @@
 #include "display.hpp"
 #include "usbBlaster.hpp"
 #include "ftdipp_mpsse.hpp"
+#include "fx2_ll.hpp"
 
 using namespace std;
 
@@ -48,11 +49,39 @@ using namespace std;
 #define display(...) do {}while(0)
 #endif
 
-UsbBlaster::UsbBlaster(bool verbose):
+UsbBlaster::UsbBlaster(int vid, int pid, const std::string &firmware_path,
+		bool verbose):
 			_verbose(verbose), _nb_bit(0),
 			_curr_tms(0), _buffer_size(64)
 {
-	init_internal();
+	if (pid == 0x6001)
+		ll_driver = new UsbBlasterI();
+	else if (pid == 0x6810)
+		ll_driver = new UsbBlasterII(firmware_path);
+	else
+		throw std::runtime_error("usb-blaster: unknown VID/PID");
+
+	_tck_pin = (1 << 0);
+	_tms_pin = (1 << 1);
+	_tdi_pin = (1 << 4);
+
+	_in_buf = (unsigned char *)malloc(sizeof(unsigned char) * _buffer_size);
+
+	_nb_bit = 0;
+	memset(_in_buf, 0, _buffer_size);
+
+	/* Force flush internal FT245 internal buffer */
+	if (pid == 0x6001) {
+		uint8_t val = DEFAULT | DO_WRITE | DO_BITBB | _tms_pin;
+		uint8_t tmp_buf[4096];
+		for (_nb_bit = 0; _nb_bit < 4096; _nb_bit += 2) {
+			tmp_buf[_nb_bit    ] = val;
+			tmp_buf[_nb_bit + 1] = val | _tck_pin;
+		}
+
+		ll_driver->write(tmp_buf, _nb_bit, NULL, 0);
+		_nb_bit = 0;
+	}
 }
 
 UsbBlaster::~UsbBlaster()
@@ -62,64 +91,9 @@ UsbBlaster::~UsbBlaster()
 	free(_in_buf);
 }
 
-void UsbBlaster::init_internal()
-{
-	int ret;
-	_ftdi = ftdi_new();
-	if (_ftdi == NULL) {
-		cout << "open_device: failed to initialize ftdi" << endl;
-		throw std::exception();
-	}
-
-     ret = ftdi_usb_open(_ftdi, 0x09fb, 0x6001);
-    if (ret < 0) {
-		fprintf(stderr, "unable to open ftdi device: %d (%s)\n",
-			ret, ftdi_get_error_string(_ftdi));
-		ftdi_free(_ftdi);
-		throw std::exception();
-	}
-
-	ret = ftdi_usb_reset(_ftdi);
-	if (ret < 0) {
-		fprintf(stderr, "Error reset: %d (%s)\n",
-			ret, ftdi_get_error_string(_ftdi));
-		ftdi_free(_ftdi);
-		throw std::exception();
-	}
-
-	ret = ftdi_set_latency_timer(_ftdi, 2);
-	if (ret < 0) {
-		fprintf(stderr, "Error set latency timer: %d (%s)\n",
-			ret, ftdi_get_error_string(_ftdi));
-		ftdi_free(_ftdi);
-		throw std::exception();
-	}
- 
-	_tck_pin = (1 << 0);
-	_tms_pin = (1 << 1);
-	_tdi_pin = (1 << 4);
-
-	_in_buf = (unsigned char *)malloc(sizeof(unsigned char) * _buffer_size);
-
-	/* Force flush internal FT245 internal buffer */
-	uint8_t val = DEFAULT | DO_WRITE | DO_BITBB | _tms_pin;
-	uint8_t tmp_buf[4096];
-	for (_nb_bit = 0; _nb_bit < 4096; _nb_bit += 2) {
-		tmp_buf[_nb_bit    ] = val;
-		tmp_buf[_nb_bit + 1] = val | _tck_pin;
-	}
-
-	ftdi_write_data(_ftdi, tmp_buf, _nb_bit);
-
-	_nb_bit = 0;
-	memset(_in_buf, 0, _buffer_size);
-}
-
 int UsbBlaster::setClkFreq(uint32_t clkHZ)
 {
-	(void) clkHZ;
-	printWarn("USB-Blaster has a 24MHz fixed frequency");
-	return 1;
+	return ll_driver->setClkFreq(clkHZ);
 }
 
 int UsbBlaster::writeTMS(uint8_t *tms, int len, bool flush_buffer)
@@ -165,7 +139,6 @@ int UsbBlaster::writeTMS(uint8_t *tms, int len, bool flush_buffer)
 		if (ret < 0)
 			return ret;
 	}
-	//printInfo("writeTMS: end");
 
 	return len;
 }
@@ -174,7 +147,6 @@ int UsbBlaster::writeTMS(uint8_t *tms, int len, bool flush_buffer)
 
 int UsbBlaster::writeTDI(uint8_t *tx, uint8_t *rx, uint32_t len, bool end)
 {
-
 	uint32_t real_len = (end) ? len -1 : len;
 	uint32_t nb_byte = real_len >> 3;
 	uint32_t nb_bit = (real_len & 0x07);
@@ -250,7 +222,6 @@ int UsbBlaster::writeTDI(uint8_t *tx, uint8_t *rx, uint32_t len, bool end)
 
 	/* set TMS high */
 	if (end) {
-		//printf("end\n");
 		_curr_tms = _tms_pin;
 		uint8_t mask = DEFAULT | DO_BITBB | _curr_tms;
 		if (tx && *tx_ptr & (1 << nb_bit))
@@ -327,7 +298,7 @@ int UsbBlaster::flush()
  */
 int UsbBlaster::writeByte(uint8_t *tdo, int nb_byte)
 {
-	int ret = write(tdo != NULL, nb_byte);	
+	int ret = write(tdo != NULL, nb_byte);
 	if (tdo && ret > 0)
 		memcpy(tdo, _in_buf, nb_byte);
 	return ret;
@@ -357,24 +328,83 @@ int UsbBlaster::writeBit(uint8_t *tdo, int nb_bit)
 
 int UsbBlaster::write(bool read, int rd_len)
 {
-	int ret = 0;
 	if (_nb_bit == 0)
 		return 0;
 
-	ret = ftdi_write_data(_ftdi, _in_buf, _nb_bit);
-	if (ret != _nb_bit) {
-		printf("problem %d written %d\n", ret, _nb_bit);
+	int ret = ll_driver->write(_in_buf, _nb_bit,
+			(read)?_in_buf:NULL, rd_len);
+	_nb_bit = 0;
+	return ret;
+}
+
+/*
+ * USB Blash I specific implementation
+ */
+
+UsbBlasterI::UsbBlasterI()
+{
+	int ret;
+	_ftdi = ftdi_new();
+	if (_ftdi == NULL) {
+		cout << "open_device: failed to initialize ftdi" << endl;
+		throw std::exception();
+	}
+
+     ret = ftdi_usb_open(_ftdi, 0x09fb, 0x6001);
+    if (ret < 0) {
+		fprintf(stderr, "unable to open ftdi device: %d (%s)\n",
+			ret, ftdi_get_error_string(_ftdi));
+		ftdi_free(_ftdi);
+		throw std::exception();
+	}
+
+	ret = ftdi_usb_reset(_ftdi);
+	if (ret < 0) {
+		fprintf(stderr, "Error reset: %d (%s)\n",
+			ret, ftdi_get_error_string(_ftdi));
+		ftdi_free(_ftdi);
+		throw std::exception();
+	}
+
+	ret = ftdi_set_latency_timer(_ftdi, 2);
+	if (ret < 0) {
+		fprintf(stderr, "Error set latency timer: %d (%s)\n",
+			ret, ftdi_get_error_string(_ftdi));
+		ftdi_free(_ftdi);
+		throw std::exception();
+	}
+}
+
+UsbBlasterI::~UsbBlasterI()
+{
+}
+
+int UsbBlasterI::setClkFreq(uint32_t clkHZ)
+{
+	(void) clkHZ;
+	printWarn("USB-BlasterI has a 24MHz fixed frequency");
+	return 1;
+}
+
+int UsbBlasterI::write(uint8_t *wr_buf, int wr_len,
+				uint8_t *rd_buf, int rd_len)
+{
+	int ret = 0;
+
+	ret = ftdi_write_data(_ftdi, wr_buf, wr_len);
+	if (ret != wr_len) {
+		printf("problem %d written %d\n", ret, wr_len);
 		return ret;
 	}
 
-	if (read) {
+	if (rd_buf) {
 		int timeout = 100;
 		uint8_t byte_read = 0;
 		while (byte_read < rd_len && timeout != 0) {
 			timeout--;
-			ret = ftdi_read_data(_ftdi, _in_buf + byte_read, rd_len - byte_read);
+			ret = ftdi_read_data(_ftdi, rd_buf + byte_read, rd_len - byte_read);
 			if (ret < 0) {
-				printError("Write error: " + std::to_string(ret));
+				printError("Read error: " + std::to_string(ret));
 				return ret;
 			}
 			byte_read += ret;
@@ -384,11 +414,85 @@ int UsbBlaster::write(bool read, int rd_len)
 			printError("Error: timeout " + std::to_string(byte_read) +
 				" " + std::to_string(rd_len));
 			for (int i=0; i < byte_read; i++)
-				printf("%02x ", _in_buf[i]);
+				printf("%02x ", rd_buf[i]);
 			printf("\n");
 			return 0;
 		}
 	}
-	_nb_bit = 0;
+	return ret;
+}
+
+/*
+ * USB Blash II specific implementation
+ */
+
+UsbBlasterII::UsbBlasterII(const string &firmware_path)
+{
+	uint8_t buf[5];
+	if (firmware_path.empty()) {
+		printError("missing FX2 firmware");
+		printError("use --probe-firmware with something");
+		printError("like /opt/altera/quartus/linux64/blaster_6810.hex");
+		throw std::runtime_error("usbBlasterII: missing firmware");
+	}
+	fx2 = new FX2_ll(0x09fb, 0x6810, 0x09fb, 0x6010, firmware_path);
+	if (!fx2->read_ctrl(0x94, 0, buf, 5)) {
+		throw std::runtime_error("Unable to read firmware version.");
+	}
+	printInfo("USB-Blaster II firmware version: " + std::string((char *)buf));
+}
+
+UsbBlasterII::~UsbBlasterII()
+{
+	delete fx2;
+}
+
+int UsbBlasterII::setClkFreq(uint32_t clkHZ)
+{
+	(void) clkHZ;
+	printWarn("USB-BlasterII has a 24MHz fixed frequency");
+	return 1;
+}
+
+int UsbBlasterII::write(uint8_t *wr_buf, int wr_len,
+				uint8_t *rd_buf, int rd_len)
+{
+	int ret = 0;
+
+	ret = fx2->write(4, wr_buf, wr_len);
+	if (ret != wr_len) {
+		printf("problem %d written %d\n", ret, wr_len);
+		return ret;
+	}
+
+	if (rd_buf) {
+		uint8_t c = 0x5f;
+		ret = fx2->write(4, &c, 1);
+		if (ret != 1) {
+			printf("problem %d written %d\n", ret, wr_len);
+			return ret;
+		}
+
+		int timeout = 100;
+		uint8_t byte_read = 0;
+		while (byte_read < rd_len && timeout != 0) {
+			timeout--;
+			ret = fx2->read(8, rd_buf + byte_read, rd_len - byte_read);
+			if (ret < 0) {
+				printError("Read error: " + std::to_string(ret));
+				return ret;
+			}
+			byte_read += ret;
+		}
+
+		if (timeout == 0) {
+			printError("Error: timeout " + std::to_string(byte_read) +
+				" " + std::to_string(rd_len));
+			for (int i=0; i < byte_read; i++)
+				printf("%02x ", rd_buf[i]);
+			printf("\n");
+			return 0;
+		}
+	}
 	return ret;
 }

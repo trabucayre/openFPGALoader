@@ -25,6 +25,22 @@
 #include "board.hpp"
 #include "jtagInterface.hpp"
 #include "ftdipp_mpsse.hpp"
+#include "fx2_ll.hpp"
+
+/*!
+ * \file UsbBlaster.hpp
+ * \class UsbBlaster_ll
+ * \brief altera/intel usb blaster abstract class for blasterI and blasterII
+ * \author Gwenhael Goavec-Merou
+ */
+
+class UsbBlaster_ll {
+	public:
+		virtual ~UsbBlaster_ll() {}
+		virtual int setClkFreq(uint32_t clkHZ) = 0;
+		virtual int write(uint8_t *wr_buf, int wr_len,
+			uint8_t *rd_buf, int rd_len) = 0;
+};
 
 /*!
  * \file UsbBlaster.hpp
@@ -35,7 +51,8 @@
 
 class UsbBlaster : public JtagInterface {
  public:
-	UsbBlaster(bool verbose = false);
+	UsbBlaster(int vid, int pid, const std::string &firmware_path,
+			bool verbose = false);
 	virtual ~UsbBlaster();
 
 	int setClkFreq(uint32_t clkHZ) override;
@@ -72,8 +89,7 @@ class UsbBlaster : public JtagInterface {
 	int flush() override;
 
  private:
-	struct ftdi_context *_ftdi;
-	void init_internal();
+	UsbBlaster_ll *ll_driver;
 	int writeByte(uint8_t *tdo, int nb_byte);
 	int writeBit(uint8_t *tdo, int nb_bit);
 	int write(bool read, int rd_len);
@@ -87,5 +103,45 @@ class UsbBlaster : public JtagInterface {
 	int _nb_bit;
 	uint8_t _curr_tms;
 	uint16_t _buffer_size;
+};
+
+/*!
+ * \file UsbBlaster.hpp
+ * \class UsbBlasterI
+ * \brief altera/intel low level usb blaster class for blasterI
+ * \author Gwenhael Goavec-Merou
+ */
+class UsbBlasterI: public UsbBlaster_ll {
+	public:
+		UsbBlasterI();
+		virtual ~UsbBlasterI();
+
+		int setClkFreq(uint32_t clkHZ) override;
+		int write(uint8_t *wr_buf, int wr_len,
+				uint8_t *rd_buf, int rd_len) override;
+	private:
+		/*
+		 * \brief init and configure FT245
+		 */
+		void init_internal();
+		struct ftdi_context *_ftdi; /*!< ftid_context */
+};
+
+/*!
+ * \file UsbBlaster.hpp
+ * \class UsbBlasterII
+ * \brief altera/intel low level usb blaster class for blasterII
+ * \author Gwenhael Goavec-Merou
+ */
+class UsbBlasterII: public UsbBlaster_ll {
+	public:
+		UsbBlasterII(const std::string &firmware_path);
+		virtual ~UsbBlasterII();
+
+		int setClkFreq(uint32_t clkHZ) override;
+		int write(uint8_t *wr_buf, int wr_len,
+				uint8_t *rd_buf, int rd_len) override;
+	private:
+		FX2_ll *fx2;
 };
 #endif
