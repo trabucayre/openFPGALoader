@@ -66,7 +66,7 @@ __Supported cables:__
 * [digilent_hs2](https://store.digilentinc.com/jtag-hs2-programming-cable/): jtag programmer cable from digilent
 * [DirtyJTAG](https://github.com/jeanthom/DirtyJTAG): JTAG probe firmware for STM32F1
   (Best to use release (1.4 or newer) or limit the --freq to 600000 with older releases. New version https://github.com/jeanthom/DirtyJTAG/tree/dirtyjtag2 is also supported)
-* Intel USB Blaster: jtag programmer cable from intel/altera
+* Intel USB Blaster I & II : jtag programmer cable from intel/altera
 * JTAG-HS3: jtag programmer cable from digilent
 * FT2232: generic programmer cable based on Ftdi FT2232
 * FT232RL and FT231X: generic USB<->UART converters in bitbang mode

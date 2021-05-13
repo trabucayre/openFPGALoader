@@ -41,7 +41,8 @@ static std::map <std::string, cable_t> cable_list = {
 	{"ft4232",       {MODE_FTDI_SERIAL,  {0x0403, 0x6011, INTERFACE_A, 0x08, 0x0B, 0x08, 0x0B}}},
 	{"ecpix5-debug", {MODE_FTDI_SERIAL,  {0x0403, 0x6010, INTERFACE_A, 0xF8, 0xFB, 0xFF, 0xFF}}},
 	{"tigard",       {MODE_FTDI_SERIAL,  {0x0403, 0x6010, INTERFACE_B, 0x08, 0x3B, 0x00, 0x00}}},
-	{"usb-blaster",  {MODE_USBBLASTER,   {}}},
+	{"usb-blaster",  {MODE_USBBLASTER,   {0x09Fb, 0x6001, 0,           0,    0,    0,    0   }}},
+	{"usb-blasterII",{MODE_USBBLASTER,   {0x09Fb, 0x6810, 0,           0,    0,    0,    0   }}},
 };
 
 #endif
