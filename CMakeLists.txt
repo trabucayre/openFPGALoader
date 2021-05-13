@@ -48,6 +48,7 @@ set(OPENFPGALOADER_SOURCE
 	src/dirtyJtag.cpp
 	src/efinix.cpp
 	src/efinixHexParser.cpp
+	src/fx2_ll.cpp
 	src/ice40.cpp
 	src/ihexParser.cpp
 	src/spiFlash.cpp
@@ -86,6 +87,7 @@ set(OPENFPGALOADER_HEADERS
 	src/dirtyJtag.hpp
 	src/efinix.hpp
 	src/efinixHexParser.hpp
+	src/fx2_ll.hpp
 	src/ice40.hpp
 	src/ihexParser.hpp
 	src/progressBar.hpp
