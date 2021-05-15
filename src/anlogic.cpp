@@ -154,20 +154,23 @@ void Anlogic::program(unsigned int offset)
 		_jtag->shiftIR(CFG_IN, IRLENGTH);
 		_jtag->toggleClk(15);
 
-		_jtag->set_state(Jtag::SHIFT_DR);
 		ProgressBar progress("Loading", len, 50, _quiet);
 		int pos = 0;
 		uint8_t *ptr = data;
 		while (len > 0) {
 			int xfer_len = (len > 512)?512:len;
-			_jtag->read_write(ptr, NULL, xfer_len*8, (len - xfer_len == 0));
+			int tx_end;
+			if (len - xfer_len == 0)
+				tx_end = Jtag::RUN_TEST_IDLE;
+			else
+				tx_end = Jtag::SHIFT_DR;
+			_jtag->shiftDR(ptr, NULL, xfer_len * 8, tx_end);
 			len -= xfer_len;
 			progress.display(pos);
 			pos += xfer_len;
 			ptr+=xfer_len;
 		}
 
-		_jtag->set_state(Jtag::RUN_TEST_IDLE);
 		progress.done();
 		_jtag->toggleClk(100);
 		// Loading device with a `jtag start` instruction.
