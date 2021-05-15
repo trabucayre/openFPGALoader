@@ -38,7 +38,26 @@ class Jtag {
 	int setClkFreq(uint32_t clkHZ) { return _jtag->setClkFreq(clkHZ);}
 	uint32_t getClkFreq() { return _jtag->getClkFreq();}
 
-	int detectChain(std::vector<int> &devices, int max_dev);
+	/*!
+	 * \brief scan JTAG chain to obtain IDCODE. Fill
+	 *        a vector with all idcode and another
+	 *        vector with irlength
+	 * \return number of devices found
+	 */
+	int detectChain(int max_dev);
+
+	/*!
+	 * \brief return list of devices in the chain
+	 * \return list of devices
+	 */
+	std::vector<int> get_devices_list() {return _devices_list;}
+
+	/*!
+	 * \brief set index for targeted FPGA
+	 * \param[in] index: index in the chain
+	 * \return -1 if index is out of bound, index otherwise
+	 */
+	uint16_t device_select(uint16_t index);
 
 	int shiftIR(unsigned char *tdi, unsigned char *tdo, int irlen,
 		int end_state = RUN_TEST_IDLE);
@@ -90,5 +109,9 @@ class Jtag {
 	unsigned char *_tms_buffer;
 	std::string _board_name;
 	JtagInterface *_jtag;
+
+	int device_index; /*!< index for targeted FPGA */
+	std::vector<int32_t> _devices_list; /*!< ordered list of devices idcode */
+	std::vector<int16_t> _irlength_list; /*!< ordered list of irlength */
 };
 #endif

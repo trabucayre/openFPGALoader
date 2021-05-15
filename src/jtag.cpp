@@ -31,6 +31,7 @@
 #include "ftdiJtagBitbang.hpp"
 #include "ftdiJtagMPSSE.hpp"
 #include "dirtyJtag.hpp"
+#include "part.hpp"
 #include "usbBlaster.hpp"
 
 using namespace std;
@@ -72,9 +73,10 @@ Jtag::Jtag(cable_t &cable, const jtag_pins_conf_t *pin_conf, string dev,
 			_verbose(verbose),
 			_state(RUN_TEST_IDLE),
 			_tms_buffer_size(128), _num_tms(0),
-			_board_name("nope")
+			_board_name("nope"), device_index(0)
 {
 	init_internal(cable, dev, serial, pin_conf, clkHZ, firmware_path);
+	detectChain(5);
 }
 
 Jtag::~Jtag()
@@ -114,14 +116,17 @@ void Jtag::init_internal(cable_t &cable, const string &dev, const string &serial
 	memset(_tms_buffer, 0, _tms_buffer_size);
 }
 
-int Jtag::detectChain(vector<int> &devices, int max_dev)
+int Jtag::detectChain(int max_dev)
 {
 	unsigned char rx_buff[4];
 	/* WA for CH552/tangNano: write is always mandatory */
 	unsigned char tx_buff[4] = {0xff, 0xff, 0xff, 0xff};
 	unsigned int tmp;
 
-	devices.clear();
+	/* cleanup */
+	_devices_list.clear();
+	_irlength_list.clear();
+
 	go_test_logic_reset();
 	set_state(SHIFT_DR);
 
@@ -130,12 +135,40 @@ int Jtag::detectChain(vector<int> &devices, int max_dev)
 		tmp = 0;
 		for (int ii=0; ii < 4; ii++)
 			tmp |= (rx_buff[ii] << (8*ii));
-		if (tmp != 0 && tmp != 0xffffffff)
-			devices.push_back(tmp);
+		if (tmp != 0 && tmp != 0xffffffff) {
+			_devices_list.insert(_devices_list.begin(), tmp);
+
+			/* search for irlength in fpga_list or misc_dev_list */
+			uint16_t irlength = -1;
+			auto dev = fpga_list.find(tmp);
+			if (dev == fpga_list.end()) {
+				auto misc = misc_dev_list.find(tmp);
+				if (misc != misc_dev_list.end()) {
+					irlength = misc->second.irlength;
+				} else {
+					char error[256];
+					snprintf(error, 256, "Unknown device with IDCODE: 0x%04x",
+							tmp);
+					throw std::runtime_error(error);
+				}
+			} else {
+				irlength = dev->second.irlength;
+			}
+
+			_irlength_list.insert(_irlength_list.begin(), irlength);
+		}
 	}
 	go_test_logic_reset();
 	flushTMS(true);
-	return devices.size();
+	return _devices_list.size();
+}
+
+uint16_t Jtag::device_select(uint16_t index)
+{
+	if (index > (uint16_t) _devices_list.size())
+		return -1;
+	device_index = index;
+	return device_index;
 }
 
 void Jtag::setTMS(unsigned char tms)
@@ -203,22 +236,51 @@ void Jtag::toggleClk(int nb)
 
 int Jtag::shiftDR(unsigned char *tdi, unsigned char *tdo, int drlen, int end_state)
 {
+	/* get number of devices in the JTAG chain
+	 * after the selected one
+	 */
+	int bits_after = device_index;
+
 	/* if current state not shift DR
 	 * move to this state
 	 */
 	if (_state != SHIFT_DR) {
 		set_state(SHIFT_DR);
 		flushTMS(false);  // force transmit tms state
+
+		/* get number of devices, in the JTAG chain,
+		 * before the selected one
+		 */
+		int bits_before = _devices_list.size() - device_index - 1;
+
+		/* if not 0 send enough bits
+		 */
+		if (bits_before > 0) {
+			int n = (bits_before + 7) / 8;
+			uint8_t tx[n];
+			memset(tx, 0xff, n);
+			read_write(tx, NULL, bits_before, 0);
+		}
 	}
+
 	/* write tdi (and read tdo) to the selected device
-	 * end (ie TMS high) is used when
-	 * a state change must
+	 * end (ie TMS high) is used only when current device
+	 * is the last of the chain and a state change must
 	 * be done
 	 */
-	read_write(tdi, tdo, drlen, end_state != SHIFT_DR);
+	read_write(tdi, tdo, drlen, bits_after == 0 && end_state != SHIFT_DR);
 
 	/* if it's asked to move in FSM */
 	if (end_state != SHIFT_DR) {
+		/* if current device is not the last */
+		if (bits_after > 0) {
+			int n = (bits_after + 7) / 8;
+			uint8_t tx[n];
+			memset(tx, 0xff, n);
+			read_write(tx, NULL, bits_after, 1);  // its the last force
+			                                      // tms high with last bit
+		}
+
 		/* move to end_state */
 		set_state(end_state);
 	}
@@ -237,26 +299,53 @@ int Jtag::shiftIR(unsigned char tdi, int irlen, int end_state)
 int Jtag::shiftIR(unsigned char *tdi, unsigned char *tdo, int irlen, int end_state)
 {
 	display("%s: avant shiftIR\n", __func__);
+	int bypass_after = 0;
 
 	/* if not in SHIFT IR move to this state */
 	if (_state != SHIFT_IR) {
 		set_state(SHIFT_IR);
 		/* force flush */
 		flushTMS(false);
-	}
 
+		/* send serie of bypass instructions
+		 * final size depends on number of device
+		 * before targeted and irlength of each one
+		 */
+		int bypass_before = 0;
+		for (int i = device_index + 1; i < _devices_list.size(); i++)
+			bypass_before += _irlength_list[i];
+		/* same for device after targeted device
+		 */
+		for (int i = 0; i < device_index; i++)
+			bypass_after += _irlength_list[i];
+
+		/* if > 0 send bits */
+		if (bypass_before > 0) {
+			int n = (bypass_before + 7) / 8;
+			uint8_t tx[n];
+			memset(tx, 0xff, n);
+			read_write(tx, NULL, bypass_before, 0);
+		}
+	}
 
 	display("%s: envoi ircode\n", __func__);
 
 	/* write tdi (and read tdo) to the selected device
-	 * end (ie TMS high) is used only when
-	 * a state change must
+	 * end (ie TMS high) is used only when current device
+	 * is the last of the chain and a state change must
 	 * be done
 	 */
-	read_write(tdi, tdo, irlen, end_state != SHIFT_IR);
+	read_write(tdi, tdo, irlen, bypass_after == 0 && end_state != SHIFT_IR);
 
 	/* it's asked to move out of SHIFT IR state */
 	if (end_state != SHIFT_IR) {
+		/* again if devices after fill '1' */
+		if (bypass_after > 0) {
+			int n = (bypass_after + 7) / 8;
+			uint8_t tx[n];
+			memset(tx, 0xff, n);
+			read_write(tx, NULL, bypass_after, 1);
+		}
 		/* move to the requested state */
 		set_state(end_state);
 	}
