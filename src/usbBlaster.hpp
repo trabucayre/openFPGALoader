@@ -38,6 +38,7 @@ class UsbBlaster_ll {
 	public:
 		virtual ~UsbBlaster_ll() {}
 		virtual int setClkFreq(uint32_t clkHZ) = 0;
+		virtual uint32_t getClkFreq() = 0;
 		virtual int write(uint8_t *wr_buf, int wr_len,
 			uint8_t *rd_buf, int rd_len) = 0;
 };
@@ -56,6 +57,7 @@ class UsbBlaster : public JtagInterface {
 	virtual ~UsbBlaster();
 
 	int setClkFreq(uint32_t clkHZ) override;
+	uint32_t getClkFreq() override;
 
 	/*!
 	 * \brief drive TMS to move in JTAG state machine
@@ -117,6 +119,7 @@ class UsbBlasterI: public UsbBlaster_ll {
 		virtual ~UsbBlasterI();
 
 		int setClkFreq(uint32_t clkHZ) override;
+		uint32_t getClkFreq() override;
 		int write(uint8_t *wr_buf, int wr_len,
 				uint8_t *rd_buf, int rd_len) override;
 	private:
@@ -139,6 +142,7 @@ class UsbBlasterII: public UsbBlaster_ll {
 		virtual ~UsbBlasterII();
 
 		int setClkFreq(uint32_t clkHZ) override;
+		uint32_t getClkFreq() override;
 		int write(uint8_t *wr_buf, int wr_len,
 				uint8_t *rd_buf, int rd_len) override;
 	private:

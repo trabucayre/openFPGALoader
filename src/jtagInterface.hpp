@@ -33,6 +33,7 @@ class JtagInterface {
 	virtual ~JtagInterface() {}
 
 	virtual int setClkFreq(uint32_t clkHZ) = 0;
+	virtual uint32_t getClkFreq() { return 0;}
 
 	/*!
 	 * \brief flush TMS internal buffer (ie. transmit to converter)

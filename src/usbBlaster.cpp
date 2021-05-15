@@ -96,6 +96,11 @@ int UsbBlaster::setClkFreq(uint32_t clkHZ)
 	return ll_driver->setClkFreq(clkHZ);
 }
 
+uint32_t UsbBlaster::getClkFreq()
+{
+	return ll_driver->getClkFreq();
+}
+
 int UsbBlaster::writeTMS(uint8_t *tms, int len, bool flush_buffer)
 {
 	int ret;
@@ -386,6 +391,11 @@ int UsbBlasterI::setClkFreq(uint32_t clkHZ)
 	return 1;
 }
 
+uint32_t UsbBlasterI::getClkFreq()
+{
+	return 24e6;
+}
+
 int UsbBlasterI::write(uint8_t *wr_buf, int wr_len,
 				uint8_t *rd_buf, int rd_len)
 {
@@ -452,6 +462,11 @@ int UsbBlasterII::setClkFreq(uint32_t clkHZ)
 	(void) clkHZ;
 	printWarn("USB-BlasterII has a 24MHz fixed frequency");
 	return 1;
+}
+
+uint32_t UsbBlasterII::getClkFreq()
+{
+	return 24e6;
 }
 
 int UsbBlasterII::write(uint8_t *wr_buf, int wr_len,
