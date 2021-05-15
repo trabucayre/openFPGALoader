@@ -65,9 +65,6 @@ void Altera::programMem()
 	/* write */
 	ProgressBar progress("Flash SRAM", byte_length, 50, _quiet);
 
-	/* 2.2.6.5 */
-	_jtag->set_state(Jtag::SHIFT_DR);
-
 	int xfer_len = 512;
 	int tx_len;
 	int tx_end;
@@ -75,12 +72,12 @@ void Altera::programMem()
 	for (int i=0; i < byte_length; i+=xfer_len) {
 		if (i + xfer_len > byte_length) {  // last packet with some size
 			tx_len = (byte_length - i) * 8;
-			tx_end = 1;  // to move in EXIT1_DR
+			tx_end = Jtag::EXIT1_DR;
 		} else {
 			tx_len = xfer_len * 8;
-			tx_end = 0;
+			tx_end = Jtag::SHIFT_DR;
 		}
-		_jtag->read_write(data+i, NULL, tx_len, tx_end);
+		_jtag->shiftDR(data+i, NULL, tx_len, tx_end);
 		progress.display(i);
 	}
 	progress.done();

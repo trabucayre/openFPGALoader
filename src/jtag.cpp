@@ -203,13 +203,25 @@ void Jtag::toggleClk(int nb)
 
 int Jtag::shiftDR(unsigned char *tdi, unsigned char *tdo, int drlen, int end_state)
 {
-	set_state(SHIFT_DR);
-	// force transmit tms state
-	flushTMS(false);
-	// currently don't care about multiple device in the chain
-	read_write(tdi, tdo, drlen, 1);// 1 since only one device
+	/* if current state not shift DR
+	 * move to this state
+	 */
+	if (_state != SHIFT_DR) {
+		set_state(SHIFT_DR);
+		flushTMS(false);  // force transmit tms state
+	}
+	/* write tdi (and read tdo) to the selected device
+	 * end (ie TMS high) is used when
+	 * a state change must
+	 * be done
+	 */
+	read_write(tdi, tdo, drlen, end_state != SHIFT_DR);
 
-	set_state(end_state);
+	/* if it's asked to move in FSM */
+	if (end_state != SHIFT_DR) {
+		/* move to end_state */
+		set_state(end_state);
+	}
 	return 0;
 }
 
@@ -225,14 +237,30 @@ int Jtag::shiftIR(unsigned char tdi, int irlen, int end_state)
 int Jtag::shiftIR(unsigned char *tdi, unsigned char *tdo, int irlen, int end_state)
 {
 	display("%s: avant shiftIR\n", __func__);
-	set_state(SHIFT_IR);
-	flushTMS(false);
-	// currently don't care about multiple device in the chain
+
+	/* if not in SHIFT IR move to this state */
+	if (_state != SHIFT_IR) {
+		set_state(SHIFT_IR);
+		/* force flush */
+		flushTMS(false);
+	}
+
 
 	display("%s: envoi ircode\n", __func__);
-	read_write(tdi, tdo, irlen, 1);  // 1 since only one device
 
-	set_state(end_state);
+	/* write tdi (and read tdo) to the selected device
+	 * end (ie TMS high) is used only when
+	 * a state change must
+	 * be done
+	 */
+	read_write(tdi, tdo, irlen, end_state != SHIFT_IR);
+
+	/* it's asked to move out of SHIFT IR state */
+	if (end_state != SHIFT_IR) {
+		/* move to the requested state */
+		set_state(end_state);
+	}
+
 	return 0;
 }
 
