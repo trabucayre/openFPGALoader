@@ -80,7 +80,7 @@ int main(int argc, char **argv)
 	/* command line args. */
 	struct arguments args = {0, false, false, 0, "", "", "-", "", -1, 6000000, "-",
 			false, false, false, false, Device::WR_SRAM, false, false, "",
-			"", "", 0};
+			"", "", -1};
 	/* parse arguments */
 	try {
 		if (parse_opt(argc, argv, &args, &pins_config))
