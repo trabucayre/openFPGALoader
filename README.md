@@ -163,31 +163,35 @@ openFPGALoader --help
 Usage: openFPGALoader [OPTION...] BIT_FILE
 openFPGALoader -- a program to flash FPGA
 
-      --bitstream arg     bitstream
-  -b, --board arg         board name, may be used instead of cable
-  -c, --cable arg         jtag interface
-      --ftdi-serial arg   FTDI chip serial number
-      --ftdi-channel arg  FTDI chip channel number (channels 0-3 map to A-D)
-  -d, --device arg        device to use (/dev/ttyUSBx)
-      --detect            detect FPGA
-      --file-type arg     provides file type instead of let's deduced by
-                          using extension
-      --freq arg          jtag frequency (Hz)
-  -f, --write-flash       write bitstream in flash (default: false, only for
-                          Gowin and ECP5 devices)
-      --list-boards       list all supported boards
-      --list-cables       list all supported cables
-      --list-fpga         list all supported FPGA
-  -m, --write-sram        write bitstream in SRAM (default: true, only for
-                          Gowin and ECP5 devices)
-  -o, --offset arg        start offset in EEPROM
-      --pins arg          pin config (only for ft232R) TDI:TDO:TCK:TMS
-      --quiet             Produce quiet output (no progress bar)
-  -r, --reset             reset FPGA after operations
-      --spi               SPI mode (only for FTDI in serial mode)
-  -v, --verbose           Produce verbose output
-  -h, --help              Give this help list
-  -V, --Version           Print program version
+      --bitstream arg       bitstream
+  -b, --board arg           board name, may be used instead of cable
+  -c, --cable arg           jtag interface
+      --ftdi-serial arg     FTDI chip serial number
+      --ftdi-channel arg    FTDI chip channel number (channels 0-3 map to
+                            A-D)
+  -d, --device arg          device to use (/dev/ttyUSBx)
+      --detect              detect FPGA
+      --file-type arg       provides file type instead of let's deduced by
+                            using extension
+      --fpga-part arg       fpga model flavor + package
+      --freq arg            jtag frequency (Hz)
+  -f, --write-flash         write bitstream in flash (default: false, only
+                            for Gowin and ECP5 devices)
+      --index-chain arg     device index in JTAG-chain
+      --list-boards         list all supported boards
+      --list-cables         list all supported cables
+      --list-fpga           list all supported FPGA
+  -m, --write-sram          write bitstream in SRAM (default: true, only for
+                            Gowin and ECP5 devices)
+  -o, --offset arg          start offset in EEPROM
+      --pins arg            pin config (only for ft232R) TDI:TDO:TCK:TMS
+      --probe-firmware arg  firmware for JTAG probe (usbBlasterII)
+      --quiet               Produce quiet output (no progress bar)
+  -r, --reset               reset FPGA after operations
+      --spi                 SPI mode (only for FTDI in serial mode)
+  -v, --verbose             Produce verbose output
+  -h, --help                Give this help list
+  -V, --Version             Print program version
 
 Mandatory or optional arguments to long options are also mandatory or optional
 for any corresponding short options.

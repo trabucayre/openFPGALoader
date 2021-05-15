@@ -64,6 +64,7 @@ struct arguments {
 	string file_type;
 	string fpga_part;
 	string probe_firmware;
+	int index_chain;
 };
 
 int parse_opt(int argc, char **argv, struct arguments *args, jtag_pins_conf_t *pins_config);
@@ -79,7 +80,7 @@ int main(int argc, char **argv)
 	/* command line args. */
 	struct arguments args = {0, false, false, 0, "", "", "-", "", -1, 6000000, "-",
 			false, false, false, false, Device::WR_SRAM, false, false, "",
-			"", ""};
+			"", "", 0};
 	/* parse arguments */
 	try {
 		if (parse_opt(argc, argv, &args, &pins_config))
@@ -274,19 +275,30 @@ int main(int argc, char **argv)
 	}
 
 	if (found != 0) {
-		for (int i = 0; i < found; i++) {
-			if (fpga_list.find(listDev[i]) != fpga_list.end()) {
-				index = i;
-				if (idcode != -1) {
-					printError("Error: currently only one device is supported");
-					for (int i = 0; i < found; i++)
-						printf("0x%08x\n", listDev[i]);
-					delete(jtag);
-					return EXIT_FAILURE;
-				} else {
-					idcode = listDev[i];
+		if (args.index_chain == -1) {
+			for (int i = 0; i < found; i++) {
+				if (fpga_list.find(listDev[i]) != fpga_list.end()) {
+					index = i;
+					if (idcode != -1) {
+						printError("Error: more than one FPGA found");
+						printError("Use --index-chain to force selection");
+						for (int i = 0; i < found; i++)
+							printf("0x%08x\n", listDev[i]);
+						delete(jtag);
+						return EXIT_FAILURE;
+					} else {
+						idcode = listDev[i];
+					}
 				}
 			}
+		} else {
+			index = args.index_chain;
+			if (index > found || index < 0) {
+				printError("wrong index for device in JTAG chain");
+				delete(jtag);
+				return EXIT_FAILURE;
+			}
+			idcode = listDev[index];
 		}
 	} else {
 		printError("Error: no device found");
@@ -296,6 +308,9 @@ int main(int argc, char **argv)
 
 	jtag->device_select(index);
 
+	/* check if selected device is supported
+	 * mainly used in conjunction with --index-chain
+	 */
 	if (fpga_list.find(idcode) == fpga_list.end()) {
 		cerr << "Error: device " << hex << idcode << " not supported" << endl;
 		delete(jtag);
@@ -413,6 +428,8 @@ int parse_opt(int argc, char **argv, struct arguments *args, jtag_pins_conf_t *p
 			("freq",        "jtag frequency (Hz)", cxxopts::value<string>(freqo))
 			("f,write-flash",
 				"write bitstream in flash (default: false, only for Gowin and ECP5 devices)")
+			("index-chain",  "device index in JTAG-chain",
+				cxxopts::value<int>(args->index_chain))
 			("list-boards", "list all supported boards",
 				cxxopts::value<bool>(args->list_boards))
 			("list-cables", "list all supported cables",
