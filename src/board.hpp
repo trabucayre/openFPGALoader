@@ -122,6 +122,7 @@ static std::map <std::string, target_board_t> board_list = {
 	JTAG_BOARD("xtrx",            "xc7a50tcpg236", ""            , 0, 0),
 	SPI_BOARD("xyloni_spi",       "efinix", "efinix_spi",
 			DBUS4 | DBUS7, DBUS5, DBUS3, DBUS0, DBUS1, DBUS2, DBUS6, 0),
+	JTAG_BOARD("zedboard",        "xc7z020-clg484", "digilent_hs2", 0, 0),
 };
 
 #endif
