@@ -46,6 +46,8 @@ void Altera::programMem()
 	int byte_length = _bit.getLength()/8;
 	uint8_t *data = _bit.getData();
 
+	uint32_t clk_period = 1e9/(float)_jtag->getClkFreq();
+
 	unsigned char cmd[2];
 	unsigned char tx[864/8], rx[864/8];
 
@@ -59,7 +61,7 @@ void Altera::programMem()
 	_jtag->shiftIR(cmd, NULL, IRLENGTH, Jtag::PAUSE_IR);
 	/* RUNTEST IDLE 12000 TCK ENDSTATE IDLE; */
 	_jtag->set_state(Jtag::RUN_TEST_IDLE);
-	_jtag->toggleClk(12000);
+	_jtag->toggleClk(1000000/clk_period);
 	/* write */
 	ProgressBar progress("Flash SRAM", byte_length, 50, _quiet);
 
@@ -89,7 +91,7 @@ void Altera::programMem()
 	_jtag->shiftIR(cmd, NULL, IRLENGTH, Jtag::PAUSE_IR);
 	/* RUNTEST 60 TCK; */
 	_jtag->set_state(Jtag::RUN_TEST_IDLE);
-	_jtag->toggleClk(60);
+	_jtag->toggleClk(5000/clk_period);
 	/*
 	 * SDR 864 TDI
 	 * (000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000)
@@ -105,7 +107,7 @@ void Altera::programMem()
 	_jtag->shiftIR(cmd, NULL, IRLENGTH, Jtag::PAUSE_IR);
 	/* RUNTEST 49152 TCK; */
 	_jtag->set_state(Jtag::RUN_TEST_IDLE);
-	_jtag->toggleClk(49152);
+	_jtag->toggleClk(4099645/clk_period);
 	/* RUNTEST 512 TCK; */
 	_jtag->set_state(Jtag::RUN_TEST_IDLE);
 	_jtag->toggleClk(512);
@@ -115,7 +117,7 @@ void Altera::programMem()
 
 	/* RUNTEST 12000 TCK; */
 	_jtag->set_state(Jtag::RUN_TEST_IDLE);
-	_jtag->toggleClk(12000);
+	_jtag->toggleClk(1000000/clk_period);
 	/* -> idle */
 	_jtag->set_state(Jtag::RUN_TEST_IDLE);
 }
