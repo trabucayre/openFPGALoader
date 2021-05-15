@@ -234,45 +234,72 @@ int main(int argc, char **argv)
 		jtag = new Jtag(cable, &pins_config, args.device, args.ftdi_serial,
 				args.freq, false, args.probe_firmware);
 	} catch (std::exception &e) {
-		printError("Error: Failed to claim cable");
+		printError("JTAG init failed with: " + string(e.what()));
 		return EXIT_FAILURE;
 	}
 
 	/* chain detection */
-	vector<int> listDev;
-	int found = jtag->detectChain(listDev, 5);
+	vector<int> listDev = jtag->get_devices_list();
+	int found = listDev.size();
+	int idcode = -1, index = 0;
 
 	if (args.verbose > 0)
 		cout << "found " << std::to_string(found) << " devices" << endl;
-	if (found > 1) {
-		printError("Error: currently only one device is supported");
-		for (int i = 0; i < found; i++)
-			printf("0x%08x\n", listDev[i]);
-		delete(jtag);
-		return EXIT_FAILURE;
-	} else if (found < 1) {
+
+	/* in verbose mode or when detect
+	 * display full chain with details
+	 */
+	if (args.verbose > 0 || args.detect) {
+		for (int i = 0; i < found; i++) {
+			int t = listDev[i];
+			printf("index %d:\n", i);
+			if (fpga_list.find(t) != fpga_list.end()) {
+				printf("\tidcode 0x%x\n\tmanufacturer %s\n\tmodel  %s\n\tfamily %s\n",
+				t,
+				fpga_list[t].manufacturer.c_str(),
+				fpga_list[t].model.c_str(),
+				fpga_list[t].family.c_str());
+				printf("\tirlength %d\n", fpga_list[t].irlength);
+			} else if (misc_dev_list.find(t) != misc_dev_list.end()) {
+				printf("\tidcode   0x%x\n\ttype     %s\n\tirlength %d\n",
+				t,
+				misc_dev_list[t].name.c_str(),
+				misc_dev_list[t].irlength);
+			}
+		}
+		if (args.detect == true) {
+			delete jtag;
+			return EXIT_SUCCESS;
+		}
+	}
+
+	if (found != 0) {
+		for (int i = 0; i < found; i++) {
+			if (fpga_list.find(listDev[i]) != fpga_list.end()) {
+				index = i;
+				if (idcode != -1) {
+					printError("Error: currently only one device is supported");
+					for (int i = 0; i < found; i++)
+						printf("0x%08x\n", listDev[i]);
+					delete(jtag);
+					return EXIT_FAILURE;
+				} else {
+					idcode = listDev[i];
+				}
+			}
+		}
+	} else {
 		printError("Error: no device found");
 		delete(jtag);
 		return EXIT_FAILURE;
 	}
 
-	int idcode = listDev[0];
+	jtag->device_select(index);
 
 	if (fpga_list.find(idcode) == fpga_list.end()) {
 		cerr << "Error: device " << hex << idcode << " not supported" << endl;
 		delete(jtag);
 		return EXIT_FAILURE;
-	} else if (args.verbose > 0 || args.detect) {
-		printf("idcode 0x%x\nmanufacturer %s\nmodel  %s\nfamily %s\n",
-			idcode,
-			fpga_list[idcode].manufacturer.c_str(),
-			fpga_list[idcode].model.c_str(),
-			fpga_list[idcode].family.c_str());
-	}
-
-	if (args.detect == true) {
-		delete jtag;
-		return EXIT_SUCCESS;
 	}
 
 	string fab = fpga_list[idcode].manufacturer;
