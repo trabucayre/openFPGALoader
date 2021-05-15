@@ -201,10 +201,6 @@ void Xilinx::program_mem(ConfigBitstreamParser *bitfile)
 	 */
 	_jtag->set_state(Jtag::SELECT_DR_SCAN);
 	/*
-	 * 12: Enter the SHIFT-DR state.                      X     0   2
-	 */
-	_jtag->set_state(Jtag::SHIFT_DR);
-	/*
 	 * 13: Shift in the FPGA bitstream. Bitn (MSB)
 	 *     is the first bit in the bitstream(2).    bit1...bitn 0  (bits in bitstream)-1
 	 * 14: Shift in the last bit of the bitstream.
@@ -222,20 +218,22 @@ void Xilinx::program_mem(ConfigBitstreamParser *bitfile)
 	for (int i=0; i < byte_length; i+=burst_len) {
 		if (i + burst_len > byte_length) {
 			tx_len = (byte_length - i) * 8;
-			tx_end = 1;
+			/*
+			 * 15: Enter UPDATE-DR state.                 X     1   1
+			 */
+			tx_end = Jtag::UPDATE_DR;
 		} else {
 			tx_len = burst_len * 8;
-			tx_end = 0;
+	        /*
+	         * 12: Enter the SHIFT-DR state.              X     0   2
+	         */
+			tx_end = Jtag::SHIFT_DR;
 		}
-		_jtag->read_write(data+i, NULL, tx_len, tx_end);
+		_jtag->shiftDR(data+i, NULL, tx_len, tx_end);
 		_jtag->flush();
 		progress.display(i);
 	}
 	progress.done();
-	/*
-	 * 15: Enter UPDATE-DR state.                         X     1   1
-	 */
-	_jtag->set_state(Jtag::UPDATE_DR);
 	/*
 	 * 16: Move into RTI state.                           X     0   1
 	 */
@@ -333,11 +331,10 @@ int Xilinx::spi_wait(uint8_t cmd, uint8_t mask, uint8_t cond,
 	uint32_t count = 0;
 
 	_jtag->shiftIR(USER1, 6, Jtag::UPDATE_IR);
-	_jtag->set_state(Jtag::SHIFT_DR);
-	_jtag->read_write(&tx, NULL, 8, 0);
+	_jtag->shiftDR(&tx, NULL, 8, Jtag::SHIFT_DR);
 
 	do {
-		_jtag->read_write(dummy, rx, 8*2, 0);
+		_jtag->shiftDR(dummy, rx, 8*2, Jtag::SHIFT_DR);
 		tmp = (McsParser::reverseByte(rx[0]>>1)) | (0x01 & rx[1]);
 		count++;
 		if (count == timeout){
@@ -348,6 +345,7 @@ int Xilinx::spi_wait(uint8_t cmd, uint8_t mask, uint8_t cond,
 			printf("%x %x %x %u\n", tmp, mask, cond, count);
 		}
 	} while ((tmp & mask) != cond);
+	_jtag->shiftDR(dummy, rx, 8*2, Jtag::EXIT1_DR);
 	_jtag->go_test_logic_reset();
 
 	if (count == timeout) {
