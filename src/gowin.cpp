@@ -397,14 +397,14 @@ bool Gowin::flashFLASH(uint8_t *data, int length)
 		wr_rd(CONFIG_ENABLE, NULL, 0, NULL, 0);
 		wr_rd(EF_PROGRAM, NULL, 0, NULL, 0);
 		if (xpage != 0)
-			_jtag->read_write(tt, NULL, 312, 0);
+			_jtag->toggleClk(312);
 		addr = xpage << 6;
 		tmp[3] = 0xff&(addr >> 24);
 		tmp[2] = 0xff&(addr >> 16);
 		tmp[1] = 0xff&(addr >> 8);
 		tmp[0] = addr&0xff;
 		_jtag->shiftDR(tmp, NULL, 32);
-		_jtag->read_write(tt, NULL, 312, 0);
+		_jtag->toggleClk(312);
 
 		int xoffset = xpage * 256;  // each page containt 256Bytes
 		if (xoffset + 256 > buffer_length)
@@ -419,13 +419,13 @@ bool Gowin::flashFLASH(uint8_t *data, int length)
 			_jtag->shiftDR(tx, NULL, 32);
 
 			if (!is_gw1n1)
-				_jtag->read_write(tt, NULL, 40, 0);
+				_jtag->toggleClk(40);
 		}
 		if (is_gw1n1) {
 			//usleep(10*2400*2);
 			uint8_t tt2[6008/8];
 			memset(tt2, 0, 6008/8);
-			_jtag->read_write(tt2, tt2, 6008, 0);
+			_jtag->toggleClk(6008);
 		}
 		progress.display(i);
 	}
@@ -447,20 +447,18 @@ bool Gowin::flashSRAM(uint8_t *data, int length)
 	/* 2.2.6.4 */
 	wr_rd(XFER_WRITE, NULL, 0, NULL, 0);
 
-	/* 2.2.6.5 */
-	_jtag->set_state(Jtag::SHIFT_DR);
-
 	int xfer_len = 256;
 
 	for (int i=0; i < byte_length; i+=xfer_len) {
 		if (i + xfer_len > byte_length) {  // last packet with some size
 			tx_len = (byte_length - i) * 8;
-			tx_end = 1;  // to move in EXIT1_DR
+			tx_end = Jtag::EXIT1_DR;  // to move in EXIT1_DR
 		} else {
 			tx_len = xfer_len * 8;
-			tx_end = 0;
+			/* 2.2.6.5 */
+			tx_end = Jtag::SHIFT_DR;
 		}
-		_jtag->read_write(data+i, NULL, tx_len, tx_end);
+		_jtag->shiftDR(data+i, NULL, tx_len, tx_end);
 		//_jtag->flush();
 		progress.display(i);
 	}
@@ -490,7 +488,6 @@ bool Gowin::eraseFLASH()
 	printInfo("erase Flash ", false);
 	wr_rd(EFLASH_ERASE, NULL, 0, NULL, 0);
 	_jtag->set_state(Jtag::RUN_TEST_IDLE);
-	//_jtag->read_write(tt, tt, 37500*8, 0);
 
 	/* GW1N1 need 65 x 32bits
 	 * others 1 x 32bits
@@ -506,7 +503,7 @@ bool Gowin::eraseFLASH()
 	 */
 	//usleep(2*120000);
 	//uint8_t tt[37500];
-	_jtag->read_write(tt, tt, 37500*8, 0);
+	_jtag->toggleClk(37500*8);
 	printSuccess("Done");
 	return true;
 }
