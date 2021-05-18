@@ -1065,11 +1065,10 @@ int Lattice::spi_wait(uint8_t cmd, uint8_t mask, uint8_t cond,
 	 * so manually move to state machine to stay is this
 	 * state as long as needed
 	 */
-	_jtag->set_state(Jtag::SHIFT_DR);
-	_jtag->read_write(&tx, NULL, 8, 0);
+	_jtag->shiftDR(&tx, NULL, 8, Jtag::SHIFT_DR);
 
 	do {
-		_jtag->read_write(dummy, &rx, 8, 0);
+		_jtag->shiftDR(dummy, &rx, 8, Jtag::SHIFT_DR);
 		tmp = (LatticeBitParser::reverseByte(rx));
 		count ++;
 		if (count == timeout){
@@ -1081,7 +1080,7 @@ int Lattice::spi_wait(uint8_t cmd, uint8_t mask, uint8_t cond,
 			printf("%x %x %x %u\n", tmp, mask, cond, count);
 		}
 	} while ((tmp & mask) != cond);
-	_jtag->set_state(Jtag::RUN_TEST_IDLE);
+	_jtag->shiftDR(dummy, &rx, 8, Jtag::RUN_TEST_IDLE);
 	if (count == timeout) {
 		printf("%x\n", tmp);
 		std::cout << "wait: Error" << std::endl;
