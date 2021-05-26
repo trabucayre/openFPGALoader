@@ -17,21 +17,21 @@ ConfigBitstreamParser::ConfigBitstreamParser(const string &filename, int mode,
 			_bit_data(), _raw_data(), _hdr()
 {
 	if (!filename.empty()) {
-		ifstream _fd(filename, ifstream::in | (ios_base::openmode)mode);
-		if (!_fd.is_open())
+		FILE *_fd = fopen(filename.c_str(), "rb");
+		if (!_fd)
 			throw std::runtime_error("Error: fail to open " + _filename);
 
-		_fd.seekg(0, _fd.end);
-		_file_size = _fd.tellg();
-		_fd.seekg(0, _fd.beg);
+		fseek(_fd, 0, SEEK_END);
+		_file_size = ftell(_fd);
+		fseek(_fd, 0, SEEK_SET);
 
 		_raw_data.resize(_file_size);
 		_bit_data.reserve(_file_size);
 
-		_fd.read((char *)&_raw_data[0], sizeof(char) * _file_size);
-		if (_fd.gcount() != _file_size)
+		int ret = fread((char *)&_raw_data[0], sizeof(char), _file_size, _fd);
+		if (ret != _file_size)
 			throw std::runtime_error("Error: fail to read " + _filename);
-		_fd.close();
+		fclose(_fd);
 	} else if (!isatty(fileno(stdin))) {
 		_file_size = 0;
 		string tmp;
@@ -39,8 +39,7 @@ ConfigBitstreamParser::ConfigBitstreamParser(const string &filename, int mode,
 		size_t size;
 
 		do {
-			cin.read((char *)&tmp[0], 4096);
-			size = cin.gcount();
+			size = fread((char *)&tmp[0], sizeof(char), 4096, stdin);
 			_raw_data.append(tmp, 0, size);
 			_file_size += size;
 		} while (size > 0);
