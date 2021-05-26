@@ -60,6 +60,8 @@ int FsParser::parseHeader()
 		/* drop all comment, base analyze on header */
 		if (buffer[0] == '/')
 			continue;
+		if (buffer[buffer.size()-1] == '\r')
+			buffer.pop_back();
 
 		/* store each line in dedicated buffer for futur use
 		 */
