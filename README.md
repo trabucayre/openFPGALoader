@@ -293,26 +293,31 @@ allowed values are:
 
 
 <a id='altera'></a>
-### CYC1000, DE0, de0nano
+### <span style="text-decoration:underline">Intel/Altera: CYC1000, DE0, de0nano</span>
 
 #### loading in memory:
+
+`SVF` and `RBF` files are supported:
 
 sof to svf generation:
 ```bash
 quartus_cpf -c -q -g 3.3 -n 12.0MHz p project_name.sof project_name.svf
 ```
+sof to rbf generation:
+```bash
+quartus_cpf  --option=bitstream_compression=off -c project_name.sof project_name.rbf
+```
+
+<span style="color:red">**Warning: as mentionned in `cyclone` handbooks, real-time decompression is not
+supported by FPGA in JTAG mode. Keep in mind to disable this option.**</span>
+
 file load:
 ```bash
-openFPGALoader -b cyc1000 project_name.svf
+openFPGALoader -b boardname project_name.svf
+# or
+openFPGALoader -b boardname project_name.rbf
 ```
-
-```bash
-openFPGALoader -b de0 -b project_name.svf
-```
-
-```bash
-openFPGALoader -b de0nano -b project_name.svf
-```
+with `boardname` = `de0`, `cyc1000`, `de0nano`, `de0nanoSoc` or `qmtechCycloneV`
 
 #### SPI flash:
 sof to rpd:
