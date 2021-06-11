@@ -13,7 +13,6 @@ class FTDIpp_MPSSE {
 			int bit_low_dir;
 			int bit_high_val;
 			int bit_high_dir;
-			int force_high_bits;
 		} mpsse_bit_config;
 
 		FTDIpp_MPSSE(const mpsse_bit_config &cable, const std::string &dev,
