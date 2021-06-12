@@ -33,7 +33,7 @@ class JtagInterface {
 	virtual ~JtagInterface() {}
 
 	virtual int setClkFreq(uint32_t clkHZ) = 0;
-	virtual uint32_t getClkFreq() { return 0;}
+	virtual uint32_t getClkFreq() {return _clkHZ;}
 
 	/*!
 	 * \brief flush TMS internal buffer (ie. transmit to converter)
@@ -80,5 +80,7 @@ class JtagInterface {
 	 * \return 1 if success, 0 if nothing to write, -1 is something wrong
 	 */
 	virtual int flush() = 0;
+ protected:
+	uint32_t _clkHZ; /*!< current clk frequency */
 };
 #endif  // _JTAGINTERFACE_H_

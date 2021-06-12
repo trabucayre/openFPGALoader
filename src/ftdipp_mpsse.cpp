@@ -294,6 +294,8 @@ int FTDIpp_MPSSE::setClkFreq(uint32_t clkHZ)
 	ftdi_tcioflush(_ftdi);
 #endif
 
+	_clkHZ = real_freq;
+
 	return real_freq;
 }
 
