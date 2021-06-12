@@ -76,7 +76,7 @@ FtdiJtagBitBang::FtdiJtagBitBang(const FTDIpp_MPSSE::mpsse_bit_config &cable,
 		throw std::runtime_error("_buffer realloc failed\n");
 	_buffer = ptr;
 
-	setClkFreq(_clkHZ);
+	setClkFreq(clkHZ);
 
 	init(1, _tck_pin | _tms_pin | _tdi_pin, BITMODE_BITBANG);
 	setBitmode(BITMODE_BITBANG);

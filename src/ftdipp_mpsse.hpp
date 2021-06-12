@@ -22,6 +22,7 @@ class FTDIpp_MPSSE {
 		int init(unsigned char latency, unsigned char bitmask_mode,
 			unsigned char mode);
 		int setClkFreq(uint32_t clkHZ);
+		uint32_t getClkFreq() { return _clkHZ;}
 
 		int vid() {return _vid;}
 		int pid() {return _pid;}

@@ -42,6 +42,8 @@ class FtdiJtagMPSSE : public JtagInterface, private FTDIpp_MPSSE {
 		return FTDIpp_MPSSE::setClkFreq(clkHZ);
 	}
 
+	uint32_t getClkFreq() override {return FTDIpp_MPSSE::getClkFreq();}
+
 	/* TMS */
 	int writeTMS(uint8_t *tms, int len, bool flush_buffer) override;
 	/* clock */

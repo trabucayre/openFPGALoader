@@ -145,6 +145,8 @@ int AnlogicCable::setClkFreq(uint32_t clkHZ)
 	printWarn("Jtag frequency : requested " + std::to_string(req_freq) +
 			"Hz -> real " + std::to_string(clkHZ) + "Hz");
 
+	_clkHZ = clkHZ;
+
 	return clkHZ;
 }
 
