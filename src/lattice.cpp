@@ -222,22 +222,23 @@ bool Lattice::program_mem()
 
 	uint8_t tmp[1024];
 	int size = 1024;
+	int next_state = Jtag::SHIFT_DR;
 
 	ProgressBar progress("Loading", length, 50, _quiet);
 
 	for (int i = 0; i < length; i += size) {
 		progress.display(i);
 
-		if (length < i + size)
+		if (length < i + size) {
 			size = length-i;
+			next_state = Jtag::RUN_TEST_IDLE;
+		}
 
 		for (int ii = 0; ii < size; ii++)
 			tmp[ii] = ConfigBitstreamParser::reverseByte(data[i+ii]);
 
-		_jtag->shiftDR(tmp, NULL, size*8, Jtag::SHIFT_DR);
+		_jtag->shiftDR(tmp, NULL, size*8, next_state);
 	}
-
-	_jtag->set_state(Jtag::RUN_TEST_IDLE);
 
 	if (checkStatus(0, REG_STATUS_CNF_CHK_MASK))
 		progress.done();
