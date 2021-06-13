@@ -113,6 +113,7 @@ static std::map <std::string, target_board_t> board_list = {
 	JTAG_BOARD("littleBee",       "", "ft2232",     0, 0),
 	JTAG_BOARD("spartanEdgeAccelBoard", "", "",0, 0),
 	JTAG_BOARD("pipistrello",     "", "ft2232",    0, 0),
+	JTAG_BOARD("minispartan6",    "", "ft2232",    0, 0),
 	JTAG_BOARD("qmtechCycloneV",  "", "",       0, 0),
 	JTAG_BOARD("runber",          "", "ft232",      0, 0),
 	JTAG_BOARD("tangnano",        "", "ft2232",     0, 0),
