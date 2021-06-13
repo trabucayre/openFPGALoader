@@ -179,14 +179,43 @@ int DirtyJtag::setClkFreq(uint32_t clkHZ)
 int DirtyJtag::writeTMS(uint8_t *tms, int len, bool flush_buffer)
 {
 	(void) flush_buffer;
+	int actual_length;
 
 	if (len == 0)
 		return 0;
 
-	for (int i = 0; i < len; i++) {
-		bool val = (tms[i >> 3] & (1 << (i & 0x07)));
-		sendBitBang(SIG_TMS, ((val)?SIG_TMS : 0), NULL, (i == len-1));
+	uint8_t mask= SIG_TCK | SIG_TMS;
+	uint8_t buf[64];
+	u_int buffer_idx = 0;
+	for (int i = 0; i < len; i++)
+	{
+		uint8_t val = (tms[i >> 3] & (1 << (i & 0x07))) ? SIG_TMS : 0;
+		buf[buffer_idx++] = CMD_SETSIG;
+		buf[buffer_idx++] = mask;
+		buf[buffer_idx++] = val;
+		buf[buffer_idx++] = CMD_SETSIG;
+		buf[buffer_idx++] = mask;
+		buf[buffer_idx++] = val | SIG_TCK;
+		if ((buffer_idx + 7) >= sizeof(buf) || (i == len - 1)) {
+			//flush the buffer
+			if (i == len - 1) {
+				//insert tck falling edge
+				buf[buffer_idx++] = CMD_SETSIG;
+				buf[buffer_idx++] = mask;
+				buf[buffer_idx++] = val;
+			}
+			buf[buffer_idx++] = CMD_STOP;
+			int ret = libusb_bulk_transfer(dev_handle, DIRTYJTAG_WRITE_EP,
+										   buf, buffer_idx, &actual_length, 1000);
+			if (ret < 0)
+			{
+				cerr << "toggleClk: usb bulk write failed " << ret << endl;
+				return -EXIT_FAILURE;
+			}
+			buffer_idx = 0;
+		}
 	}
+	assert(buffer_idx == 0);
 	return len;
 }
 
@@ -316,48 +345,52 @@ int DirtyJtag::writeTDI(uint8_t *tx, uint8_t *rx, uint32_t len, bool end)
 
 int DirtyJtag::sendBitBang(uint8_t mask, uint8_t val, uint8_t *read, bool last)
 {
-	int actual_length;
-	mask |= SIG_TCK;
-	uint8_t buf[] = { CMD_SETSIG,
-					static_cast<uint8_t>(mask),
-					static_cast<uint8_t>(val),
-					CMD_SETSIG,
-					static_cast<uint8_t>(mask),
-					static_cast<uint8_t>(val | SIG_TCK),
-					CMD_STOP};
-
-	if (libusb_bulk_transfer(dev_handle, DIRTYJTAG_WRITE_EP,
-			buf, 7, &actual_length, 1000) < 0) {
-		cerr << "sendBitBang: usb bulk write failed 1" << endl;
-		return -EXIT_FAILURE;
-	}
-
-	if (read) {
-		uint8_t rd_buf[] = {CMD_GETSIG, CMD_STOP};
+	if (read || !((mask  & SIG_TDI) && (mask & SIG_TMS))) {
+		int actual_length;
+		mask |= SIG_TCK;
+		uint8_t buf[] = {CMD_SETSIG,
+						 static_cast<uint8_t>(mask),
+						 static_cast<uint8_t>(val),
+						 CMD_SETSIG,
+						 static_cast<uint8_t>(mask),
+						 static_cast<uint8_t>(val | SIG_TCK),
+						 CMD_GETSIG, //<---Read instruction
+						 CMD_STOP,
+						 };
+		if (!read){
+			//remove the read instruction
+			buf[6] = CMD_STOP;
+		}
 		if (libusb_bulk_transfer(dev_handle, DIRTYJTAG_WRITE_EP,
-				rd_buf, 2, &actual_length, 1000) < 0) {
-			cerr << "sendBitBang: usb bulk write failed 3" << endl;
+				buf, sizeof(buf), &actual_length, 1000) < 0) {
+			cerr << "sendBitBang: usb bulk write failed 1" << endl;
 			return -EXIT_FAILURE;
 		}
 
-		do {
-			if (libusb_bulk_transfer(dev_handle, DIRTYJTAG_READ_EP,
-					read, 1, &actual_length, 1000) < 0) {
-				cerr << "sendBitBang: usb bulk read failed 4" << endl;
+		if (read) {
+			do
+			{
+				if (libusb_bulk_transfer(dev_handle, DIRTYJTAG_READ_EP,
+										read, 1, &actual_length, 1000) < 0)
+				{
+					cerr << "sendBitBang: usb bulk read failed 4" << endl;
+					return -EXIT_FAILURE;
+				}
+			} while (actual_length == 0);
+		}
+
+		if (last) {
+			buf[2] &= ~SIG_TCK;
+			buf[3] = CMD_STOP;
+			if (libusb_bulk_transfer(dev_handle, DIRTYJTAG_WRITE_EP,
+									 buf, 4, &actual_length, 1000) < 0)	{
+				cerr << "sendBitBang usb bulk write failed" << endl;
 				return -EXIT_FAILURE;
 			}
-		} while (actual_length == 0);
-	}
-
-	if (last) {
-		buf[2] &= ~SIG_TCK;
-		buf[3] = CMD_STOP;
-		if (libusb_bulk_transfer(dev_handle, DIRTYJTAG_WRITE_EP,
-				buf, 4, &actual_length, 1000) < 0) {
-			cerr << "sendBitBang usb bulk write failed" << endl;
-			return -EXIT_FAILURE;
 		}
-	}
 
-	return EXIT_SUCCESS;
+		return EXIT_SUCCESS;
+	} else {
+		return toggleClk(SIG_TMS & val, SIG_TDI & val, 1);
+	}	
 }
