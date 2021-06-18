@@ -50,6 +50,7 @@ int FsParser::parseHeader()
 	int ret = 0;
 	string buffer;
 	int line_index = 0;
+	bool in_header = true;
 
 	istringstream lineStream(_raw_data);
 
@@ -66,6 +67,9 @@ int FsParser::parseHeader()
 		/* store each line in dedicated buffer for futur use
 		 */
 		_lstRawData.push_back(buffer);
+
+		if (!in_header)
+			continue;
 
 		uint8_t c = bitToVal(buffer.substr(0, 8).c_str(), 8);
 		uint8_t key = c & 0x7F;
@@ -112,6 +116,7 @@ int FsParser::parseHeader()
 				break;
 			case 0x3B: /* last header line with crc and cfg data length */
 						/* documentation issue */
+				in_header = false;
 				uint8_t crc;
 				crc = 0x01 & (val >> 23);
 
