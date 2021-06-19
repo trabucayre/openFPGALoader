@@ -5,6 +5,7 @@ __Current supported kits:__
 
 * [Acorn CLE 215+](http://squirrelsresearch.com/acorn-cle-215/) (memory and spi flash)
 * [Alchitry Au](https://alchitry.com/products/alchitry-au-fpga-development-board) (memory)
+* [Avnet ZedBoard](https://www.avnet.com/wps/portal/us/products/avnet-boards/avnet-board-families/zedboard/) (memory)
 * [Digilent Basys3](https://reference.digilentinc.com/reference/programmable-logic/basys-3/start) (memory and spi flash)
 * Trenz cyc1000 Cyclone 10 LP 10CL025 (memory and spi flash)
 * [Colorlight 5A-75B (version 7)](https://fr.aliexpress.com/item/32281130824.html) (memory and spi flash)
@@ -35,6 +36,8 @@ __Current supported kits:__
 * [Sipeed Lichee Tang](https://tang.sipeed.com/en/hardware-overview/lichee-tang/) (memory and spi flash)
 * [Terasic DE0](https://www.terasic.com.tw/cgi-bin/page/archive.pl?No=364) (memory)
 * [Terasic de0nano](https://www.terasic.com.tw/cgi-bin/page/archive.pl?No=593) (memory)
+* [Terasic de0nanoSoc](https://www.terasic.com.tw/cgi-bin/page/archive.pl?Language=English&CategoryNo=205&No=941) (memory)
+* [Terasic de10Nano](https://www.terasic.com.tw/cgi-bin/page/archive.pl?Language=English&CategoryNo=205&No=1046) (memory)
 * LambdaConcept ECPIX-5 (memory and flash)
 * [Efinix Xyloni](https://www.efinixinc.com/products-devkits-xyloni.html) (spi flash (*xyloni_spi*))
 * [honeycomb](https://github.com/Disasm/honeycomb-pcb) (memory and internal flash)
