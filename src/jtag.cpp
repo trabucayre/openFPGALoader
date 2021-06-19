@@ -30,6 +30,9 @@
 #include "ftdipp_mpsse.hpp"
 #include "ftdiJtagBitbang.hpp"
 #include "ftdiJtagMPSSE.hpp"
+#ifdef ENABLE_CMSISDAP
+#include "cmsisDAP.hpp"
+#endif
 #include "dirtyJtag.hpp"
 #include "part.hpp"
 #include "usbBlaster.hpp"
@@ -107,6 +110,11 @@ void Jtag::init_internal(cable_t &cable, const string &dev, const string &serial
 		_jtag = new UsbBlaster(cable.config.vid, cable.config.pid,
 				firmware_path, _verbose);
 		break;
+#ifdef ENABLE_CMSISDAP
+	case MODE_CMSISDAP:
+		_jtag = new CmsisDAP(cable.config.vid, cable.config.pid, _verbose);
+		break;
+#endif
 	default:
 		std::cerr << "Jtag: unknown cable type" << std::endl;
 		throw std::exception();

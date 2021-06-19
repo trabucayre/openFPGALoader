@@ -9,6 +9,7 @@ __Current supported kits:__
 * [Digilent Basys3](https://reference.digilentinc.com/reference/programmable-logic/basys-3/start) (memory and spi flash)
 * Trenz cyc1000 Cyclone 10 LP 10CL025 (memory and spi flash)
 * [Colorlight 5A-75B (version 7)](https://fr.aliexpress.com/item/32281130824.html) (memory and spi flash)
+* [Colorlight I5](https://www.colorlight-led.com/product/colorlight-i5-led-display-receiver-card.html) (memory and spi flash)
 * [Digilent Arty A7 xc7a35ti](https://reference.digilentinc.com/reference/programmable-logic/arty-a7/start) (memory and spi flash)
 * [Digilent Arty S7 xc7s50](https://reference.digilentinc.com/reference/programmable-logic/arty-s7/start) (memory and spi flash)
 * [Digilent Nexys Video xc7a200t](https://reference.digilentinc.com/reference/programmable-logic/nexys-video/start) (memory and spi flash)
@@ -70,6 +71,7 @@ __Supported cables:__
 
 * anlogic JTAG adapter
 * [digilent_hs2](https://store.digilentinc.com/jtag-hs2-programming-cable/): jtag programmer cable from digilent
+* [cmsisdap](https://os.mbed.com/docs/mbed-os/v6.11/debug-test/daplink.html): ARM CMSIS DAP protocol interface (hid only)
 * [DirtyJTAG](https://github.com/jeanthom/DirtyJTAG): JTAG probe firmware for STM32F1
   (Best to use release (1.4 or newer) or limit the --freq to 600000 with older releases. New version https://github.com/jeanthom/DirtyJTAG/tree/dirtyjtag2 is also supported)
 * Intel USB Blaster I & II : jtag programmer cable from intel/altera
@@ -106,7 +108,7 @@ __Supported cables:__
 This application uses **libftdi1**, so this library must be installed (and,
 depending of the distribution, headers too)
 ```bash
-apt-get install libftdi1-2 libftdi1-dev libudev-dev cmake
+apt-get install libftdi1-2 libftdi1-dev libhidapi-libusb0 libhidapi-dev libudev-dev cmake
 ```
 **libudev-dev** is optional, may be replaced by **eudev-dev** or just not installed.
 
@@ -115,6 +117,13 @@ node). If you don't want this option, use:
 
 ```bash
 -DENABLE_UDEV=OFF
+```
+
+By default, **cmsisdap** support is enabled (used for colorlight I5).
+If you don't want this option, use:
+
+```bash
+-DENABLE_CMSISDAP=OFF
 ```
 
 And if not already done, install **pkg-config**, **make** and **g++**.
@@ -137,6 +146,7 @@ $ mkdir build
 $ cd build
 $ cmake ../ # add -DBUILD_STATIC=ON to build a static version
             # add -DENABLE_UDEV=OFF to disable udev support and -d /dev/xxx
+            # add -DENABLE_CMSISDAP=OFF to disable CMSIS DAP support
 $ cmake --build .
 or
 $ make -j$(nproc)

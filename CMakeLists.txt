@@ -7,6 +7,7 @@ add_definitions(-DVERSION=\"v${PROJECT_VERSION}\")
 
 option(BUILD_STATIC "Whether or not to build with static libraries" OFF)
 option(ENABLE_UDEV "use udev to search JTAG adapter from /dev/xx" ON)
+option(ENABLE_CMSISDAP "enable cmsis DAP interface (requires hidapi)" ON)
 option(USE_PKGCONFIG "Use pkgconfig to find libraries" ON)
 option(LINK_CMAKE_THREADS "Use CMake find_package to link the threading library" OFF)
 
@@ -28,6 +29,7 @@ if(USE_PKGCONFIG)
 	find_package(PkgConfig REQUIRED)
 	pkg_check_modules(LIBFTDI REQUIRED libftdi1)
 	pkg_check_modules(LIBUSB REQUIRED libusb-1.0)
+	pkg_check_modules(HIDAPI hidapi-libusb)
 
 	if(ENABLE_UDEV)
 		pkg_check_modules(LIBUDEV libudev)
@@ -129,7 +131,6 @@ include_directories(
 	${LIBFTDI_INCLUDE_DIRS}
 )
 
-
 if (${CMAKE_SYSTEM_NAME} MATCHES "Darwin")
 	find_library(LIBFTDI1STATIC libftdi1.a REQUIRED)
 	find_library(LIBUSB1STATIC libusb-1.0.a REQUIRED)
@@ -163,6 +164,20 @@ endif()
 if (BUILD_STATIC)
 	set_target_properties(openFPGALoader PROPERTIES LINK_SEARCH_END_STATIC 1)
 endif()
+
+if (ENABLE_CMSISDAP)
+if (HIDAPI_FOUND)
+	include_directories(${HIDAPI_INCLUDE_DIRS})
+	target_link_libraries(openFPGALoader ${HIDAPI_LIBRARIES})
+	add_definitions(-DENABLE_CMSISDAP=1)
+	target_sources(openFPGALoader PRIVATE src/cmsisDAP.cpp)
+	list (APPEND OPENFPGALOADER_HEADERS src/cmsisDAP.hpp)
+	message("cmsis_dap support enabled")
+else()
+	message("hidapi-libusb not found: cmsis_dap support disabled")
+endif()
+endif(ENABLE_CMSISDAP)
+
 endif()
 
 if (LINK_CMAKE_THREADS)
