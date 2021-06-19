@@ -196,7 +196,7 @@ int DirtyJtag::writeTMS(uint8_t *tms, int len, bool flush_buffer)
 		buf[buffer_idx++] = CMD_SETSIG;
 		buf[buffer_idx++] = mask;
 		buf[buffer_idx++] = val | SIG_TCK;
-		if ((buffer_idx + 7) >= sizeof(buf) || (i == len - 1)) {
+		if ((buffer_idx + 9) >= sizeof(buf) || (i == len - 1)) {
 			//flush the buffer
 			if (i == len - 1) {
 				//insert tck falling edge
@@ -209,7 +209,7 @@ int DirtyJtag::writeTMS(uint8_t *tms, int len, bool flush_buffer)
 										   buf, buffer_idx, &actual_length, 1000);
 			if (ret < 0)
 			{
-				cerr << "toggleClk: usb bulk write failed " << ret << endl;
+				cerr << "writeTMS: usb bulk write failed " << ret << endl;
 				return -EXIT_FAILURE;
 			}
 			buffer_idx = 0;
