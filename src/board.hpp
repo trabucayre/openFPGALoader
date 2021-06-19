@@ -92,6 +92,7 @@ static std::map <std::string, target_board_t> board_list = {
 	JTAG_BOARD("nexysVideo",      "xc7a200tsbg484", "digilent_b", 0, 0),
 	JTAG_BOARD("kc705",           "", "digilent", 0, 0),
 	JTAG_BOARD("colorlight",      "", "",           0, 0),
+	JTAG_BOARD("colorlight-i5",   "", "cmsisdap", 0, 0),
 	JTAG_BOARD("crosslinknx_evn", "", "ft2232", 0, 0),
 	JTAG_BOARD("cyc1000",         "", "ft2232",     0, 0),
 	JTAG_BOARD("de0",             "", "usb-blaster",0, 0),
