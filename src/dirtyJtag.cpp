@@ -375,7 +375,7 @@ int DirtyJtag::writeTDI(uint8_t *tx, uint8_t *rx, uint32_t len, bool end)
 		}
 		else
 		{
-			if (toggleClk(SIG_TMS & val, SIG_TDI & val, 1))
+			if (toggleClk(SIG_TMS, last_bit, 1))
 			{
 				cerr << "writeTDI: last bit error" << endl;
 				return -EXIT_FAILURE;
