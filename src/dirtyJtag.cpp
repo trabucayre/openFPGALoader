@@ -159,6 +159,8 @@ int DirtyJtag::setClkFreq(uint32_t clkHZ)
 		clkHZ = 16000000;
 	}
 
+	_clkHZ = clkHZ;
+
 	printInfo("Jtag frequency : requested " + std::to_string(req_freq) +
 			"Hz -> real " + std::to_string(clkHZ) + "Hz");
 
