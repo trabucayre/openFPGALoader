@@ -16,6 +16,7 @@ enum communication_type {
 	MODE_DIRTYJTAG    = 3, /*! JTAG probe firmware for STM32F1 */
 	MODE_USBBLASTER   = 4, /*! JTAG probe firmware for USBBLASTER */
 	MODE_CMSISDAP     = 5, /*! CMSIS-DAP JTAG probe */
+	MODE_DFU          = 6, /*! DFU based probe */
 };
 
 typedef struct {
@@ -30,6 +31,7 @@ static std::map <std::string, cable_t> cable_list = {
 	{"bus_blaster",  {MODE_FTDI_SERIAL,  {0x0403, 0x6010, INTERFACE_A, 0x08, 0x1B, 0x08, 0x0B}}},
 	{"bus_blaster_b",{MODE_FTDI_SERIAL,  {0x0403, 0x6010, INTERFACE_B, 0x08, 0x0B, 0x08, 0x0B}}},
 	{"cmsisdap",     {MODE_CMSISDAP,     {0x0d28, 0x0204, 0,           0,    0,    0,    0   }}},
+	{"dfu",          {MODE_DFU,          {}}},
 	{"digilent",     {MODE_FTDI_SERIAL,  {0x0403, 0x6010, INTERFACE_A, 0xe8, 0xeb, 0x00, 0x60}}},
 	{"digilent_b",   {MODE_FTDI_SERIAL,  {0x0403, 0x6010, INTERFACE_B, 0xe8, 0xeb, 0x00, 0x60}}},
 	{"digilent_hs2", {MODE_FTDI_SERIAL,  {0x0403, 0x6014, INTERFACE_A, 0xe8, 0xeb, 0x00, 0x60}}},

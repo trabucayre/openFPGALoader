@@ -58,7 +58,8 @@ typedef struct {
 
 enum {
 	COMM_JTAG = (1 << 0),
-	COMM_SPI  = (1 << 1)
+	COMM_SPI  = (1 << 1),
+	COMM_DFU  = (1 << 2),
 };
 
 /*!
@@ -83,6 +84,8 @@ typedef struct {
 #define SPI_BOARD(_name, _manufacturer, _cable, _rst, _done, _cs, _sck, _si, _so, _holdn, _wpn) \
 	{_name, {_manufacturer, _cable, "", _rst, _done, COMM_SPI, {}, \
 		{_cs, _sck, _so, _si, _holdn, _wpn}}}
+#define DFU_BOARD(_name, _fpga_part, _cable) \
+	{_name, {"", _cable, _fpga_part, 0, 0, COMM_DFU, {}, {}}}
 
 static std::map <std::string, target_board_t> board_list = {
 	JTAG_BOARD("acornCle215",     "xc7a200tsbg484", "",         0, 0),
@@ -116,6 +119,7 @@ static std::map <std::string, target_board_t> board_list = {
 	JTAG_BOARD("spartanEdgeAccelBoard", "", "",0, 0),
 	JTAG_BOARD("pipistrello",     "", "ft2232",    0, 0),
 	JTAG_BOARD("minispartan6",    "", "ft2232",    0, 0),
+	DFU_BOARD("orangeCrab",       "", "dfu"            ),
 	JTAG_BOARD("qmtechCycloneV",  "", "",       0, 0),
 	JTAG_BOARD("runber",          "", "ft232",      0, 0),
 	JTAG_BOARD("tangnano",        "", "ft2232",     0, 0),

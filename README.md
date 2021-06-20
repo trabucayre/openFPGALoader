@@ -27,6 +27,7 @@ __Current supported kits:__
 * [Lattice ECP5 5G Evaluation Board (LFE5UM5G-85F-EVN)](https://www.latticesemi.com/en/Products/DevelopmentBoardsAndKits/ECP5EvaluationBoard) (memory and spi flash)
 * [Olimex iCE40HX1K-EVB](https://www.olimex.com/Products/FPGA/iCE40/iCE40HX1K-EVB/open-source-hardware)
 * [Olimex iCE40HX8K-EVB](https://www.olimex.com/Products/FPGA/iCE40/iCE40HX8K-EVB/open-source-hardware)
+* [Orange Crab](https://github.com/gregdavill/OrangeCrab)
 * [QMTech CycloneV Core Board](https://fr.aliexpress.com/i/1000006622149.html) (memory)
 * [Trenz Gowin LittleBee (TEC0117)](https://shop.trenz-electronic.de/en/TEC0117-01-FPGA-Module-with-GOWIN-LittleBee-and-8-MByte-internal-SDRAM) (memory and flash)
 * [Saanlima Pipistrello LX45](http://pipistrello.saanlima.com/index.php?title=Welcome_to_Pipistrello) (memory)
@@ -72,6 +73,7 @@ __Supported cables:__
 * anlogic JTAG adapter
 * [digilent_hs2](https://store.digilentinc.com/jtag-hs2-programming-cable/): jtag programmer cable from digilent
 * [cmsisdap](https://os.mbed.com/docs/mbed-os/v6.11/debug-test/daplink.html): ARM CMSIS DAP protocol interface (hid only)
+* [DFU (Device Firmware Upgrade)](http://www.usb.org/developers/docs/devclass_docs/DFU_1.1.pdf): USB device compatible with DFU protocol
 * [DirtyJTAG](https://github.com/jeanthom/DirtyJTAG): JTAG probe firmware for STM32F1
   (Best to use release (1.4 or newer) or limit the --freq to 600000 with older releases. New version https://github.com/jeanthom/DirtyJTAG/tree/dirtyjtag2 is also supported)
 * Intel USB Blaster I & II : jtag programmer cable from intel/altera
@@ -187,6 +189,7 @@ openFPGALoader -- a program to flash FPGA
                             A-D)
   -d, --device arg          device to use (/dev/ttyUSBx)
       --detect              detect FPGA
+      --dfu                 DFU mode
       --file-type arg       provides file type instead of let's deduced by
                             using extension
       --fpga-part arg       fpga model flavor + package

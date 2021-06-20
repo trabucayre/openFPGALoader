@@ -46,6 +46,7 @@ set(OPENFPGALOADER_SOURCE
 	src/anlogic.cpp
 	src/anlogicBitParser.cpp
 	src/anlogicCable.cpp
+	src/dfu.cpp
 	src/dfuFileParser.cpp
 	src/dirtyJtag.cpp
 	src/efinix.cpp
@@ -85,6 +86,7 @@ set(OPENFPGALOADER_HEADERS
 	src/anlogicBitParser.hpp
 	src/anlogicCable.hpp
 	src/cxxopts.hpp
+	src/dfu.hpp
 	src/dfuFileParser.hpp
 	src/dirtyJtag.hpp
 	src/efinix.hpp

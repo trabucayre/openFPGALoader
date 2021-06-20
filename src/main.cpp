@@ -29,6 +29,7 @@
 #include "board.hpp"
 #include "cable.hpp"
 #include "device.hpp"
+#include "dfu.hpp"
 #include "display.hpp"
 #include "efinix.hpp"
 #include "ftdispi.hpp"
@@ -61,6 +62,7 @@ struct arguments {
 	Device::prog_type_t prg_type;
 	bool is_list_command;
 	bool spi;
+	bool dfu;
 	string file_type;
 	string fpga_part;
 	string probe_firmware;
@@ -79,7 +81,7 @@ int main(int argc, char **argv)
 
 	/* command line args. */
 	struct arguments args = {0, false, false, 0, "", "", "-", "", -1, 6000000, "-",
-			false, false, false, false, Device::WR_SRAM, false, false, "",
+			false, false, false, false, Device::WR_SRAM, false, false, false, "",
 			"", "", -1};
 	/* parse arguments */
 	try {
@@ -225,6 +227,36 @@ int main(int argc, char **argv)
 		}
 
 		delete spi;
+
+		return EXIT_SUCCESS;
+	}
+
+	/* ------------------- */
+	/* DFU access          */
+	/* ------------------- */
+	if (args.dfu || (board && board->mode == COMM_DFU)) {
+		/* try to init DFU probe */
+		DFU *dfu = NULL;
+		try {
+			dfu = new DFU(args.bit_file, args.verbose);
+		} catch (std::exception &e) {
+			printError("DFU init failed with: " + string(e.what()));
+			return EXIT_FAILURE;
+		}
+		/* if verbose or detect: display device */
+		if (args.verbose > 0 || args.detect)
+			dfu->displayDFU();
+
+		/* if detect: stop */
+		if (args.detect)
+			return EXIT_SUCCESS;
+
+		try {
+			dfu->download();
+		} catch (std::exception &e) {
+			printError("DFU download failed with: " + string(e.what()));
+			return EXIT_FAILURE;
+		}
 
 		return EXIT_SUCCESS;
 	}
@@ -422,6 +454,7 @@ int parse_opt(int argc, char **argv, struct arguments *args, jtag_pins_conf_t *p
 #endif
 			("detect",      "detect FPGA",
 				cxxopts::value<bool>(args->detect))
+			("dfu",   "DFU mode", cxxopts::value<bool>(args->dfu))
 			("file-type",   "provides file type instead of let's deduced by using extension",
 				cxxopts::value<string>(args->file_type))
 			("fpga-part",   "fpga model flavor + package", cxxopts::value<string>(args->fpga_part))
