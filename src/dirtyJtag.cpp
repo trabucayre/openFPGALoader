@@ -48,7 +48,7 @@ enum dirtyJtagCmd {
 	CMD_CLK =    0x06
 };
 
-//Modifiers applicable only to DirtyJTAG2
+// Modifiers applicable only to DirtyJTAG2
 enum CommandModifier {
   EXTEND_LENGTH = 0x40,
   NO_READ       = 0x80
@@ -56,11 +56,12 @@ enum CommandModifier {
 
 struct version_specific
 {
-	uint8_t no_read; //command modifer for xfer no read
-	uint16_t max_bits; //max bit count that can be transferred
+	uint8_t no_read;  // command modifer for xfer no read
+	uint16_t max_bits;  // max bit count that can be transferred
 };
 
-static version_specific v_options[4] ={{0, 240}, {0, 240}, {NO_READ, 496}, {NO_READ, 4000}};
+static version_specific v_options[4] ={{0, 240}, {0, 240}, {NO_READ, 496},
+									{NO_READ, 4000}};
 
 
 enum dirtyJtagSig {
@@ -186,7 +187,7 @@ int DirtyJtag::writeTMS(uint8_t *tms, int len, bool flush_buffer)
 	if (len == 0)
 		return 0;
 
-	uint8_t mask= SIG_TCK | SIG_TMS;
+	uint8_t mask = SIG_TCK | SIG_TMS;
 	uint8_t buf[64];
 	u_int buffer_idx = 0;
 	for (int i = 0; i < len; i++)
@@ -199,9 +200,9 @@ int DirtyJtag::writeTMS(uint8_t *tms, int len, bool flush_buffer)
 		buf[buffer_idx++] = mask;
 		buf[buffer_idx++] = val | SIG_TCK;
 		if ((buffer_idx + 9) >= sizeof(buf) || (i == len - 1)) {
-			//flush the buffer
+			// flush the buffer
 			if (i == len - 1) {
-				//insert tck falling edge
+				// insert tck falling edge
 				buf[buffer_idx++] = CMD_SETSIG;
 				buf[buffer_idx++] = mask;
 				buf[buffer_idx++] = val;
@@ -255,7 +256,7 @@ int DirtyJtag::writeTDI(uint8_t *tx, uint8_t *rx, uint32_t len, bool end)
 
 	uint8_t tx_cpy[real_byte_len];
 	uint8_t tx_buf[512], rx_buf[512];
-	uint8_t *tx_ptr = tx, *rx_ptr = rx;
+	uint8_t *tx_ptr, *rx_ptr = rx;
 
 	if (tx)
 		memcpy(tx_cpy, tx, real_byte_len);
@@ -263,11 +264,13 @@ int DirtyJtag::writeTDI(uint8_t *tx, uint8_t *rx, uint32_t len, bool end)
 		memset(tx_cpy, 0, real_byte_len);
 	tx_ptr = tx_cpy;
 
-	tx_buf[0] = CMD_XFER | (rx ? 0 : v_options[_version].no_read );
+	tx_buf[0] = CMD_XFER | (rx ? 0 : v_options[_version].no_read);
 	uint16_t max_bit_transfer_length = v_options[_version].max_bits;
-	assert(max_bit_transfer_length %8 == 0);//need to cut the bits on byte size.
+	// need to cut the bits on byte size.
+	assert(max_bit_transfer_length % 8 == 0);
 	while (real_bit_len != 0) {
-		uint16_t bit_to_send = (real_bit_len > max_bit_transfer_length) ? max_bit_transfer_length : real_bit_len;
+		uint16_t bit_to_send = (real_bit_len > max_bit_transfer_length) ?
+			max_bit_transfer_length : real_bit_len;
 		size_t byte_to_send = (bit_to_send + 7) / 8;
 		size_t header_offset = 0;
 		if (_version == 3) {
@@ -290,12 +293,14 @@ int DirtyJtag::writeTDI(uint8_t *tx, uint8_t *rx, uint32_t len, bool end)
 
 		actual_length = 0;
 		int ret = libusb_bulk_transfer(dev_handle, DIRTYJTAG_WRITE_EP,
-		        (unsigned char *)tx_buf, (byte_to_send + header_offset), &actual_length, 1000);
+		        (unsigned char *)tx_buf, (byte_to_send + header_offset),
+				&actual_length, 1000);
 		if ((ret < 0) || (actual_length != (int)(byte_to_send + header_offset))) {
-			cerr << "writeTDI: fill: usb bulk write failed " << ret << "actual length: " << actual_length << endl;
+			cerr << "writeTDI: fill: usb bulk write failed " << ret <<
+				"actual length: " << actual_length << endl;
 			return EXIT_FAILURE;
 		}
-		//cerr << actual_length << ", " << bit_to_send << endl;
+		// cerr << actual_length << ", " << bit_to_send << endl;
 
 		if (rx || (_version <= 1)) {
 			int transfer_length = (bit_to_send > 255) ? byte_to_send :32;
@@ -333,7 +338,6 @@ int DirtyJtag::writeTDI(uint8_t *tx, uint8_t *rx, uint32_t len, bool end)
 
 		if (rx)
 		{
-			int actual_length;
 			mask |= SIG_TCK;
 			uint8_t buf[] = {
 				CMD_SETSIG,
@@ -342,7 +346,7 @@ int DirtyJtag::writeTDI(uint8_t *tx, uint8_t *rx, uint32_t len, bool end)
 				CMD_SETSIG,
 				static_cast<uint8_t>(mask),
 				static_cast<uint8_t>(val | SIG_TCK),
-				CMD_GETSIG, //<---Read instruction
+				CMD_GETSIG,  // <---Read instruction
 				CMD_STOP,
 			};
 			if (libusb_bulk_transfer(dev_handle, DIRTYJTAG_WRITE_EP,
@@ -374,11 +378,8 @@ int DirtyJtag::writeTDI(uint8_t *tx, uint8_t *rx, uint32_t len, bool end)
 				return -EXIT_FAILURE;
 			}
 
-		}
-		else
-		{
-			if (toggleClk(SIG_TMS, last_bit, 1))
-			{
+		} else {
+			if (toggleClk(SIG_TMS, last_bit, 1)) {
 				cerr << "writeTDI: last bit error" << endl;
 				return -EXIT_FAILURE;
 			}
