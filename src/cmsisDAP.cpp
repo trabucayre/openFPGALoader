@@ -110,14 +110,8 @@ CmsisDAP::CmsisDAP(int vid, int pid, bool verbose):_verbose(verbose),
 	 */
 	devs = hid_enumerate(vid, pid);
 
-	/* for all HID devices extracts only
-	 * ones with a product_string containing the string "CMSIS-DAP"
-	 */
 	for (cur_dev = devs; NULL != cur_dev; cur_dev = cur_dev->next) {
-		if (NULL != cur_dev->product_string &&
-				wcsstr(cur_dev->product_string, L"CMSIS-DAP")) {
-			dev_found.push_back(cur_dev);
-		}
+		dev_found.push_back(cur_dev);
 	}
 
 	/* no devices: stop */
