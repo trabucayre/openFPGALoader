@@ -73,6 +73,7 @@ __Supported cables:__
 * anlogic JTAG adapter
 * [digilent_hs2](https://store.digilentinc.com/jtag-hs2-programming-cable/): jtag programmer cable from digilent
 * [cmsisdap](https://os.mbed.com/docs/mbed-os/v6.11/debug-test/daplink.html): ARM CMSIS DAP protocol interface (hid only)
+* [Orbtrace](https://github.com/orbcode/orbtrace): Open source FPGA-based debug and trace interface
 * [DFU (Device Firmware Upgrade)](http://www.usb.org/developers/docs/devclass_docs/DFU_1.1.pdf): USB device compatible with DFU protocol
 * [DirtyJTAG](https://github.com/jeanthom/DirtyJTAG): JTAG probe firmware for STM32F1
   (Best to use release (1.4 or newer) or limit the --freq to 600000 with older releases. New version https://github.com/jeanthom/DirtyJTAG/tree/dirtyjtag2 is also supported)
