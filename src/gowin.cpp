@@ -75,6 +75,8 @@ Gowin::Gowin(Jtag *jtag, const string filename, const string &file_type,
 		is_gw1n1(false)
 {
 	_fs = NULL;
+	uint32_t idcode = idCode();
+
 	if (!_file_extension.empty()) {
 		if (_file_extension == "fs") {
 			if (prg_type == Device::WR_FLASH)
@@ -98,6 +100,11 @@ Gowin::Gowin(Jtag *jtag, const string filename, const string &file_type,
 
 			if (_verbose)
 				_fs->displayHeader();
+			string idcode_str = _fs->getHeaderVal("idcode");
+			uint32_t fs_idcode = std::stoul(idcode_str.c_str(), NULL, 16);
+			if (fs_idcode != idcode) {
+				throw std::runtime_error("mismatch between target's idcode and fs idcode");
+			}
 		} else {
 			throw std::runtime_error("incompatible file format");
 		}
@@ -105,7 +112,7 @@ Gowin::Gowin(Jtag *jtag, const string filename, const string &file_type,
 	_jtag->setClkFreq(2500000);
 
 	/* erase and program flash differ for GW1N1 */
-	if (idCode() == 0x0900281B)
+	if (idcode == 0x0900281B)
 		is_gw1n1 = true;
 }
 
