@@ -67,6 +67,7 @@ struct arguments {
 	string fpga_part;
 	string probe_firmware;
 	int index_chain;
+	unsigned int file_size;
 };
 
 int parse_opt(int argc, char **argv, struct arguments *args, jtag_pins_conf_t *pins_config);
@@ -82,7 +83,7 @@ int main(int argc, char **argv)
 	/* command line args. */
 	struct arguments args = {0, false, false, false, 0, "", "", "-", "", -1,
 			6000000, "-", false, false, false, false, Device::WR_SRAM, false,
-			false, false, "", "", "", -1};
+			false, false, "", "", "", -1, 0};
 	/* parse arguments */
 	try {
 		if (parse_opt(argc, argv, &args, &pins_config))
@@ -379,13 +380,22 @@ int main(int argc, char **argv)
 		return EXIT_FAILURE;
 	}
 
-	if (!args.bit_file.empty() || !args.file_type.empty()) {
+	if ((!args.bit_file.empty() || !args.file_type.empty())
+			&& args.prg_type != Device::RD_FLASH) {
 		try {
 			fpga->program(args.offset);
 		} catch (std::exception &e) {
 			delete(fpga);
 			delete(jtag);
 			return EXIT_FAILURE;
+		}
+	}
+
+	if (args.prg_type == Device::RD_FLASH) {
+		if (args.file_size == 0) {
+			printError("Error: 0 size for dump");
+		} else {
+			fpga->dumpFlash(args.bit_file, args.offset, args.file_size);
 		}
 	}
 
@@ -455,6 +465,9 @@ int parse_opt(int argc, char **argv, struct arguments *args, jtag_pins_conf_t *p
 			("detect",      "detect FPGA",
 				cxxopts::value<bool>(args->detect))
 			("dfu",   "DFU mode", cxxopts::value<bool>(args->dfu))
+			("dump-flash",  "Dump flash mode")
+			("file-size",   "provides size in Byte to dump, must be used with dump-flash",
+				cxxopts::value<unsigned int>(args->file_size))
 			("file-type",   "provides file type instead of let's deduced by using extension",
 				cxxopts::value<string>(args->file_type))
 			("fpga-part",   "fpga model flavor + package", cxxopts::value<string>(args->fpga_part))
@@ -511,7 +524,8 @@ int parse_opt(int argc, char **argv, struct arguments *args, jtag_pins_conf_t *p
 			return 1;
 		}
 
-		if (result.count("write-flash") && result.count("write-sram")) {
+		if (result.count("write-flash") && result.count("write-sram") &&
+				result.count("dump-flash")) {
 			printError("Error: both write to flash and write to ram enabled");
 			throw std::exception();
 		}
@@ -520,6 +534,8 @@ int parse_opt(int argc, char **argv, struct arguments *args, jtag_pins_conf_t *p
 			args->prg_type = Device::WR_FLASH;
 		else if (result.count("write-sram"))
 			args->prg_type = Device::WR_SRAM;
+		else if (result.count("dump-flash"))
+			args->prg_type = Device::RD_FLASH;
 
 		if (result.count("freq")) {
 			double freq;

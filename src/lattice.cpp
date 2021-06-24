@@ -73,7 +73,9 @@ Lattice::Lattice(Jtag *jtag, const string filename, const string &file_type,
 		Device(jtag, filename, file_type, verify, verbose),
 		_fpga_family(UNKNOWN_FAMILY)
 {
-	if (!_file_extension.empty()) {
+	if (prg_type == Device::RD_FLASH) {
+		_mode = READ_MODE;
+	} else if (!_file_extension.empty()) {
 		if (_file_extension == "jed" || _file_extension == "mcs") {
 			_mode = Device::FLASH_MODE;
 		} else if (_file_extension == "bit" || _file_extension == "bin") {
@@ -554,6 +556,79 @@ void Lattice::program(unsigned int offset)
 		program_flash(offset);
 	else if (_mode == MEM_MODE)
 		program_mem();
+}
+
+bool Lattice::dumpFlash(const string &filename,
+		uint32_t base_addr, uint32_t len)
+{
+	/* idem program */
+
+	/* preload 0x1C */
+	uint8_t tx_buf[26];
+	memset(tx_buf, 0xff, 26);
+	wr_rd(0x1C, tx_buf, 26, NULL, 0);
+
+	wr_rd(0xFf, NULL, 0, NULL, 0);
+
+	/* ISC Enable 0xC6 */
+	printInfo("Enable configuration: ", false);
+	if (!EnableISC(0x00)) {
+		printError("FAIL");
+		displayReadReg(readStatusReg());
+		return false;
+	} else {
+		printSuccess("DONE");
+	}
+
+	/* ISC ERASE */
+	printInfo("SRAM erase: ", false);
+	if (flashErase(FLASH_ERASE_SRAM) == false) {
+		printError("FAIL");
+		displayReadReg(readStatusReg());
+		return false;
+	} else {
+		printSuccess("DONE");
+	}
+
+	DisableISC();
+
+	string data;
+	data.resize(len);
+	/* switch to SPI mode */
+	_jtag->shiftIR(0x3A, 8, Jtag::EXIT1_IR);
+	uint8_t tmp[2] = {0xFE, 0x68};
+	_jtag->shiftDR(tmp, NULL, 16);
+
+	/* prepare SPI access */
+	SPIFlash flash(this, _verbose);
+	flash.reset();
+	flash.read_id();
+	flash.read_status_reg();
+	flash.read(base_addr, (uint8_t*)&data[0], len);
+
+	FILE *fd = fopen(filename.c_str(), "wb");
+	if (!fd) {
+		return false;
+	}
+
+	fwrite(data.c_str(), sizeof(uint8_t), len, fd);
+	fclose(fd);
+
+	/* ISC REFRESH 0x79 */
+	printInfo("Refresh: ", false);
+	if (loadConfiguration() == false) {
+		printError("FAIL");
+		displayReadReg(readStatusReg());
+		return false;
+	} else {
+		printSuccess("DONE");
+	}
+
+	/* bypass */
+	wr_rd(0xff, NULL, 0, NULL, 0);
+	_jtag->go_test_logic_reset();
+
+	return true;
 }
 
 /* flash mode :

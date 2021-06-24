@@ -17,18 +17,23 @@ class Device {
 			NONE_MODE = 0,
 			SPI_MODE = 1,
 			FLASH_MODE = 1,
-			MEM_MODE = 2
+			MEM_MODE = 2,
+			READ_MODE = 3,
 		};
 
 		typedef enum {
 			WR_SRAM = 0,
-			WR_FLASH = 1
+			WR_FLASH = 1,
+			RD_FLASH = 2
 		} prog_type_t;
 
 		Device(Jtag *jtag, std::string filename, const std::string &file_type,
 				bool verify, int8_t verbose = false);
 		virtual ~Device();
 		virtual void program(unsigned int offset = 0) = 0;
+		virtual bool dumpFlash(const std::string &filename,
+			uint32_t base_addr, uint32_t len) {
+			(void)filename; (void) base_addr; (void) len; return false;}
 		virtual int  idCode() = 0;
 		virtual void reset();
 

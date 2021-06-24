@@ -191,6 +191,9 @@ openFPGALoader -- a program to flash FPGA
   -d, --device arg          device to use (/dev/ttyUSBx)
       --detect              detect FPGA
       --dfu                 DFU mode
+      --dump-flash          Dump flash mode
+      --file-size arg       provides size in Byte to dump, must be used with
+                            dump-flash
       --file-type arg       provides file type instead of let's deduced by
                             using extension
       --fpga-part arg       fpga model flavor + package

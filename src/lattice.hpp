@@ -41,6 +41,8 @@ class Lattice: public Device, SPIInterface {
 		bool program_mem();
 		bool program_flash(unsigned int offset);
 		bool Verify(std::vector<std::string> data, bool unlock = false);
+		bool dumpFlash(const std::string &filename,
+			uint32_t base_addr, uint32_t len) override;
 
 		/* spi interface */
 		int spi_put(uint8_t cmd, uint8_t *tx, uint8_t *rx,
