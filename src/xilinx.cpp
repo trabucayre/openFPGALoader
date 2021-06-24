@@ -17,8 +17,9 @@
 Xilinx::Xilinx(Jtag *jtag, const std::string &filename,
 	const std::string &file_type,
 	Device::prog_type_t prg_type,
-	std::string device_package, int8_t verbose):
-	Device(jtag, filename, file_type, verbose),_device_package(device_package)
+	std::string device_package, bool verify, int8_t verbose):
+	Device(jtag, filename, file_type, verify, verbose),
+	_device_package(device_package)
 {
 	if (!_file_extension.empty()) {
 		if (_file_extension == "mcs") {
@@ -146,11 +147,44 @@ void Xilinx::program_spi(ConfigBitstreamParser * bit, unsigned int offset)
 		throw std::runtime_error(e.what());
 	}
 
+	uint8_t *data = bit->getData();
+	int length = bit->getLength() / 8;
+
 	SPIFlash spiFlash(this, (_verbose ? 1 : (_quiet ? -1 : 0)));
 	spiFlash.reset();
 	spiFlash.read_id();
 	spiFlash.read_status_reg();
-	spiFlash.erase_and_prog(offset, bit->getData(), bit->getLength()/8);
+	spiFlash.erase_and_prog(offset, data, length);
+
+	/* verify write if required */
+	if (_verify) {
+		std::string verify_data;
+		verify_data.resize(256);
+
+		ProgressBar progress("Verifying write", length, 50, _quiet);
+		int rd_length = 256;
+		for (int i = 0; i < length; i+=rd_length) {
+			if (rd_length + i > length)
+				rd_length = length - i;
+			if (0 != spiFlash.read(offset + i, (uint8_t*)&verify_data[0],
+						rd_length)) {
+				progress.fail();
+				printError("Failed to read flash");
+				return;
+			}
+
+			for (int ii = 0; ii < rd_length; ii++) {
+				if ((uint8_t)verify_data[ii] != data[i + ii]) {
+					progress.fail();
+					printError("Verification failed at " +
+							std::to_string(offset + i + ii));
+					return;
+				}
+			}
+			progress.display(i);
+		}
+		progress.done();
+	}
 }
 
 void Xilinx::program_mem(ConfigBitstreamParser *bitfile)

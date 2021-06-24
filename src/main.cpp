@@ -46,7 +46,7 @@ using namespace std;
 
 struct arguments {
 	int8_t verbose;
-	bool reset, detect;
+	bool reset, detect, verify;
 	unsigned int offset;
 	string bit_file;
 	string device;
@@ -80,9 +80,9 @@ int main(int argc, char **argv)
 	jtag_pins_conf_t pins_config = {0, 0, 0, 0};
 
 	/* command line args. */
-	struct arguments args = {0, false, false, 0, "", "", "-", "", -1, 6000000, "-",
-			false, false, false, false, Device::WR_SRAM, false, false, false, "",
-			"", "", -1};
+	struct arguments args = {0, false, false, false, 0, "", "", "-", "", -1,
+			6000000, "-", false, false, false, false, Device::WR_SRAM, false,
+			false, false, "", "", "", -1};
 	/* parse arguments */
 	try {
 		if (parse_opt(argc, argv, &args, &pins_config))
@@ -355,7 +355,7 @@ int main(int argc, char **argv)
 	try {
 		if (fab == "xilinx") {
 			fpga = new Xilinx(jtag, args.bit_file, args.file_type,
-				args.prg_type, args.fpga_part, args.verbose);
+				args.prg_type, args.fpga_part, args.verify, args.verbose);
 		} else if (fab == "altera") {
 			fpga = new Altera(jtag, args.bit_file, args.file_type,
 				args.verbose);
@@ -367,7 +367,7 @@ int main(int argc, char **argv)
 				args.prg_type, args.verbose);
 		} else if (fab == "lattice") {
 			fpga = new Lattice(jtag, args.bit_file, args.file_type,
-				args.prg_type, args.verbose);
+				args.prg_type, args.verify, args.verbose);
 		} else {
 			printError("Error: manufacturer " + fab + " not supported");
 			delete(jtag);
@@ -485,6 +485,8 @@ int parse_opt(int argc, char **argv, struct arguments *args, jtag_pins_conf_t *p
 				cxxopts::value<bool>(args->spi))
 			("v,verbose", "Produce verbose output", cxxopts::value<bool>(verbose))
 			("h,help", "Give this help list")
+			("verify", "Verify write operation (SPI Flash only)",
+				cxxopts::value<bool>(args->verify))
 			("V,Version", "Print program version");
 
 		options.parse_positional({"bitstream"});

@@ -69,8 +69,9 @@ using namespace std;
 #	define REG_STATUS_EXEC_ERR	(1 << 26)
 
 Lattice::Lattice(Jtag *jtag, const string filename, const string &file_type,
-	Device::prog_type_t prg_type, int8_t verbose):
-		Device(jtag, filename, file_type, verbose), _fpga_family(UNKNOWN_FAMILY)
+	Device::prog_type_t prg_type, bool verify, int8_t verbose):
+		Device(jtag, filename, file_type, verify, verbose),
+		_fpga_family(UNKNOWN_FAMILY)
 {
 	if (!_file_extension.empty()) {
 		if (_file_extension == "jed" || _file_extension == "mcs") {
@@ -358,8 +359,10 @@ bool Lattice::program_intFlash()
 			return false;
 	}
 	/* verify write */
-	if (Verify(cfg_data) == false)
-		return false;
+	if (_verify) {
+		if (Verify(cfg_data) == false)
+			return false;
+	}
 
 	/* missing usercode update */
 
@@ -453,6 +456,31 @@ bool Lattice::program_extFlash(unsigned int offset)
 	flash.read_id();
 	flash.read_status_reg();
 	flash.erase_and_prog(offset, data, length);
+
+	if (_verify) {
+		printInfo("Verifying write");
+		string verify_data;
+		verify_data.resize(length);
+		printInfo("Read flash ", false);
+		if (0 != flash.read(offset, (uint8_t*)&verify_data[0], length)) {
+			printError("FAIL");
+			return false;
+		} else {
+			printSuccess("DONE");
+		}
+
+		ProgressBar progress("Check", length, 50, _quiet);
+		for (int i = 0; i < length; i++) {
+			if ((uint8_t)verify_data[i] != data[i]) {
+				progress.fail();
+				printError("Verification failed at " +
+						std::to_string(offset + i));
+				return false;
+			}
+			progress.display(i);
+		}
+		progress.done();
+	}
 
 	delete _bit;
 	return true;

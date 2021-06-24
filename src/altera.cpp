@@ -18,7 +18,7 @@
 
 Altera::Altera(Jtag *jtag, const std::string &filename,
 	const std::string &file_type, int8_t verbose):
-	Device(jtag, filename, file_type, verbose), _svf(_jtag, _verbose)
+	Device(jtag, filename, file_type, false, verbose), _svf(_jtag, _verbose)
 {
 	if (!_file_extension.empty()) {
 		if (_file_extension == "svf" || _file_extension == "rbf")

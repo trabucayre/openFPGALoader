@@ -211,6 +211,7 @@ openFPGALoader -- a program to flash FPGA
       --spi                 SPI mode (only for FTDI in serial mode)
   -v, --verbose             Produce verbose output
   -h, --help                Give this help list
+      --verify              Verify write operation (SPI Flash only)
   -V, --Version             Print program version
 
 Mandatory or optional arguments to long options are also mandatory or optional

@@ -33,7 +33,7 @@ Ice40::Ice40(FtdiSpi* spi, const std::string &filename,
 			const std::string &file_type,
 			uint16_t rst_pin, uint16_t done_pin,
 			int8_t verbose):
-	Device(NULL, filename, file_type, verbose), _rst_pin(rst_pin),
+	Device(NULL, filename, file_type, false, verbose), _rst_pin(rst_pin),
 		_done_pin(done_pin)
 {
 	_spi = spi;

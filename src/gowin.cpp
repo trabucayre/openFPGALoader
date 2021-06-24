@@ -71,7 +71,7 @@ using namespace std;
 
 Gowin::Gowin(Jtag *jtag, const string filename, const string &file_type,
 		Device::prog_type_t prg_type,
-		int8_t verbose): Device(jtag, filename, file_type, verbose),
+		int8_t verbose): Device(jtag, filename, file_type, false, verbose),
 		is_gw1n1(false)
 {
 	_fs = NULL;
