@@ -21,7 +21,9 @@ Xilinx::Xilinx(Jtag *jtag, const std::string &filename,
 	Device(jtag, filename, file_type, verify, verbose),
 	_device_package(device_package)
 {
-	if (!_file_extension.empty()) {
+	if (prg_type == Device::RD_FLASH) {
+		_mode = Device::READ_MODE;
+	} else if (!_file_extension.empty()) {
 		if (_file_extension == "mcs") {
 			_mode = Device::SPI_MODE;
 		} else if (_file_extension == "bit" || _file_extension == "bin") {
@@ -81,7 +83,7 @@ void Xilinx::program(unsigned int offset)
 	bool reverse = false;
 
 	/* nothing to do */
-	if (_mode == Device::NONE_MODE)
+	if (_mode == Device::NONE_MODE || _mode == Device::READ_MODE)
 		return;
 
 	if (_mode == Device::MEM_MODE)
@@ -124,11 +126,11 @@ void Xilinx::program(unsigned int offset)
 	delete bit;
 }
 
-void Xilinx::program_spi(ConfigBitstreamParser * bit, unsigned int offset)
+bool Xilinx::load_bridge()
 {
 	if (_device_package.empty()) {
 		printError("Can't program SPI flash: missing device-package information");
-		return;
+		return false;
 	}
 
 	// DATA_DIR is defined at compile time.
@@ -146,6 +148,14 @@ void Xilinx::program_spi(ConfigBitstreamParser * bit, unsigned int offset)
 		printError(e.what());
 		throw std::runtime_error(e.what());
 	}
+	return true;
+}
+
+void Xilinx::program_spi(ConfigBitstreamParser * bit, unsigned int offset)
+{
+	/* first need to have bridge in RAM */
+	if (load_bridge() == false)
+		return;
 
 	uint8_t *data = bit->getData();
 	int length = bit->getLength() / 8;
@@ -294,6 +304,54 @@ void Xilinx::program_mem(ConfigBitstreamParser *bitfile)
 	 * now functional.                                    X     1   3
 	 */
 	_jtag->go_test_logic_reset();
+}
+
+bool Xilinx::dumpFlash(const std::string &filename,
+		uint32_t base_addr, uint32_t len)
+{
+	/* first need to have bridge in RAM */
+	if (load_bridge() == false)
+		return false;
+
+	/* prepare SPI access */
+	SPIFlash flash(this, _verbose);
+	flash.reset();
+	flash.read_id();
+	flash.read_status_reg();
+
+	FILE *fd = fopen(filename.c_str(), "wb");
+	if (!fd) {
+		printError("Open dump file failed\n");
+		return false;
+	}
+
+	uint32_t rd_length = 256;
+	std::string data;
+	data.resize(rd_length);
+
+	ProgressBar progress("Dump flash", len, 50, _quiet);
+
+	for (uint32_t i = 0; i < len; i+=rd_length) {
+		if (rd_length + i > len)
+			rd_length = len - i;
+		if (0 != flash.read(base_addr + i, (uint8_t*)&data[0],
+					rd_length)) {
+			progress.fail();
+			printError("Failed to read flash");
+			return false;
+		}
+
+		fwrite(data.c_str(), sizeof(uint8_t), rd_length, fd);
+
+		progress.display(i);
+	}
+	progress.done();
+	fclose(fd);
+
+	/* reset device */
+	reset();
+
+	return false;
 }
 
 /*

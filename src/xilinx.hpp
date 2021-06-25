@@ -20,6 +20,8 @@ class Xilinx: public Device, SPIInterface {
 		void program(unsigned int offset = 0) override;
 		void program_spi(ConfigBitstreamParser * bit, unsigned int offset = 0);
 		void program_mem(ConfigBitstreamParser *bitfile);
+		bool dumpFlash(const std::string &filename,
+			uint32_t base_addr, uint32_t len);
 		int idCode() override;
 		void reset() override;
 
@@ -31,6 +33,12 @@ class Xilinx: public Device, SPIInterface {
 				uint32_t timeout, bool verbose = false) override;
 
 	private:
+		/*!
+		 * \brief with xilinx devices SPI flash direct access is not possible
+		 * 		so a bridge must be loaded in RAM to access flash
+		 * 	\return false if missing device mode, true otherwise
+		 */
+		bool load_bridge();
 		std::string _device_package;
 };
 
