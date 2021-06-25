@@ -71,8 +71,8 @@ using namespace std;
 
 Gowin::Gowin(Jtag *jtag, const string filename, const string &file_type,
 		Device::prog_type_t prg_type,
-		int8_t verbose): Device(jtag, filename, file_type, false, verbose),
-		is_gw1n1(false)
+		bool verify, int8_t verbose): Device(jtag, filename, file_type,
+		verify, verbose), is_gw1n1(false)
 {
 	_fs = NULL;
 	uint32_t idcode = idCode();
@@ -155,6 +155,8 @@ void Gowin::programFlash()
 	/* test status a faire */
 	if (!flashFLASH(data, length))
 		return;
+	if (_verify)
+		printWarn("writing verification not supported");
 	if (!DisableCfg())
 		return;
 	wr_rd(RELOAD, NULL, 0, NULL, 0);

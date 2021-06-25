@@ -32,7 +32,7 @@ class Gowin: public Device {
 	public:
 		Gowin(Jtag *jtag, std::string filename, const std::string &file_type,
 				Device::prog_type_t prg_type,
-				int8_t verbose);
+				bool verify, int8_t verbose);
 		~Gowin();
 		int idCode() override;
 		void reset() override;

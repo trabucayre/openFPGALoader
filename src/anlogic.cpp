@@ -39,8 +39,8 @@
 
 Anlogic::Anlogic(Jtag *jtag, const std::string &filename,
 	const std::string &file_type,
-	Device::prog_type_t prg_type, int8_t verbose):
-	Device(jtag, filename, file_type, false, verbose), _svf(_jtag, _verbose)
+	Device::prog_type_t prg_type, bool verify, int8_t verbose):
+	Device(jtag, filename, file_type, verify, verbose), _svf(_jtag, _verbose)
 {
 	if (!_file_extension.empty()) {
 		if (_file_extension == "svf")
@@ -115,6 +115,9 @@ void Anlogic::program(unsigned int offset)
 		flash.read_status_reg();
 
 		flash.erase_and_prog(offset, data, len);
+
+		if (_verify)
+			printWarn("writing verification not supported");
 
 		//Loading device with 'bypass' instruction.
 		_jtag->shiftIR(BYPASS, IRLENGTH);

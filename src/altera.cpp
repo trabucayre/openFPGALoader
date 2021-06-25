@@ -17,8 +17,8 @@
 #define BIT_FOR_FLASH (DATA_DIR "/openFPGALoader/test_sfl.svf")
 
 Altera::Altera(Jtag *jtag, const std::string &filename,
-	const std::string &file_type, int8_t verbose):
-	Device(jtag, filename, file_type, false, verbose), _svf(_jtag, _verbose)
+	const std::string &file_type, bool verify, int8_t verbose):
+	Device(jtag, filename, file_type, verify, verbose), _svf(_jtag, _verbose)
 {
 	if (!_file_extension.empty()) {
 		if (_file_extension == "svf" || _file_extension == "rbf")
@@ -140,6 +140,9 @@ void Altera::program(unsigned int offset)
 		EPCQ epcq(0x403, 0x6010/*_jtag->vid(), _jtag->pid()*/, 2, 6000000);
 		_svf.parse(BIT_FOR_FLASH);
 		epcq.program(offset, _filename, (_file_extension == "rpd")? true:false);
+
+		if (_verify)
+			printWarn("writing verification not supported");
 		reset();
 	}
 }

@@ -4,6 +4,7 @@
 #include <iostream>
 #include <string>
 
+#include "display.hpp"
 #include "jtag.hpp"
 
 /* GGM: TODO: program must have an optional
@@ -33,7 +34,8 @@ class Device {
 		virtual void program(unsigned int offset = 0) = 0;
 		virtual bool dumpFlash(const std::string &filename,
 			uint32_t base_addr, uint32_t len) {
-			(void)filename; (void) base_addr; (void) len; return false;}
+			(void)filename; (void) base_addr; (void) len;
+			printError("dump flash not supported"); return false;}
 		virtual int  idCode() = 0;
 		virtual void reset();
 

@@ -28,7 +28,7 @@ class Efinix: public Device {
 		Efinix(FtdiSpi *spi, const std::string &filename,
 			const std::string &file_type,
 			uint16_t rst_pin, uint16_t done_pin,
-			int8_t verbose);
+			bool verify, int8_t verbose);
 		~Efinix();
 
 		void program(unsigned int offset = 0) override;

@@ -33,8 +33,8 @@
 Efinix::Efinix(FtdiSpi* spi, const std::string &filename,
 			const std::string &file_type,
 			uint16_t rst_pin, uint16_t done_pin,
-			int8_t verbose):
-	Device(NULL, filename, file_type, false, verbose), _rst_pin(rst_pin),
+			bool verify, int8_t verbose):
+	Device(NULL, filename, file_type, verify, verbose), _rst_pin(rst_pin),
 		_done_pin(done_pin)
 {
 	_spi = spi;
@@ -106,6 +106,9 @@ void Efinix::program(unsigned int offset)
     printf("%02x\n", flash.read_status_reg());
     flash.read_id();
     flash.erase_and_prog(offset, bit->getData(), bit->getLength() / 8);
+
+	if (_verify)
+		printWarn("writing verification not supported");
 
     _spi->gpio_set(_rst_pin);
 	usleep(12000);

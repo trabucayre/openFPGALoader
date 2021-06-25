@@ -181,11 +181,11 @@ int main(int argc, char **argv)
 
 		if (board->manufacturer == "efinix") {
 			Efinix target(spi, args.bit_file, args.file_type,
-				board->reset_pin, board->done_pin, args.verbose);
+				board->reset_pin, board->done_pin, args.verify, args.verbose);
 			target.program(args.offset);
 		} else if (board->manufacturer == "lattice") {
 			Ice40 target(spi, args.bit_file, args.file_type,
-				board->reset_pin, board->done_pin, args.verbose);
+				board->reset_pin, board->done_pin, args.verify, args.verbose);
 			target.program(args.offset);
 		} else {
 			RawParser *bit = NULL;
@@ -220,6 +220,9 @@ int main(int argc, char **argv)
 				}
 
 				flash.erase_and_prog(args.offset, bit->getData(), bit->getLength()/8);
+
+				if (args.verify)
+					printWarn("writing verification not supported");
 
 				delete bit;
 			}
@@ -359,13 +362,13 @@ int main(int argc, char **argv)
 				args.prg_type, args.fpga_part, args.verify, args.verbose);
 		} else if (fab == "altera") {
 			fpga = new Altera(jtag, args.bit_file, args.file_type,
-				args.verbose);
+				args.verify, args.verbose);
 		} else if (fab == "anlogic") {
 			fpga = new Anlogic(jtag, args.bit_file, args.file_type,
-				args.prg_type, args.verbose);
+				args.prg_type, args.verify, args.verbose);
 		} else if (fab == "Gowin") {
 			fpga = new Gowin(jtag, args.bit_file, args.file_type,
-				args.prg_type, args.verbose);
+				args.prg_type, args.verify, args.verbose);
 		} else if (fab == "lattice") {
 			fpga = new Lattice(jtag, args.bit_file, args.file_type,
 				args.prg_type, args.verify, args.verbose);
