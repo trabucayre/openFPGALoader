@@ -182,7 +182,15 @@ int main(int argc, char **argv)
 		if (board->manufacturer == "efinix") {
 			Efinix target(spi, args.bit_file, args.file_type,
 				board->reset_pin, board->done_pin, args.verify, args.verbose);
-			target.program(args.offset);
+			if (args.prg_type == Device::RD_FLASH) {
+				if (args.file_size == 0) {
+					printError("Error: 0 size for dump");
+				} else {
+					target.dumpFlash(args.bit_file, args.offset, args.file_size);
+				}
+			} else {
+				target.program(args.offset);
+			}
 		} else if (board->manufacturer == "lattice") {
 			Ice40 target(spi, args.bit_file, args.file_type,
 				board->reset_pin, board->done_pin, args.verify, args.verbose);
