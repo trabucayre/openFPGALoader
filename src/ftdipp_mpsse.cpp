@@ -68,6 +68,9 @@ void FTDIpp_MPSSE::open_device(const std::string &serial, unsigned int baudrate)
 		cout << "open_device: failed to initialize ftdi" << endl;
 		throw std::exception();
 	}
+#if (ATTACH_KERNEL && (FTDI_VERSION >= 105))
+	_ftdi->module_detach_mode = AUTO_DETACH_REATACH_SIO_MODULE;
+#endif
 
 	ftdi_set_interface(_ftdi, (ftdi_interface)_interface);
 	if (_bus == -1 || _addr == -1)
@@ -108,10 +111,6 @@ int FTDIpp_MPSSE::close_device()
 #if (FTDI_VERSION < 105)
 	ftdi_usb_purge_rx_buffer(_ftdi);
 	ftdi_usb_purge_tx_buffer(_ftdi);
-#else
-	ftdi_tciflush(_ftdi);
-	ftdi_tcoflush(_ftdi);
-#endif
 
 	/*
 	 * repompe de la fonction et des suivantes
@@ -132,6 +131,11 @@ int FTDIpp_MPSSE::close_device()
 #endif
 	}
 	ftdi_usb_close_internal();
+#else
+	ftdi_tciflush(_ftdi);
+	ftdi_tcoflush(_ftdi);
+	ftdi_usb_close(_ftdi);
+#endif
 
 	ftdi_free(_ftdi);
 	return EXIT_SUCCESS;
