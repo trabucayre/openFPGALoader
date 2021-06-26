@@ -161,8 +161,8 @@ int FtdiSpi::ft2232_spi_wr_and_rd(//struct ftdi_spi *spi,
 			    uint32_t writecnt,
 			    const uint8_t * writearr, uint8_t * readarr)
 {
-#define TX_BUF (60000/8-3)
-	uint8_t buf[TX_BUF+3];//65536+9];
+	uint32_t max_xfer = (readarr) ? _buffer_size : 4096;
+	uint8_t buf[max_xfer];
 	int i = 0;
 	int ret = 0;
 
@@ -183,7 +183,7 @@ int FtdiSpi::ft2232_spi_wr_and_rd(//struct ftdi_spi *spi,
 	 * operations.
 	 */
 	while (len > 0) {
-		xfer = (len > TX_BUF) ? TX_BUF: len;
+		xfer = (len > max_xfer) ? max_xfer : len;
 
 		buf[i++] = ((readarr) ? (MPSSE_DO_READ | _rd_mode) : 0) |
 					((writearr) ? (MPSSE_DO_WRITE | _wr_mode) : 0);
