@@ -320,7 +320,7 @@ int Jtag::shiftIR(unsigned char *tdi, unsigned char *tdo, int irlen, int end_sta
 		 * before targeted and irlength of each one
 		 */
 		int bypass_before = 0;
-		for (int i = device_index + 1; i < _devices_list.size(); i++)
+		for (unsigned int i = device_index + 1; i < _devices_list.size(); i++)
 			bypass_before += _irlength_list[i];
 		/* same for device after targeted device
 		 */
