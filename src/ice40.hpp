@@ -32,6 +32,8 @@ class Ice40: public Device {
 		~Ice40();
 
 		void program(unsigned int offset = 0) override;
+		bool dumpFlash(const std::string &filename,
+			uint32_t base_addr, uint32_t len);
 		/* not supported in SPI Active mode */
 		int idCode() override {return 0;}
 		void reset() override;
