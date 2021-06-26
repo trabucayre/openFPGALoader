@@ -1,7 +1,7 @@
-// SPDX-License-Identifier: GPL-3.0-or-later
+// SPDX-License-Identifier: Apache-2.0
 /*
  * Copyright (c) 2021 Gwenhael Goavec-Merou <gwenhael.goavec-merou@trabucayre.com>
-*/
+ */
 
 #ifndef SRC_FX2_LL_HPP_
 #define SRC_FX2_LL_HPP_

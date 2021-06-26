@@ -1,3 +1,7 @@
+// SPDX-License-Identifier: Apache-2.0
+/*
+ * Copyright (C) 2019 Gwenhael Goavec-Merou <gwenhael.goavec-merou@trabucayre.com>
+ */
 
 #include <stdio.h>
 #include <stdlib.h>
