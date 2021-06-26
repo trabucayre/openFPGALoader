@@ -81,17 +81,17 @@ void Ice40::program(unsigned int offset)
 	_spi->gpio_clear(_rst_pin);
 
 	SPIFlash flash(reinterpret_cast<SPIInterface *>(_spi), _quiet);
-    flash.reset();
-    flash.power_up();
+	flash.reset();
+	flash.power_up();
 
-    printf("%02x\n", flash.read_status_reg());
-    flash.read_id();
-    flash.erase_and_prog(offset, bit.getData(), bit.getLength() / 8);
+	printf("%02x\n", flash.read_status_reg());
+	flash.read_id();
+	flash.erase_and_prog(offset, bit.getData(), bit.getLength() / 8);
 
 	if (_verify)
 		printWarn("writing verification not supported");
 
-    _spi->gpio_set(_rst_pin);
+	_spi->gpio_set(_rst_pin);
 	usleep(12000);
 
 	printInfo("Wait for CDONE ", false);
