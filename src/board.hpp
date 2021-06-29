@@ -110,6 +110,7 @@ static std::map <std::string, target_board_t> board_list = {
 	JTAG_BOARD("ecp5_evn",        "", "ft2232",     0, 0),
 	SPI_BOARD("fireant",              "efinix", "ft232",
 			DBUS4, DBUS5, DBUS3, DBUS0, DBUS1, DBUS2, DBUS6, 0),
+	DFU_BOARD("fomu",             "", "dfu"            ),
 	/* most ice40 boards uses the same pinout */
 	SPI_BOARD("ice40_generic",    "lattice", "ft2232",
 			DBUS7, DBUS6,

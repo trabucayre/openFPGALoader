@@ -17,6 +17,7 @@ __Current supported kits:__
 * [Digilent Digital Discovery xc6slx25](https://reference.digilentinc.com/test-and-measurement/digital-discovery/start) (memory)
 * [FairWaves XTRXPro](https://www.crowdsupply.com/fairwaves/xtrx) (memory and flash)
 * [Fireant Trion T8](https://www.crowdsupply.com/jungle-elec/fireant) (spi flash active mode)
+* [Fomu PVT](https://tomu.im/fomu.html)
 * [iCEBreaker](https://1bitsquared.com/collections/fpga/products/icebreaker)
 * [icestick](https://www.latticesemi.com/icestick)
 * [iCE40-HX8K](https://www.latticesemi.com/Products/DevelopmentBoardsAndKits/iCE40HX8KBreakoutBoard.aspx)
