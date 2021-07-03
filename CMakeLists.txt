@@ -198,14 +198,9 @@ math(EXPR FTDI_VAL "${LIBFTDI_VERSION_MAJOR} * 100 + ${LIBFTDI_VERSION_MINOR}")
 add_definitions(-DFTDI_VERSION=${FTDI_VAL})
 
 install(TARGETS openFPGALoader DESTINATION bin)
+file(GLOB BITS_FILES spiOverJtag/spiOverJtag_*.bit)
 install(FILES 
 	test_sfl.svf
-	spiOverJtag/spiOverJtag_xc7a100tfgg484.bit
-	spiOverJtag/spiOverJtag_xc7a200tsbg484.bit
-	spiOverJtag/spiOverJtag_xc7a35tcsg324.bit
-	spiOverJtag/spiOverJtag_xc7a35tftg256.bit
-	spiOverJtag/spiOverJtag_xc7a50tcpg236.bit
-	spiOverJtag/spiOverJtag_xc7a75tfgg484.bit
-	spiOverJtag/spiOverJtag_xc7s50csga324.bit
+	${BITS_FILES}
 	DESTINATION ${CMAKE_INSTALL_DATAROOTDIR}/openFPGALoader
 )
