@@ -6,10 +6,12 @@ use UNISIM.vcomponents.all;
 
 entity xilinx_spiOverJtag is
 	port (
-		csn       : out std_logic;
-		sdi	  : out std_logic;
-		sdo       : in std_logic;
-		sck       : out std_logic
+	 csn       : out std_logic;
+	 sdi       : out std_logic;
+	 sdo       : in std_logic;
+	 sck       : out std_logic;
+	 wpn	   : out std_logic;
+	 hldn      : out std_logic
 	);
 end entity xilinx_spiOverJtag;
 
@@ -21,6 +23,8 @@ architecture bhv of xilinx_spiOverJtag is
 
 	signal tmp_up_s, tmp_shift_s, tmp_cap_s : std_logic;
 begin
+	wpn <= '1';
+	hldn <= '1';
 	-- jtag -> spi flash
 	csn <= fsm_csn;
 	sdi <= tdi;
