@@ -366,7 +366,7 @@ int main(int argc, char **argv)
 				args.prg_type, args.fpga_part, args.verify, args.verbose);
 		} else if (fab == "altera") {
 			fpga = new Altera(jtag, args.bit_file, args.file_type,
-				args.verify, args.verbose);
+				args.prg_type, args.fpga_part, args.verify, args.verbose);
 		} else if (fab == "anlogic") {
 			fpga = new Anlogic(jtag, args.bit_file, args.file_type,
 				args.prg_type, args.verify, args.verbose);
