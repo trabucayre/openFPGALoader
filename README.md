@@ -345,6 +345,9 @@ openFPGALoader -b boardname project_name.rbf
 with `boardname` = `de0`, `cyc1000`, `de0nano`, `de0nanoSoc` or `qmtechCycloneV`
 
 #### SPI flash:
+
+`RPD` and `RFP are supported
+
 sof to rpd:
 ```bash
 quartus_cpf -o auto_create_rpd=on -c -d EPCQ16A -s 10CL025YU256C8G project_name.svf project_name.jic
@@ -352,15 +355,9 @@ quartus_cpf -o auto_create_rpd=on -c -d EPCQ16A -s 10CL025YU256C8G project_name.
 file load:
 ```bash
 openFPGALoader -b cyc1000 -r project_name_auto.rpd
+# or
+openFPGALoader -b cyc1000 -r project_name.rbf
 ```
-
-**Note about SPI flash:
-svf file used to write in flash is just a bridge between FT2232 interfaceB
-configured in SPI mode and sfl primitive used to access EPCQ SPI flash.**
-
-**Note about FT2232 interfaceB:
-This interface is used for SPI communication only when the dedicated svf is
-loaded in RAM, rest of the time, user is free to use for what he want.**
 
 <a id='xilinx'></a>
 ### <span style="text-decoration:underline">Xilinx based boards</span>
