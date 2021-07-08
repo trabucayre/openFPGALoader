@@ -3,9 +3,6 @@
  * Copyright (C) 2019 Gwenhael Goavec-Merou <gwenhael.goavec-merou@trabucayre.com>
  */
 
-#ifndef SRC_EPCQ_HPP_
-#define SRC_EPCQ_HPP_
-
 #include <iostream>
 #include <vector>
 #include "spiInterface.hpp"
@@ -15,17 +12,24 @@ using namespace std;
 
 class EPCQ: public SPIFlash {
  public:
-	EPCQ(SPIInterface *spi, int8_t verbose);
+ 	EPCQ(SPIInterface *spi, int8_t verbose);
 	~EPCQ();
 
 	void read_id() override;
 
+	//void program(unsigned int start_offet, string filename, bool reverse=true);
+	//int erase_sector(char start_sector, char nb_sectors);
+	//void dumpflash(char *dest_file, int size);
+
 	/* not supported */
-	void power_up() override {}
-	void power_down() override {}
+	virtual void power_up() override {}
+	virtual void power_down() override {}
 
 	private:
 		unsigned char convertLSB(unsigned char src);
+		//void wait_wel();
+		//void wait_wip();
+		//int do_write_enable();
 
 		/* trash */
 		void dumpJICFile(char *jic_file, char *out_file, size_t max_len);
@@ -33,5 +37,3 @@ class EPCQ: public SPIFlash {
 		unsigned char _device_id;
 		unsigned char _silicon_id;
 };
-
-#endif  // SRC_EPCQ_HPP_

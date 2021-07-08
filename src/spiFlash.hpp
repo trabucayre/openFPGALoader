@@ -12,8 +12,8 @@ class SPIFlash {
 	public:
 		SPIFlash(SPIInterface *spi, int8_t verbose);
 		/* power */
-		void power_up();
-		void power_down();
+		virtual void power_up();
+		virtual void power_down();
 		void reset();
 		/* protection */
 		int write_enable();
@@ -37,10 +37,10 @@ class SPIFlash {
 		int erase_and_prog(int base_addr, uint8_t *data, int len);
 		/* display/info */
 		uint8_t read_status_reg();
-		void read_id();
+		virtual void read_id();
 		uint16_t readNonVolatileCfgReg();
 		uint16_t readVolatileCfgReg();
-	private:
+	protected:
 		SPIInterface *_spi;
 		int8_t _verbose;
 		uint32_t _jedec_id; /**< CHIP ID */
