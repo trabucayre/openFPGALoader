@@ -38,7 +38,7 @@ __Current supported kits:__
 * [Sipeed Tang Nano](https://tangnano.sipeed.com/en/) (memory)
 * [Sipeed Lichee Tang](https://tang.sipeed.com/en/hardware-overview/lichee-tang/) (memory and spi flash)
 * [Terasic DE0](https://www.terasic.com.tw/cgi-bin/page/archive.pl?No=364) (memory)
-* [Terasic de0nano](https://www.terasic.com.tw/cgi-bin/page/archive.pl?No=593) (memory)
+* [Terasic de0nano](https://www.terasic.com.tw/cgi-bin/page/archive.pl?No=593) (memory and spi flash)
 * [Terasic de0nanoSoc](https://www.terasic.com.tw/cgi-bin/page/archive.pl?Language=English&CategoryNo=205&No=941) (memory)
 * [Terasic de10Nano](https://www.terasic.com.tw/cgi-bin/page/archive.pl?Language=English&CategoryNo=205&No=1046) (memory)
 * LambdaConcept ECPIX-5 (memory and flash)
@@ -62,12 +62,9 @@ __Supported (tested) FPGA:__
 * Xilinx Spartan 6 [xc6slx9, xc6slx16, xc6slx25, xc6slx45](https://www.xilinx.com/products/silicon-devices/fpga/spartan-6.html) (memory)
 * Xilinx Spartan 7 [xc7s15, xc7s25, xc7s50](https://www.xilinx.com/products/silicon-devices/fpga/spartan-7.html) (memory (all) and spi flash (xc7s50))
 * Intel Cyclone III [EP3C16](https://www.intel.com/content/www/us/en/programmable/products/fpga/cyclone-series/cyclone-iii/support.html) (memory)
-* Intel Cyclone IV CE [EP4CE22](https://www.intel.com/content/www/us/en/products/programmable/fpga/cyclone-iv/features.html) (memory. See note below)
+* Intel Cyclone IV CE [EP4CE22](https://www.intel.com/content/www/us/en/products/programmable/fpga/cyclone-iv/features.html) (memory and spi flash)
 * Intel Cyclone V E [5CEA2, 5CEBA4](https://www.intel.com/content/www/us/en/products/programmable/fpga/cyclone-v.html)
 * Intel Cyclone 10 LP [10CL025](https://www.intel.com/content/www/us/en/products/programmable/fpga/cyclone-10.html)
-
-**Note**: cyclone IV and cyclone 10 have same idcode. A WA is mandatory to
-detect correct model for flash programming.
 
 __Supported cables:__
 
