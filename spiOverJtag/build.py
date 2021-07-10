@@ -17,6 +17,8 @@ if not os.path.isdir(build_dir):
         print ("Successfully created the directory %s " % build_dir)
 
 currDir = os.path.abspath(os.path.curdir) + '/'
+files = []
+parameters = {}
 
 subpart = part[0:4].lower()
 if subpart == '10cl':
@@ -28,6 +30,8 @@ elif subpart == 'ep4c':
 elif subpart[0:2] == '5c':
     family = "Cyclone V"
     tool = "quartus"
+    files.append({'name': currDir + 'constr_cycloneV.tcl',
+                  'file_type': 'tclSource'})
 elif subpart == "xc7a":
     family = "Artix"
     tool = "vivado"
@@ -41,15 +45,13 @@ else:
     print("Error: unknown device")
     os.sys.exit()
 
-files = []
-
 if tool in ["ise", "vivado"]:
     pkg_name = {
         "xc7a35tcpg236"    : "xc7a_cpg236",
-        "xc7a35tcsg324g236": "xc7a_csg324",
-        "xc7a35tftg256g236": "xc7a_ftg256",
-        "xc7a50tcpg236g236": "xc7a_cpg236",
-        "xc7a75tfgg484g236": "xc7a_fgg484",
+        "xc7a35tcsg324"    : "xc7a_csg324",
+        "xc7a35tftg256"    : "xc7a_ftg256",
+        "xc7a50tcpg236"    : "xc7a_cpg236",
+        "xc7a75tfgg484"    : "xc7a_fgg484",
         "xc7a100tfgg484"   : "xc7a_fgg484",
         "xc7a200tsbg484"   : "xc7a_sbg484",
         "xc7a200tfbg484"   : "xc7a_fbg484",
@@ -75,7 +77,6 @@ else:
                   'file_type': 'SDC'})
     tool_options = {'device': full_part, 'family':family}
 
-parameters = {}
 parameters[family.lower().replace(' ', '')]= {
     'datatype': 'int',
     'paramtype': 'vlogdefine',

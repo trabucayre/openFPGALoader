@@ -29,7 +29,7 @@ __Current supported kits:__
 * [Olimex iCE40HX1K-EVB](https://www.olimex.com/Products/FPGA/iCE40/iCE40HX1K-EVB/open-source-hardware)
 * [Olimex iCE40HX8K-EVB](https://www.olimex.com/Products/FPGA/iCE40/iCE40HX8K-EVB/open-source-hardware)
 * [Orange Crab](https://github.com/gregdavill/OrangeCrab)
-* [QMTech CycloneV Core Board](https://fr.aliexpress.com/i/1000006622149.html) (memory)
+* [QMTech CycloneV Core Board](https://fr.aliexpress.com/i/1000006622149.html) (memory and spi flash)
 * [Trenz Gowin LittleBee (TEC0117)](https://shop.trenz-electronic.de/en/TEC0117-01-FPGA-Module-with-GOWIN-LittleBee-and-8-MByte-internal-SDRAM) (memory and flash)
 * [Saanlima Pipistrello LX45](http://pipistrello.saanlima.com/index.php?title=Welcome_to_Pipistrello) (memory)
 * [Scarab Hardware MiniSpartan6+ (Spartan 6 LX9)](https://www.kickstarter.com/projects/1812459948/minispartan6-a-powerful-fpga-board-and-easy-to-use) (memory)

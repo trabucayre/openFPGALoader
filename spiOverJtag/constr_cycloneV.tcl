@@ -1,0 +1,2 @@
+set_global_assignment -name STRATIXV_CONFIGURATION_SCHEME "ACTIVE SERIAL X4"
+set_global_assignment -name ON_CHIP_BITSTREAM_DECOMPRESSION ON
