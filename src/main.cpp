@@ -30,6 +30,8 @@
 #include "rawParser.hpp"
 #include "xilinx.hpp"
 
+#define DEFAULT_FREQ 	6000000
+
 using namespace std;
 
 struct arguments {
@@ -70,7 +72,7 @@ int main(int argc, char **argv)
 
 	/* command line args. */
 	struct arguments args = {0, false, false, false, 0, "", "", "-", "", -1,
-			6000000, "-", false, false, false, false, Device::WR_SRAM, false,
+			DEFAULT_FREQ, "-", false, false, false, false, Device::WR_SRAM, false,
 			false, false, "", "", "", -1, 0};
 	/* parse arguments */
 	try {
@@ -127,7 +129,7 @@ int main(int argc, char **argv)
 			args.fpga_part = board->fpga_part;
 
 		/* Some boards can override the default clock speed */
-		if (board->default_freq != CABLE_DEFAULT)
+		if (board->default_freq != CABLE_DEFAULT && freq == DEFAULT_FREQ)
 			freq = board->default_freq;
 	}
 
