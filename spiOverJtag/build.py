@@ -39,7 +39,7 @@ elif subpart == "xc7s":
     family = "Spartan 7"
     tool = "vivado"
 elif subpart == "xc6s":
-    family = "Spartan 6"
+    family = "Spartan6"
     tool = "ise"
 else:
     print("Error: unknown device")
@@ -47,6 +47,8 @@ else:
 
 if tool in ["ise", "vivado"]:
     pkg_name = {
+        "xc6slx45csg324"   : "xc6s_csg324",
+        "xc6slx100fgg484"  : "xc6s_fgg484",
         "xc7a35tcpg236"    : "xc7a_cpg236",
         "xc7a35tcsg324"    : "xc7a_csg324",
         "xc7a35tftg256"    : "xc7a_ftg256",
@@ -59,18 +61,29 @@ if tool in ["ise", "vivado"]:
         }[part]
     if tool == "ise":
         cst_type = "UCF"
+        tool_options = {'family': family,
+                        'device': {
+                            "xc6slx45csg324": "xc6slx45",
+                            "xc6slx100fgg484": "xc6slx100"}[part],
+                        'package': {
+                            "xc6slx45csg324": "csg324",
+                            "xc6slx100fgg484": "fgg384"}[part],
+                        'speed' : -3
+                }
     else:
         cst_type = "xdc"
-    cst_file = currDir + "constr_" + pkg_name + "." + cst_type
+        tool_options = {'part': part+ '-1'}
+    cst_file = currDir + "constr_" + pkg_name + "." + cst_type.lower()
     files.append({'name': currDir + 'xilinx_spiOverJtag.v',
                   'file_type': 'verilogSource'})
     files.append({'name': cst_file, 'file_type': cst_type})
-    tool_options = {'part': part+ '-1'}
 else:
     full_part = {
         "10cl025256": "10CL025YU256C8G",
         "ep4ce2217" : "EP4CE22F17C6",
-        "5ce223"    : "5CEFA2F23I7"}[part]
+        "5ce223"    : "5CEFA2F23I7",
+        "5cse423"   : "5CSEMA4U23C6",
+        "5cse623"   : "5CSEBA6U23I7"}[part]
     files.append({'name': currDir + 'altera_spiOverJtag.v',
                   'file_type': 'verilogSource'})
     files.append({'name': currDir + 'test_jtag.sdc',
@@ -93,3 +106,8 @@ edam = {'name' : "spiOverJtag",
 backend = get_edatool(tool)(edam=edam, work_root=build_dir)
 backend.configure()
 backend.build()
+
+if tool == "vivado":
+    import shutil
+    shutil.copy("tmp_" + part + "/spiOverJtag.runs/impl_1/spiOverJtag.bit",
+            "tmp_" + part);
