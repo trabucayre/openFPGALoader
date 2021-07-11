@@ -25,6 +25,16 @@ class Altera: public Device, SPIInterface {
 
 		void programMem(RawParser &_bit);
 		void program(unsigned int offset = 0) override;
+		/*!
+		 * \brief read len Byte starting at base_addr and store
+		 *        into filename
+		 * \param[in] filename: file name
+		 * \param[in] base_addr: starting address in flash memory
+		 * \param[in] len: length (in Byte)
+		 * \return false if read fails or filename can't be open, true otherwise
+		 */
+		bool dumpFlash(const std::string filename, uint32_t base_addr,
+				uint32_t len);
 		int idCode() override;
 		void reset() override;
 

@@ -226,10 +226,37 @@ void Altera::program(unsigned int offset)
 		}
 
 		if (_verify)
-			printWarn("writing verification not supported");
+			epcq.verify(offset, data, length, 256);
 		reset();
 	}
 }
+
+bool Altera::dumpFlash(const std::string filename, uint32_t base_addr,
+		uint32_t len)
+{
+	int ret = true;
+	/* try to load spiOverJtag bridge
+	 * to have an access to SPI flash
+	 */
+	if (!load_bridge()) {
+		printError("Fail to load bridge");
+		return false;
+	}
+
+	EPCQ epcq(this, 0);
+
+	try {
+		epcq.reset();
+		ret = epcq.dump(filename, base_addr, len, 256);
+	} catch (std::exception &e) {
+		printError(e.what());
+		ret = false;
+	}
+
+	reset();
+	return ret;
+}
+
 int Altera::idCode()
 {
 	unsigned char tx_data[4] = {IDCODE};
