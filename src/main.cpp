@@ -95,6 +95,8 @@ int main(int argc, char **argv)
 		board = &(board_list[args.board]);
 	}
 
+	uint32_t freq = args.freq;
+
 	/* if a board name is specified try to use this to determine cable */
 	if (board) {
 		/* set pins config (only when user has not already provided
@@ -123,6 +125,10 @@ int main(int argc, char **argv)
 			printInfo("Board default fpga part overridden with " + args.fpga_part);
 		else if (!board->fpga_part.empty() && args.fpga_part.empty())
 			args.fpga_part = board->fpga_part;
+
+		/* Some boards can override the default clock speed */
+		if (board->default_freq != CABLE_DEFAULT)
+			freq = board->default_freq;
 	}
 
 	if (args.cable[0] == '-') { /* if no board and no cable */
@@ -161,7 +167,7 @@ int main(int argc, char **argv)
 		spi_pins_conf_t pins_config = board->spi_pins_config;
 
 		try {
-			spi = new FtdiSpi(cable.config, pins_config, args.freq, args.verbose > 0);
+			spi = new FtdiSpi(cable.config, pins_config, freq, args.verbose > 0);
 		} catch (std::exception &e) {
 			printError("Error: Failed to claim cable");
 			return EXIT_FAILURE;
@@ -277,7 +283,7 @@ int main(int argc, char **argv)
 	Jtag *jtag;
 	try {
 		jtag = new Jtag(cable, &pins_config, args.device, args.ftdi_serial,
-				args.freq, false, args.probe_firmware);
+				freq, false, args.probe_firmware);
 	} catch (std::exception &e) {
 		printError("JTAG init failed with: " + string(e.what()));
 		return EXIT_FAILURE;
