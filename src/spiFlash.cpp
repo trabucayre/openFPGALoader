@@ -11,6 +11,7 @@
 
 #include "ftdipp_mpsse.hpp"
 #include "progressBar.hpp"
+#include "display.hpp"
 #include "spiFlash.hpp"
 #include "spiInterface.hpp"
 
@@ -139,6 +140,47 @@ int SPIFlash::read(int base_addr, uint8_t *data, int len)
 	return ret;
 }
 
+bool SPIFlash::dump(const std::string &filename, const int &base_addr,
+		const int &len, int rd_burst)
+{
+	if (rd_burst == 0)
+		rd_burst = len;
+
+	std::string data;
+	data.resize(rd_burst);
+
+	printInfo("dump flash (May take time)");
+
+	printInfo("Open dump file ", false);
+	FILE *fd = fopen(filename.c_str(), "wb");
+	if (!fd) {
+		printError("FAIL");
+		return false;
+	} else {
+		printSuccess("DONE");
+	}
+
+	ProgressBar progress("Read flash ", len, 50, false);
+	for (int i = 0; i < len; i += rd_burst) {
+		if (rd_burst + i > len)
+			rd_burst = len - i;
+		if (0 != read(base_addr + i, (uint8_t*)&data[0], rd_burst)) {
+			progress.fail();
+			printError("Failed to read flash");
+			fclose(fd);
+			return false;
+		}
+		fwrite(data.c_str(), sizeof(uint8_t), rd_burst, fd);
+		progress.display(i);
+	}
+
+	progress.done();
+
+	fclose(fd);
+
+	return true;
+}
+
 int SPIFlash::erase_and_prog(int base_addr, uint8_t *data, int len)
 {
 	if (_jedec_id == 0)
@@ -172,6 +214,43 @@ int SPIFlash::erase_and_prog(int base_addr, uint8_t *data, int len)
 	}
 	progress.done();
 	return 0;
+}
+
+bool SPIFlash::verify(const int &base_addr, const uint8_t *data,
+		const int &len, int rd_burst)
+{
+	if (rd_burst == 0)
+		rd_burst = len;
+
+	printInfo("Verifying write (May take time)");
+
+	std::string verify_data;
+	verify_data.resize(rd_burst);
+
+	ProgressBar progress("Read flash ", len, 50, false);
+	for (int i = 0; i < len; i += rd_burst) {
+		if (rd_burst + i > len)
+			rd_burst = len - i;
+		if (0 != read(base_addr + i, (uint8_t*)&verify_data[0], rd_burst)) {
+			progress.fail();
+			printError("Failed to read flash");
+			return false;
+		}
+
+		for (int ii = 0; ii < rd_burst; ii++) {
+			if ((uint8_t)verify_data[ii] != data[i+ii]) {
+				progress.fail();
+				printError("Verification failed at " +
+						std::to_string(base_addr + i + ii));
+				return false;
+			}
+		}
+		progress.display(i);
+	}
+
+	progress.done();
+
+	return true;
 }
 
 void SPIFlash::reset()
