@@ -447,33 +447,12 @@ bool Lattice::program_extFlash(unsigned int offset)
 	flash.read_status_reg();
 	flash.erase_and_prog(offset, data, length);
 
-	if (_verify) {
-		printInfo("Verifying write");
-		string verify_data;
-		verify_data.resize(length);
-		printInfo("Read flash ", false);
-		if (0 != flash.read(offset, (uint8_t*)&verify_data[0], length)) {
-			printError("FAIL");
-			return false;
-		} else {
-			printSuccess("DONE");
-		}
-
-		ProgressBar progress("Check", length, 50, _quiet);
-		for (int i = 0; i < length; i++) {
-			if ((uint8_t)verify_data[i] != data[i]) {
-				progress.fail();
-				printError("Verification failed at " +
-						std::to_string(offset + i));
-				return false;
-			}
-			progress.display(i);
-		}
-		progress.done();
-	}
+	int ret = true;
+	if (_verify)
+		ret = flash.verify(offset, data, length);
 
 	delete _bit;
-	return true;
+	return ret;
 }
 
 bool Lattice::program_flash(unsigned int offset)
@@ -580,8 +559,6 @@ bool Lattice::dumpFlash(const string &filename,
 
 	DisableISC();
 
-	string data;
-	data.resize(len);
 	/* switch to SPI mode */
 	_jtag->shiftIR(0x3A, 8, Jtag::EXIT1_IR);
 	uint8_t tmp[2] = {0xFE, 0x68};
@@ -590,17 +567,7 @@ bool Lattice::dumpFlash(const string &filename,
 	/* prepare SPI access */
 	SPIFlash flash(this, _verbose);
 	flash.reset();
-	flash.read_id();
-	flash.read_status_reg();
-	flash.read(base_addr, (uint8_t*)&data[0], len);
-
-	FILE *fd = fopen(filename.c_str(), "wb");
-	if (!fd) {
-		return false;
-	}
-
-	fwrite(data.c_str(), sizeof(uint8_t), len, fd);
-	fclose(fd);
+	flash.dump(filename, base_addr, len);
 
 	/* ISC REFRESH 0x79 */
 	printInfo("Refresh: ", false);

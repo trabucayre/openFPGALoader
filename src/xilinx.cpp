@@ -172,34 +172,8 @@ void Xilinx::program_spi(ConfigBitstreamParser * bit, unsigned int offset)
 	spiFlash.erase_and_prog(offset, data, length);
 
 	/* verify write if required */
-	if (_verify) {
-		std::string verify_data;
-		verify_data.resize(256);
-
-		ProgressBar progress("Verifying write", length, 50, _quiet);
-		int rd_length = 256;
-		for (int i = 0; i < length; i+=rd_length) {
-			if (rd_length + i > length)
-				rd_length = length - i;
-			if (0 != spiFlash.read(offset + i, (uint8_t*)&verify_data[0],
-						rd_length)) {
-				progress.fail();
-				printError("Failed to read flash");
-				return;
-			}
-
-			for (int ii = 0; ii < rd_length; ii++) {
-				if ((uint8_t)verify_data[ii] != data[i + ii]) {
-					progress.fail();
-					printError("Verification failed at " +
-							std::to_string(offset + i + ii));
-					return;
-				}
-			}
-			progress.display(i);
-		}
-		progress.done();
-	}
+	if (_verify)
+		spiFlash.verify(offset, data, length, 256);
 }
 
 void Xilinx::program_mem(ConfigBitstreamParser *bitfile)
@@ -314,49 +288,26 @@ void Xilinx::program_mem(ConfigBitstreamParser *bitfile)
 bool Xilinx::dumpFlash(const std::string &filename,
 		uint32_t base_addr, uint32_t len)
 {
+	int ret = true;
 	/* first need to have bridge in RAM */
 	if (load_bridge() == false)
 		return false;
 
 	/* prepare SPI access */
 	SPIFlash flash(this, _verbose);
-	flash.reset();
-	flash.read_id();
-	flash.read_status_reg();
 
-	FILE *fd = fopen(filename.c_str(), "wb");
-	if (!fd) {
-		printError("Open dump file failed\n");
-		return false;
+	try {
+		flash.reset();
+		ret = flash.dump(filename, base_addr, len, 256);
+	} catch (std::exception &e) {
+		printError(e.what());
+		ret = false;
 	}
-
-	uint32_t rd_length = 256;
-	std::string data;
-	data.resize(rd_length);
-
-	ProgressBar progress("Dump flash", len, 50, _quiet);
-
-	for (uint32_t i = 0; i < len; i+=rd_length) {
-		if (rd_length + i > len)
-			rd_length = len - i;
-		if (0 != flash.read(base_addr + i, (uint8_t*)&data[0],
-					rd_length)) {
-			progress.fail();
-			printError("Failed to read flash");
-			return false;
-		}
-
-		fwrite(data.c_str(), sizeof(uint8_t), rd_length, fd);
-
-		progress.display(i);
-	}
-	progress.done();
-	fclose(fd);
 
 	/* reset device */
 	reset();
 
-	return false;
+	return ret;
 }
 
 /*

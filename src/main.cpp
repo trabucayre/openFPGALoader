@@ -203,7 +203,8 @@ int main(int argc, char **argv)
 			flash.reset();
 			flash.read_id();
 
-			if (!args.bit_file.empty() || !args.file_type.empty()) {
+			if (args.prg_type != Device::RD_FLASH &&
+					(!args.bit_file.empty() || !args.file_type.empty())) {
 				printInfo("Open file " + args.bit_file + " ", false);
 				try {
 					bit = new RawParser(args.bit_file, false);
@@ -226,10 +227,13 @@ int main(int argc, char **argv)
 				flash.erase_and_prog(args.offset, bit->getData(), bit->getLength()/8);
 
 				if (args.verify)
-					printWarn("writing verification not supported");
+					flash.verify(args.offset, bit->getData(), bit->getLength() / 8);
 
 				delete bit;
+			} else if (args.prg_type == Device::RD_FLASH) {
+				flash.dump(args.bit_file, args.offset, args.file_size);
 			}
+
 			if (board->reset_pin)
 				spi->gpio_set(board->reset_pin, true);
 		}

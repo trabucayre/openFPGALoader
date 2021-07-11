@@ -100,30 +100,8 @@ void Efinix::program(unsigned int offset)
 	flash.erase_and_prog(offset, data, length);
 
 	/* verify write if required */
-	if (_verify) {
-		printInfo("Verifying write");
-		std::string verify_data;
-		verify_data.resize(length);
-		printInfo("Read flash ", false);
-		if (0 != flash.read(offset, (uint8_t*)&verify_data[0], length)) {
-			printError("FAIL");
-			return;
-		} else {
-			printSuccess("DONE");
-		}
-
-		ProgressBar progress("Check", length, 50, _quiet);
-		for (int i = 0; i < length; i++) {
-			if ((uint8_t)verify_data[i] != data[i]) {
-				progress.fail();
-				printError("Verification failed at " +
-						std::to_string(offset + i));
-				return;
-			}
-			progress.display(i);
-		}
-		progress.done();
-	}
+	if (_verify)
+		flash.verify(offset, data, length);
 
 	_spi->gpio_set(_rst_pin);
 	usleep(12000);
@@ -145,37 +123,20 @@ bool Efinix::dumpFlash(const std::string &filename,
 	uint32_t timeout = 1000;
 	_spi->gpio_clear(_rst_pin);
 
-	std::string data;
-	data.resize(len);
-
 	/* prepare SPI access */
 	printInfo("Read Flash ", false);
 	try {
 		SPIFlash flash(reinterpret_cast<SPIInterface *>(_spi), _verbose);
 		flash.reset();
 		flash.power_up();
-		flash.read_id();
-		flash.read_status_reg();
-		flash.read(base_addr, (uint8_t*)&data[0], len);
+		flash.dump(filename, base_addr, len);
 	} catch (std::exception &e) {
 		printError("Fail");
 		printError(std::string(e.what()));
 		return false;
 	}
 
-	FILE *fd = fopen(filename.c_str(), "wb");
-	if (!fd) {
-		printError("Fail");
-		return false;
-	}
-
-	fwrite(data.c_str(), sizeof(uint8_t), len, fd);
-	fclose(fd);
-
-	printSuccess("Done");
-
-	/* prepare SPI access */
-
+	/* release SPI access */
 	_spi->gpio_set(_rst_pin);
 	usleep(12000);
 
