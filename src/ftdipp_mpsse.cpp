@@ -10,6 +10,7 @@
 #include <unistd.h>
 
 #include <iostream>
+#include <stdexcept>
 
 #ifdef USE_UDEV
 #include <libudev.h>
@@ -36,7 +37,7 @@ FTDIpp_MPSSE::FTDIpp_MPSSE(const mpsse_bit_config &cable, const string &dev,
 	if (!dev.empty()) {
 		if (!search_with_dev(dev)) {
 			cerr << "No cable found" << endl;
-			throw std::exception();
+			throw std::runtime_error("No cable found");
 		}
 	} else {
 		_vid = cable.vid;
@@ -49,7 +50,7 @@ FTDIpp_MPSSE::FTDIpp_MPSSE(const mpsse_bit_config &cable, const string &dev,
 	_buffer = (unsigned char *)malloc(sizeof(unsigned char) * _buffer_size);
 	if (!_buffer) {
 		cout << "_buffer malloc failed" << endl;
-		throw std::exception();
+		throw std::runtime_error("_buffer malloc failed");
 	}
 }
 
@@ -71,7 +72,7 @@ void FTDIpp_MPSSE::open_device(const std::string &serial, unsigned int baudrate)
 	_ftdi = ftdi_new();
 	if (_ftdi == NULL) {
 		cout << "open_device: failed to initialize ftdi" << endl;
-		throw std::exception();
+		throw std::runtime_error("open_device: failed to initialize ftdi");
 	}
 #if (ATTACH_KERNEL && (FTDI_VERSION >= 105))
 	_ftdi->module_detach_mode = AUTO_DETACH_REATACH_SIO_MODULE;
@@ -90,12 +91,12 @@ void FTDIpp_MPSSE::open_device(const std::string &serial, unsigned int baudrate)
 		fprintf(stderr, "unable to open ftdi device: %d (%s)\n",
 			ret, ftdi_get_error_string(_ftdi));
 		ftdi_free(_ftdi);
-		throw std::exception();
+		throw std::runtime_error("unable to open ftdi device");
 	}
 	if (ftdi_set_baudrate(_ftdi, baudrate) < 0) {
 		fprintf(stderr, "baudrate error\n");
 		close_device();
-		throw std::exception();
+		throw std::runtime_error("baudrate error");
 	}
 }
 
@@ -108,7 +109,6 @@ void FTDIpp_MPSSE::ftdi_usb_close_internal()
 
 int FTDIpp_MPSSE::close_device()
 {
-	int rtn;
 	if (_ftdi == NULL)
 		return EXIT_FAILURE;
 
@@ -121,7 +121,7 @@ int FTDIpp_MPSSE::close_device()
 	 * repompe de la fonction et des suivantes
 	 */
 	 if (_ftdi->usb_dev != NULL) {
-		rtn = libusb_release_interface(_ftdi->usb_dev, _ftdi->interface);
+		int rtn = libusb_release_interface(_ftdi->usb_dev, _ftdi->interface);
 		if (rtn < 0) {
 			fprintf(stderr, "release interface failed %d\n", rtn);
 			return EXIT_FAILURE;
