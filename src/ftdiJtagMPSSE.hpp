@@ -26,9 +26,7 @@ class FtdiJtagMPSSE : public JtagInterface, private FTDIpp_MPSSE {
 		const std::string &serial, uint32_t clkHZ, bool verbose = false);
 	virtual ~FtdiJtagMPSSE();
 
-	int setClkFreq(uint32_t clkHZ) override {
-		return FTDIpp_MPSSE::setClkFreq(clkHZ);
-	}
+	int setClkFreq(uint32_t clkHZ) override;
 
 	uint32_t getClkFreq() override {return FTDIpp_MPSSE::getClkFreq();}
 
@@ -51,6 +49,14 @@ class FtdiJtagMPSSE : public JtagInterface, private FTDIpp_MPSSE {
 
  private:
 	void init_internal(const FTDIpp_MPSSE::mpsse_bit_config &cable);
+	/*!
+	 * \brief configure read and write edge (pos or neg), with freq < 15MHz
+	 *        neg is used for write and pos to sample. with freq >= 15MHz
+	 *        pos is used for write and neg to sample
+	 */
+	void config_edge();
 	bool _ch552WA; /* avoid errors with SiPeed tangNano */
+	uint8_t _write_mode; /**< write edge configuration */
+	uint8_t _read_mode; /**< read edge configuration */
 };
 #endif

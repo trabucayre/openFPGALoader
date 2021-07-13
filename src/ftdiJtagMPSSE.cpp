@@ -30,7 +30,8 @@ using namespace std;
 
 FtdiJtagMPSSE::FtdiJtagMPSSE(const FTDIpp_MPSSE::mpsse_bit_config &cable,
 			string dev, const string &serial, uint32_t clkHZ, bool verbose):
-			FTDIpp_MPSSE(cable, dev, serial, clkHZ, verbose), _ch552WA(false)
+			FTDIpp_MPSSE(cable, dev, serial, clkHZ, verbose), _ch552WA(false),
+			_write_mode(0), _read_mode(0)
 {
 	init_internal(cable);
 }
@@ -45,8 +46,8 @@ FtdiJtagMPSSE::~FtdiJtagMPSSE()
 	static unsigned char tbuf[16] = { SET_BITS_LOW, 0xff, 0x00,
 		SET_BITS_HIGH, 0xff, 0x00,
 		LOOPBACK_START,
-		MPSSE_DO_READ |
-		MPSSE_DO_WRITE | MPSSE_WRITE_NEG | MPSSE_LSB,
+		static_cast<unsigned char>(MPSSE_DO_READ | _read_mode |
+		MPSSE_DO_WRITE | _write_mode | MPSSE_LSB),
 		0x04, 0x00,
 		0xaa, 0x55, 0x00, 0xff, 0xaa,
 		LOOPBACK_END
@@ -83,6 +84,25 @@ void FtdiJtagMPSSE::init_internal(const FTDIpp_MPSSE::mpsse_bit_config &cable)
 	display("%x\n", cable.bit_high_dir);
 
 	init(5, 0xfb, BITMODE_MPSSE);
+	config_edge();
+}
+
+int FtdiJtagMPSSE::setClkFreq(uint32_t clkHZ) {
+
+	int ret = FTDIpp_MPSSE::setClkFreq(clkHZ);
+	config_edge();
+	return ret;
+}
+
+void FtdiJtagMPSSE::config_edge()
+{
+	if (FTDIpp_MPSSE::getClkFreq() < 15000000) {
+		_write_mode = MPSSE_WRITE_NEG;
+		_read_mode = 0;
+	} else {
+		_write_mode = 0;
+		_read_mode = MPSSE_READ_NEG;
+	}
 }
 
 int FtdiJtagMPSSE::writeTMS(uint8_t *tms, int len, bool flush_buffer)
@@ -98,7 +118,7 @@ int FtdiJtagMPSSE::writeTMS(uint8_t *tms, int len, bool flush_buffer)
 	int offset = 0, pos = 0;
 
 	uint8_t buf[3]= {static_cast<unsigned char>(MPSSE_WRITE_TMS | MPSSE_LSB |
-						MPSSE_BITMODE | MPSSE_WRITE_NEG),
+						MPSSE_BITMODE | _write_mode),
 						0, 0};
 	while (xfer > 0) {
 		int bit_to_send = (xfer > 6) ? 6 : xfer;
@@ -196,8 +216,8 @@ int FtdiJtagMPSSE::writeTDI(uint8_t *tdi, uint8_t *tdo, uint32_t len, bool last)
 	unsigned char *rx_ptr = (unsigned char *)tdo;
 	unsigned char *tx_ptr = (unsigned char *)tdi;
 	unsigned char tx_buf[3] = {(unsigned char)(MPSSE_LSB |
-						((tdi) ? (MPSSE_DO_WRITE | MPSSE_WRITE_NEG) : 0) |
-						((tdo) ? MPSSE_DO_READ : 0)),
+						((tdi) ? (MPSSE_DO_WRITE | _write_mode) : 0) |
+						((tdo) ? (MPSSE_DO_READ | _read_mode) : 0)),
 						static_cast<unsigned char>((xfer - 1) & 0xff),       // low
 						static_cast<unsigned char>((((xfer - 1) >> 8) & 0xff))}; // high
 
@@ -273,8 +293,8 @@ int FtdiJtagMPSSE::writeTDI(uint8_t *tdi, uint8_t *tdo, uint32_t len, bool last)
 
 		display("%s move to EXIT1_xx and send last bit %x\n", __func__, (last_bit?0x81:0x01));
 		/* write the last bit in conjunction with TMS */
-		tx_buf[0] = MPSSE_WRITE_TMS | MPSSE_LSB | MPSSE_BITMODE | MPSSE_WRITE_NEG |
-					((tdo) ? MPSSE_DO_READ : 0);
+		tx_buf[0] = MPSSE_WRITE_TMS | MPSSE_LSB | MPSSE_BITMODE | _write_mode |
+					((tdo) ? (MPSSE_DO_READ | _read_mode) : 0);
 		tx_buf[1] = 0x0;  // send 1bit
 		tx_buf[2] = ((last_bit) ? 0x81 : 0x01);  // we know in TMS tdi is bit 7
 							// and to move to EXIT_XR TMS = 1
