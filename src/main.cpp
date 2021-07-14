@@ -412,6 +412,7 @@ int main(int argc, char **argv)
 		try {
 			fpga->program(args.offset);
 		} catch (std::exception &e) {
+			printError("Error: Failed to program FPGA: " + string(e.what()));
 			delete(fpga);
 			delete(jtag);
 			return EXIT_FAILURE;
