@@ -88,11 +88,11 @@ typedef struct {
 
 #define JTAG_BOARD(_name, _fpga_part, _cable, _rst, _done, _freq) \
 	{_name, {"", _cable, _fpga_part, _rst, _done, COMM_JTAG, {}, {}, _freq}}
-#define JTAG_BITBANG_BOARD(_name, _fpga_part, _cable, _rst, _done, _tms, _tck, _tdi, _tdo) \
-	{_name, {"", _cable, _fpga_part, _rst, _done, COMM_JTAG, { _tms, _tck, _tdi, _tdo }, {}, 0}}
-#define SPI_BOARD(_name, _manufacturer, _cable, _rst, _done, _cs, _sck, _si, _so, _holdn, _wpn) \
+#define JTAG_BITBANG_BOARD(_name, _fpga_part, _cable, _rst, _done, _tms, _tck, _tdi, _tdo, _freq) \
+	{_name, {"", _cable, _fpga_part, _rst, _done, COMM_JTAG, { _tms, _tck, _tdi, _tdo }, {}, _freq}}
+#define SPI_BOARD(_name, _manufacturer, _cable, _rst, _done, _cs, _sck, _si, _so, _holdn, _wpn, _freq) \
 	{_name, {_manufacturer, _cable, "", _rst, _done, COMM_SPI, {}, \
-		{_cs, _sck, _so, _si, _holdn, _wpn}, 0}}
+		{_cs, _sck, _so, _si, _holdn, _wpn}, _freq}}
 #define DFU_BOARD(_name, _fpga_part, _cable) \
 	{_name, {"", _cable, _fpga_part, 0, 0, COMM_DFU, {}, {}, 0}}
 
@@ -113,13 +113,13 @@ static std::map <std::string, target_board_t> board_list = {
 	JTAG_BOARD("de10nano",        "", "usb-blasterII",0, 0, CABLE_DEFAULT),
 	JTAG_BOARD("ecp5_evn",        "", "ft2232",     0, 0, CABLE_DEFAULT),
 	SPI_BOARD("fireant",              "efinix", "ft232",
-			DBUS4, DBUS5, DBUS3, DBUS0, DBUS1, DBUS2, DBUS6, 0),
+			DBUS4, DBUS5, DBUS3, DBUS0, DBUS1, DBUS2, DBUS6, 0, CABLE_DEFAULT),
 	DFU_BOARD("fomu",             "", "dfu"            ),
 	/* most ice40 boards uses the same pinout */
 	SPI_BOARD("ice40_generic",    "lattice", "ft2232",
 			DBUS7, DBUS6,
 			DBUS4, DBUS0, DBUS1, DBUS2,
-			0, 0),
+			0, 0, CABLE_DEFAULT),
 	JTAG_BOARD("machXO2EVN",      "", "ft2232",     0, 0, CABLE_DEFAULT),
 	JTAG_BOARD("machXO3SK",       "", "ft2232",     0, 0, CABLE_DEFAULT),
 	JTAG_BOARD("machXO3EVN",      "", "ft2232",     0, 0, CABLE_DEFAULT),
@@ -134,12 +134,14 @@ static std::map <std::string, target_board_t> board_list = {
 	JTAG_BOARD("runber",          "", "ft232",      0, 0, CABLE_DEFAULT),
 	JTAG_BOARD("tangnano",        "", "ft2232",     0, 0, CABLE_DEFAULT),
 	JTAG_BOARD("tec0117",         "", "ft2232",     0, 0, CABLE_DEFAULT),
-	JTAG_BITBANG_BOARD("ulx2s",   "", "ft232RL", 0, 0, FT232RL_RI, FT232RL_DSR, FT232RL_CTS, FT232RL_DCD),
-	JTAG_BITBANG_BOARD("ulx3s",   "", "ft231X",  0, 0, FT232RL_DCD, FT232RL_DSR, FT232RL_RI, FT232RL_CTS),
+	JTAG_BITBANG_BOARD("ulx2s",   "", "ft232RL", 0, 0,
+			FT232RL_RI, FT232RL_DSR, FT232RL_CTS, FT232RL_DCD, CABLE_DEFAULT),
+	JTAG_BITBANG_BOARD("ulx3s",   "", "ft231X",  0, 0,
+			FT232RL_DCD, FT232RL_DSR, FT232RL_RI, FT232RL_CTS, CABLE_DEFAULT),
 	JTAG_BOARD("ecpix5",          "", "ecpix5-debug", 0, 0, CABLE_DEFAULT),
 	JTAG_BOARD("xtrx",            "xc7a50tcpg236", ""            , 0, 0, CABLE_DEFAULT),
 	SPI_BOARD("xyloni_spi",       "efinix", "efinix_spi",
-			DBUS4 | DBUS7, DBUS5, DBUS3, DBUS0, DBUS1, DBUS2, DBUS6, 0),
+			DBUS4 | DBUS7, DBUS5, DBUS3, DBUS0, DBUS1, DBUS2, DBUS6, 0, CABLE_DEFAULT),
 	JTAG_BOARD("zedboard",        "xc7z020-clg484", "digilent_hs2", 0, 0, CABLE_DEFAULT),
 };
 
