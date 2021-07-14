@@ -52,6 +52,16 @@ FTDIpp_MPSSE::FTDIpp_MPSSE(const mpsse_bit_config &cable, const string &dev,
 		cout << "_buffer malloc failed" << endl;
 		throw std::runtime_error("_buffer malloc failed");
 	}
+
+	/* search for iProduct -> need to have
+	 * ftdi->usb_dev (libusb_device_handler) -> libusb_device ->
+	 * libusb_device_descriptor
+	 */
+	struct libusb_device * usb_dev = libusb_get_device(_ftdi->usb_dev);
+	struct libusb_device_descriptor usb_desc;
+	libusb_get_device_descriptor(usb_dev, &usb_desc);
+	libusb_get_string_descriptor_ascii(_ftdi->usb_dev, usb_desc.iProduct,
+		_iproduct, 200);
 }
 
 FTDIpp_MPSSE::~FTDIpp_MPSSE()

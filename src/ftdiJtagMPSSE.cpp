@@ -61,20 +61,9 @@ FtdiJtagMPSSE::~FtdiJtagMPSSE()
 
 void FtdiJtagMPSSE::init_internal(const FTDIpp_MPSSE::mpsse_bit_config &cable)
 {
-	/* search for iProduct -> need to have
-	 * ftdi->usb_dev (libusb_device_handler) -> libusb_device ->
-	 * libusb_device_descriptor
-	 */
-	struct libusb_device * usb_dev = libusb_get_device(_ftdi->usb_dev);
-	struct libusb_device_descriptor usb_desc;
-	unsigned char iProduct[200];
-	libusb_get_device_descriptor(usb_dev, &usb_desc);
-	libusb_get_string_descriptor_ascii(_ftdi->usb_dev, usb_desc.iProduct,
-		iProduct, 200);
+	display("iProduct : %s\n", _iproduct);
 
-	display("iProduct : %s\n", iProduct);
-
-	if (!strncmp((const char *)iProduct, "Sipeed-Debug", 12)) {
+	if (!strncmp((const char *)_iproduct, "Sipeed-Debug", 12)) {
 		_ch552WA = true;
 	}
 
@@ -96,12 +85,21 @@ int FtdiJtagMPSSE::setClkFreq(uint32_t clkHZ) {
 
 void FtdiJtagMPSSE::config_edge()
 {
-	if (FTDIpp_MPSSE::getClkFreq() < 15000000) {
+	/* at high (>15MHz) with digilent cable (arty)
+	 * opposite edges must be used.
+	 * Not required with classic FT2232
+	 */
+	if (!strncmp((const char *)_iproduct, "Digilent USB Device", 19)) {
+		if (FTDIpp_MPSSE::getClkFreq() < 15000000) {
+			_write_mode = MPSSE_WRITE_NEG;
+			_read_mode = 0;
+		} else {
+			_write_mode = 0;
+			_read_mode = MPSSE_READ_NEG;
+		}
+	} else {
 		_write_mode = MPSSE_WRITE_NEG;
 		_read_mode = 0;
-	} else {
-		_write_mode = 0;
-		_read_mode = MPSSE_READ_NEG;
 	}
 }
 

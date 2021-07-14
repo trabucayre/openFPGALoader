@@ -84,6 +84,7 @@ class FTDIpp_MPSSE {
 		int _buffer_size;
 		int _num;
 		unsigned char *_buffer;
+		uint8_t _iproduct[200];
 };
 
 #endif
