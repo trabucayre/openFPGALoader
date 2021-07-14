@@ -177,7 +177,7 @@ int main(int argc, char **argv)
 		spi_pins_conf_t pins_config = board->spi_pins_config;
 
 		try {
-			spi = new FtdiSpi(cable.config, pins_config, freq, args.verbose > 0);
+			spi = new FtdiSpi(cable.config, pins_config, args.freq, args.verbose > 0);
 		} catch (std::exception &e) {
 			printError("Error: Failed to claim cable");
 			return EXIT_FAILURE;
@@ -293,7 +293,7 @@ int main(int argc, char **argv)
 	Jtag *jtag;
 	try {
 		jtag = new Jtag(cable, &pins_config, args.device, args.ftdi_serial,
-				freq, false, args.probe_firmware);
+				args.freq, false, args.probe_firmware);
 	} catch (std::exception &e) {
 		printError("JTAG init failed with: " + string(e.what()));
 		return EXIT_FAILURE;
