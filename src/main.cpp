@@ -72,7 +72,7 @@ int main(int argc, char **argv)
 
 	/* command line args. */
 	struct arguments args = {0, false, false, false, 0, "", "", "-", "", -1,
-			DEFAULT_FREQ, "-", false, false, false, false, Device::WR_SRAM, false,
+			0, "-", false, false, false, false, Device::WR_SRAM, false,
 			false, false, "", "", "", -1, 0};
 	/* parse arguments */
 	try {
@@ -96,8 +96,6 @@ int main(int argc, char **argv)
 	if (args.board[0] != '-' && board_list.find(args.board) != board_list.end()) {
 		board = &(board_list[args.board]);
 	}
-
-	uint32_t freq = args.freq;
 
 	/* if a board name is specified try to use this to determine cable */
 	if (board) {
@@ -128,9 +126,13 @@ int main(int argc, char **argv)
 		else if (!board->fpga_part.empty() && args.fpga_part.empty())
 			args.fpga_part = board->fpga_part;
 
-		/* Some boards can override the default clock speed */
-		if (board->default_freq != CABLE_DEFAULT && freq == DEFAULT_FREQ)
-			freq = board->default_freq;
+		/* Some boards can override the default clock speed
+		 * if args.freq == 0: the `--freq` arg has not been used
+		 * => apply board->default_freq with a value of
+		 * 0 (no default frequency) or > 0 (board has a default frequency)
+		 */
+		if (args.freq == 0)
+			args.freq = board->default_freq;
 	}
 
 	if (args.cable[0] == '-') { /* if no board and no cable */
@@ -138,6 +140,12 @@ int main(int argc, char **argv)
 			cout << "No cable or board specified: using direct ft2232 interface" << endl;
 		args.cable = "ft2232";
 	}
+
+	/* if args.freq == 0: no user requirement nor board default
+	 * clock speed => set default frequency
+	 */
+	if (args.freq == 0)
+		args.freq = DEFAULT_FREQ;
 
 	auto select_cable = cable_list.find(args.cable);
 	if (select_cable == cable_list.end()) {
