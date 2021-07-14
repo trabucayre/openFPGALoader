@@ -32,7 +32,7 @@ FX2_ll::FX2_ll(uint16_t uninit_vid, uint16_t uninit_pid,
 	}
 
 	/* try to open uninitialized device */
-	if (uninit_vid != -1 && uninit_pid != -1) {
+	if (uninit_vid != 0 && uninit_pid != 0) {
 		dev_handle = libusb_open_device_with_vid_pid(usb_ctx,
 				uninit_vid, uninit_pid);
 		if (dev_handle) {

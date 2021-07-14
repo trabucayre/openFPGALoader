@@ -21,6 +21,7 @@ ConfigBitstreamParser::ConfigBitstreamParser(const string &filename, int mode,
 			_file_size(0), _verbose(verbose),
 			_bit_data(), _raw_data(), _hdr()
 {
+	(void) mode;
 	if (!filename.empty()) {
 		FILE *_fd = fopen(filename.c_str(), "rb");
 		if (!_fd)

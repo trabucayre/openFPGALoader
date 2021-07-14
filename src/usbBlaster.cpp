@@ -42,6 +42,7 @@ UsbBlaster::UsbBlaster(int vid, int pid, const std::string &firmware_path,
 			_verbose(verbose), _nb_bit(0),
 			_curr_tms(0), _buffer_size(64)
 {
+	(void) vid;
 	if (pid == 0x6001)
 		ll_driver = new UsbBlasterI();
 	else if (pid == 0x6810)
