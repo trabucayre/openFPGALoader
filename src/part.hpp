@@ -87,6 +87,7 @@ static std::map <int, fpga_model> fpga_list = {
 
 	{0x1100581b, {"Gowin", "GW1N", "GW1NR-9", 8}},
 	{0x0900281B, {"Gowin", "GW1N", "GW1N-1", 8}},
+	{0x0120681b, {"Gowin", "GW1N", "GW1N-2", 8}},
 	{0x0100381B, {"Gowin", "GW1N", "GW1N-4", 8}},
 	{0x0300181b, {"Gowin", "GW1NS", "GW1NS-2C", 8}},
 };
