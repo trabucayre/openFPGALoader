@@ -109,7 +109,7 @@ __Supported cables:__
 This application uses **libftdi1**, so this library must be installed (and,
 depending of the distribution, headers too)
 ```bash
-apt-get install libftdi1-2 libftdi1-dev libhidapi-libusb0 libhidapi-dev libudev-dev cmake
+apt-get install libftdi1-2 libftdi1-dev libhidapi-libusb0 libhidapi-dev libudev-dev cmake pkg-config make g++
 ```
 **libudev-dev** is optional, may be replaced by **eudev-dev** or just not installed.
 
@@ -126,8 +126,6 @@ If you don't want this option, use:
 ```bash
 -DENABLE_CMSISDAP=OFF
 ```
-
-And if not already done, install **pkg-config**, **make** and **g++**.
 
 Alternatively you can manually specify the location of **libusb** and **libftdi1**:
 
