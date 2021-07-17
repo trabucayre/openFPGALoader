@@ -1,5 +1,11 @@
 # openFPGALoader
-Universal utility for programming FPGA
+
+<p align="center">
+  <a title="'Test' workflow Status" href="https://github.com/trabucayre/openFPGALoader/actions?query=workflow%3ATest"><img alt="'Test' workflow Status" src="https://img.shields.io/github/workflow/status/trabucayre/openFPGALoader/Test?longCache=true&style=flat-square&label=Test&logo=github%20actions&logoColor=fff"></a><!--
+  -->
+</p>
+
+Universal utility for programming FPGAs.
 
 __Current supported kits:__
 
