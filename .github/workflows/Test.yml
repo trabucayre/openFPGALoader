@@ -48,20 +48,20 @@ jobs:
 
     - name: '🚧 Build package'
       run: |
-        cd msys2
+        cd scripts/msys2
         makepkg-mingw --noconfirm --noprogressbar -sCLf
 
     - name: '📤 Upload artifact: package'
       uses: actions/upload-artifact@v2
       with:
         name: ${{ matrix.sys }}-openFPGALoader
-        path: msys2/*${{ matrix.env }}*.zst
+        path: scripts/msys2/*${{ matrix.env }}*.zst
 
     - name: '🔍 Show package content'
       run: |
         mkdir tmp
         cd tmp
-        tar -xf ../msys2/*.zst
+        tar -xf ../scripts/msys2/*.zst
         tree .
 
 

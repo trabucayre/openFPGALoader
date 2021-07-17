@@ -17,25 +17,25 @@ source=()
 sha256sums=()
 
 build() {
-  cd "${srcdir}"/../..
+  cd "${srcdir}"
   mkdir build
   cd build
   MSYS2_ARG_CONV_EXCL=- cmake \
     -G "MSYS Makefiles" \
     -DCMAKE_INSTALL_PREFIX="${MINGW_PREFIX}" \
-    ../
+    ../../../..
   cmake --build .
 }
 
 check() {
-  "${srcdir}"/../../build/openFPGALoader.exe --help
+  "${srcdir}"/build/openFPGALoader.exe --help
 }
 
 package() {
-  cd "${srcdir}"/../../build
+  cd "${srcdir}"/build
   make DESTDIR="${pkgdir}" install
 
   _licenses="${pkgdir}${MINGW_PREFIX}/share/licenses/${_realname}"
   mkdir -p "${_licenses}"
-  install -m 644 ../LICENSE "${_licenses}"
+  install -m 644 ../../../../LICENSE "${_licenses}"
 }
