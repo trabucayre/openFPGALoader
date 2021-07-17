@@ -1,0 +1,100 @@
+name: Test
+
+on:
+  push:
+  pull_request:
+  workflow_dispatch:
+
+jobs:
+
+
+  win-makepkg:
+    runs-on: windows-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - { icon: '⬛', sys: mingw32, env: i686 }
+          - { icon: '🟦', sys: mingw64, env: x86_64 }
+          - { icon: '🟨', sys: ucrt64,  env: ucrt-x86_64 }  # Experimental!
+          - { icon: '🟧', sys: clang64, env: clang-x86_64 } # Experimental!
+    name: 🚧${{ matrix.icon }} ${{ matrix.sys }} | ${{ matrix.env }} | makepkg
+    defaults:
+      run:
+        shell: msys2 {0}
+    env:
+      MINGW_ARCH: ${{ matrix.sys }}
+    steps:
+
+    - name: '⚙️ git config'
+      run: git config --global core.autocrlf input
+      shell: bash
+
+    - name: '🧰 Checkout'
+      uses: actions/checkout@v2
+      with:
+        fetch-depth: 0
+
+    - name: '${{ matrix.icon }} Setup MSYS2'
+      uses: msys2/setup-msys2@v2
+      with:
+        msystem: ${{ matrix.sys }}
+        update: true
+        install: >
+          git
+          base-devel
+          tree
+          mingw-w64-${{ matrix.env }}-toolchain
+
+    - name: '🚧 Build package'
+      run: |
+        cd msys2
+        makepkg-mingw --noconfirm --noprogressbar -sCLf
+
+    - name: '📤 Upload artifact: package'
+      uses: actions/upload-artifact@v2
+      with:
+        name: ${{ matrix.sys }}-openFPGALoader
+        path: msys2/*${{ matrix.env }}*.zst
+
+    - name: '🔍 Show package content'
+      run: |
+        mkdir tmp
+        cd tmp
+        tar -xf ../msys2/*.zst
+        tree .
+
+
+  win-test:
+    needs: win-makepkg
+    runs-on: windows-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - { icon: '⬛', sys: mingw32, env: i686 }
+          - { icon: '🟦', sys: mingw64, env: x86_64 }
+          - { icon: '🟨', sys: ucrt64,  env: ucrt-x86_64 }  # Experimental!
+          - { icon: '🟧', sys: clang64, env: clang-x86_64 } # Experimental!
+    name: 🚦${{ matrix.icon }} ${{ matrix.sys }} | ${{ matrix.env }} | test
+    defaults:
+      run:
+        shell: msys2 {0}
+    steps:
+
+    - name: '${{ matrix.icon }} Setup MSYS2'
+      uses: msys2/setup-msys2@v2
+      with:
+        msystem: ${{ matrix.sys }}
+        update: true
+
+    - name: '📥 Download artifact: package'
+      uses: actions/download-artifact@v2
+      with:
+        name: ${{ matrix.sys }}-openFPGALoader
+
+    - name: '🛠️ Install package'
+      run: pacman -U --noconfirm --noprogressbar *.zst
+
+    - name: '🚦 Test package'
+      run: openFPGALoader --help
