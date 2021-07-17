@@ -265,8 +265,13 @@ int main(int argc, char **argv)
 	if (args.dfu || (board && board->mode == COMM_DFU)) {
 		/* try to init DFU probe */
 		DFU *dfu = NULL;
+		uint16_t vid = 0, pid = 0;
+		if (board) {
+			vid = board->vid;
+			pid = board->pid;
+		}
 		try {
-			dfu = new DFU(args.bit_file, args.verbose);
+			dfu = new DFU(args.bit_file, vid, pid, args.verbose);
 		} catch (std::exception &e) {
 			printError("DFU init failed with: " + string(e.what()));
 			return EXIT_FAILURE;
