@@ -8,6 +8,100 @@ on:
 jobs:
 
 
+  lin-build:
+    strategy:
+      fail-fast: false
+      max-parallel: 4
+      matrix:
+        os:
+        - 18
+        - 20
+    name: '🚧🐧 Ubuntu ${{ matrix.os }} | build'
+    runs-on: ubuntu-${{ matrix.os }}.04
+    steps:
+
+    - name: '🧰 Checkout'
+      uses: actions/checkout@v2
+
+    - name: '⚙️ Install dependencies'
+      run: |
+        sudo apt update -qq
+        sudo apt install -y \
+          cmake \
+          libftdi1-2 \
+          libftdi1-dev \
+          libhidapi-libusb0 \
+          libhidapi-dev \
+          libudev-dev \
+          pkg-config \
+          tree
+
+    - name: '🚧 Build tarball'
+      run: |
+        mkdir build
+        cd build
+        cmake ..
+        cmake --build .
+
+        make DESTDIR=$(pwd)/dist install
+        _rulesdir='dist/etc/udev/rules.d/'
+        mkdir -p "${_rulesdir}"
+        cp ../99-openfpgaloader.rules "${_rulesdir}"
+        _licenses="dist/usr/local/share/licenses/openFPGALoader"
+        mkdir -p "${_licenses}"
+        install -m 644 ../LICENSE "${_licenses}"
+
+        tar -cvzf ../ubtuntu${{ matrix.os }}.04-openFPGALoader.tgz -C dist .
+
+    - name: '📤 Upload artifact: tarball'
+      uses: actions/upload-artifact@v2
+      with:
+        name: ubtuntu${{ matrix.os }}.04-openFPGALoader
+        path: ubtuntu${{ matrix.os }}.04-openFPGALoader.tgz
+
+    - name: '🔍 Show package content'
+      run: |
+        mkdir tmp
+        cd tmp
+        tar -xf ../ubtuntu${{ matrix.os }}.04-openFPGALoader.tgz
+        tree .
+
+
+  lin-test:
+    needs: lin-build
+    strategy:
+      fail-fast: false
+      max-parallel: 4
+      matrix:
+        os:
+        - 18
+        - 20
+    name: '🚦🐧 Ubuntu ${{ matrix.os }} | test'
+    runs-on: ubuntu-${{ matrix.os }}.04
+    steps:
+
+    - name: '⚙️ Install dependencies'
+      run: |
+        sudo apt update -qq
+        sudo apt install -y \
+          libftdi1-2 \
+          libhidapi-libusb0 \
+          udev
+
+    - name: '📥 Download artifact: package'
+      uses: actions/download-artifact@v2
+      with:
+        name: ubtuntu${{ matrix.os }}.04-openFPGALoader
+
+    - name: '🛠️ Install package'
+      run: sudo tar -xvzf *.tgz -C /
+
+    - name: '🚦 Test package'
+      run: |
+        openFPGALoader --help
+        openFPGALoader --detect || true
+
+
   win-makepkg:
     runs-on: windows-latest
     strategy:
@@ -18,7 +112,7 @@ jobs:
           - { icon: '🟦', sys: mingw64, env: x86_64 }
           - { icon: '🟨', sys: ucrt64,  env: ucrt-x86_64 }  # Experimental!
           - { icon: '🟧', sys: clang64, env: clang-x86_64 } # Experimental!
-    name: 🚧${{ matrix.icon }} ${{ matrix.sys }} | ${{ matrix.env }} | makepkg
+    name: '🚧${{ matrix.icon }} ${{ matrix.sys }} | makepkg'
     defaults:
       run:
         shell: msys2 {0}
@@ -76,7 +170,7 @@ jobs:
           - { icon: '🟦', sys: mingw64, env: x86_64 }
           - { icon: '🟨', sys: ucrt64,  env: ucrt-x86_64 }  # Experimental!
           - { icon: '🟧', sys: clang64, env: clang-x86_64 } # Experimental!
-    name: 🚦${{ matrix.icon }} ${{ matrix.sys }} | ${{ matrix.env }} | test
+    name: '🚦${{ matrix.icon }} ${{ matrix.sys }} | test'
     defaults:
       run:
         shell: msys2 {0}
