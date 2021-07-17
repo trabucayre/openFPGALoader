@@ -46,12 +46,14 @@ enum dfu_cmd {
  * - index as jtag chain (fix issue when more than one device connected)
  */
 
-DFU::DFU(const string &filename, int verbose_lvl):_verbose(verbose_lvl > 0),
+DFU::DFU(const string &filename, uint16_t vid, uint16_t pid,
+		int verbose_lvl):_verbose(verbose_lvl > 0),
 		_quiet(verbose_lvl < 0), dev_idx(0), _vid(0), _pid(0),
 		usb_ctx(NULL), dev_handle(NULL), curr_intf(0), transaction(0),
 		_bit(NULL)
 {
 	struct dfu_status status;
+	int dfu_vid = 0, dfu_pid = 0;
 
 	if (!filename.empty()) {
 		printInfo("Open file " + filename + " ", false);
@@ -78,9 +80,8 @@ DFU::DFU(const string &filename, int verbose_lvl):_verbose(verbose_lvl > 0),
 
 		/* get VID and PID from dfu file */
 		try {
-			_vid = std::stoi(_bit->getHeaderVal("idVendor"), 0, 16);
-			_pid = std::stoi(_bit->getHeaderVal("idProduct"), 0, 16);
-			printf("0x%04x 0x%04x\n", _vid, _pid);
+			dfu_vid = std::stoi(_bit->getHeaderVal("idVendor"), 0, 16);
+			dfu_pid = std::stoi(_bit->getHeaderVal("idProduct"), 0, 16);
 		} catch (std::exception &e) {
 			if (_verbose)
 				printWarn(e.what());
@@ -92,48 +93,25 @@ DFU::DFU(const string &filename, int verbose_lvl):_verbose(verbose_lvl > 0),
 		throw std::runtime_error("libusb init failed");
 	}
 
-	/* no vid or pid provided by DFU file */
-	if (_vid == 0 || _pid == 0) {  // search all DFU compatible devices
+	/* no vid or pid provided by DFU file or by params */
+	if ((dfu_vid == 0 || dfu_pid == 0) && (vid == 0 || pid == 0)) {
+		// search all DFU compatible devices
 		if (searchDFUDevices() != EXIT_SUCCESS) {
 			delete _bit;
 			throw std::runtime_error("Devices enumeration failed");
 		}
 	} else {
-		/* search device using vid/pid */
-		libusb_device_handle *handle = libusb_open_device_with_vid_pid(usb_ctx,
-			_vid, _pid);
-		if (!handle) {
-			delete _bit;
-			throw std::runtime_error("Error: unable to connect to device");
-		}
-
-		/* retrieve usb device structure */
-		libusb_device *dev = libusb_get_device(handle);
-		if (!dev) {
-			libusb_close(handle);
-			delete _bit;
-			throw std::runtime_error("Error: unable to retrieve usb device");
-		}
-
-		/* and device descriptor */
-		struct libusb_device_descriptor desc;
-		int r = libusb_get_device_descriptor(dev, &desc);
-		if (r != 0) {
-			libusb_close(handle);
-			delete _bit;
-			throw std::runtime_error("Error: fail to retrieve usb descriptor");
-		}
-
-		/* search if one descriptor is DFU compatible */
-		searchIfDFU(dev, &desc);
-
-		libusb_close(handle);  // no more needed -> reopen after
+		bool found = false;
+		if (dfu_vid != 0 && dfu_pid != 0)
+			found = searchWithVIDPID(dfu_vid, dfu_pid);
+		if (vid != 0 && pid != 0 && !found)
+			found = searchWithVIDPID(vid, pid);
 	}
 
 	/* check if DFU compatible devices are present */
 	if (dfu_dev.size() != 0) {
 		/* more than one: only possible if file is not DFU */
-		if (dfu_dev.size() > 1)
+		if (dfu_dev.size() > 1 && !filename.empty())
 			throw std::runtime_error("Only one device supported");
 	} else {
 		throw std::runtime_error("No DFU compatible device found");
@@ -141,6 +119,10 @@ DFU::DFU(const string &filename, int verbose_lvl):_verbose(verbose_lvl > 0),
 
 	if (_verbose)
 		displayDFU();
+
+	/* don't try device without vid/pid */
+	if (_vid == 0 || _pid == 0)
+		return;
 
 	/* open the first */
 	if (open_DFU(0) == EXIT_FAILURE) {
@@ -167,6 +149,11 @@ DFU::~DFU()
 int DFU::open_DFU(int index)
 {
 	struct dfu_dev curr_dfu;
+
+	if (_vid == 0 || _pid == 0) {
+		printError("Error: Can't open device without VID/PID");
+		return EXIT_FAILURE;
+	}
 
 	dev_idx = index;
 	curr_dfu = dfu_dev[dev_idx];
@@ -213,6 +200,61 @@ int DFU::close_DFU() {
 	return EXIT_SUCCESS;
 }
 
+/* search one device using VID/PID */
+bool DFU::searchWithVIDPID(uint16_t vid, uint16_t pid)
+{
+	char mess[40];
+	/* search device using vid/pid */
+	libusb_device_handle *handle = NULL;
+
+	/* try first by using VID:PID from DFU file */
+	snprintf(mess, 40, "Open device %04x:%04x ",
+			vid, pid);
+
+	printInfo(mess, false);
+	handle = libusb_open_device_with_vid_pid(usb_ctx, vid, pid);
+	/* No device found */
+	if (!handle) {
+		printWarn("Not found");
+		if (_verbose)
+			printError("Error: unable to connect to device");
+		return false;
+	} else {
+		printSuccess("DONE");
+	}
+
+	/* retrieve usb device structure */
+	libusb_device *dev = libusb_get_device(handle);
+	if (!dev) {
+		libusb_close(handle);
+		if (_verbose)
+			printError("Error: unable to retrieve usb device");
+		return false;
+	}
+
+	/* and device descriptor */
+	struct libusb_device_descriptor desc;
+	int r = libusb_get_device_descriptor(dev, &desc);
+	if (r != 0) {
+		libusb_close(handle);
+		printError("Error: fail to retrieve usb descriptor");
+		return false;
+	}
+
+	/* search if one descriptor is DFU compatible */
+	int ret = searchIfDFU(handle, dev, &desc);
+	if (ret == 1) {
+		if (_verbose)
+			printError("Error: No DFU interface");
+	}
+	_vid = vid;
+	_pid = pid;
+
+	libusb_close(handle);  // no more needed -> reopen after
+
+	return (ret == 1) ? false : true;
+}
+
 /* Tree steps are required to discover all
  * DFU capable devices
  * 1. loop over devices
@@ -222,6 +264,7 @@ int DFU::searchDFUDevices()
 	int i = 0;
 	libusb_device **dev_list;
 	libusb_device *usb_dev;
+	libusb_device_handle *handle;
 
 	/* clear dfu list */
 	dfu_dev.clear();
@@ -245,9 +288,12 @@ int DFU::searchDFUDevices()
 				libusb_get_device_address(usb_dev));
 		}
 
-		if (searchIfDFU(usb_dev, &desc) != 0) {
+		libusb_open(usb_dev, &handle);
+
+		if (searchIfDFU(handle, usb_dev, &desc) != 0) {
 			return EXIT_FAILURE;
 		}
+		libusb_close(handle);
 	}
 
 	libusb_free_device_list(dev_list, 1);
@@ -257,7 +303,8 @@ int DFU::searchDFUDevices()
 
 /* 2. loop over configuration
  */
-int DFU::searchIfDFU(struct libusb_device *dev,
+int DFU::searchIfDFU(struct libusb_device_handle *handle,
+		struct libusb_device *dev,
 		struct libusb_device_descriptor *desc)
 {
 	/* configuration descriptor iteration */
@@ -292,6 +339,10 @@ int DFU::searchIfDFU(struct libusb_device *dev,
 					my_dev.bus = libusb_get_bus_number(dev);
 					my_dev.device = libusb_get_device_address(dev);
 					my_dev.bMaxPacketSize0 = desc->bMaxPacketSize0;
+
+					libusb_get_string_descriptor_ascii(handle, desc->iProduct,
+						my_dev.iProduct, 128);
+
 					int r = libusb_get_port_numbers(dev, my_dev.path, sizeof(my_dev.path));
 					my_dev.path[r] = '\0';
 					dfu_dev.push_back(my_dev);
@@ -518,7 +569,8 @@ void DFU::displayDFU()
 		printf("%04x:%04x (bus %d, device %2d)",
             dfu_dev[i].vid, dfu_dev[i].pid,
             dfu_dev[i].bus, dfu_dev[i].device);
-		printf(" path: %d", dfu_dev[i].path[0]);
+		printf(" path: %d: iProduct %s", dfu_dev[i].path[0],
+				dfu_dev[i].iProduct);
 		for (size_t j = 1; j < strlen(((const char *)dfu_dev[i].path)); j++)
 			printf(".%d", dfu_dev[i].path[j]);
 		printf("\n");
@@ -566,6 +618,14 @@ void DFU::displayDFU()
  */
 int DFU::download()
 {
+	/* a device must be open. Can't try
+	 * to download image on an enumerate device
+	 */
+	if (!dev_handle) {
+		printError("Error: No device. Can't download file");
+		return -1;
+	}
+
 	int ret, ret_val = EXIT_SUCCESS;
 	uint8_t *buffer, *ptr;
 	int size, xfer_len;

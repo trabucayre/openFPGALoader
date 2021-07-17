@@ -20,7 +20,7 @@ class DFU {
 		 * \brief contructor
 		 * \param[in] verbose_lvl: verbose level 0 normal, -1 quiet, 1 verbose
 		 */
-		DFU(const std::string &filename, int verbose_lvl);
+		DFU(const std::string &filename, uint16_t vid, uint16_t pid, int verbose_lvl);
 
 		~DFU();
 
@@ -61,6 +61,7 @@ class DFU {
 			uint8_t  interface;
 			uint8_t  device;
 			uint8_t  path[8];
+			uint8_t  iProduct[128];
 			uint32_t bMaxPacketSize0;
 			struct   dfu_desc dfu_desc;
 		};
@@ -202,12 +203,21 @@ class DFU {
 		int parseDFUDescriptor(const struct libusb_interface_descriptor *intf,
 				uint8_t *dfu_desc, int dfu_desc_size);
 		/*!
+		 * \brief try to open device specified by vid and pid. If found
+		 *        search for compatible interface
+		 * \param[in] vid: USB VID
+		 * \param[in] pid: USB PID
+		 * \return false when no device, unable to connect, or no DFU interface.
+		 */
+		bool searchWithVIDPID(uint16_t vid, uint16_t pid);
+		/*!
 		 * \brief search, for the specified device, if it has a DFU interface
 		 * \param[in] dev: USB device
 		 * \param[in] desc: USB device descriptor
 		 * \return 1 when can't read config, 0 otherwise
 		 */
-		int searchIfDFU(struct libusb_device *dev,
+		int searchIfDFU(struct libusb_device_handle *handle,
+				struct libusb_device *dev,
 				struct libusb_device_descriptor *desc);
 
 		bool _verbose;                       /**< display more message */
