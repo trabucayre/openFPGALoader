@@ -97,4 +97,6 @@ jobs:
       run: pacman -U --noconfirm --noprogressbar *.zst
 
     - name: '🚦 Test package'
-      run: openFPGALoader --help
+      run: |
+        openFPGALoader --help
+        openFPGALoader --detect || true
