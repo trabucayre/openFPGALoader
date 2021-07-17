@@ -194,3 +194,24 @@ jobs:
       run: |
         openFPGALoader --help
         openFPGALoader --detect || true
+
+
+  Release:
+    if: github.event_name != 'pull_request' && (github.ref == 'refs/heads/master' || contains(github.ref, 'refs/tags/'))
+    needs: [ lin-test, win-test ]
+    runs-on: ubuntu-latest
+    name: '📦 Release'
+    steps:
+
+    - name: '📥 Download artifacts'
+      uses: actions/download-artifact@v2
+      with:
+        path: artifact
+
+    # Tagged: create a pre-release or a release (semver)
+    # Untagged: update the assets of pre-release 'nightly'
+    - uses: eine/tip@master
+      with:
+        token: ${{ github.token }}
+        tag: 'nightly'
+        files: artifact/**/*
