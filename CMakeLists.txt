@@ -2,7 +2,7 @@
 cmake_minimum_required(VERSION 3.0)
 
 # set the project name
-project(openFPGALoader VERSION "0.4.0" LANGUAGES CXX)
+project(openFPGALoader VERSION "0.5.0" LANGUAGES CXX)
 add_definitions(-DVERSION=\"v${PROJECT_VERSION}\")
 
 option(BUILD_STATIC "Whether or not to build with static libraries" OFF)
