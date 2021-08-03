@@ -4,7 +4,7 @@
 
 ### Arch Linux
 
-openFPGALoader is available is the default repositories:
+openFPGALoader is available in the default repositories:
 
 ```
 sudo pacman -S openfpgaloader
@@ -95,4 +95,3 @@ brew install openfpgaloader
 ```
 
 ## Windows
-
