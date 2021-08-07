@@ -14,7 +14,7 @@ More instructions for other installation scenarios (including Windows) are avail
 
 ## Programming a development board
 
-Just simply replace `my_fpga_board` with any FPGA board from the [board compatibility list](board-compatility-list.md) (or `openFPGALoader --list-boards`) in any of the two commands below, depending on if you want to program the volatile part of your FPGA (faster but not persistent) or the flash part of your FPGA (slower but persistent):
+Just simply replace `my_fpga_board` with any FPGA board from the [board compatibility list](board-compatibility-list.md) (or `openFPGALoader --list-boards`) in any of the two commands below, depending on if you want to program the volatile part of your FPGA (faster but not persistent) or the flash part of your FPGA (slower but persistent):
 
 ```bash
 openFPGALoader -b my_fpga_board my_bitstream.bit # Program to SRAM
@@ -29,7 +29,7 @@ If your FPGA doesn't come with a built-in programmer or if you prefer to use an 
 
 ```bash
 openFPGALoader -c my_cable my_bitstream.bit # Program to SRAM
-openFPGALoader -c my_cable my_bitstream.bit # Program to flash
+openFPGALoader -c my_cable -f my_bitstream.bit # Program to flash
 ```
 
 **Note:** For some cable (like digilent adapters) signals from the converter are not just directly to the FPGA. For this case, the -c must be added.
