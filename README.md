@@ -18,6 +18,13 @@ Not sure if your hardware is supported? Check the hardware compatibility lists:
 
 Also checkout the vendor-specific documentation: [Anlogic](doc/anlogic.md), [Efinix](doc/efinix.md), [Gowin](doc/gowin.md), [Intel/Altera](doc/intel.md), [Lattice](doc/lattice.md), [Xilinx](doc/xilinx.md).
 
+## Quick Usage
+
+```
+openFPGALoader -b arty arty_bitstream.bit # Loading in SRAM
+openFPGALoader -b arty -f arty_bitstream.bit # Writing in flash
+```
+
 ## Usage
 
 ```
