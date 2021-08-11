@@ -20,9 +20,17 @@ Also checkout the vendor-specific documentation: [Anlogic](doc/anlogic.md), [Efi
 
 ## Quick Usage
 
-```
+`arty` in the example below is one of the many FPGA board configurations listed [here](doc/board-compatibility-list.md).
+
+```bash
 openFPGALoader -b arty arty_bitstream.bit # Loading in SRAM
 openFPGALoader -b arty -f arty_bitstream.bit # Writing in flash
+```
+
+You can also specify a JTAG cable model instead of the board model:
+
+```bash
+openFPGALoader -c cmsisdap fpga_bitstream.bit
 ```
 
 ## Usage
