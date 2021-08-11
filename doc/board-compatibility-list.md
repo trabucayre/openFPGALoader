@@ -1,5 +1,12 @@
 # Board compatibility list
 
+**Quick usage reminder.** `arty` can be any of the board names from the first column.
+
+```
+openFPGALoader -b arty bitstream.bit # Loading in SRAM (volatile)
+openFPGALoader -b arty -f bitstream.bit # Writing in flash (non-volatile)
+```
+
 |                Board name | Description                                                                                                                                   | FPGA                              | Memory    | Flash    |
 |--------------------------:|:----------------------------------------------------------------------------------------------------------------------------------------------|:----------------------------------|:----------|:---------|
 |           **acornCle215** | [Acorn CLE 215+](http://squirrelsresearch.com/acorn-cle-215/)                                                                                 | Artix</br>xc7a200tsbg484          | OK        | OK       |
