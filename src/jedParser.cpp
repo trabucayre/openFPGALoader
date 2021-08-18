@@ -13,6 +13,7 @@
 #include <string.h>
 #include <strings.h>
 
+#include <algorithm>
 #include <fstream>
 #include <iostream>
 #include <iterator>
@@ -32,8 +33,11 @@ using namespace std;
 
 JedParser::JedParser(string filename, bool verbose):
 	ConfigBitstreamParser(filename, ConfigBitstreamParser::BIN_MODE, verbose),
-	_fuse_count(0), _pin_count(0), _featuresRow(0), _feabits(0), _checksum(0),
-	_userCode(0), _security_settings(0), _default_fuse_state(0)
+	_fuse_count(0), _pin_count(0), _max_vect_test(0),
+	_featuresRow(0), _feabits(0), _has_feabits(false), _checksum(0),
+	_compute_checksum(0),
+	_userCode(0), _security_settings(0), _default_fuse_state(0),
+	_default_test_condition(0), _arch_code(0), _pinout_code(0)
 {
 }
 
@@ -91,6 +95,29 @@ void JedParser::buildDataArray(const string &content, struct jed_data &jed)
 			data |= val << ii;
 		}
 		tmp_buff += data;
+		_compute_checksum += data;
+	}
+	jed.data.push_back(std::move(tmp_buff));
+	jed.len += data_len;
+}
+
+/* convert one serie ASCII 1/0 to a vector of
+ * unsigned char
+ * string must be up to 8 bits
+ */
+void JedParser::buildDataArray(const vector<string> &content,
+		struct jed_data &jed)
+{
+	size_t data_len = 0;
+	string tmp_buff;
+	for (size_t i = 0; i < content.size(); i++) {
+		uint8_t data = 0;
+		data_len += content[i].size();
+		for (size_t ii = 0; ii < content[i].size(); ii++) {
+			uint8_t val = (content[i][ii] == '1'?1:0);
+			data |= val << ii;
+		}
+		tmp_buff += data;
 	}
 	jed.data.push_back(std::move(tmp_buff));
 	jed.len += data_len;
@@ -98,48 +125,57 @@ void JedParser::buildDataArray(const string &content, struct jed_data &jed)
 
 void JedParser::displayHeader()
 {
-	printf("feabits :\n");
-	printf("%04x <-> %d\n", _feabits, _feabits);
-	/* 15-14: always 0 */
-	printf("\tBoot Mode       : ");
-	switch ((_feabits>>11)&0x07) {
-	case 0:
-		printf("Single Boot from Configuration Flash\n");
-		break;
-	case 1:
-		printf("Dual Boot from Configuration Flash then External if there is a failure\n");
-		break;
-	case 3:
-		printf("Single Boot from External Flash\n");
-		break;
-	default:
-		printf("Error\n");
-	}
+	/* only lattice jed */
+	if (_has_feabits) {
+		printf("feabits :\n");
+		printf("%04x <-> %d\n", _feabits, _feabits);
+		/* 15-14: always 0 */
+		printf("\tBoot Mode       : ");
+		switch ((_feabits>>11)&0x07) {
+		case 0:
+			printf("Single Boot from Configuration Flash\n");
+			break;
+		case 1:
+			printf("Dual Boot from Configuration Flash then External if there is a failure\n");
+			break;
+		case 3:
+			printf("Single Boot from External Flash\n");
+			break;
+		default:
+			printf("Error\n");
+		}
 
-	printf("\tMaster Mode SPI : %s\n",
-		(((_feabits>>11)&0x01)?"enable":"disable"));
-	printf("\tI2c port        : %s\n",
-		(((_feabits>>10)&0x01)?"disable":"enable"));
-	printf("\tSlave SPI port  : %s\n",
-		(((_feabits>>9)&0x01)?"disable":"enable"));
-	printf("\tJTAG port       : %s\n",
-		(((_feabits>>8)&0x01)?"disable":"enable"));
-	printf("\tDONE            : %s\n",
-		(((_feabits>>7)&0x01)?"enable":"disable"));
-	printf("\tINITN           : %s\n",
-		(((_feabits>>6)&0x01)?"enable":"disable"));
-	printf("\tPROGRAMN        : %s\n",
-		(((_feabits>>5)&0x01)?"disable":"enable"));
-	printf("\tMy_ASSP         : %s\n",
-		(((_feabits>>4)&0x01)?"enable":"disable"));
-	/* 3-0: always 0 */
+		printf("\tMaster Mode SPI : %s\n",
+			(((_feabits>>11)&0x01)?"enable":"disable"));
+		printf("\tI2c port        : %s\n",
+			(((_feabits>>10)&0x01)?"disable":"enable"));
+		printf("\tSlave SPI port  : %s\n",
+			(((_feabits>>9)&0x01)?"disable":"enable"));
+		printf("\tJTAG port       : %s\n",
+			(((_feabits>>8)&0x01)?"disable":"enable"));
+		printf("\tDONE            : %s\n",
+			(((_feabits>>7)&0x01)?"enable":"disable"));
+		printf("\tINITN           : %s\n",
+			(((_feabits>>6)&0x01)?"enable":"disable"));
+		printf("\tPROGRAMN        : %s\n",
+			(((_feabits>>5)&0x01)?"disable":"enable"));
+		printf("\tMy_ASSP         : %s\n",
+			(((_feabits>>4)&0x01)?"enable":"disable"));
+		/* 3-0: always 0 */
+	}
 
 	printf("Pin Count  : %d\n", _pin_count);
 	printf("Fuse Count : %d\n", _fuse_count);
 
 	for (size_t i = 0; i < _data_list.size(); i++) {
-		printf("area[%zd] %d %d ", i, _data_list[i].offset, _data_list[i].len);
-		printf("%s\n", _data_list[i].associatedPrevNote.c_str());
+		printf("area[%zd] %4d %4d ", i, _data_list[i].offset, _data_list[i].len);
+		printf("%ld ", _data_list[i].data.size());
+		for (size_t ii = 0; ii < _data_list[i].data.size(); ii++)
+			for (size_t iii = 0; iii < _data_list[i].data[ii].size(); iii++)
+				printf("%02x", (uint8_t)_data_list[i].data[ii][iii]);
+		printf(" %s\n", _data_list[i].associatedPrevNote.c_str());
+		if (_data_list[i].offset == 2656)
+			break;
 	}
 }
 
@@ -182,8 +218,20 @@ void JedParser::parseLField(const vector<string> &content)
 		std::istringstream iss(content[0]);
 		vector<string> myList((std::istream_iterator<string>(iss)),
 		std::istream_iterator<string>());
-		myList[1].pop_back();
-		buildDataArray(myList[1], d);
+
+		myList.erase(myList.begin());
+
+		/* merge all to compute checksum by 8bits */
+		std::stringstream imploded;
+		std::copy(myList.begin(), myList.end(),
+				std::ostream_iterator<std::string>(imploded, ""));
+		string t = imploded.str();
+
+		for (size_t i = 0; i < t.size(); i+=8)
+			_compute_checksum += reverseByte(std::stoi(t.substr(i, 8),
+					nullptr, 2));
+
+		buildDataArray(myList, d);
 	}
 	_data_list.push_back(std::move(d));
 }
@@ -246,6 +294,9 @@ int JedParser::parse()
 				case 'P':  // pin count
 					_pin_count = count;
 					break;
+				case 'V':  // pin count
+					_max_vect_test = count;
+					break;
 				default:
 					cerr << "Error for 'Q' unknown qualifier " << lines[0] << endl;
 					return EXIT_FAILURE;
@@ -257,6 +308,10 @@ int JedParser::parse()
 		case 'F':
 			_default_fuse_state = lines[0][1] - '0';
 			break;
+		case 'J':
+			sscanf(lines[0].c_str() + 1, "%d", &_arch_code);
+			sscanf(lines[0].c_str() + 3, "%d", &_pinout_code);
+			break;
 		case 'C':
 			sscanf(lines[0].c_str() + 1, "%hx", &_checksum);
 			break;
@@ -266,6 +321,7 @@ int JedParser::parse()
 			break;
 		case 'E':
 			parseEField(lines);
+			_has_feabits = true;
 			break;
 		case 'L':  // fuse offset
 			parseLField(lines);
@@ -284,6 +340,9 @@ int JedParser::parse()
 						_userCode = ((_userCode << 1) | (lines[0][ii] - '0'));
 			}
 			break;
+		case 'X':  // default test condition
+			sscanf(lines[0].c_str() + 1, "%d", &_default_test_condition);
+			break;
 		default:
 			printf("inconnu\n");
 			cout << lines[0]<< endl;
@@ -292,18 +351,13 @@ int JedParser::parse()
 	} while (lines[0][0] != 0x03);
 
 	int size = 0;
-	uint16_t checksum = 0;
 	for (size_t area = 0; area < _data_list.size(); area++) {
 		size += _data_list[area].len;
-		for (size_t line = 0; line < _data_list[area].data.size(); line++) {
-			for (size_t col = 0; col < _data_list[area].data[line].size(); col++)
-				checksum += (uint8_t)_data_list[area].data[line][col];
-		}
 	}
 
 	if (_verbose)
-		printf("theorical checksum %x -> %x\n", _checksum, checksum);
-	if (_checksum != checksum) {
+		printf("theorical checksum %x -> %x\n", _checksum, _compute_checksum);
+	if (_checksum != _compute_checksum) {
 		printError("Error: wrong checksum");
 		return EXIT_FAILURE;
 	}

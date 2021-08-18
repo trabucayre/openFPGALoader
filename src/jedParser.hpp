@@ -31,6 +31,7 @@ class JedParser: public ConfigBitstreamParser {
 
 		size_t nb_section() { return _data_list.size();}
 		size_t offset_for_section(int id) {return _data_list[id].offset;}
+		int len_for_section(int id) {return _data_list[id].len;}
 		std::vector<std::string> data_for_section(int id) {
 			return _data_list[id].data;
 		}
@@ -42,19 +43,27 @@ class JedParser: public ConfigBitstreamParser {
 		std::string readline();
 		std::vector<std::string>readJEDLine();
 		void buildDataArray(const std::string &content, struct jed_data &jed);
+		void buildDataArray(const std::vector<std::string> &content,
+				struct jed_data &jed);
 		void parseEField(const std::vector<std::string> &content);
 		void parseLField(const std::vector<std::string> &content);
 
 		std::vector<struct jed_data> _data_list;
 		int _fuse_count;
 		int _pin_count;
+		int _max_vect_test;
 		uint64_t _featuresRow;
 		uint16_t _feabits;
+		bool _has_feabits;
 		uint16_t _checksum;
+		uint16_t _compute_checksum;
 		uint32_t _userCode;
 		uint8_t _security_settings;
 		uint8_t _default_fuse_state;
 		std::istringstream _ss;
+		int _default_test_condition;
+		int _arch_code;
+		int _pinout_code;
 };
 
 #endif  // JEDPARSER_HPP_
