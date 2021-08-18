@@ -3,6 +3,9 @@
  * Copyright (C) 2019 Gwenhael Goavec-Merou <gwenhael.goavec-merou@trabucayre.com>
  */
 
+#include <unistd.h>
+
+#include <cstring>
 #include <iostream>
 #include <stdexcept>
 #include <string>
@@ -10,6 +13,7 @@
 #include "jtag.hpp"
 #include "bitparser.hpp"
 #include "configBitstreamParser.hpp"
+#include "jedParser.hpp"
 #include "mcsParser.hpp"
 #include "spiFlash.hpp"
 #include "rawParser.hpp"
@@ -22,7 +26,7 @@
 Xilinx::Xilinx(Jtag *jtag, const std::string &filename,
 	const std::string &file_type,
 	Device::prog_type_t prg_type,
-	std::string device_package, bool verify, int8_t verbose):
+	const std::string &device_package, bool verify, int8_t verbose):
 	Device(jtag, filename, file_type, verify, verbose),
 	_device_package(device_package)
 {
@@ -36,9 +40,37 @@ Xilinx::Xilinx(Jtag *jtag, const std::string &filename,
 				_mode = Device::MEM_MODE;
 			else
 				_mode = Device::SPI_MODE;
+		} else if (_file_extension == "jed") {
+			_mode = Device::FLASH_MODE;
 		} else {
 			_mode = Device::SPI_MODE;
 		}
+	}
+
+	uint32_t idcode = _jtag->get_target_device_id();
+	std::string family = fpga_list[idcode].family;
+	if (family.substr(0, 5) == "artix") {
+		_fpga_family = ARTIX_FAMILY;
+	} else if (family == "spartan7") {
+		_fpga_family = SPARTAN7_FAMILY;
+	} else if (family == "zynq") {
+		_fpga_family = ZYNQ_FAMILY;
+	} else if (family == "kintex7") {
+		_fpga_family = KINTEX_FAMILY;
+	} else if (family == "spartan6") {
+		_fpga_family = SPARTAN6_FAMILY;
+	} else if (family == "xc9500xl") {
+		_fpga_family = XC95_FAMILY;
+		if (idcode == 0x59602093)
+			_xc95_line_len = 2;
+		else if (idcode == 0x59604093)
+			_xc95_line_len = 4;
+		else if (idcode == 0x59608093)
+			_xc95_line_len = 8;
+		else if (idcode == 0x59616093)
+			_xc95_line_len = 16;
+	} else {
+		_fpga_family = UNKNOWN_FAMILY;
 	}
 }
 Xilinx::~Xilinx() {}
@@ -52,7 +84,16 @@ Xilinx::~Xilinx() {}
 #define JSTART   0x0C
 #define JSHUTDOWN 0x0D
 #define ISC_DISABLE 0x16
-#define BYPASS   0x3f
+#define BYPASS   0xff
+
+/* xc95 instructions set */
+#define XC95_IDCODE          0xfe
+#define XC95_ISC_ERASE       0xed
+#define XC95_ISC_ENABLE      0xe9
+#define XC95_ISC_DISABLE     0xf0
+#define XC95_XSC_BLANK_CHECK 0xe5
+#define XC95_ISC_PROGRAM     0xea
+#define XC95_ISC_READ        0xee
 
 void Xilinx::reset()
 {
@@ -71,15 +112,31 @@ void Xilinx::reset()
 
 int Xilinx::idCode()
 {
+	int id = 0;
 	unsigned char tx_data[4]= {0x00, 0x00, 0x00, 0x00};
 	unsigned char rx_data[4];
 	_jtag->go_test_logic_reset();
 	_jtag->shiftIR(IDCODE, 6);
 	_jtag->shiftDR(tx_data, rx_data, 32);
-	return ((rx_data[0] & 0x000000ff) |
+	id = ((rx_data[0] & 0x000000ff) |
 		((rx_data[1] << 8) & 0x0000ff00) |
 		((rx_data[2] << 16) & 0x00ff0000) |
 		((rx_data[3] << 24) & 0xff000000));
+
+	/* workaround for XC95 with different
+	 * IR length and IDCODE value
+	 */
+	if (id == 0) {
+		_jtag->go_test_logic_reset();
+		_jtag->shiftIR(XC95_IDCODE, 8);
+		_jtag->shiftDR(tx_data, rx_data, 32);
+		id = ((rx_data[0] & 0x000000ff) |
+			((rx_data[1] << 8) & 0x0000ff00) |
+			((rx_data[2] << 16) & 0x00ff0000) |
+			((rx_data[3] << 24) & 0xff000000));
+	}
+
+	return id;
 }
 
 void Xilinx::program(unsigned int offset)
@@ -90,6 +147,16 @@ void Xilinx::program(unsigned int offset)
 	/* nothing to do */
 	if (_mode == Device::NONE_MODE || _mode == Device::READ_MODE)
 		return;
+
+	if (_mode == Device::FLASH_MODE && _file_extension == "jed") {
+		flow_program();
+		return;
+	}
+
+	if (_fpga_family == XC95_FAMILY) {
+		printError("Only jed file and flash mode supported for XC95 CPLD");
+		return;
+	}
 
 	if (_mode == Device::MEM_MODE)
 		reverse = true;
@@ -288,6 +355,30 @@ void Xilinx::program_mem(ConfigBitstreamParser *bitfile)
 bool Xilinx::dumpFlash(const std::string &filename,
 		uint32_t base_addr, uint32_t len)
 {
+	if (_fpga_family == XC95_FAMILY) {
+		/* enable ISC */
+		flow_enable();
+		std::string buffer = flow_read();
+		printInfo("Open dump file ", false);
+		FILE *fd = fopen(filename.c_str(), "wb");
+		if (!fd) {
+			printError("FAIL");
+			return false;
+		}
+		printSuccess("DONE");
+
+		printInfo("Read flash ", false);
+		fwrite(buffer.c_str(), sizeof(uint8_t), buffer.size(), fd);
+
+		printSuccess("DONE");
+
+		fclose(fd);
+		/* disable ISC */
+		flow_disable();
+
+		return true;
+	}
+
 	int ret = true;
 	/* first need to have bridge in RAM */
 	if (load_bridge() == false)
@@ -309,6 +400,214 @@ bool Xilinx::dumpFlash(const std::string &filename,
 
 	return ret;
 }
+
+/*                                */
+/* internal flash (xc95)          */
+/* based on ISE xx_1532.bsd files */
+/*                                */
+
+void Xilinx::flow_enable()
+{
+	uint8_t xfer_buf = 0x15;
+	_jtag->shiftIR(XC95_ISC_ENABLE, 8);
+	_jtag->shiftDR(&xfer_buf, NULL, 6);
+	_jtag->toggleClk(1);
+}
+
+void Xilinx::flow_disable()
+{
+	_jtag->shiftIR(XC95_ISC_DISABLE, 8);
+	usleep(100);
+	_jtag->shiftIR(BYPASS, 8);
+	_jtag->toggleClk(1);
+}
+
+bool Xilinx::flow_erase()
+{
+	uint8_t xfer_buf[3] = {0x03, 0x00, 0x00};
+
+	printInfo("Erase flash ", false);
+
+	_jtag->shiftIR(XC95_ISC_ERASE, 8);
+	_jtag->shiftDR(xfer_buf, NULL, 18);
+	_jtag->toggleClk(2000000);
+	_jtag->shiftDR(NULL, xfer_buf, 18);
+	if ((xfer_buf[0] & 0x03) != 0x01) {
+		printError("FAIL");
+		return false;
+	}
+
+	if (_verify) {
+		xfer_buf[0] = 0x03;
+		xfer_buf[1] = xfer_buf[2] = 0x00;
+
+		_jtag->shiftIR(XC95_XSC_BLANK_CHECK, 8);
+		_jtag->shiftDR(xfer_buf, NULL, 18);
+		_jtag->toggleClk(500);
+		_jtag->shiftDR(NULL, xfer_buf, 18);
+		if ((xfer_buf[0] & 0x03) != 0x01) {
+			printError("FAIL");
+			return false;
+		}
+	}
+	printSuccess("DONE");
+
+	return true;
+}
+
+bool Xilinx::flow_program()
+{
+	uint8_t wr_buf[16+2];  // largest section length
+	uint8_t rd_buf[16+3];
+	JedParser *jed;
+	printInfo("Open file ", false);
+	try {
+		jed = new JedParser(_filename, _verbose);
+		jed->parse();
+	} catch (std::exception &e) {
+		printError("FAIL");
+		return false;
+	}
+	printSuccess("DONE");
+
+	/* limit JTAG clock frequency to 1MHz */
+	if (_jtag->getClkFreq() > 1e6)
+		_jtag->setClkFreq(1e6);
+
+	/* enable ISC */
+	flow_enable();
+
+	/* erase internal flash */
+	if (!flow_erase())
+		return false;
+
+	/* xc95 internal flash is written by sector
+	 * for each one them 15 jed sections are used
+	 */
+	size_t nb_section = jed->nb_section() / (15);
+
+	ProgressBar progress("Write Flash", nb_section, 50, _quiet);
+
+	for (size_t i = 0; i < nb_section; i++) {
+		uint16_t addr2 = i * 32;
+		for (int ii = 0; ii < 15; ii++) {
+			uint8_t mode = (ii == 14) ? 0x3 : 0x1;
+			int id = i * 15 + ii;
+
+			memcpy(wr_buf, jed->data_for_section(id)[0].c_str(),
+					_xc95_line_len);
+			wr_buf[_xc95_line_len] = (uint8_t) addr2&0xff;
+			wr_buf[_xc95_line_len+ 1 ] = (uint8_t)((addr2 >> 8) & 0xff);
+
+			_jtag->shiftIR(XC95_ISC_PROGRAM, 8);
+			_jtag->shiftDR(&mode, NULL, 2, Jtag::SHIFT_DR);
+			_jtag->shiftDR(wr_buf, NULL, 8 * (_xc95_line_len + 2));
+
+			if (ii == 14)
+				_jtag->toggleClk(20000);
+			else
+				_jtag->toggleClk(1);
+
+
+			if (ii == 14) {
+				mode = 0x00;
+				for (int loop_try = 0; loop_try < 32; loop_try++) {
+					_jtag->shiftIR(XC95_ISC_PROGRAM, 8);
+					_jtag->shiftDR(&mode, NULL, 2, Jtag::SHIFT_DR);
+					_jtag->shiftDR(wr_buf, NULL, 8 * (_xc95_line_len + 2));
+					_jtag->toggleClk(50000);
+					_jtag->shiftDR(NULL, rd_buf, 8 * (_xc95_line_len + 2) + 2);
+					if ((rd_buf[0] & 0x03) == 0x01)
+						break;
+				}
+
+				if ((rd_buf[0] & 0x03) != 0x01) {
+					progress.fail();
+					return false;
+				}
+			}
+			addr2 += ((ii+1) % 0x05) ? 1 : 4;
+		}
+		progress.display(i);
+	}
+	progress.done();
+
+	/* TODO: verify */
+	if (_verify) {
+		std::string flash = flow_read();
+		int flash_pos = 0;
+		ProgressBar progress2("Verify Flash", nb_section, 50, _quiet);
+		for (size_t section = 0; section < 108; section++) {
+			for (size_t subsection = 0; subsection < 15; subsection++) {
+				int id = section * 15 + subsection;
+				std::string content = jed->data_for_section(id)[0];
+				for (int col = 0; col < _xc95_line_len; col++, flash_pos++) {
+					if ((uint8_t)content[col] != (uint8_t)flash[flash_pos]) {
+						char error[256];
+						progress2.fail();
+						snprintf(error, sizeof(error),
+								"Error: wrong value: read %02x instead of %02x",
+								(uint8_t)flash[flash_pos], (uint8_t)content[col]);
+						printError(error);
+						flow_disable();
+						return false;
+					}
+				}
+			}
+		}
+		progress2.done();
+	}
+
+	/* disable ISC */
+	flow_disable();
+
+	return true;
+}
+
+std::string Xilinx::flow_read()
+{
+	uint8_t mode;
+	std::string buffer;
+	uint8_t wr_buf[16+2];  // largest section length
+	uint8_t rd_buf[16+2];
+	memset(wr_buf, 0xff, 16);
+
+	/* limit JTAG clock frequency to 1MHz */
+	if (_jtag->getClkFreq() > 1e6)
+		_jtag->setClkFreq(1e6);
+
+	ProgressBar progress("Read Flash", 108, 50, _quiet);
+
+	for (size_t section = 0; section < 108; section++) {
+		uint16_t addr2 = section * 32;
+		for (int subsection = 0; subsection < 15; subsection++) {
+			wr_buf[_xc95_line_len    ] = (uint8_t)((addr2     ) & 0xff);
+			wr_buf[_xc95_line_len + 1] = (uint8_t)((addr2 >> 8) & 0xff);
+
+			mode = 3;
+			_jtag->shiftIR(XC95_ISC_READ, 8);
+			_jtag->shiftDR(&mode, NULL, 2, Jtag::SHIFT_DR);
+			_jtag->shiftDR(wr_buf, NULL, 8 * (_xc95_line_len + 2));
+
+			_jtag->toggleClk(1);
+
+			mode = 0;
+			_jtag->shiftDR(&mode, NULL, 2, Jtag::SHIFT_DR);
+			_jtag->shiftDR(NULL, rd_buf, 8 * (_xc95_line_len + 2));
+			for (int pos = 0; pos < _xc95_line_len; pos++)
+				buffer += rd_buf[pos];
+			addr2 += ((subsection+1) % 0x05) ? 1 : 4;
+		}
+		progress.display(section);
+	}
+	progress.done();
+
+	return buffer;
+}
+
+/*               */
+/* SPI interface */
+/*               */
 
 /*
  * jtag : jtag interface
