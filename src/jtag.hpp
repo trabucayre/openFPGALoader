@@ -41,6 +41,12 @@ class Jtag {
 	std::vector<int> get_devices_list() {return _devices_list;}
 
 	/*!
+	 * \brief return current selected device idcode
+	 * \return device idcode
+	 */
+	uint32_t get_target_device_id() {return _devices_list[device_index];}
+
+	/*!
 	 * \brief set index for targeted FPGA
 	 * \param[in] index: index in the chain
 	 * \return -1 if index is out of bound, index otherwise
