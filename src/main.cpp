@@ -320,11 +320,11 @@ int main(int argc, char **argv)
 			int t = listDev[i];
 			printf("index %d:\n", i);
 			if (fpga_list.find(t) != fpga_list.end()) {
-				printf("\tidcode 0x%x\n\tmanufacturer %s\n\tmodel  %s\n\tfamily %s\n",
+				printf("\tidcode 0x%x\n\tmanufacturer %s\n\tfamily %s\n\tmodel  %s\n",
 				t,
 				fpga_list[t].manufacturer.c_str(),
-				fpga_list[t].model.c_str(),
-				fpga_list[t].family.c_str());
+				fpga_list[t].family.c_str(),
+				fpga_list[t].model.c_str());
 				printf("\tirlength %d\n", fpga_list[t].irlength);
 			} else if (misc_dev_list.find(t) != misc_dev_list.end()) {
 				printf("\tidcode   0x%x\n\ttype     %s\n\tirlength %d\n",
