@@ -36,6 +36,7 @@
 #ifdef ENABLE_XVC
 #include "xvc_client.hpp"
 #endif
+#include "bmp.hpp"
 
 using namespace std;
 
@@ -151,6 +152,9 @@ void Jtag::init_internal(const cable_t &cable, const string &dev, const string &
 		_jtag = new RemoteBitbang_client(ip_adr, port, _verbose);
 		break;
 #endif
+	case MODE_BMP:
+		_jtag = new Bmp(dev, serial, clkHZ, _verbose);
+		break;
 	default:
 		std::cerr << "Jtag: unknown cable type" << std::endl;
 		throw std::exception();
