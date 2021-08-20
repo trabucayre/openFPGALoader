@@ -461,10 +461,9 @@ bool Xilinx::flow_program()
 	uint8_t rd_buf[16+3];
 	JedParser *jed;
 	printInfo("Open file ", false);
-	try {
-		jed = new JedParser(_filename, _verbose);
-		jed->parse();
-	} catch (std::exception &e) {
+
+	jed = new JedParser(_filename, _verbose);
+	if (jed->parse() == EXIT_FAILURE) {
 		printError("FAIL");
 		return false;
 	}
