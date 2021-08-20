@@ -64,6 +64,7 @@ class JedParser: public ConfigBitstreamParser {
 		int _default_test_condition;
 		int _arch_code;
 		int _pinout_code;
+		std::string fuselist;
 };
 
 #endif  // JEDPARSER_HPP_

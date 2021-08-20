@@ -87,15 +87,14 @@ void JedParser::buildDataArray(const string &content, struct jed_data &jed)
 {
 	size_t data_len = content.size();
 	string tmp_buff;
-	uint8_t data = 0;
+	fuselist += content;
 	for (size_t i = 0; i < content.size(); i+=8) {
-		data = 0;
+		uint8_t data = 0;
 		for (int ii = 0; ii < 8; ii++) {
 			uint8_t val = (content[i+ii] == '1'?1:0);
 			data |= val << ii;
 		}
 		tmp_buff += data;
-		_compute_checksum += data;
 	}
 	jed.data.push_back(std::move(tmp_buff));
 	jed.len += data_len;
@@ -113,6 +112,7 @@ void JedParser::buildDataArray(const vector<string> &content,
 	for (size_t i = 0; i < content.size(); i++) {
 		uint8_t data = 0;
 		data_len += content[i].size();
+		fuselist += content[i];
 		for (size_t ii = 0; ii < content[i].size(); ii++) {
 			uint8_t val = (content[i][ii] == '1'?1:0);
 			data |= val << ii;
@@ -220,16 +220,6 @@ void JedParser::parseLField(const vector<string> &content)
 		std::istream_iterator<string>());
 
 		myList.erase(myList.begin());
-
-		/* merge all to compute checksum by 8bits */
-		std::stringstream imploded;
-		std::copy(myList.begin(), myList.end(),
-				std::ostream_iterator<std::string>(imploded, ""));
-		string t = imploded.str();
-
-		for (size_t i = 0; i < t.size(); i+=8)
-			_compute_checksum += reverseByte(std::stoi(t.substr(i, 8),
-					nullptr, 2));
 
 		buildDataArray(myList, d);
 	}
@@ -354,6 +344,10 @@ int JedParser::parse()
 	for (size_t area = 0; area < _data_list.size(); area++) {
 		size += _data_list[area].len;
 	}
+
+	for (size_t i = 0; i < fuselist.size(); i+=8)
+		_compute_checksum += reverseByte(std::stoi(fuselist.substr(i, 8),
+				nullptr, 2));
 
 	if (_verbose)
 		printf("theorical checksum %x -> %x\n", _checksum, _compute_checksum);
