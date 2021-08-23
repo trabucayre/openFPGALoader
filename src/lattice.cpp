@@ -492,10 +492,14 @@ bool Lattice::program_flash(unsigned int offset)
 
 	DisableISC();
 
+	bool retval;
 	if (_file_extension == "jed")
-		program_intFlash();
+		retval = program_intFlash();
 	else
-		program_extFlash(offset);
+		retval = program_extFlash(offset);
+
+	if (!retval)
+		return false;
 
 	/* *************************** */
 	/* reload bitstream from flash */
@@ -519,10 +523,13 @@ bool Lattice::program_flash(unsigned int offset)
 
 void Lattice::program(unsigned int offset)
 {
+	bool retval;
 	if (_mode == FLASH_MODE)
-		program_flash(offset);
+		retval = program_flash(offset);
 	else if (_mode == MEM_MODE)
-		program_mem();
+		retval = program_mem();
+	if (!retval)
+		throw std::exception();
 }
 
 bool Lattice::dumpFlash(const string &filename,
