@@ -61,14 +61,20 @@ Xilinx::Xilinx(Jtag *jtag, const std::string &filename,
 		_fpga_family = SPARTAN6_FAMILY;
 	} else if (family == "xc9500xl") {
 		_fpga_family = XC95_FAMILY;
-		if (idcode == 0x59602093)
+		switch (idcode) {
+		case 0x09602093:
 			_xc95_line_len = 2;
-		else if (idcode == 0x59604093)
+			break;
+		case 0x09604093:
 			_xc95_line_len = 4;
-		else if (idcode == 0x59608093)
+			break;
+		case 0x09608093:
 			_xc95_line_len = 8;
-		else if (idcode == 0x59616093)
+			break;
+		case 0x09616093:
 			_xc95_line_len = 16;
+			break;
+		}
 	} else {
 		_fpga_family = UNKNOWN_FAMILY;
 	}

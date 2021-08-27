@@ -63,7 +63,7 @@ Gowin::Gowin(Jtag *jtag, const string filename, const string &file_type,
 		verify, verbose), is_gw1n1(false)
 {
 	_fs = NULL;
-	uint32_t idcode = idCode();
+	uint32_t idcode = _jtag->get_target_device_id();;
 
 	if (!_file_extension.empty()) {
 		if (_file_extension == "fs") {
@@ -90,7 +90,7 @@ Gowin::Gowin(Jtag *jtag, const string filename, const string &file_type,
 				_fs->displayHeader();
 			string idcode_str = _fs->getHeaderVal("idcode");
 			uint32_t fs_idcode = std::stoul(idcode_str.c_str(), NULL, 16);
-			if (fs_idcode != idcode) {
+			if ((fs_idcode & 0x0fffffff) != idcode) {
 				throw std::runtime_error("mismatch between target's idcode and fs idcode");
 			}
 		} else {

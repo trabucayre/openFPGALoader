@@ -132,7 +132,7 @@ int Jtag::detectChain(int max_dev)
 		for (int ii=0; ii < 4; ii++)
 			tmp |= (rx_buff[ii] << (8*ii));
 		if (tmp != 0 && tmp != 0xffffffff) {
-			_devices_list.insert(_devices_list.begin(), tmp);
+			_devices_list.insert(_devices_list.begin(), 0x0fffffff & tmp);
 
 			/* search for irlength in fpga_list or misc_dev_list */
 			uint16_t irlength = -1;
