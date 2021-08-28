@@ -132,7 +132,8 @@ int Jtag::detectChain(int max_dev)
 		for (int ii=0; ii < 4; ii++)
 			tmp |= (rx_buff[ii] << (8*ii));
 		if (tmp != 0 && tmp != 0xffffffff) {
-			_devices_list.insert(_devices_list.begin(), 0x0fffffff & tmp);
+			tmp &= 0x0fffffff;
+			_devices_list.insert(_devices_list.begin(), tmp);
 
 			/* search for irlength in fpga_list or misc_dev_list */
 			uint16_t irlength = -1;
@@ -143,7 +144,7 @@ int Jtag::detectChain(int max_dev)
 					irlength = misc->second.irlength;
 				} else {
 					char error[256];
-					snprintf(error, 256, "Unknown device with IDCODE: 0x%04x",
+					snprintf(error, 256, "Unknown device with IDCODE: 0x%08x",
 							tmp);
 					throw std::runtime_error(error);
 				}
