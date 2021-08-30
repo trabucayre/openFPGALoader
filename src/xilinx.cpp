@@ -646,6 +646,7 @@ std::string Xilinx::flow_read()
 #define XCF_ISC_ADDR_SHIFT 0xEB
 #define XCF_ISC_ERASE      0xEC
 #define XCF_ISC_DATA_SHIFT 0xED
+#define XCF_CONFIG         0xEE
 #define XCF_ISC_READ       0xeF
 #define XCF_ISC_DISABLE    0xF0
 
@@ -810,6 +811,12 @@ bool Xilinx::xcf_program(ConfigBitstreamParser *bitfile)
 	_jtag->go_test_logic_reset();
 
 	xcf_flow_disable();
+
+	/* reconfigure FPGA */
+	_jtag->shiftIR(XCF_CONFIG, 8);
+	_jtag->toggleClk(1);
+	_jtag->shiftIR(BYPASS, 8);
+	_jtag->toggleClk(1);
 
 	return true;
 }
