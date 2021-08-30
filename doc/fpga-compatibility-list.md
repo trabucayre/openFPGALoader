@@ -17,9 +17,11 @@
 |         | [MachXO3LF](http://www.latticesemi.com/en/Products/FPGAandCPLD/MachXO3.aspx)                                                     | OK     | OK    |
 |  Xilinx | Artix 7 [xc7a35ti, xc7a50t, xc7a75t, xc7a100t, xc7a200t](https://www.xilinx.com/products/silicon-devices/fpga/artix-7.html)      | OK     | OK    |
 |         | Kintex 7 [xc7k325t](https://www.xilinx.com/products/silicon-devices/fpga/kintex-7.html#productTable)                             | OK     | NT    |
+|         | Spartan 3 [xc3s200](https://www.xilinx.com/products/silicon-devices/fpga/spartan-3.html)                                         | OK     | NA    |
 |         | Spartan 6 [xc6slx9, xc6slx16, xc6slx25, xc6slx45](https://www.xilinx.com/products/silicon-devices/fpga/spartan-6.html)           | OK     | OK    |
 |         | Spartan 7 [xc7s15, xc7s25, xc7s50](https://www.xilinx.com/products/silicon-devices/fpga/spartan-7.html)                          | OK     | OK    |
 |         | XC9500XL [xc9536xl, xc9572xl, xc95144xl, xc95188xl](https://www.xilinx.com/support/documentation/data_sheets/ds054.pdf)          | NA     | OK    |
+|         | XCF [xcf01s, xcf02s, xcf04s](https://www.xilinx.com/products/silicon-devices/configuration-memory/platform-flash.html)           | NA     | OK    |
 
 - *IF* Internal Flash
 - *AS* Active Serial flash mode

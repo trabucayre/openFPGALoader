@@ -57,6 +57,16 @@ Xilinx::Xilinx(Jtag *jtag, const std::string &filename,
 		_fpga_family = ZYNQ_FAMILY;
 	} else if (family == "kintex7") {
 		_fpga_family = KINTEX_FAMILY;
+	} else if (family == "spartan3") {
+		_fpga_family = SPARTAN3_FAMILY;
+		if (_mode != Device::MEM_MODE) {
+			throw std::runtime_error("Error: Only load to mem is supported");
+		}
+	} else if (family == "xcf") {
+		_fpga_family = XCF_FAMILY;
+		if (_mode == Device::MEM_MODE) {
+			throw std::runtime_error("Error: Only write or read is supported");
+		}
 	} else if (family == "spartan6") {
 		_fpga_family = SPARTAN6_FAMILY;
 	} else if (family == "xc9500xl") {
@@ -89,6 +99,7 @@ Xilinx::~Xilinx() {}
 #define JPROGRAM 0x0B
 #define JSTART   0x0C
 #define JSHUTDOWN 0x0D
+#define ISC_PROGRAM 0x11
 #define ISC_DISABLE 0x16
 #define BYPASS   0xff
 
@@ -164,7 +175,7 @@ void Xilinx::program(unsigned int offset)
 		return;
 	}
 
-	if (_mode == Device::MEM_MODE)
+	if (_mode == Device::MEM_MODE || _fpga_family == XCF_FAMILY)
 		reverse = true;
 
 	printInfo("Open file ", false);
@@ -193,6 +204,11 @@ void Xilinx::program(unsigned int offset)
 
 	if (_verbose)
 		bit->displayHeader();
+
+	if (_fpga_family == XCF_FAMILY) {
+		xcf_program(bit);
+		return;
+	}
 
 	if (_mode == Device::SPI_MODE) {
 		program_spi(bit, offset);
@@ -361,10 +377,21 @@ void Xilinx::program_mem(ConfigBitstreamParser *bitfile)
 bool Xilinx::dumpFlash(const std::string &filename,
 		uint32_t base_addr, uint32_t len)
 {
-	if (_fpga_family == XC95_FAMILY) {
-		/* enable ISC */
-		flow_enable();
-		std::string buffer = flow_read();
+	if (_fpga_family == XC95_FAMILY || _fpga_family == XCF_FAMILY) {
+		std::string buffer;
+		if (_fpga_family == XC95_FAMILY) {
+			/* enable ISC */
+			flow_enable();
+			buffer = flow_read();
+			/* disable ISC */
+			flow_disable();
+		} else {
+			/* enable ISC */
+			xcf_flow_enable(0x34);
+			buffer = xcf_read();
+			/* disable ISC */
+			xcf_flow_disable();
+		}
 		printInfo("Open dump file ", false);
 		FILE *fd = fopen(filename.c_str(), "wb");
 		if (!fd) {
@@ -379,8 +406,6 @@ bool Xilinx::dumpFlash(const std::string &filename,
 		printSuccess("DONE");
 
 		fclose(fd);
-		/* disable ISC */
-		flow_disable();
 
 		return true;
 	}
@@ -604,6 +629,226 @@ std::string Xilinx::flow_read()
 			addr2 += ((subsection+1) % 0x05) ? 1 : 4;
 		}
 		progress.display(section);
+	}
+	progress.done();
+
+	return buffer;
+}
+
+/*               */
+/*   XCF Prom    */
+/*               */
+
+#define XCF_FVFY3          0xE2
+#define XCF_ISCTESTSTATUS  0xE3
+#define XCF_ISC_ENABLE     0xE8
+#define XCF_ISC_PROGRAM    0xEA
+#define XCF_ISC_ADDR_SHIFT 0xEB
+#define XCF_ISC_ERASE      0xEC
+#define XCF_ISC_DATA_SHIFT 0xED
+#define XCF_ISC_READ       0xeF
+#define XCF_ISC_DISABLE    0xF0
+
+void Xilinx::xcf_flow_enable(uint8_t mode)
+{
+	_jtag->shiftIR(XCF_ISC_ENABLE, 8);
+	_jtag->shiftDR(&mode, NULL, 6);
+	_jtag->toggleClk(1);
+}
+
+void Xilinx::xcf_flow_disable()
+{
+	_jtag->shiftIR(XCF_ISC_DISABLE, 8);
+	usleep(110000);
+	_jtag->shiftIR(BYPASS, 8);
+	_jtag->toggleClk(1);
+}
+
+bool Xilinx::xcf_flow_erase()
+{
+	uint8_t xfer_buf[2] = {0x01, 0x00};
+
+	printInfo("Erase flash ", false);
+	xcf_flow_enable();
+
+	_jtag->shiftIR(XCF_ISC_ADDR_SHIFT, 8);
+	_jtag->shiftDR(xfer_buf, NULL, 16);
+	_jtag->toggleClk(1);
+
+	_jtag->shiftIR(XCF_ISC_ERASE, 8);
+	usleep(500000);
+
+	int i;
+	for (i = 0; i < 32; i++) {
+		_jtag->shiftIR(XCF_ISCTESTSTATUS, 8);
+		usleep(500000);
+		_jtag->shiftDR(NULL, xfer_buf, 8);
+		if ((xfer_buf[0] & 0x04))
+			break;
+	}
+
+	if (i == 32) {
+		printError("FAIL");
+		return false;
+	}
+
+	printSuccess("DONE");
+
+	xcf_flow_disable();
+
+	return true;
+}
+
+bool Xilinx::xcf_program(ConfigBitstreamParser *bitfile)
+{
+	uint8_t tx_buf[4096 / 8];
+	uint16_t pkt_len =
+		((_jtag->get_target_device_id() == 0x05044093) ? 2048 : 4096) / 8;
+	uint8_t *data = bitfile->getData();
+	uint32_t data_len = bitfile->getLength() / 8;
+	uint32_t xfer_len, offset = 0;
+	uint32_t addr = 0;
+	int xfer_end;
+
+	/* limit JTAG clock frequency to 15MHz */
+	if (_jtag->getClkFreq() > 15e6)
+		_jtag->setClkFreq(15e6);
+
+	if (!xcf_flow_erase()) {
+		printError("flow erase failed");
+		return false;
+	}
+
+	xcf_flow_enable();
+
+	int blk_id = 0;
+
+	ProgressBar progress("Write PROM", (data_len / pkt_len), 50, _quiet);
+
+	while (data_len > 0) {
+		if (data_len < pkt_len) {
+			xfer_len = data_len;
+			xfer_end = Jtag::SHIFT_DR;
+		} else {
+			xfer_len = pkt_len;
+			xfer_end = Jtag::RUN_TEST_IDLE;
+		}
+
+		/* send data to PROM */
+		_jtag->shiftIR(XCF_ISC_DATA_SHIFT, 8);
+		_jtag->shiftDR(data+offset, NULL, xfer_len * 8, xfer_end);
+		if (xfer_len != pkt_len) {
+			uint32_t res = pkt_len - xfer_len;
+			memset(tx_buf, 0xff, res);
+			_jtag->shiftDR(tx_buf, NULL, res * 8);
+		}
+
+		_jtag->toggleClk(1);
+
+		/* send address */
+		tx_buf[0] = (addr >> 0) & 0x00ff;
+		tx_buf[1] = (addr >> 8) & 0x00ff;
+		_jtag->shiftIR(XCF_ISC_ADDR_SHIFT, 8);
+		_jtag->shiftDR(tx_buf, NULL, 16);
+		_jtag->toggleClk(1);
+
+		/* send program instruction */
+		_jtag->shiftIR(XCF_ISC_PROGRAM, 8);
+		usleep((addr == 0) ? 14000: 500);
+
+		/* wait until bit 3 != 1 */
+		int i;
+		for (i = 0; i < 29; i++) {
+			_jtag->shiftIR(XCF_ISCTESTSTATUS, 8);
+			usleep(500);
+			_jtag->shiftDR(NULL, tx_buf, 8);
+			if ((tx_buf[0] & 0x04))
+				break;
+		}
+
+		if (i == 29) {
+			progress.fail();
+			return false;
+		}
+
+		blk_id++;
+		offset += xfer_len;
+		addr += 32;
+		data_len -= xfer_len;
+		progress.display(blk_id);
+	}
+	progress.done();
+
+	/* program done */
+	_jtag->shiftIR(BYPASS, 8);
+	_jtag->toggleClk(1);
+
+	if (_verify) {
+		std::string flash = xcf_read();
+		uint32_t file_size = bitfile->getLength() / 8;
+		uint32_t prom_size = (uint32_t)flash.size();
+
+		uint32_t nb_bytes = (file_size > prom_size) ? prom_size : file_size;
+		ProgressBar progress2("Verify Flash", nb_bytes, 50, _quiet);
+
+		for (uint32_t pos = 0; pos < nb_bytes; pos++) {
+			if (data[pos] != (uint8_t)flash[pos]) {
+				progress2.fail();
+				char error[64];
+				snprintf(error, sizeof(error),
+						"Error: wrong value: read %02x instead of %02x",
+						(uint8_t)flash[pos], (uint8_t)data[pos]);
+				printError(error);
+				xcf_flow_disable();
+				return false;
+			}
+			progress.display(pos);
+		}
+		progress2.done();
+	}
+
+	_jtag->go_test_logic_reset();
+
+	xcf_flow_disable();
+
+	return true;
+}
+
+std::string Xilinx::xcf_read()
+{
+	uint32_t addr = 0;
+	uint8_t rx_buf[4096 / 8];
+	uint16_t pkt_len =
+		((_jtag->get_target_device_id() == 0x05044093) ? 2048 : 4096) / 8;
+	uint16_t nb_section =
+		((_jtag->get_target_device_id() == 0x05046093) ? 1024 : 512);
+
+	std::string buffer;
+
+	/* limit JTAG clock frequency to 15MHz */
+	if (_jtag->getClkFreq() > 15e6)
+		_jtag->setClkFreq(15e6);
+
+	ProgressBar progress("Read PROM", nb_section, 50, _quiet);
+
+	for (size_t section = 0; section < nb_section; section++) {
+		/* send address */
+		rx_buf[0] = (addr >> 0) & 0x00ff;
+		rx_buf[1] = (addr >> 8) & 0x00ff;
+		_jtag->shiftIR(XCF_ISC_ADDR_SHIFT, 8);
+		_jtag->shiftDR(rx_buf, NULL, 16);
+		_jtag->toggleClk(1);
+
+		/* send data to PROM */
+		_jtag->shiftIR(XCF_ISC_READ, 8);
+		usleep(50);
+		_jtag->shiftDR(NULL, rx_buf, pkt_len * 8);
+
+		for (int i = 0; i < pkt_len; i++)
+			buffer += rx_buf[i];
+
+		progress.display(section);
+		addr += 32;
 	}
 	progress.done();
 

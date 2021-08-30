@@ -60,6 +60,15 @@ class Xilinx: public Device, SPIInterface {
 		 */
 		std::string flow_read();
 
+		/* ------------------- */
+		/* XCF JTAG Flash PROM */
+		/* ------------------- */
+		void xcf_flow_enable(uint8_t mode = 0x37);
+		void xcf_flow_disable();
+		bool xcf_flow_erase();
+		bool xcf_program(ConfigBitstreamParser *bitfile);
+		std::string xcf_read();
+
 		/* spi interface */
 		int spi_put(uint8_t cmd, uint8_t *tx, uint8_t *rx,
 				uint32_t len) override;
@@ -71,11 +80,13 @@ class Xilinx: public Device, SPIInterface {
 		/* list of xilinx family devices */
 		enum xilinx_family_t {
 			XC95_FAMILY     = 0,
-			SPARTAN6_FAMILY = 1,
-			SPARTAN7_FAMILY = 2,
-			ARTIX_FAMILY    = 3,
-			KINTEX_FAMILY   = 4,
-			ZYNQ_FAMILY     = 5,
+			SPARTAN3_FAMILY,
+			SPARTAN6_FAMILY,
+			SPARTAN7_FAMILY,
+			ARTIX_FAMILY,
+			KINTEX_FAMILY,
+			ZYNQ_FAMILY,
+			XCF_FAMILY,
 			UNKNOWN_FAMILY  = 999
 		};
 

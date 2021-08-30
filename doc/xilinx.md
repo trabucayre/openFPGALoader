@@ -10,6 +10,8 @@ current directory.
 3. board provides the device/package model, but if the targeted board is not
    officially supported but the FPGA yes, you can use --fpga-part to provides
    model
+4. with spartan3 the flash is an independent JTAG device. User has to use
+   `--index-chain` to access FPGA (RAM only) or flash (write/read only)
 
 <span style="color:red">**Warning** *.bin* may be loaded in memory or in flash, but this extension is a classic extension
 for CPU firmware and, by default, *openFPGALoader* load file in memory, double check
