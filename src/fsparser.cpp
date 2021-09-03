@@ -160,6 +160,7 @@ int FsParser::parse()
 		case 0x1100181b: /* GW1N-2B   */
 		case 0x0300081b: /* GW1NS-2   */
 		case 0x0300181b: /* GW1NSx-2C */
+		case 0x0100981b: /* GW1NSR-4C (warning! not documented) */
 		case 0x0100381b: /* GW1N-4(ES)*/
 		case 0x1100381b: /* GW1N-4B   */
 			nb_line = 494;
