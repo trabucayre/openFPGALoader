@@ -82,7 +82,7 @@ when a converter is plugged.
 ```bash
 $ sudo cp 99-openfpgaloader.rules /etc/udev/rules.d/
 $ sudo udevadm control --reload-rules && sudo udevadm trigger # force udev to take new rule
-$ sudo usermod -a YourUserName -G plugdev # add user to plugdev group
+$ sudo usermod -a $USER -G plugdev # add user to plugdev group
 ```
 After that you need to unplug and replug your device.
 
