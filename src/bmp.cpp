@@ -121,7 +121,6 @@ Bmp::Bmp(std::string dev,
     int c = snprintf(construct, REMOTE_MAX_MSG_SIZE, "%s", REMOTE_START_STR);
     platform_buffer_write(construct, c);
     c = platform_buffer_read(construct, REMOTE_MAX_MSG_SIZE);
-
     if ((!c) || (construct[0] == REMOTE_RESP_ERR)) {
 	DEBUG_WARN("Remote Start failed, error %s\n",
 		   c ? (char *)&(construct[1]) : "unknown");
@@ -129,7 +128,17 @@ Bmp::Bmp(std::string dev,
     }
     DEBUG_PROBE("Remote is %s\n", &construct[1]);
 
-    /* Get Version to init*/
+    /* Init JTAG */
+    c = snprintf((char *)construct, REMOTE_MAX_MSG_SIZE, "%s",
+		 REMOTE_JTAG_INIT_STR);
+    platform_buffer_write(construct, c);
+    c = platform_buffer_read(construct, REMOTE_MAX_MSG_SIZE);
+    if ((!c) || (construct[0] == REMOTE_RESP_ERR)) {
+	DEBUG_WARN("jtagtap_init failed, error %s\n",
+		   c ? (char *)&(construct[1]) : "unknown");
+	 throw std::runtime_error("jtag_init failed");
+    }
+    /* Get Version*/
     int s = snprintf((char *)construct, REMOTE_MAX_MSG_SIZE, "%s",
 		     REMOTE_HL_CHECK_STR);
     platform_buffer_write(construct, s);
