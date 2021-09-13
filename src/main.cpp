@@ -506,7 +506,7 @@ int parse_opt(int argc, char **argv, struct arguments *args, jtag_pins_conf_t *p
 			("fpga-part",   "fpga model flavor + package", cxxopts::value<string>(args->fpga_part))
 			("freq",        "jtag frequency (Hz)", cxxopts::value<string>(freqo))
 			("f,write-flash",
-				"write bitstream in flash (default: false, only for Gowin and ECP5 devices)")
+				"write bitstream in flash (default: false)")
 			("index-chain",  "device index in JTAG-chain",
 				cxxopts::value<int>(args->index_chain))
 			("list-boards", "list all supported boards",
@@ -516,7 +516,7 @@ int parse_opt(int argc, char **argv, struct arguments *args, jtag_pins_conf_t *p
 			("list-fpga", "list all supported FPGA",
 				cxxopts::value<bool>(args->list_fpga))
 			("m,write-sram",
-				"write bitstream in SRAM (default: true, only for Gowin and ECP5 devices)")
+				"write bitstream in SRAM (default: true)")
 			("o,offset",  "start offset in EEPROM",
 				cxxopts::value<unsigned int>(args->offset))
 			("pins", "pin config (only for ft232R) TDI:TDO:TCK:TMS",
