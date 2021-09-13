@@ -56,14 +56,12 @@ openFPGALoader -- a program to flash FPGA
                             using extension
       --fpga-part arg       fpga model flavor + package
       --freq arg            jtag frequency (Hz)
-  -f, --write-flash         write bitstream in flash (default: false, only
-                            for Gowin and ECP5 devices)
+  -f, --write-flash         write bitstream in flash (default: false)
       --index-chain arg     device index in JTAG-chain
       --list-boards         list all supported boards
       --list-cables         list all supported cables
       --list-fpga           list all supported FPGA
-  -m, --write-sram          write bitstream in SRAM (default: true, only for
-                            Gowin and ECP5 devices)
+  -m, --write-sram          write bitstream in SRAM (default: true)
   -o, --offset arg          start offset in EEPROM
       --pins arg            pin config (only for ft232R) TDI:TDO:TCK:TMS
       --probe-firmware arg  firmware for JTAG probe (usbBlasterII)
