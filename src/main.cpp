@@ -58,6 +58,7 @@ struct arguments {
 	string probe_firmware;
 	int index_chain;
 	unsigned int file_size;
+	bool external_flash;
 };
 
 int parse_opt(int argc, char **argv, struct arguments *args, jtag_pins_conf_t *pins_config);
@@ -73,7 +74,7 @@ int main(int argc, char **argv)
 	/* command line args. */
 	struct arguments args = {0, false, false, false, 0, "", "", "-", "", -1,
 			0, "-", false, false, false, false, Device::WR_SRAM, false,
-			false, false, "", "", "", -1, 0};
+			false, false, "", "", "", -1, 0, false};
 	/* parse arguments */
 	try {
 		if (parse_opt(argc, argv, &args, &pins_config))
@@ -397,7 +398,7 @@ int main(int argc, char **argv)
 				args.prg_type, args.verify, args.verbose);
 		} else if (fab == "Gowin") {
 			fpga = new Gowin(jtag, args.bit_file, args.file_type,
-				args.prg_type, args.verify, args.verbose);
+				args.prg_type, args.external_flash, args.verify, args.verbose);
 		} else if (fab == "lattice") {
 			fpga = new Lattice(jtag, args.bit_file, args.file_type,
 				args.prg_type, args.verify, args.verbose);
@@ -499,6 +500,9 @@ int parse_opt(int argc, char **argv, struct arguments *args, jtag_pins_conf_t *p
 				cxxopts::value<bool>(args->detect))
 			("dfu",   "DFU mode", cxxopts::value<bool>(args->dfu))
 			("dump-flash",  "Dump flash mode")
+			("external-flash",
+			 	"select ext flash for device with internal and external storage",
+				cxxopts::value<bool>(args->external_flash))
 			("file-size",   "provides size in Byte to dump, must be used with dump-flash",
 				cxxopts::value<unsigned int>(args->file_size))
 			("file-type",   "provides file type instead of let's deduced by using extension",
@@ -569,6 +573,8 @@ int parse_opt(int argc, char **argv, struct arguments *args, jtag_pins_conf_t *p
 			args->prg_type = Device::WR_SRAM;
 		else if (result.count("dump-flash"))
 			args->prg_type = Device::RD_FLASH;
+		else if (result.count("external-flash"))
+			args->prg_type = Device::WR_FLASH;
 
 		if (result.count("freq")) {
 			double freq;

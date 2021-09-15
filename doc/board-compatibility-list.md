@@ -43,11 +43,11 @@ openFPGALoader -b arty -f bitstream.bit # Writing in flash (non-volatile)
 |            **orangeCrab** | [Orange Crab](https://github.com/gregdavill/OrangeCrab)                                                                                       | ECP5</br>LFE5U-25F-8MG285C        | OK (JTAG) | OK (DFU) |
 |           **pipistrello** | [Saanlima Pipistrello LX45](http://pipistrello.saanlima.com/index.php?title=Welcome_to_Pipistrello)                                           | Spartan6</br>xc6slx45-csg324      | OK        | OK       |
 |        **qmtechCycloneV** | [QMTech CycloneV Core Board](https://fr.aliexpress.com/i/1000006622149.html)                                                                  | Cyclone V</br>5CEFA2F23I7         | OK        | OK       |
-|                **runber** | [SeeedStudio Gowin RUNBER](https://www.seeedstudio.com/Gowin-RUNBER-Development-Board-p-4779.html)                                            | littleBee</br>GW1N-4              | OK        | IF       |
+|                **runber** | [SeeedStudio Gowin RUNBER](https://www.seeedstudio.com/Gowin-RUNBER-Development-Board-p-4779.html)                                            | littleBee</br>GW1N-4              | OK        | IF/EF    |
 |                           | [Scarab Hardware MiniSpartan6+](https://www.kickstarter.com/projects/1812459948/minispartan6-a-powerful-fpga-board-and-easy-to-use)           | Spartan6</br>xc6slx25-3-ftg256    | OK        | NT       |
 | **spartanEdgeAccelBoard** | [SeeedStudio Spartan Edge Accelerator Board](http://wiki.seeedstudio.com/Spartan-Edge-Accelerator-Board)                                      | Spartan7</br>xc7s15ftgb196        | OK        | NA       |
 |              **tangnano** | [Sipeed Tang Nano](https://tangnano.sipeed.com/en/)                                                                                           | littleBee</br>GW1N-1              | OK        |          |
-|            **tangnano4k** | [Sipeed Tang Nano 4K](https://tangnano.sipeed.com/en/)                                                                                        | littleBee</br>GW1NSR-4C           | OK        |          |
+|            **tangnano4k** | [Sipeed Tang Nano 4K](https://tangnano.sipeed.com/en/)                                                                                        | littleBee</br>GW1NSR-4C           | OK        | IF/EF    |
 |               **tec0117** | [Trenz Gowin LittleBee (TEC0117)](https://shop.trenz-electronic.de/en/TEC0117-01-FPGA-Module-with-GOWIN-LittleBee-and-8-MByte-internal-SDRAM) | littleBee</br>GW1NR-9             | OK        | IF       |
 |                  **xtrx** | [FairWaves XTRXPro](https://www.crowdsupply.com/fairwaves/xtrx)                                                                               | Artix</br>xc7a50tcpg236           | OK        | OK       |
 |            **xyloni_spi** | [Efinix Xyloni](https://www.efinixinc.com/products-devkits-xyloni.html)                                                                       | Trion</br>T8F81                   | NA        | AS       |
@@ -55,6 +55,7 @@ openFPGALoader -b arty -f bitstream.bit # Writing in flash (non-volatile)
 |              **zedboard** | [Avnet ZedBoard](https://www.avnet.com/wps/portal/us/products/avnet-boards/avnet-board-families/zedboard/)                                    | zynq7000</br>xc7z020clg484        | OK        | NA       |
 
 - *IF* Internal Flash
+- *EF* External Flash
 - *AS* Active Serial flash mode
 - *NA* Not Available
 - *NT* Not Tested

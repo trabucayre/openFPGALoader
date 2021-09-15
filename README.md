@@ -50,6 +50,8 @@ openFPGALoader -- a program to flash FPGA
       --detect              detect FPGA
       --dfu                 DFU mode
       --dump-flash          Dump flash mode
+      --external-flash      select ext flash for device with internal and  
+                            external storage
       --file-size arg       provides size in Byte to dump, must be used with
                             dump-flash
       --file-type arg       provides file type instead of let's deduced by

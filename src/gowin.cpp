@@ -18,6 +18,8 @@
 #include "progressBar.hpp"
 #include "display.hpp"
 #include "fsparser.hpp"
+#include "rawParser.hpp"
+#include "spiFlash.hpp"
 
 using namespace std;
 
@@ -57,44 +59,73 @@ using namespace std;
 #define EF_PROGRAM			0x71
 #define EFLASH_ERASE		0x75
 
+/* BSCAN spi (external flash) (see below for details) */
+/* most common pins def */
+#define BSCAN_SPI_SCK           (1 << 1)
+#define BSCAN_SPI_CS            (1 << 3)
+#define BSCAN_SPI_DI            (1 << 5)
+#define BSCAN_SPI_DO            (1 << 7)
+#define BSCAN_SPI_MSK           ((0x01 << 6))
+/* GW1NSR-4C pins def */
+#define BSCAN_GW1NSR_4C_SPI_SCK (1 << 7)
+#define BSCAN_GW1NSR_4C_SPI_CS  (1 << 5)
+#define BSCAN_GW1NSR_4C_SPI_DI  (1 << 3)
+#define BSCAN_GW1NSR_4C_SPI_DO  (1 << 1)
+#define BSCAN_GW1NSR_4C_SPI_MSK ((0x01 << 0))
+
 Gowin::Gowin(Jtag *jtag, const string filename, const string &file_type,
-		Device::prog_type_t prg_type,
+		Device::prog_type_t prg_type, bool external_flash,
 		bool verify, int8_t verbose): Device(jtag, filename, file_type,
-		verify, verbose), is_gw1n1(false)
+		verify, verbose), is_gw1n1(false), _external_flash(external_flash),
+		_spi_sck(BSCAN_SPI_SCK), _spi_cs(BSCAN_SPI_CS),
+		_spi_di(BSCAN_SPI_DI), _spi_do(BSCAN_SPI_DO),
+		_spi_msk(BSCAN_SPI_MSK)
 {
 	_fs = NULL;
 	uint32_t idcode = _jtag->get_target_device_id();;
 
+	if (prg_type == Device::WR_FLASH)
+		_mode = Device::FLASH_MODE;
+	else
+		_mode = Device::MEM_MODE;
+
 	if (!_file_extension.empty()) {
 		if (_file_extension == "fs") {
-			if (prg_type == Device::WR_FLASH)
-				_mode = Device::FLASH_MODE;
-			else
-				_mode = Device::MEM_MODE;
 			try {
 				_fs = new FsParser(_filename, _mode == Device::MEM_MODE, _verbose);
 			} catch (std::exception &e) {
 				throw std::runtime_error(e.what());
 			}
-
-			printInfo("Parse file ", false);
-			if (_fs->parse() == EXIT_FAILURE) {
-				printError("FAIL");
-				delete _fs;
-				throw std::runtime_error("can't parse file");
-			} else {
-				printSuccess("DONE");
+		} else {
+			/* non fs file is only allowed with external flash */
+			if (!external_flash)
+				throw std::runtime_error("incompatible file format");
+			try {
+				_fs = new RawParser(_filename, false);
+			} catch (std::exception &e) {
+				throw std::runtime_error(e.what());
 			}
+		}
 
-			if (_verbose)
-				_fs->displayHeader();
+		printInfo("Parse file ", false);
+		if (_fs->parse() == EXIT_FAILURE) {
+			printError("FAIL");
+			delete _fs;
+			throw std::runtime_error("can't parse file");
+		} else {
+			printSuccess("DONE");
+		}
+
+		if (_verbose)
+			_fs->displayHeader();
+
+		/* for fs file check match with targeted device */
+		if (_file_extension == "fs") {
 			string idcode_str = _fs->getHeaderVal("idcode");
 			uint32_t fs_idcode = std::stoul(idcode_str.c_str(), NULL, 16);
 			if ((fs_idcode & 0x0fffffff) != idcode) {
 				throw std::runtime_error("mismatch between target's idcode and fs idcode");
 			}
-		} else {
-			throw std::runtime_error("incompatible file format");
 		}
 	}
 	_jtag->setClkFreq(2500000);
@@ -102,6 +133,14 @@ Gowin::Gowin(Jtag *jtag, const string filename, const string &file_type,
 	/* erase and program flash differ for GW1N1 */
 	if (idcode == 0x0900281B)
 		is_gw1n1 = true;
+	/* bscan spi external flash differ for GW1NSR-4C */
+	if (idcode == 0x0100981b) {
+		_spi_sck = BSCAN_GW1NSR_4C_SPI_SCK;
+		_spi_cs  = BSCAN_GW1NSR_4C_SPI_CS;
+		_spi_di  = BSCAN_GW1NSR_4C_SPI_DI;
+		_spi_do  = BSCAN_GW1NSR_4C_SPI_DO;
+		_spi_msk = BSCAN_GW1NSR_4C_SPI_MSK;
+	}
 }
 
 Gowin::~Gowin()
@@ -155,11 +194,13 @@ void Gowin::programFlash()
 
 	/* check if file checksum == checksum in FPGA */
 	status = readUserCode();
-	if (_fs->checksum() != status) {
+	int checksum = static_cast<FsParser *>(_fs)->checksum();
+	if (checksum != status) {
 		printError("CRC check : FAIL");
-		printf("%04x %04x\n", _fs->checksum(), status);
-	} else
+		printf("%04x %04x\n", checksum, status);
+	} else {
 		printSuccess("CRC check: Success");
+	}
 
 	if (_verbose)
 		displayReadReg(readStatusReg());
@@ -176,17 +217,45 @@ void Gowin::program(unsigned int offset)
 	if (_mode == NONE_MODE || !_fs)
 		return;
 
+	data = _fs->getData();
+	length = _fs->getLength();
+
 	if (_mode == FLASH_MODE) {
-		programFlash();
+		if (!_external_flash) { /* write into internal flash */
+			programFlash();
+		} else { /* write bitstream into external flash */
+			_jtag->setClkFreq(10000000);
+
+			if (!EnableCfg())
+				throw std::runtime_error("Error: fail to enable configuration");
+
+			eraseSRAM();
+			wr_rd(XFER_DONE, NULL, 0, NULL, 0);
+			wr_rd(NOOP, NULL, 0, NULL, 0);
+
+			wr_rd(0x3D, NULL, 0, NULL, 0);
+
+			SPIFlash spiFlash(this, (_verbose ? 1 : (_quiet ? -1 : 0)));
+			spiFlash.reset();
+			spiFlash.read_id();
+			spiFlash.read_status_reg();
+			if (spiFlash.erase_and_prog(offset, data, length / 8) != 0)
+				throw std::runtime_error("Error: write to flash failed");
+			if (_verify)
+				if (!spiFlash.verify(offset, data, length / 8, 256))
+					throw std::runtime_error("Error: flash vefication failed");
+			if (!DisableCfg())
+				throw std::runtime_error("Error: fail to disable configuration");
+
+			reset();
+		}
+
 		return;
 	}
 
 	if (_verbose) {
 		displayReadReg(readStatusReg());
 	}
-
-	data = _fs->getData();
-	length = _fs->getLength();
 
 	wr_rd(READ_IDCODE, NULL, 0, NULL, 0);
 
@@ -207,11 +276,13 @@ void Gowin::program(unsigned int offset)
 
 	/* check if file checksum == checksum in FPGA */
 	status = readUserCode();
-	if (_fs->checksum() != status) {
+	uint32_t checksum = static_cast<FsParser *>(_fs)->checksum();
+	if (checksum != status) {
 		printError("SRAM Flash: FAIL");
-		printf("%04x %04x\n", _fs->checksum(), status);
-	} else
+		printf("%04x %04x\n", checksum, status);
+	} else {
 		printSuccess("SRAM Flash: Success");
+	}
 	if (_verbose)
 		displayReadReg(readStatusReg());
 }
@@ -527,4 +598,131 @@ bool Gowin::eraseSRAM()
 		printError("FAIL");
 		return false;
 	}
+}
+
+/* SPI wrapper
+ * extflash access may be done using specific mode or
+ * boundary scan. But former is only available with mode=[11]
+ * so use Bscan
+ *
+ * it's a bitbanging mode with:
+ * Pins Name of SPI Flash | SCLK | CS  | DI  | DO  |
+ * Bscan Chain[7:0]       | 7  6 | 5 4 | 3 2 | 1 0 |
+ * (ctrl & data)          | 0    | 0   | 0   | 1   |
+ * ctrl 0 -> out, 1 -> in
+ * data 1 -> high, 0 -> low
+ * but all byte must be bit reversal...
+ */
+
+#define spi_gowin_write(_wr, _rd, _len) do { \
+	_jtag->shiftDR(_wr, _rd, _len); \
+	_jtag->toggleClk(6); } while (0)
+
+int Gowin::spi_put(uint8_t cmd, uint8_t *tx, uint8_t *rx, uint32_t len)
+{
+	uint8_t jrx[len+1], jtx[len+1];
+	jtx[0] = cmd;
+	if (tx)
+		memcpy(jtx+1, tx, len);
+	else
+		memset(jtx+1, 0, len);
+	int ret = spi_put(jtx, (rx)? jrx : NULL, len+1);
+	if (rx)
+		memcpy(rx, jrx+1, len);
+	return ret;
+}
+
+int Gowin::spi_put(uint8_t *tx, uint8_t *rx, uint32_t len)
+{
+	/* set CS/SCK/DI low */
+	uint8_t t = _spi_msk | _spi_do;
+	t &= ~_spi_cs;
+	spi_gowin_write(&t, NULL, 8);
+	_jtag->flush();
+
+	/* send bit/bit full tx content (or set di to 0 when NULL) */
+	for (uint32_t i = 0; i < len * 8; i++) {
+		uint8_t r;
+		t = _spi_msk | _spi_do;
+		if (tx != NULL && tx[i>>3] & (1 << (7-(i&0x07))))
+			t |= _spi_di;
+		spi_gowin_write(&t, NULL, 8);
+		t |= _spi_sck;
+		spi_gowin_write(&t, (rx) ? &r : NULL, 8);
+		_jtag->flush();
+		/* if read reconstruct bytes */
+		if (rx) {
+			if (r & _spi_do)
+				rx[i >> 3] |= 1 << (7-(i & 0x07));
+			else
+				rx[i >> 3] &= ~(1 << (7-(i & 0x07)));
+		}
+	}
+	/* set CS and unset SCK (next xfer) */
+	t &= ~_spi_sck;
+	t |= _spi_cs;
+	spi_gowin_write(&t, NULL, 8);
+	_jtag->flush();
+
+	return 0;
+}
+
+int Gowin::spi_wait(uint8_t cmd, uint8_t mask, uint8_t cond,
+		uint32_t timeout, bool verbose)
+{
+	uint32_t count = 0;
+	uint8_t rx, t;
+
+	/* set CS/SCK/DI low */
+	t = _spi_msk | _spi_do;
+	spi_gowin_write(&t, NULL, 8);
+
+	/* send command bit/bit */
+	for (int i = 0; i < 8; i++) {
+		t = _spi_msk | _spi_do;
+		if ((cmd & (1 << (7-i))) != 0)
+			t |= _spi_di;
+		spi_gowin_write(&t, NULL, 8);
+		t |= _spi_sck;
+		spi_gowin_write(&t, NULL, 8);
+		_jtag->flush();
+	}
+
+	t = _spi_msk | _spi_do;
+	do {
+		rx = 0;
+		/* read status register bit/bit with di == 0 */
+		for (int i = 0; i < 8; i++) {
+			uint8_t r;
+			t &= ~_spi_sck;
+			spi_gowin_write(&t, NULL, 8);
+			t |= _spi_sck;
+			spi_gowin_write(&t, &r, 8);
+			_jtag->flush();
+			if ((r & _spi_do) != 0)
+				rx |= 1 << (7-i);
+		}
+
+		count++;
+		if (count == timeout) {
+			printf("timeout: %x\n", rx);
+			break;
+		}
+		if (verbose)
+			printf("%x %x %x %u\n", rx, mask, cond, count);
+	} while ((rx & mask) != cond);
+
+	/* set CS & unset SCK (next xfer) */
+	t &= ~_spi_sck;
+	t |= _spi_cs;
+	spi_gowin_write(&t, NULL, 8);
+	_jtag->flush();
+
+	if (count == timeout) {
+		printf("%02x\n", rx);
+		std::cout << "wait: Error" << std::endl;
+		return -ETIME;
+	}
+
+	return 0;
 }

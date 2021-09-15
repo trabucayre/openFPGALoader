@@ -32,3 +32,6 @@ openFPGALoader -f -b BOARD_NAME impl/pnr/*.fs
 where *BOARD_NAME* is:
 - **tec0117**
 - **runber**
+
+It's possible to flash external SPI Flash (connected to MSPI) in bscan mode
+by using `--external-flash` instead of `-f`
