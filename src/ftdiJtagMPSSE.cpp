@@ -230,6 +230,14 @@ int FtdiJtagMPSSE::writeTDI(uint8_t *tdi, uint8_t *tdo, uint32_t len, bool last)
 		throw std::exception();
 	}
 
+	/* if only one full byte use BITMODE to reduce
+	 * transaction size
+	 */
+	if (nb_byte == 1 && nb_bit == 0) {
+		nb_byte = 0;
+		nb_bit = 8;
+	}
+
 	while (nb_byte != 0) {
 		int xfer_len = (nb_byte > xfer) ? xfer : nb_byte;
 		tx_buf[1] = (((xfer_len - 1)     ) & 0xff);  // low
@@ -245,13 +253,14 @@ int FtdiJtagMPSSE::writeTDI(uint8_t *tdi, uint8_t *tdo, uint32_t len, bool last)
 		} else if (_ch552WA) {
 			mpsse_write();
 			ftdi_read_data(_ftdi, c, xfer_len);
-		} else {
+		} else if (!last) {
 			mpsse_write();
 		}
 		nb_byte -= xfer_len;
 	}
 
 	unsigned char last_bit = (tdi) ? *tx_ptr : 0;
+	bool double_write = true;
 
 	if (nb_bit != 0) {
 		display("%s read/write %d bit\n", __func__, nb_bit);
@@ -262,8 +271,9 @@ int FtdiJtagMPSSE::writeTDI(uint8_t *tdi, uint8_t *tdo, uint32_t len, bool last)
 			display("%s last_bit %x size %d\n", __func__, last_bit, nb_bit-1);
 			mpsse_store(last_bit);
 		}
-		if (tdo) {
+		if (tdo && !last) {
 			mpsse_read(rx_ptr, 1);
+			double_write = false;
 			/* realign we have read nb_bit
 			 * since LSB add bit by the left and shift
 			 * we need to complete shift
@@ -271,9 +281,15 @@ int FtdiJtagMPSSE::writeTDI(uint8_t *tdi, uint8_t *tdo, uint32_t len, bool last)
 			*rx_ptr >>= (8 - nb_bit);
 			display("%s %x\n", __func__, *rx_ptr);
 		} else if (_ch552WA) {
-			mpsse_write();
-			ftdi_read_data(_ftdi, c, nb_bit);
-		} else {
+			if (tdo) {
+				mpsse_read(rx_ptr, 1);
+				double_write = false;
+				*rx_ptr >>= (8 - nb_bit);
+			} else {
+				mpsse_write();
+				ftdi_read_data(_ftdi, c, nb_bit);
+			}
+		} else if (!last) {
 			mpsse_write();
 		}
 	}
@@ -298,11 +314,15 @@ int FtdiJtagMPSSE::writeTDI(uint8_t *tdi, uint8_t *tdo, uint32_t len, bool last)
 							// and to move to EXIT_XR TMS = 1
 		mpsse_store(tx_buf, 3);
 		if (tdo) {
-			unsigned char c;
-			mpsse_read(&c, 1);
+			unsigned char c[2];
+			int index = 0;
+			mpsse_read(c, 1 + ((double_write)?1:0));
+			if (double_write) {
+				*rx_ptr = c[index] >> (8-nb_bit);
+				index++;
+			}
 			/* in this case for 1 one it's always bit 7 */
-			*rx_ptr |= ((c & 0x80) << (7 - nb_bit));
-			display("%s %x\n", __func__, c);
+			*rx_ptr |= ((c[index] & 0x80) << (7 - nb_bit));
 		} else if (_ch552WA) {
 			mpsse_write();
 			ftdi_read_data(_ftdi, c, 1);
