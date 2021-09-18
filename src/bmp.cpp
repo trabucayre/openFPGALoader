@@ -184,6 +184,7 @@ int Bmp::setClkFreq(uint32_t clkHZ)
     uint32_t freq[1];
     unhexify(freq, &construct[1], 4);
     fprintf(stderr, "%d Hz\n", freq[0]);
+    _clkHZ = freq[0];
     return freq[0];
 }
 

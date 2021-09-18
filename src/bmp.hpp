@@ -23,7 +23,7 @@ class Bmp : public JtagInterface {
 	const std::string &serial, uint32_t clkHZ, bool verbose);
     ~Bmp(void);
     int setClkFreq(uint32_t clkHZ) override;
-
+    uint32_t getClkFreq() { return _clkHZ;}
     /* TMS */
     int writeTMS(uint8_t *tms, int len, bool flush_buffer) override;
     /* TDI */
@@ -44,5 +44,7 @@ private:
     void DEBUG_WARN(const char *format, ...);
     void DEBUG_WIRE(const char *format, ...);
     void DEBUG_PROBE(const char *format, ...);
+protected:
+    uint32_t _clkHZ;
 };
 #endif // SRC_BMP_HPP_
