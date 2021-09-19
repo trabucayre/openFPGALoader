@@ -143,10 +143,12 @@ Bmp::Bmp(std::string dev,
 		     REMOTE_HL_CHECK_STR);
     platform_buffer_write(construct, s);
     s = platform_buffer_read(construct, REMOTE_MAX_MSG_SIZE);
+    #define NEEDED_BMP_VERSION 2
     if ((!s) || (construct[0] == REMOTE_RESP_ERR) ||
-	((construct[1] - '0') <  2)) {
+	((construct[1] - '0') <  NEEDED_BMP_VERSION)) {
 	fprintf(stderr,
-	    "Please update BMP!\n");
+		"Please update BMP, expected version %d, got %d!\n",
+		NEEDED_BMP_VERSION, construct[1] - '0');
 	return;
     }
 
@@ -221,14 +223,14 @@ int Bmp::writeTMS(uint8_t *tms, int len, bool flush_buffer)
     return ret;
 }
 
-int Bmp::writeTDI(uint8_t *tx, uint8_t *rx, uint32_t len, bool end)
+int Bmp::writeTDI(uint8_t *tdi, uint8_t *tdo, uint32_t len, bool end)
 {
     int ret = len;
 
-    if(!len || (!tx && !rx))
+    if(!len || (!tdi && !tdo))
 	return len;
     while (len) {
-	int chunk = (len > 2000) ? 2000 : len;
+	int chunk = (len > 4000) ? 4000 : len;
 	len -= chunk;
 	int byte_count = (chunk + 7) >> 3;
 	char construct[REMOTE_MAX_MSG_SIZE];
@@ -236,22 +238,23 @@ int Bmp::writeTDI(uint8_t *tx, uint8_t *rx, uint32_t len, bool end)
 	    construct, REMOTE_MAX_MSG_SIZE,
 	    REMOTE_JTAG_IOSEQ_STR,
 	    (!len && end) ? REMOTE_IOSEQ_TMS : REMOTE_IOSEQ_NOTMS,
-	    (((tx) ? REMOTE_IOSEQ_FLAG_IN  : REMOTE_IOSEQ_FLAG_NONE) |
-	     ((rx) ? REMOTE_IOSEQ_FLAG_OUT : REMOTE_IOSEQ_FLAG_NONE)),
+	    (((tdi) ? REMOTE_IOSEQ_FLAG_IN  : REMOTE_IOSEQ_FLAG_NONE) |
+	     ((tdo) ? REMOTE_IOSEQ_FLAG_OUT : REMOTE_IOSEQ_FLAG_NONE)),
 	    chunk);
 	char *p = construct + s;
-	if (tx) {
-	    hexify(p, tx, byte_count);
+	if (tdi) {
+	    hexify(p, tdi, byte_count);
 	    p += 2 * byte_count;
+	    tdi += byte_count;
 	}
 	*p++ = REMOTE_EOM;
 	*p   = 0;
 	platform_buffer_write(construct, p - construct);
 	s = platform_buffer_read(construct, REMOTE_MAX_MSG_SIZE);
 	if ((s > 0) && (construct[0] == REMOTE_RESP_OK)) {
-	    if (rx) {
-		unhexify(rx, (const char*)&construct[1], byte_count);
-		rx += byte_count;
+	    if (tdo) {
+		unhexify(tdo, (const char*)&construct[1], byte_count);
+		tdo += byte_count;
 	    }
 	    continue;
 	}

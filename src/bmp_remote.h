@@ -146,7 +146,7 @@
 					   '%','0','2','x','%','x',REMOTE_EOM, 0 }
 
 #define REMOTE_JTAG_IOSEQ_STR (const char []) {REMOTE_SOM, REMOTE_JTAG_PACKET,'%', 'c', '%', 'd', '%','0','4','x', 0}
-#define REMOTE_JTAG_JTCK_STR (const char []) {REMOTE_SOM, REMOTE_JTAG_PACKET, REMOTE_JTAG_JTCK,'%', 'd', '%','0','8','x', REMOTE_EOM, 0}
+#define REMOTE_JTAG_JTCK_STR (const char []) {REMOTE_SOM, REMOTE_JTAG_PACKET, REMOTE_JTAG_JTCK,'%', 'd', '%', 'd', '%','0','8','x', REMOTE_EOM, 0}
 
 #define REMOTE_JTAG_NEXT (char []){ REMOTE_SOM, REMOTE_JTAG_PACKET, REMOTE_NEXT, \
 				       '%','c','%','c',REMOTE_EOM, 0 }
