@@ -263,12 +263,21 @@ int JedParser::parse()
 	 */
 	std::vector<string>lines;
 	int first_pos;
+	char instr;
 	do {
 		lines = readJEDLine();
-		if (lines.size() == 0)
-			break;
+		/* empty or end of file */
+		if (lines.size() == 0) {
+			if (_ss.eof()) {
+				break;
+			} else {
+				instr = 0;
+				continue;
+			}
+		}
+		instr = lines[0][0];
 
-		switch (lines[0][0]) {
+		switch (instr) {
 		case 'N':  // note
 			/* note may start with "N " or "NOTE " */
 			first_pos = lines[0].find_first_of(' ', 0) + 1;
@@ -338,15 +347,24 @@ int JedParser::parse()
 			cout << lines[0]<< endl;
 			return EXIT_FAILURE;
 		}
-	} while (lines[0][0] != 0x03);
+	} while (instr != 0x03);
 
 	int size = 0;
 	for (size_t area = 0; area < _data_list.size(); area++) {
 		size += _data_list[area].len;
 	}
 
-	for (size_t i = 0; i < fuselist.size(); i+=8)
-		_compute_checksum += reverseByte(std::stoi(fuselist.substr(i, 8),
+	std::string fuses;
+	std::copy(fuselist.begin(), fuselist.end(), std::back_inserter(fuses));
+
+	if (fuses.size() % 8) {
+		int diff = (((fuses.size() / 8) + 1) * 8) - fuses.size();
+		for (int i = 0; i < diff; i++)
+			fuses += '0';
+	}
+
+	for (size_t i = 0; i < fuses.size(); i+=8)
+		_compute_checksum += reverseByte(std::stoi(fuses.substr(i, 8),
 				nullptr, 2));
 
 	if (_verbose)
