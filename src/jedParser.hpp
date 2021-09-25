@@ -32,6 +32,7 @@ class JedParser: public ConfigBitstreamParser {
 		size_t nb_section() { return _data_list.size();}
 		size_t offset_for_section(int id) {return _data_list[id].offset;}
 		int len_for_section(int id) {return _data_list[id].len;}
+		std::string get_fuselist() {return fuselist;}
 		std::vector<std::string> data_for_section(int id) {
 			return _data_list[id].data;
 		}
