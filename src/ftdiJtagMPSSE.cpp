@@ -169,17 +169,24 @@ int FtdiJtagMPSSE::toggleClk(uint8_t tms, uint8_t tdi, uint32_t clk_len)
 	if (_ftdi->type == TYPE_2232H || _ftdi->type == TYPE_4232H ||
 				_ftdi->type == TYPE_232H) {
 		uint8_t buf[] = {static_cast<uint8_t>(0x8f), 0, 0};
-		if (clk_len > 8) {
-			buf[1] = ((len / 8)     ) & 0xff;
-			buf[2] = ((len / 8) >> 8) & 0xff;
-			mpsse_store(buf, 3);
-			len %= 8;
-		}
-
-		if (len > 0) {
-			buf[0] = 0x8E;
-			buf[1] = len - 1;
-			mpsse_store(buf, 2);
+		while (len) {
+			unsigned int chunk = len;
+			if (chunk > 0x10000 * 8)
+				chunk = 0x10000 * 8;
+			if (chunk  > 8) {
+				unsigned cycles8 = chunk / 8;
+				len -= cycles8 * 8;
+				cycles8 --;
+				buf[1] = ((cycles8)		) & 0xff;
+				buf[2] = ((cycles8) >> 8) & 0xff;
+				mpsse_store(buf, 3);
+			}
+			if (len && len < 9) {
+				buf[0] = 0x8E;
+				buf[1] = len - 1;
+				mpsse_store(buf, 2);
+				len = 0;
+			}
 		}
 		ret = clk_len;
 	} else {
