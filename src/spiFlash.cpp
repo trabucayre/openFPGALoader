@@ -146,6 +146,10 @@ bool SPIFlash::dump(const std::string &filename, const int &base_addr,
 	if (rd_burst == 0)
 		rd_burst = len;
 
+	/* segfault with buffer > 1M */
+	if (rd_burst > 0x100000)
+		rd_burst = 0x100000;
+
 	std::string data;
 	data.resize(rd_burst);
 
