@@ -66,7 +66,6 @@ set(OPENFPGALOADER_SOURCE
 	src/ftdiJtagMPSSE.cpp
 	src/configBitstreamParser.cpp
 	src/ftdipp_mpsse.cpp
-	src/xilinx.cpp
 	src/main.cpp
 	src/latticeBitParser.cpp
 	src/gowin.cpp
@@ -78,6 +77,8 @@ set(OPENFPGALOADER_SOURCE
 	src/ftdispi.cpp
 	src/altera.cpp
 	src/bitparser.cpp
+	src/xilinx.cpp
+	src/xilinxMapParser.cpp
 )
 
 set(OPENFPGALOADER_HEADERS
@@ -113,7 +114,6 @@ set(OPENFPGALOADER_HEADERS
 	src/epcq.hpp
 	src/spiInterface.hpp
 	src/svf_jtag.hpp
-	src/xilinx.hpp
 	src/configBitstreamParser.hpp
 	src/device.hpp
 	src/gowin.hpp
@@ -121,6 +121,8 @@ set(OPENFPGALOADER_HEADERS
 	src/ftdispi.hpp
 	src/lattice.hpp
 	src/latticeBitParser.hpp
+	src/xilinx.hpp
+	src/xilinxMapParser.hpp
 )
 
 add_executable(openFPGALoader
