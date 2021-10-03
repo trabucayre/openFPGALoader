@@ -47,7 +47,7 @@ enum dfu_cmd {
  */
 
 DFU::DFU(const string &filename, uint16_t vid, uint16_t pid,
-		int altsetting,
+		int16_t altsetting,
 		int verbose_lvl):_verbose(verbose_lvl > 0),
 		_quiet(verbose_lvl < 0), dev_idx(0), _vid(0), _pid(0),
 		_altsetting(altsetting),
@@ -123,14 +123,17 @@ DFU::DFU(const string &filename, uint16_t vid, uint16_t pid,
 		displayDFU();
 
 	/* don't try device without vid/pid */
-	if (_vid == 0 || _pid == 0)
-		return;
+	if (_vid == 0 || _pid == 0) {
+		throw std::runtime_error("Can't open device vid/pid == 0");
+	}
 
 	/* open the first */
 	if (open_DFU(0) == EXIT_FAILURE) {
 		delete _bit;
 		throw std::runtime_error("Fail to claim device");
 	}
+
+	printf("%02x %02x\n", _vid, _pid);
 
 	char state = get_state();
 	if (_verbose > 0) {
@@ -284,7 +287,7 @@ int DFU::searchDFUDevices()
 		}
 
 		if (_verbose > 0) {
-			printf("%04x:%04x (bus %d, device %2d)",
+			printf("%04x:%04x (bus %d, device %2d)\n",
             	desc.idVendor, desc.idProduct,
             	libusb_get_bus_number(usb_dev),
 				libusb_get_device_address(usb_dev));

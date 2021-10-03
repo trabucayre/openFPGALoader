@@ -25,7 +25,7 @@ class DFU {
 		 * \param[in] verbose_lvl: verbose level 0 normal, -1 quiet, 1 verbose
 		 */
 		DFU(const std::string &filename, uint16_t vid, uint16_t pid,
-				int altsetting, int verbose_lvl);
+				int16_t altsetting, int verbose_lvl);
 
 		~DFU();
 
