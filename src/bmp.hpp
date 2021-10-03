@@ -35,15 +35,11 @@ public:
 	int flush() override { return 0;};
 private:
 	bool _verbose;				/**< display more message */
-	int fd;
-	int set_interface_attribs(void);
 	int platform_buffer_write(const char *data, int size);
 	int platform_buffer_read(char *data, int maxsize);
 	char *unhexify(void *buf, const char *hex, size_t size);
 	char *hexify(char *hex, const void *buf, size_t size);
-	void DEBUG_WARN(const char *format, ...);
 	void DEBUG_WIRE(const char *format, ...);
-	void DEBUG_PROBE(const char *format, ...);
 protected:
 	uint32_t _clkHZ;
 };
