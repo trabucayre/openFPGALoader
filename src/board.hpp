@@ -83,20 +83,20 @@ typedef struct {
 	uint32_t default_freq;   /* Default clock speed: 0 = use cable default */
 	uint16_t vid;             /* optional VID: used only with DFU */
 	uint16_t pid;             /* optional VID: used only with DFU */
-	uint16_t altsetting;      /* optional altsetting: used only with DFU */
+	int16_t altsetting;       /* optional altsetting: used only with DFU */
 } target_board_t;
 
 #define CABLE_DEFAULT 0
 #define CABLE_MHZ(_m) ((_m) * 1000000)
 
 #define JTAG_BOARD(_name, _fpga_part, _cable, _rst, _done, _freq) \
-	{_name, {"", _cable, _fpga_part, _rst, _done, COMM_JTAG, {}, {}, _freq, 0, 0, 0}}
+	{_name, {"", _cable, _fpga_part, _rst, _done, COMM_JTAG, {}, {}, _freq, 0, 0, -1}}
 #define JTAG_BITBANG_BOARD(_name, _fpga_part, _cable, _rst, _done, _tms, _tck, _tdi, _tdo, _freq) \
 	{_name, {"", _cable, _fpga_part, _rst, _done, COMM_JTAG, { _tms, _tck, _tdi, _tdo }, {}, \
-	_freq, 0, 0, 0}}
+	_freq, 0, 0, -1}}
 #define SPI_BOARD(_name, _manufacturer, _cable, _rst, _done, _cs, _sck, _si, _so, _holdn, _wpn, _freq) \
 	{_name, {_manufacturer, _cable, "", _rst, _done, COMM_SPI, {}, \
-		{_cs, _sck, _so, _si, _holdn, _wpn}, _freq, 0, 0, 0}}
+		{_cs, _sck, _so, _si, _holdn, _wpn}, _freq, 0, 0, -1}}
 #define DFU_BOARD(_name, _fpga_part, _cable, _vid, _pid, _alt) \
 	{_name, {"", _cable, _fpga_part, 0, 0, COMM_DFU, {}, {}, 0, _vid, _pid, _alt}}
 
