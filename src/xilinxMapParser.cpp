@@ -18,12 +18,12 @@ using namespace std;
 
 XilinxMapParser::XilinxMapParser(const string &filename,
 		uint16_t num_row, uint16_t num_col,
-		const JedParser *jed, const uint32_t usercode,
+		JedParser *jed, const uint32_t usercode,
 		bool verbose): ConfigBitstreamParser(filename,
 			ConfigBitstreamParser::BIN_MODE, verbose),
 		_num_row(num_row), _num_col(num_col), _usercode(usercode)
 {
-	_jed = reinterpret_case<JedParser *>(jed);
+	_jed = jed;
 	_map_table.resize(_num_row);
 	for (int i = 0; i < _num_row; i++)
 		_map_table[i].resize(_num_col);

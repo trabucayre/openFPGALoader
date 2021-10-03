@@ -33,7 +33,7 @@ class XilinxMapParser: public ConfigBitstreamParser {
 		 */
 		XilinxMapParser(const std::string &filename,
 				const uint16_t num_row, const uint16_t num_col,
-				const JedParser *jed,
+				JedParser *jed,
 				const uint32_t usercode, bool verbose = false);
 
 		/*!
