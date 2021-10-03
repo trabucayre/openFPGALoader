@@ -18,9 +18,14 @@ class DFU {
 	public:
 		/*!
 		 * \brief contructor
+		 * \param[in] filename: bitstream
+		 * \param[in] vid: vendor id
+		 * \param[in] pid: product id
+		 * \param[in] altsetting: device altsetting to use
 		 * \param[in] verbose_lvl: verbose level 0 normal, -1 quiet, 1 verbose
 		 */
-		DFU(const std::string &filename, uint16_t vid, uint16_t pid, int verbose_lvl);
+		DFU(const std::string &filename, uint16_t vid, uint16_t pid,
+				int altsetting, int verbose_lvl);
 
 		~DFU();
 
@@ -59,9 +64,11 @@ class DFU {
 			uint16_t pid;
 			uint8_t  bus;
 			uint8_t  interface;
+			uint16_t altsettings;
 			uint8_t  device;
 			uint8_t  path[8];
 			uint8_t  iProduct[128];
+			uint8_t  iInterface[128];
 			uint32_t bMaxPacketSize0;
 			struct   dfu_desc dfu_desc;
 		};
@@ -226,6 +233,7 @@ class DFU {
 		int dev_idx;                         /**< device index in dfu_dev */
 		uint16_t _vid;                       /**< device Vendor ID */
 		uint16_t _pid;                       /**< device Product ID */
+		int16_t _altsetting;                 /**< device altesetting */
 		struct libusb_context *usb_ctx;      /**< usb context */
 		libusb_device_handle * dev_handle;   /**< current device handle */
 		int curr_intf;                       /**< device interface to use */

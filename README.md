@@ -40,6 +40,7 @@ openFPGALoader --help
 Usage: openFPGALoader [OPTION...] BIT_FILE
 openFPGALoader -- a program to flash FPGA
 
+      --altsetting arg      DFU interface altsetting (only for DFU mode)
       --bitstream arg       bitstream
   -b, --board arg           board name, may be used instead of cable
   -c, --cable arg           jtag interface

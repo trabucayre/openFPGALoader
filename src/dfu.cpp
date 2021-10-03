@@ -47,8 +47,10 @@ enum dfu_cmd {
  */
 
 DFU::DFU(const string &filename, uint16_t vid, uint16_t pid,
+		int altsetting,
 		int verbose_lvl):_verbose(verbose_lvl > 0),
 		_quiet(verbose_lvl < 0), dev_idx(0), _vid(0), _pid(0),
+		_altsetting(altsetting),
 		usb_ctx(NULL), dev_handle(NULL), curr_intf(0), transaction(0),
 		_bit(NULL)
 {
@@ -324,6 +326,8 @@ int DFU::searchIfDFU(struct libusb_device_handle *handle,
 				const struct libusb_interface_descriptor *intf = &uif->altsetting[intf_idx];
 				uint8_t intfClass = intf->bInterfaceClass;
 				uint8_t intfSubClass = intf->bInterfaceSubClass;
+				if (_altsetting != -1 && _altsetting != intf_idx)
+					continue;
 				if (intfClass == 0xfe && intfSubClass == 0x01) {
 					struct dfu_dev my_dev;
 					if (_verbose)
@@ -335,6 +339,7 @@ int DFU::searchIfDFU(struct libusb_device_handle *handle,
 						continue;  // not compatible
 					my_dev.vid = desc->idVendor;
 					my_dev.pid = desc->idProduct;
+					my_dev.altsettings = intf_idx;
 					my_dev.interface = if_idx;
 					my_dev.bus = libusb_get_bus_number(dev);
 					my_dev.device = libusb_get_device_address(dev);
@@ -342,6 +347,8 @@ int DFU::searchIfDFU(struct libusb_device_handle *handle,
 
 					libusb_get_string_descriptor_ascii(handle, desc->iProduct,
 						my_dev.iProduct, 128);
+					libusb_get_string_descriptor_ascii(handle, intf->iInterface,
+						my_dev.iInterface, 128);
 
 					int r = libusb_get_port_numbers(dev, my_dev.path, sizeof(my_dev.path));
 					my_dev.path[r] = '\0';
@@ -566,13 +573,15 @@ void DFU::displayDFU()
 	/* display dfu device */
 	printf("Found DFU:\n");
 	for (unsigned int i = 0; i < dfu_dev.size(); i++) {
-		printf("%04x:%04x (bus %d, device %2d)",
+		printf("%04x:%04x (bus %d, device %2d),",
             dfu_dev[i].vid, dfu_dev[i].pid,
             dfu_dev[i].bus, dfu_dev[i].device);
-		printf(" path: %d: iProduct %s", dfu_dev[i].path[0],
-				dfu_dev[i].iProduct);
+		printf(" path: %d",dfu_dev[i].path[0]);
 		for (size_t j = 1; j < strlen(((const char *)dfu_dev[i].path)); j++)
 			printf(".%d", dfu_dev[i].path[j]);
+		printf(", alt: %d, iProduct \"%s\", iInterface \"%s\"",
+				dfu_dev[i].altsettings,
+				dfu_dev[i].iProduct, dfu_dev[i].iInterface);
 		printf("\n");
 		printf("\tDFU details\n");
 		printf("\t\tbLength         %02x\n", dfu_dev[i].dfu_desc.bLength);

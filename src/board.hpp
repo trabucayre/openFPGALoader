@@ -83,6 +83,7 @@ typedef struct {
 	uint32_t default_freq;   /* Default clock speed: 0 = use cable default */
 	uint16_t vid;             /* optional VID: used only with DFU */
 	uint16_t pid;             /* optional VID: used only with DFU */
+	uint16_t altsetting;      /* optional altsetting: used only with DFU */
 } target_board_t;
 
 #define CABLE_DEFAULT 0
@@ -96,8 +97,8 @@ typedef struct {
 #define SPI_BOARD(_name, _manufacturer, _cable, _rst, _done, _cs, _sck, _si, _so, _holdn, _wpn, _freq) \
 	{_name, {_manufacturer, _cable, "", _rst, _done, COMM_SPI, {}, \
 		{_cs, _sck, _so, _si, _holdn, _wpn}, _freq, 0, 0}}
-#define DFU_BOARD(_name, _fpga_part, _cable, _vid, _pid) \
-	{_name, {"", _cable, _fpga_part, 0, 0, COMM_DFU, {}, {}, 0, _vid, _pid}}
+#define DFU_BOARD(_name, _fpga_part, _cable, _vid, _pid, _alt) \
+	{_name, {"", _cable, _fpga_part, 0, 0, COMM_DFU, {}, {}, 0, _vid, _pid, _alt}}
 
 static std::map <std::string, target_board_t> board_list = {
 	JTAG_BOARD("acornCle215",     "xc7a200tsbg484", "",         0, 0, CABLE_DEFAULT),
@@ -117,7 +118,7 @@ static std::map <std::string, target_board_t> board_list = {
 	JTAG_BOARD("ecp5_evn",        "", "ft2232",     0, 0, CABLE_DEFAULT),
 	SPI_BOARD("fireant",              "efinix", "ft232",
 			DBUS4, DBUS5, DBUS3, DBUS0, DBUS1, DBUS2, DBUS6, 0, CABLE_DEFAULT),
-	DFU_BOARD("fomu",             "", "dfu", 0x1209, 0x5bf0),
+	DFU_BOARD("fomu",             "", "dfu", 0x1209, 0x5bf0, 0),
 	/* most ice40 boards uses the same pinout */
 	SPI_BOARD("ice40_generic",    "lattice", "ft2232",
 			DBUS7, DBUS6,
@@ -132,7 +133,7 @@ static std::map <std::string, target_board_t> board_list = {
 	JTAG_BOARD("spartanEdgeAccelBoard", "", "",0, 0, CABLE_DEFAULT),
 	JTAG_BOARD("pipistrello",     "xc6slx45csg324", "ft2232", 0, 0, CABLE_DEFAULT),
 	JTAG_BOARD("minispartan6",    "", "ft2232",    0, 0, CABLE_DEFAULT),
-	DFU_BOARD("orangeCrab",       "", "dfu", 0x1209, 0x5af0),
+	DFU_BOARD("orangeCrab",       "", "dfu", 0x1209, 0x5af0, 0),
 	JTAG_BOARD("qmtechCycloneV",  "5ce223", "",     0, 0, CABLE_DEFAULT),
 	JTAG_BOARD("runber",          "", "ft232",      0, 0, CABLE_DEFAULT),
 	JTAG_BOARD("tangnano",        "", "ft2232",     0, 0, CABLE_DEFAULT),

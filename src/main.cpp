@@ -59,6 +59,7 @@ struct arguments {
 	int index_chain;
 	unsigned int file_size;
 	bool external_flash;
+	int altsetting;
 };
 
 int parse_opt(int argc, char **argv, struct arguments *args, jtag_pins_conf_t *pins_config);
@@ -74,7 +75,7 @@ int main(int argc, char **argv)
 	/* command line args. */
 	struct arguments args = {0, false, false, false, 0, "", "", "-", "", -1,
 			0, "-", false, false, false, false, Device::WR_SRAM, false,
-			false, false, "", "", "", -1, 0, false};
+			false, false, "", "", "", -1, 0, false, -1};
 	/* parse arguments */
 	try {
 		if (parse_opt(argc, argv, &args, &pins_config))
@@ -267,12 +268,19 @@ int main(int argc, char **argv)
 		/* try to init DFU probe */
 		DFU *dfu = NULL;
 		uint16_t vid = 0, pid = 0;
+		int altsetting = -1;
 		if (board) {
 			vid = board->vid;
 			pid = board->pid;
+			altsetting = board->altsetting;
+		}
+		if (args.altsetting != -1) {
+			if (altsetting != -1)
+				printInfo("Board altsetting overridden");
+			altsetting = args.altsetting;
 		}
 		try {
-			dfu = new DFU(args.bit_file, vid, pid, args.verbose);
+			dfu = new DFU(args.bit_file, vid, pid, altsetting, args.verbose);
 		} catch (std::exception &e) {
 			printError("DFU init failed with: " + string(e.what()));
 			return EXIT_FAILURE;
@@ -486,6 +494,8 @@ int parse_opt(int argc, char **argv, struct arguments *args, jtag_pins_conf_t *p
 
 		options
 			.add_options()
+			("altsetting", "DFU interface altsetting (only for DFU mode)",
+				cxxopts::value<int>(args->altsetting))
 			("bitstream", "bitstream",
 				cxxopts::value<std::string>(args->bit_file))
 			("b,board",     "board name, may be used instead of cable",
