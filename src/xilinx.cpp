@@ -448,7 +448,7 @@ void Xilinx::flow_enable()
 void Xilinx::flow_disable()
 {
 	_jtag->shiftIR(XC95_ISC_DISABLE, 8);
-	usleep(100);
+	_jtag->toggleClk((_jtag->getClkFreq() * 100) / 1000000);
 	_jtag->shiftIR(BYPASS, 8);
 	_jtag->toggleClk(1);
 }
@@ -461,7 +461,7 @@ bool Xilinx::flow_erase()
 
 	_jtag->shiftIR(XC95_ISC_ERASE, 8);
 	_jtag->shiftDR(xfer_buf, NULL, 18);
-	_jtag->toggleClk(2000000);
+	_jtag->toggleClk((_jtag->getClkFreq() * 400) / 1000);
 	_jtag->shiftDR(NULL, xfer_buf, 18);
 	if ((xfer_buf[0] & 0x03) != 0x01) {
 		printError("FAIL");
@@ -499,10 +499,6 @@ bool Xilinx::flow_program()
 		return false;
 	}
 	printSuccess("DONE");
-
-	/* limit JTAG clock frequency to 1MHz */
-	if (_jtag->getClkFreq() > 1e6)
-		_jtag->setClkFreq(1e6);
 
 	/* enable ISC */
 	flow_enable();
@@ -545,7 +541,7 @@ bool Xilinx::flow_program()
 					_jtag->shiftIR(XC95_ISC_PROGRAM, 8);
 					_jtag->shiftDR(&mode, NULL, 2, Jtag::SHIFT_DR);
 					_jtag->shiftDR(wr_buf, NULL, 8 * (_xc95_line_len + 2));
-					_jtag->toggleClk(50000);
+					_jtag->toggleClk((_jtag->getClkFreq() * 50) / 1000);
 					_jtag->shiftDR(NULL, rd_buf, 8 * (_xc95_line_len + 2) + 2);
 					if ((rd_buf[0] & 0x03) == 0x01)
 						break;
