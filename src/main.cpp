@@ -59,7 +59,9 @@ struct arguments {
 	int index_chain;
 	unsigned int file_size;
 	bool external_flash;
-	int altsetting;
+	int16_t altsetting;
+	uint16_t vid;
+	uint16_t pid;
 };
 
 int parse_opt(int argc, char **argv, struct arguments *args, jtag_pins_conf_t *pins_config);
@@ -75,7 +77,7 @@ int main(int argc, char **argv)
 	/* command line args. */
 	struct arguments args = {0, false, false, false, 0, "", "", "-", "", -1,
 			0, "-", false, false, false, false, Device::WR_SRAM, false,
-			false, false, "", "", "", -1, 0, false, -1};
+			false, false, "", "", "", -1, 0, false, -1, 0, 0};
 	/* parse arguments */
 	try {
 		if (parse_opt(argc, argv, &args, &pins_config))
@@ -279,6 +281,18 @@ int main(int argc, char **argv)
 				printInfo("Board altsetting overridden");
 			altsetting = args.altsetting;
 		}
+
+		if (args.vid != 0) {
+			if (vid != 0)
+				printInfo("Board VID overridden");
+			vid = args.vid;
+		}
+		if (args.pid != 0) {
+			if (pid != 0)
+				printInfo("Board PID overridden");
+			pid = args.pid;
+		}
+
 		try {
 			dfu = new DFU(args.bit_file, vid, pid, altsetting, args.verbose);
 		} catch (std::exception &e) {
@@ -495,12 +509,15 @@ int parse_opt(int argc, char **argv, struct arguments *args, jtag_pins_conf_t *p
 		options
 			.add_options()
 			("altsetting", "DFU interface altsetting (only for DFU mode)",
-				cxxopts::value<int>(args->altsetting))
+				cxxopts::value<int16_t>(args->altsetting))
 			("bitstream", "bitstream",
 				cxxopts::value<std::string>(args->bit_file))
 			("b,board",     "board name, may be used instead of cable",
 				cxxopts::value<string>(args->board))
 			("c,cable", "jtag interface", cxxopts::value<string>(args->cable))
+			("vid", "probe Vendor ID", cxxopts::value<uint16_t>(args->vid))
+			("pid", "probe Product ID", cxxopts::value<uint16_t>(args->pid))
+
 			("ftdi-serial", "FTDI chip serial number", cxxopts::value<string>(args->ftdi_serial))
 			("ftdi-channel", "FTDI chip channel number (channels 0-3 map to A-D)", cxxopts::value<int>(args->ftdi_channel))
 #ifdef USE_UDEV

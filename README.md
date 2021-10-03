@@ -44,6 +44,8 @@ openFPGALoader -- a program to flash FPGA
       --bitstream arg       bitstream
   -b, --board arg           board name, may be used instead of cable
   -c, --cable arg           jtag interface
+      --vid arg             probe Vendor ID
+      --pid arg             probe Product ID
       --ftdi-serial arg     FTDI chip serial number
       --ftdi-channel arg    FTDI chip channel number (channels 0-3 map to
                             A-D)
