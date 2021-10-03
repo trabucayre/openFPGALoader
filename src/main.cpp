@@ -299,7 +299,7 @@ int main(int argc, char **argv)
 	Jtag *jtag;
 	try {
 		jtag = new Jtag(cable, &pins_config, args.device, args.ftdi_serial,
-				args.freq, false, args.probe_firmware);
+				args.freq, args.verbose, args.probe_firmware);
 	} catch (std::exception &e) {
 		printError("JTAG init failed with: " + string(e.what()));
 		return EXIT_FAILURE;
@@ -476,6 +476,7 @@ int parse_opt(int argc, char **argv, struct arguments *args, jtag_pins_conf_t *p
 	string freqo;
 	vector<string> pins;
 	bool verbose, quiet;
+	int8_t verbose_level = -2;
 	try {
 		cxxopts::Options options(argv[0], "openFPGALoader -- a program to flash FPGA",
 			"<gwenhael.goavec-merou@trabucayre.com>");
@@ -534,6 +535,8 @@ int parse_opt(int argc, char **argv, struct arguments *args, jtag_pins_conf_t *p
 			("spi",   "SPI mode (only for FTDI in serial mode)",
 				cxxopts::value<bool>(args->spi))
 			("v,verbose", "Produce verbose output", cxxopts::value<bool>(verbose))
+			("verbose-level", "verbose level -1: quiet, 0: normal, 1:verbose, 2:debug",
+				cxxopts::value<int8_t>(verbose_level))
 			("h,help", "Give this help list")
 			("verify", "Verify write operation (SPI Flash only)",
 				cxxopts::value<bool>(args->verify))
@@ -555,6 +558,15 @@ int parse_opt(int argc, char **argv, struct arguments *args, jtag_pins_conf_t *p
 			args->verbose = 1;
 		if (quiet)
 			args->verbose = -1;
+		if (verbose_level != -2) {
+			if ((verbose && verbose_level != 1) ||
+					(quiet && verbose_level != -1)) {
+				printError("Error: mismatch quiet/verbose and verbose-level\n");
+				throw std::exception();
+			}
+
+			args->verbose = verbose_level;
+		}
 
 		if (result.count("Version")) {
 			cout << "openFPGALoader " << VERSION << endl;

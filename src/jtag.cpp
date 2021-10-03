@@ -29,7 +29,7 @@ using namespace std;
 
 #define DEBUG 0
 
-#ifdef DEBUG
+#if DEBUG
 #define display(...) \
 	do { if (_verbose) fprintf(stdout, __VA_ARGS__);}while(0)
 #else
@@ -59,9 +59,9 @@ using namespace std;
  */
 
 Jtag::Jtag(cable_t &cable, const jtag_pins_conf_t *pin_conf, string dev,
-			const string &serial, uint32_t clkHZ, bool verbose,
+			const string &serial, uint32_t clkHZ, int8_t verbose,
 			const string &firmware_path):
-			_verbose(verbose),
+			_verbose(verbose > 1),
 			_state(RUN_TEST_IDLE),
 			_tms_buffer_size(128), _num_tms(0),
 			_board_name("nope"), device_index(0)

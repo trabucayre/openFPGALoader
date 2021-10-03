@@ -18,7 +18,7 @@
 class Jtag {
  public:
 	Jtag(cable_t &cable, const jtag_pins_conf_t *pin_conf, std::string dev,
-		const std::string &serial, uint32_t clkHZ, bool verbose = false,
+		const std::string &serial, uint32_t clkHZ, int8_t verbose = 0,
 		const std::string &firmware_path="");
 	~Jtag();
 
@@ -90,13 +90,13 @@ class Jtag {
 	const char *getStateName(tapState_t s);
 
 	/* utilities */
-	void setVerbose(bool verbose){_verbose = verbose;}
+	void setVerbose(int8_t verbose){_verbose = verbose;}
 
  private:
 	void init_internal(cable_t &cable, const std::string &dev, const std::string &serial,
 		const jtag_pins_conf_t *pin_conf, uint32_t clkHZ,
 		const std::string &firmware_path);
-	bool _verbose;
+	int8_t _verbose;
 	int _state;
 	int _tms_buffer_size;
 	int _num_tms;

@@ -71,6 +71,8 @@ openFPGALoader -- a program to flash FPGA
   -r, --reset               reset FPGA after operations
       --spi                 SPI mode (only for FTDI in serial mode)
   -v, --verbose             Produce verbose output
+      --verbose-level arg   verbose level -1: quiet, 0: normal, 1:verbose,
+                            2:debug
   -h, --help                Give this help list
       --verify              Verify write operation (SPI Flash only)
   -V, --Version             Print program version
