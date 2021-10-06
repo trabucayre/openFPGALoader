@@ -52,7 +52,7 @@ class Xilinx: public Device, SPIInterface {
 		 *        program and disable ISC
 		 * \return false if something wrong
 		 */
-		bool flow_program();
+		bool flow_program(JedParser *jed);
 
 		/*!
 		 * \brief fill a buffer with internal flash content
@@ -69,6 +69,35 @@ class Xilinx: public Device, SPIInterface {
 		bool xcf_program(ConfigBitstreamParser *bitfile);
 		std::string xcf_read();
 
+		/* -------------------- */
+		/* XC2C (CoolRunner II) */
+		/* -------------------- */
+		/*!
+		 * \brief configure instance using model name and idcode
+		 * \param[in] idcode: targeted device idcode
+		 */
+		void xc2c_init(uint32_t idcode);
+		/*!
+		 * \brief reset device, force read configuration
+		 */
+		void xc2c_flow_reinit();
+		/*!
+		 * \brief erase full internal flash (optionnally verify)
+		 * \return false if erase fails, true otherwise
+		 */
+		bool xc2c_flow_erase();
+		/*!
+		 * \brief read full internal flash
+		 * \return flash configuration data
+		 */
+		std::string xc2c_flow_read();
+		/*!
+		 * \brief write program to the flash (erase before, optional read after)
+		 * \param[in] jed: bitstream instance
+		 * \return false when erase or verify fails
+		 */
+		bool xc2c_flow_program(JedParser *jed);
+
 		/* spi interface */
 		int spi_put(uint8_t cmd, uint8_t *tx, uint8_t *rx,
 				uint32_t len) override;
@@ -80,6 +109,7 @@ class Xilinx: public Device, SPIInterface {
 		/* list of xilinx family devices */
 		enum xilinx_family_t {
 			XC95_FAMILY     = 0,
+			XC2C_FAMILY,
 			SPARTAN3_FAMILY,
 			SPARTAN6_FAMILY,
 			SPARTAN7_FAMILY,
@@ -100,6 +130,10 @@ class Xilinx: public Device, SPIInterface {
 		bool load_bridge();
 		std::string _device_package;
 		int _xc95_line_len; /**< xc95 only: number of col by flash line */
+		uint16_t _cpld_nb_row; /**< number of flash rows */
+		uint16_t _cpld_nb_col; /**< number of cols in a row */
+		uint16_t _cpld_addr_size; /**< number of addr bits */
+		char _cpld_base_name[7]; /**< cpld name (without package size) */
 };
 
 #endif

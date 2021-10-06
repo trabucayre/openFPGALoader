@@ -14,6 +14,7 @@ endif()
 option(ENABLE_CMSISDAP "enable cmsis DAP interface (requires hidapi)" ON)
 option(USE_PKGCONFIG "Use pkgconfig to find libraries" ON)
 option(LINK_CMAKE_THREADS "Use CMake find_package to link the threading library" OFF)
+set(ISE_PATH "/opt/Xilinx/14.7" CACHE STRING "ise root directory (default: /opt/Xilinx/14.7)")
 
 ## specify the C++ standard
 set(CMAKE_CXX_STANDARD 11)
@@ -28,6 +29,8 @@ endif()
 include(GNUInstallDirs)
 # By default: DATA_DIR="/usr/local/share"
 add_definitions(-DDATA_DIR=\"${CMAKE_INSTALL_FULL_DATAROOTDIR}\")
+
+add_definitions(-DISE_DIR=\"${ISE_PATH}\")
 
 if(USE_PKGCONFIG)
 	find_package(PkgConfig REQUIRED)

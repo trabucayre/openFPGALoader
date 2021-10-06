@@ -4,7 +4,7 @@
 |--------:|:---------------------------------------------------------------------------------------------------------------------------------|:-------|:------|
 | Anlogic | [EG4S20](http://www.anlogic.com/prod_view.aspx?TypeId=10&Id=168&FId=t3:10:3)                                                     | OK     | AS    |
 |  Efinix | [Trion T8](https://www.efinixinc.com/products-trion.html)                                                                        | NA     | OK    |
-|   Gowin | [GW1N (GW1N-1, GW1N-4, GW1NR-9, GW1NS-2C, GW1NSR-4C)](https://www.gowinsemi.com/en/product/detail/2/)                             | OK     | IF    |
+|   Gowin | [GW1N (GW1N-1, GW1N-4, GW1NR-9, GW1NS-2C, GW1NSR-4C)](https://www.gowinsemi.com/en/product/detail/2/)                            | OK     | IF    |
 |   Intel | Cyclone III [EP3C16](https://www.intel.com/content/www/us/en/programmable/products/fpga/cyclone-series/cyclone-iii/support.html) | OK     | OK    |
 |         | Cyclone IV CE [EP4CE22](https://www.intel.com/content/www/us/en/products/programmable/fpga/cyclone-iv/features.html)             | OK     | OK    |
 |         | Cyclone V E [5CEA2, 5CEBA4](https://www.intel.com/content/www/us/en/products/programmable/fpga/cyclone-v.html)                   | OK     | OK    |
@@ -21,6 +21,7 @@
 |         | Spartan 6 [xc6slx9, xc6slx16, xc6slx25, xc6slx45](https://www.xilinx.com/products/silicon-devices/fpga/spartan-6.html)           | OK     | OK    |
 |         | Spartan 7 [xc7s15, xc7s25, xc7s50](https://www.xilinx.com/products/silicon-devices/fpga/spartan-7.html)                          | OK     | OK    |
 |         | XC9500XL [xc9536xl, xc9572xl, xc95144xl, xc95188xl](https://www.xilinx.com/support/documentation/data_sheets/ds054.pdf)          | NA     | OK    |
+|         | XC2C (coolrunner II) [xc2c32a](https://www.xilinx.com/support/documentation/data_sheets/ds090.pdf)                               | TBD    | OK    |
 |         | XCF [xcf01s, xcf02s, xcf04s](https://www.xilinx.com/products/silicon-devices/configuration-memory/platform-flash.html)           | NA     | OK    |
 
 - *IF* Internal Flash

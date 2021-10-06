@@ -95,3 +95,14 @@ brew install openfpgaloader
 ```
 
 ## Windows
+
+## Common
+
+Bitstreams for **XC2C (coolrunner-II)** needs to be remapped using `.map` shipped with
+**ISE**. **ISE** path is set at configure time using
+
+```
+-DISE_PATH=/somewhere/Xilinx/ISE_VERS/
+```
+
+default: `/opt/Xilinx/14.7`
