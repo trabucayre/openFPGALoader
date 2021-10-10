@@ -406,7 +406,7 @@ int SPIFlash::disable_protection()
 /* convert bp area (status register) to len in byte */
 uint32_t SPIFlash::bp_to_len(uint8_t bp)
 {
-	/* 0 -> no sectors protected */
+	/* 0 -> no block protected */
 	if (bp == 0)
 		return 0;
 
@@ -415,16 +415,16 @@ uint32_t SPIFlash::bp_to_len(uint8_t bp)
 	for (int i = 0; i < 4; i++)
 		if ((bp & _flash_model->bp_offset[i]))
 			tmp |= (1 << i);
-	/* bp code is 2^(bp-1) sectors */
+	/* bp code is 2^(bp-1) blocks */
 	uint16_t nr_sectors = (1 << (tmp-1));
 
 	return nr_sectors * 0x10000;
 }
 
-/* convert len (in byte) to bp (sector protection) */
+/* convert len (in byte) to bp (block protection) */
 uint8_t SPIFlash::len_to_bp(uint32_t len)
 {
-	/* 0 -> no sector to protect */
+	/* 0 -> no block to protect */
 	if (len == 0)
 		return 0;
 

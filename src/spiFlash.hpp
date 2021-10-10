@@ -78,15 +78,15 @@ class SPIFlash {
 
 	protected:
 		/*!
-		 * \brief convert bit protect to len in byte
-		 * \param[in] bp: byte protection
+		 * \brief convert block protect to len in byte
+		 * \param[in] bp: block protection
 		 * \return protect area in byte
 		 */
 		uint32_t bp_to_len(uint8_t bp);
 		/*!
-		 * \brief convert len (in byte) to corresponding bit protect
+		 * \brief convert len (in byte) to corresponding block protect
 		 * \param[in] len: len in byte
-		 * \return bp code (based on chip bp[x] position
+		 * \return bp code (based on chip bp[x] position)
 		 */
 		uint8_t len_to_bp(uint32_t len);
 
