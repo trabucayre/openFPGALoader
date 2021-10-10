@@ -118,6 +118,7 @@ set(OPENFPGALOADER_HEADERS
 	src/mcsParser.hpp
 	src/ftdipp_mpsse.hpp
 	src/spiFlash.hpp
+	src/spiFlashdb.hpp
 	src/epcq.hpp
 	src/spiInterface.hpp
 	src/svf_jtag.hpp
