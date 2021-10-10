@@ -3,10 +3,13 @@
  * Copyright (C) 2019 Gwenhael Goavec-Merou <gwenhael.goavec-merou@trabucayre.com>
  */
 
-#ifndef SPIFLASH_HPP
-#define SPIFLASH_HPP
+#ifndef SRC_SPIFLASH_HPP_
+#define SRC_SPIFLASH_HPP_
+
+#include <string>
 
 #include "spiInterface.hpp"
+#include "spiFlashdb.hpp"
 
 class SPIFlash {
 	public:
@@ -18,6 +21,10 @@ class SPIFlash {
 		/* protection */
 		int write_enable();
 		int write_disable();
+		/*!
+		 * \brief disable protection for all sectors
+		 * \return -1 if write enable or disabling failed
+		 */
 		int disable_protection();
 		/*!
 		 * \brief unlock all sectors: specific to
@@ -27,7 +34,13 @@ class SPIFlash {
 		bool global_unlock();
 		/* erase */
 		int bulk_erase();
+		/*!
+		 * \brief erase one sector (64Kb)
+		 */
 		int sector_erase(int addr);
+		/*!
+		 * \brief erase n sectors starting at base_addr
+		 */
 		int sectors_erase(int base_addr, int len);
 		/* write */
 		int write_page(int addr, uint8_t *data, int len);
@@ -62,10 +75,25 @@ class SPIFlash {
 		virtual void read_id();
 		uint16_t readNonVolatileCfgReg();
 		uint16_t readVolatileCfgReg();
+
 	protected:
+		/*!
+		 * \brief convert bit protect to len in byte
+		 * \param[in] bp: byte protection
+		 * \return protect area in byte
+		 */
+		uint32_t bp_to_len(uint8_t bp);
+		/*!
+		 * \brief convert len (in byte) to corresponding bit protect
+		 * \param[in] len: len in byte
+		 * \return bp code (based on chip bp[x] position
+		 */
+		uint8_t len_to_bp(uint32_t len);
+
 		SPIInterface *_spi;
 		int8_t _verbose;
 		uint32_t _jedec_id; /**< CHIP ID */
+		flash_t *_flash_model; /**< detect flash model */
 };
 
-#endif
+#endif  // SRC_SPIFLASH_HPP_

@@ -7,12 +7,13 @@
 #include <string.h>
 #include <stdlib.h>
 #include <unistd.h>
+#include <cmath>
 #include <iostream>
 
-#include "ftdipp_mpsse.hpp"
 #include "progressBar.hpp"
 #include "display.hpp"
 #include "spiFlash.hpp"
+#include "spiFlashdb.hpp"
 #include "spiInterface.hpp"
 
 /* read/write status register : 0B addr + 0 dummy */
@@ -55,8 +56,10 @@
 /* Global Block Protection unlock */
 #define FLASH_ULBPR 0x98
 
-SPIFlash::SPIFlash(SPIInterface *spi, int8_t verbose):_spi(spi), _verbose(verbose)
+SPIFlash::SPIFlash(SPIInterface *spi, int8_t verbose):_spi(spi),
+	_verbose(verbose), _jedec_id(0), _flash_model(NULL)
 {
+	read_id();
 }
 
 int SPIFlash::bulk_erase()
@@ -281,30 +284,39 @@ void SPIFlash::read_id()
 
 	if (_verbose > 0)
 		printf("read %x\n", _jedec_id);
+	auto t = flash_list.find(_jedec_id >> 8);
+	if (t != flash_list.end()) {
+		_flash_model = &(*t).second;
+		char content[256];
+		snprintf(content, 256, "Detected: %s %s %u sectors size: %uMb",
+				_flash_model->manufacturer.c_str(), _flash_model->model.c_str(),
+				_flash_model->nr_sector, _flash_model->nr_sector * 0x80000 / 1048576);
+		printInfo(content);
+	} else {
+		/* read extented */
+		if ((_jedec_id & 0xff) != 0) {
+			has_edid = true;
+			len += (_jedec_id & 0x0ff);
+			_spi->spi_put(0x9F, NULL, rx, len);
+		}
 
-	/* read extented */
-	if ((_jedec_id & 0xff) != 0) {
-		has_edid = true;
-		len += (_jedec_id & 0x0ff);
-		_spi->spi_put(0x9F, NULL, rx, len);
-	}
+		/* must be 0x20BA1810 ... */
 
-	/* must be 0x20BA1810 ... */
-
-	printf("Detail: \n");
-	printf("Jedec ID          : %02x\n", rx[0]);
-	printf("memory type       : %02x\n", rx[1]);
-	printf("memory capacity   : %02x\n", rx[2]);
-	if (has_edid) {
-		printf("EDID + CFD length : %02x\n", rx[3]);
-		printf("EDID              : %02x%02x\n", rx[5], rx[4]);
-		printf("CFD               : ");
-		if (_verbose > 0) {
-			for (int i = 6; i < len; i++)
-				printf("%02x ", rx[i]);
-			printf("\n");
-		} else {
-			printf("\n");
+		printf("Detail: \n");
+		printf("Jedec ID          : %02x\n", rx[0]);
+		printf("memory type       : %02x\n", rx[1]);
+		printf("memory capacity   : %02x\n", rx[2]);
+		if (has_edid) {
+			printf("EDID + CFD length : %02x\n", rx[3]);
+			printf("EDID              : %02x%02x\n", rx[5], rx[4]);
+			printf("CFD               : ");
+			if (_verbose > 0) {
+				for (int i = 6; i < len; i++)
+					printf("%02x ", rx[i]);
+				printf("\n");
+			} else {
+				printf("\n");
+			}
 		}
 	}
 }
@@ -389,6 +401,45 @@ int SPIFlash::disable_protection()
 		return -1;
 	} else
 		return 0;
+}
+
+/* convert bp area (status register) to len in byte */
+uint32_t SPIFlash::bp_to_len(uint8_t bp)
+{
+	/* 0 -> no sectors protected */
+	if (bp == 0)
+		return 0;
+
+	/* reconstruct code based on each BPx bit */
+	uint8_t tmp = 0;
+	for (int i = 0; i < 4; i++)
+		if ((bp & _flash_model->bp_offset[i]))
+			tmp |= (1 << i);
+	/* bp code is 2^(bp-1) sectors */
+	uint16_t nr_sectors = (1 << (tmp-1));
+
+	return nr_sectors * 0x10000;
+}
+
+/* convert len (in byte) to bp (sector protection) */
+uint8_t SPIFlash::len_to_bp(uint32_t len)
+{
+	/* 0 -> no sector to protect */
+	if (len == 0)
+		return 0;
+
+	/* round and divide by sector size */
+	len = ((len + 0xffff) & ~0xffff) / 0x10000;
+
+	/* convert size to basic BP code */
+	uint8_t bp = 1 + static_cast<int>(ceil(log2(len)));
+	/* reconstruct code based on each BPx bit */
+	uint8_t tmp = 0;
+	for (int i = 0; i < 4; i++)
+		if (bp >> i)
+			tmp |= _flash_model->bp_offset[i];
+
+	return tmp;
 }
 
 /* microchip SST26VF032B has a dedicated register
