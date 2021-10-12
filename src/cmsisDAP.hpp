@@ -80,6 +80,13 @@ class CmsisDAP: public JtagInterface {
 		 * \return 1 if success <= 0 otherwhise
 		 */
 		int dapConnect();
+
+		/*!
+		 * \brief disconnect device
+		 * \return 1 if success <= 0 otherwhise
+		 */
+		int dapDisconnect();
+		int dapResetTarget();
 		int read_info(uint8_t info, uint8_t *rd_info, int max_len);
 		int xfer(int tx_len, uint8_t *rx_buff, int rx_len);
 		int xfer(uint8_t instruction, int tx_len,
@@ -100,6 +107,7 @@ class CmsisDAP: public JtagInterface {
 		unsigned char *_ll_buffer; /**< message buffer */
 		unsigned char *_buffer;    /**< subset of _ll_buffer */
 		int _num_tms;              /**< current tms length */
+		int _is_connect;           /**< device status ((dis)connected) */
 };
 
 #endif  // SRC_CMSISDAP_HPP_

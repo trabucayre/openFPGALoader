@@ -32,6 +32,7 @@ enum datalink_cmd {
 	DAP_HOSTSTATUS    = 0x01,
 	DAP_CONNECT       = 0x02,  // Connect to device and select mode
 	DAP_DISCONNECT    = 0x03,  // Disconnect to device
+	DAP_RESETTARGET   = 0x0A,  // reset the target
 	DAP_SWJ_CLK       = 0x11,  // Select maximum frequency
 	DAP_SWJ_SEQUENCE  = 0x12,  // Generate TMS sequence
 	DAP_JTAG_SEQUENCE = 0x14   // Generate TMS, TDI and capture TDO Sequence
@@ -89,7 +90,7 @@ enum cmsisdap_status {
 
 CmsisDAP::CmsisDAP(int vid, int pid, bool verbose):_verbose(verbose),
 		_device_idx(0),  _vid(vid), _pid(pid),
-		_serial_number(L""), _dev(NULL), _num_tms(0)
+		_serial_number(L""), _dev(NULL), _num_tms(0), _is_connect(false)
 {
 	std::vector<struct hid_device_info *> dev_found;
 	_ll_buffer = (unsigned char *)malloc(sizeof(unsigned char) * 65);
@@ -200,6 +201,8 @@ CmsisDAP::~CmsisDAP()
 	/* TODO: disconnect device
 	 * close device
 	 */
+	if (_is_connect)
+		dapDisconnect();
 	if (_ll_buffer)
 		free(_ll_buffer);
 }
@@ -209,6 +212,8 @@ CmsisDAP::~CmsisDAP()
  */
 int CmsisDAP::dapConnect()
 {
+	if (_is_connect)
+		return 1;
 	_ll_buffer[1] = DAP_CONNECT;
 	_ll_buffer[2] = DAP_CONNECT_JTAG;
 	uint8_t response[2];
@@ -217,6 +222,30 @@ int CmsisDAP::dapConnect()
 		return ret;
 	if (response[0] != DAP_CONNECT || response[1] != DAP_CONNECT_JTAG)
 		return 0;
+	_is_connect = true;
+	return 1;
+}
+
+/* send disconnect instruction (0x03)
+ */
+int CmsisDAP::dapDisconnect()
+{
+	if (!_is_connect)
+		return 1;
+	int ret = xfer(DAP_DISCONNECT, NULL, 0);
+	if (ret <= 0)
+		return ret;
+	_is_connect = false;
+	return 1;
+}
+
+/* send resetTarget instruction (0x0A)
+ */
+int CmsisDAP::dapResetTarget()
+{
+	int ret = xfer(DAP_RESETTARGET, NULL, 0);
+	if (ret <= 0)
+		return ret;
 	return 1;
 }
 
