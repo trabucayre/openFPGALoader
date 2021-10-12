@@ -232,7 +232,8 @@ int CmsisDAP::dapDisconnect()
 {
 	if (!_is_connect)
 		return 1;
-	int ret = xfer(DAP_DISCONNECT, NULL, 0);
+	_ll_buffer[1] = DAP_DISCONNECT;
+	int ret = xfer(1, NULL, 0);
 	if (ret <= 0)
 		return ret;
 	_is_connect = false;
