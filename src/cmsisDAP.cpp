@@ -182,8 +182,8 @@ CmsisDAP::CmsisDAP(int vid, int pid, bool verbose):_verbose(verbose),
        SWO Streaming Trace support:
         Info0 - Bit 6: 1 = SWO Streaming Trace is implemented (0 = not implemented).
 	*/
-	memset(_buffer, 0, 65);
-	int res = read_info(INFO_ID_HWCAP, _buffer, 64);
+	memset(_buffer, 0, 63);
+	int res = read_info(INFO_ID_HWCAP, _buffer, 63);
 	if (res < 0) {
 		hid_close(_dev);
 		hid_exit();
@@ -210,8 +210,8 @@ CmsisDAP::CmsisDAP(int vid, int pid, bool verbose):_verbose(verbose),
 
 CmsisDAP::~CmsisDAP()
 {
-	/* TODO: disconnect device
-	 * close device
+	/* disconnect and close device
+	 * and free context
 	 */
 	if (_is_connect)
 		dapDisconnect();
