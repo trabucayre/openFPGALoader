@@ -175,6 +175,15 @@ int main(int argc, char **argv)
 		}
 	}
 
+	if (args.vid != 0) {
+		printInfo("Cable VID overridden");
+		cable.config.vid = args.vid;
+	}
+	if (args.pid != 0) {
+		printInfo("Cable PID overridden");
+		cable.config.pid = args.pid;
+	}
+
 	/* FLASH direct access */
 	if (args.spi || (board && board->mode == COMM_SPI)) {
 		FtdiSpi *spi = NULL;
