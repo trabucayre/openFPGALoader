@@ -116,12 +116,16 @@ CmsisDAP::CmsisDAP(int vid, int pid, bool verbose):_verbose(verbose),
 	}
 
 	/* no devices: stop */
-	if (dev_found.empty())
+	if (dev_found.empty()) {
+		hid_exit();
 		throw std::runtime_error("No device found");
+	}
 	/* more than one device: can't continue without more information */
-	if (dev_found.size() > 1)
+	if (dev_found.size() > 1) {
+		hid_exit();
 		throw std::runtime_error(
 				"Error: more than one device. Please provides VID/PID");
+	}
 
 	printInfo("Found " + std::to_string(dev_found.size()) + " compatible device:");
 	for (size_t i = 0; i < dev_found.size(); i++) {
@@ -181,6 +185,8 @@ CmsisDAP::CmsisDAP(int vid, int pid, bool verbose):_verbose(verbose),
 	memset(_buffer, 0, 65);
 	int res = read_info(INFO_ID_HWCAP, _buffer, 64);
 	if (res < 0) {
+		hid_close(_dev);
+		hid_exit();
 		char t[256];
 		snprintf(t, sizeof(t), "Error %d for command %d\n", res, INFO_ID_HWCAP);
 		throw std::runtime_error(t);
@@ -188,12 +194,18 @@ CmsisDAP::CmsisDAP(int vid, int pid, bool verbose):_verbose(verbose),
 
 	if (verbose)
 		printf("Hardware cap %02x %02x %02x\n", _buffer[0], _buffer[1], _buffer[2]);
-	if (!(_buffer[2] & (1 << 1)))
+	if (!(_buffer[2] & (1 << 1))) {
+		hid_close(_dev);
+		hid_exit();
 		throw std::runtime_error("JTAG is not supported by the probe");
+	}
 
 	/* send connect */
-	if (dapConnect() != 1)
+	if (dapConnect() != 1) {
+		hid_close(_dev);
+		hid_exit();
 		throw std::runtime_error("DAP connection in JTAG mode failed");
+	}
 }
 
 CmsisDAP::~CmsisDAP()
@@ -203,6 +215,10 @@ CmsisDAP::~CmsisDAP()
 	 */
 	if (_is_connect)
 		dapDisconnect();
+	if (_dev)
+		hid_close(_dev);
+	hid_exit();
+
 	if (_ll_buffer)
 		free(_ll_buffer);
 }
@@ -244,7 +260,8 @@ int CmsisDAP::dapDisconnect()
  */
 int CmsisDAP::dapResetTarget()
 {
-	int ret = xfer(DAP_RESETTARGET, NULL, 0);
+	_ll_buffer[1] = DAP_RESETTARGET;
+	int ret = xfer(1, NULL, 0);
 	if (ret <= 0)
 		return ret;
 	return 1;
