@@ -30,7 +30,7 @@ jobs:
           cmake \
           libftdi1-2 \
           libftdi1-dev \
-          libhidapi-libusb0 \
+          libhidapi-hidraw0 \
           libhidapi-dev \
           libudev-dev \
           pkg-config \
@@ -85,7 +85,7 @@ jobs:
         sudo apt update -qq
         sudo apt install -y \
           libftdi1-2 \
-          libhidapi-libusb0 \
+          libhidapi-hidraw0 \
           udev
 
     - name: '📥 Download artifact: package'

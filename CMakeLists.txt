@@ -36,7 +36,11 @@ if(USE_PKGCONFIG)
 	find_package(PkgConfig REQUIRED)
 	pkg_check_modules(LIBFTDI REQUIRED libftdi1)
 	pkg_check_modules(LIBUSB REQUIRED libusb-1.0)
-	pkg_check_modules(HIDAPI hidapi-libusb)
+	pkg_check_modules(HIDAPI hidapi-hidraw)
+	# if hidraw not found try with libusb
+	if(NOT HIDAPI_FOUND)
+		pkg_check_modules(HIDAPI hidapi-libusb)
+	endif()
 
 	if(ENABLE_UDEV)
 		pkg_check_modules(LIBUDEV libudev)
