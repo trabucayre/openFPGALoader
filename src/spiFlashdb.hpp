@@ -74,6 +74,18 @@ static std::map <uint32_t, flash_t> flash_list = {
 		.bp_len = 4,
 		.bp_offset = {(1 << 2), (1 << 3), (1 << 4), (1 << 5)}}
 	},
+	{0x9d6018, {
+		.manufacturer = "ISSI",
+		.model = "IS25LP128",
+		.nr_sector = 256,
+		.sector_erase = true,
+		.subsector_erase = true,
+		.has_extended = false,
+		.tb_otp = true,
+		.tb_offset = (1 << 5),
+		.bp_len = 4,
+		.bp_offset = {(1 << 2), (1 << 3), (1 << 4), (1 << 5)}}
+	},
 	{0xef4018, {
 		.manufacturer = "Winbond",
 		.model = "W25Q128",
