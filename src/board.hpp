@@ -146,7 +146,9 @@ static std::map <std::string, target_board_t> board_list = {
 			FT232RL_DCD, FT232RL_DSR, FT232RL_RI, FT232RL_CTS, CABLE_DEFAULT),
 	JTAG_BOARD("ecpix5",          "", "ecpix5-debug", 0, 0, CABLE_DEFAULT),
 	JTAG_BOARD("xtrx",            "xc7a50tcpg236", ""            , 0, 0, CABLE_DEFAULT),
-	SPI_BOARD("xyloni_spi",       "efinix", "efinix_spi",
+	SPI_BOARD("xyloni_spi",       "efinix", "efinix_spi_ft4232",
+			DBUS4 | DBUS7, DBUS5, DBUS3, DBUS0, DBUS1, DBUS2, DBUS6, 0, CABLE_DEFAULT),
+	SPI_BOARD("trion_t120_bga576","efinix", "efinix_spi_ft2232",
 			DBUS4 | DBUS7, DBUS5, DBUS3, DBUS0, DBUS1, DBUS2, DBUS6, 0, CABLE_DEFAULT),
 	JTAG_BOARD("zedboard",        "xc7z020-clg484", "digilent_hs2", 0, 0, CABLE_DEFAULT),
 };

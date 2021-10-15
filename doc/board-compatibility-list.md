@@ -52,6 +52,7 @@ openFPGALoader -b arty -f bitstream.bit # Writing in flash (non-volatile)
 |               **tec0117** | [Trenz Gowin LittleBee (TEC0117)](https://shop.trenz-electronic.de/en/TEC0117-01-FPGA-Module-with-GOWIN-LittleBee-and-8-MByte-internal-SDRAM) | littleBee</br>GW1NR-9             | OK        | IF       |
 |                  **xtrx** | [FairWaves XTRXPro](https://www.crowdsupply.com/fairwaves/xtrx)                                                                               | Artix</br>xc7a50tcpg236           | OK        | OK       |
 |            **xyloni_spi** | [Efinix Xyloni](https://www.efinixinc.com/products-devkits-xyloni.html)                                                                       | Trion</br>T8F81                   | NA        | AS       |
+| **trion_t120_bga576_spi** | [Efinix Trion T120 BGA576 Dev Kit](https://www.efinixinc.com/products-devkits-triont120bga576.html)                                           | Trion</br>T120BGA576              | NA        | AS       |
 |                  **xmf3** | [PLDkit XMF3](https://pldkit.com/xilinx/xmf3)                                                                                                 | Xilinx</br>xc3s200ft256, xcf01s   | OK        | OK       |
 |              **zedboard** | [Avnet ZedBoard](https://www.avnet.com/wps/portal/us/products/avnet-boards/avnet-board-families/zedboard/)                                    | zynq7000</br>xc7z020clg484        | OK        | NA       |
 
