@@ -436,7 +436,7 @@ uint8_t SPIFlash::len_to_bp(uint32_t len)
 	/* reconstruct code based on each BPx bit */
 	uint8_t tmp = 0;
 	for (int i = 0; i < 4; i++)
-		if (bp >> i)
+		if (bp & (1 << i))
 			tmp |= _flash_model->bp_offset[i];
 
 	return tmp;
