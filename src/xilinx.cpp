@@ -276,7 +276,7 @@ void Xilinx::program_spi(ConfigBitstreamParser * bit, unsigned int offset)
 	SPIFlash spiFlash(this, (_verbose ? 1 : (_quiet ? -1 : 0)));
 	spiFlash.reset();
 	spiFlash.read_id();
-	spiFlash.read_status_reg();
+	spiFlash.display_status_reg(spiFlash.read_status_reg());
 	spiFlash.erase_and_prog(offset, data, length);
 
 	/* verify write if required */

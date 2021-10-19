@@ -321,18 +321,31 @@ void SPIFlash::read_id()
 	}
 }
 
+void SPIFlash::display_status_reg(uint8_t reg)
+{
+	uint8_t tb, bp;
+	if (!_flash_model) {
+		tb = (reg >> 5) & 0x01;
+		bp = (((reg >> 6) & 0x01) << 3) | ((reg >> 2) & 0x07);
+	} else {
+		tb = (reg & _flash_model->tb_offset) ? 1 : 0;
+		bp = 0;
+		for (int i = 0; i < _flash_model->bp_len; i++)
+			if (reg & _flash_model->bp_offset[i])
+				bp |= 1 << i;
+	}
+	printf("RDSR : %02x\n", reg);
+	printf("WIP  : %d\n", reg&0x01);
+	printf("WEL  : %d\n", (reg>>1)&0x01);
+	printf("BP   : %x\n", bp);
+	printf("TB   : %d\n", tb);
+	printf("SRWD : %d\n", (((reg>>7)&0x01)));
+}
+
 uint8_t SPIFlash::read_status_reg()
 {
 	uint8_t rx;
 	_spi->spi_put(FLASH_RDSR, NULL, &rx, 1);
-	if (_verbose > 0) {
-		printf("RDSR : %02x\n", rx);
-		printf("WIP  : %d\n", rx&0x01);
-		printf("WEL  : %d\n", (rx>>1)&0x01);
-		printf("BP   : %x\n", (((rx>>6)&0x01)<<3) | ((rx >> 2) & 0x07));
-		printf("TB   : %d\n", (((rx>>5)&0x01)));
-		printf("SRWD : %d\n", (((rx>>7)&0x01)));
-	}
 	return rx;
 }
 

@@ -238,7 +238,7 @@ void Gowin::program(unsigned int offset)
 			SPIFlash spiFlash(this, (_verbose ? 1 : (_quiet ? -1 : 0)));
 			spiFlash.reset();
 			spiFlash.read_id();
-			spiFlash.read_status_reg();
+			spiFlash.display_status_reg(spiFlash.read_status_reg());
 			if (spiFlash.erase_and_prog(offset, data, length / 8) != 0)
 				throw std::runtime_error("Error: write to flash failed");
 			if (_verify)

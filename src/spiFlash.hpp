@@ -70,8 +70,10 @@ class SPIFlash {
 		 */
 		bool verify(const int &base_addr, const uint8_t *data,
 				const int &len, int rd_burst = 0);
-		/* display/info */
+		/* return status register value */
 		uint8_t read_status_reg();
+		/* display/info */
+		void display_status_reg(uint8_t reg);
 		virtual void read_id();
 		uint16_t readNonVolatileCfgReg();
 		uint16_t readVolatileCfgReg();
