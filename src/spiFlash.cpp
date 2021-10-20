@@ -26,6 +26,10 @@
 /* write [en|dis]able : 0B addr + 0 dummy */
 #define FLASH_WRDIS    0x04
 #define FLASH_WREN     0x06
+/* write function register (at least ISSI) */
+#define FLASH_WRFR     0x42
+/* read function register (at least ISSI) */
+#define FLASH_RDFR     0x48
 /* Read OTP : 3 B addr + 8 clk cycle*/
 #define FLASH_ROTP     0x4B
 #define FLASH_POWER_UP 0xAB
@@ -56,8 +60,9 @@
 /* Global Block Protection unlock */
 #define FLASH_ULBPR 0x98
 
-SPIFlash::SPIFlash(SPIInterface *spi, int8_t verbose):_spi(spi),
-	_verbose(verbose), _jedec_id(0), _flash_model(NULL)
+SPIFlash::SPIFlash(SPIInterface *spi, int8_t verbose):
+	_spi(spi), _verbose(verbose), _jedec_id(0),
+	_flash_model(NULL)
 {
 	read_id();
 }
@@ -200,8 +205,6 @@ int SPIFlash::erase_and_prog(int base_addr, uint8_t *data, int len)
 	} else {
 		uint8_t status = read_status_reg();
 		if ((status & 0x1c) !=0) {
-			if (write_enable() != 0)
-				return -1;
 			if (disable_protection() != 0)
 				return -1;
 		}
@@ -404,6 +407,8 @@ int SPIFlash::write_disable()
 int SPIFlash::disable_protection()
 {
 	uint8_t data = 0x00;
+	if (write_enable() == -1)
+		return -1;
 	_spi->spi_put(FLASH_WRSR, &data, NULL, 1);
 	if (_spi->spi_wait(FLASH_RDSR, 0xff, 0, 1000) < 0)
 		return -1;
@@ -414,6 +419,111 @@ int SPIFlash::disable_protection()
 		return -1;
 	} else
 		return 0;
+}
+
+/* write protect code to status register
+ * no check for TB
+ */
+int SPIFlash::enable_protection(uint8_t protect_code)
+{
+	/* enable write (required to access WRSR) */
+	if (write_enable() == -1) {
+		printError("Error: can't enable write");
+		return -1;
+	}
+
+	/* write status register and wait until Flash idle */
+	_spi->spi_put(FLASH_WRSR, &protect_code, NULL, 1);
+	if (_spi->spi_wait(FLASH_RDSR, 0xff, protect_code, 1000) < 0) {
+		printError("Error: enable protection failed\n");
+		return -1;
+	}
+
+	/* check status register update */
+	if (read_status_reg() != protect_code) {
+		printError("disable protection failed");
+		return -1;
+	}
+	if (_verbose > 0)
+		display_status_reg(read_status_reg());
+
+	return 0;
+}
+
+int SPIFlash::enable_protection(int length)
+{
+	/* flash device is not listed: can't know BPx position, nor
+	 * TB offset, nor TB non-volatile vs OTP */
+	if (!_flash_model) {
+		printError("unknown spi flash model: can't lock sectors");
+		return -1;
+	}
+
+	/* convert number of sectors to bp[3:0] mask */
+	uint8_t bp = len_to_bp(length);
+
+	/* TB bit is OTP: this modification can't be revert!
+	 * check if tb is already set and if not warn
+	 * current (temporary) policy: do nothing
+	 */
+	if (_flash_model->tb_otp) {
+		uint8_t status;
+		/* red TB: not aloways in status register */
+		switch (_flash_model->tb_register) {
+		case STATR:  // status register
+			status = read_status_reg();
+			break;
+		case FUNCR:  // function register
+			_spi->spi_put(FLASH_RDFR, NULL, &status, 1);
+			break;
+		default:  // unknown
+			printError("Unknown Top/Bottom register");
+			return -1;
+		}
+
+		/* check if TB is set */
+		if (!(status & _flash_model->tb_otp)) {
+			printError("TOP/BOTTOM bit is OTP: can't write this bit");
+			return -1;
+		}
+	}
+
+	/* if TB is located in status register -> set to 1 */
+	if (_flash_model->tb_register == STATR)
+		bp |= _flash_model->tb_offset;
+
+	/* update status register */
+	int ret = enable_protection(bp);
+
+	/* tb is in different register */
+	if (_flash_model->tb_register != STATR) {
+		if (ret == -1)  // check if enable_protection has failed
+			return ret;
+		/* update register */
+		uint8_t reg_wr, reg_rd, val;
+		if (_flash_model->tb_register == FUNCR) {
+			val = _flash_model->tb_offset;
+			reg_wr = FLASH_WRFR;
+			reg_rd = FLASH_RDFR;
+		} else {
+			printError("Unknown TOP/BOTTOM register");
+			return -1;
+		}
+
+		/* write status register and wait until Flash idle */
+		_spi->spi_put(reg_wr, &val, NULL, 1);
+		if (_spi->spi_wait(FLASH_RDSR, 0x03, 0, 1000) < 0) {
+			printError("Error: enable protection failed\n");
+			return -1;
+		}
+		_spi->spi_put(reg_rd, &val, NULL, 1);
+		if (reg_rd != val) {
+			printError("failed to update TB bit");
+			return -1;
+		}
+	}
+
+	return ret;
 }
 
 /* convert bp area (status register) to len in byte */

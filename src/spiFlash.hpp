@@ -27,6 +27,18 @@ class SPIFlash {
 		 */
 		int disable_protection();
 		/*!
+		 * \brief enable protection for selected blocks
+		 * \param[in] protect_code: bp + tb combinaison
+		 * \return -1 if write enable or enabling failed
+		 */
+		int enable_protection(uint8_t protect_code = 0x1c);
+		/*!
+		 * \brief enable protection for specified area
+		 * \param[in] length: TODO
+		 * \return -1 if write enable or enabling failed
+		 */
+		int enable_protection(int len);
+		/*!
 		 * \brief unlock all sectors: specific to
 		 * Microchip SST26VF032B / SST26VF032BA
 		 * \return false if unlock fail
