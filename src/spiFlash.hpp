@@ -47,9 +47,17 @@ class SPIFlash {
 		/* erase */
 		int bulk_erase();
 		/*!
-		 * \brief erase one sector (64Kb)
+		 * \brief erase one sector (4Kb)
 		 */
 		int sector_erase(int addr);
+		/*!
+		 * \brief erase one 32Kb block
+		 */
+		int block32_erase(int addr);
+		/*!
+		 * \brief erase one 64Kb block
+		 */
+		int block64_erase(int addr);
 		/*!
 		 * \brief erase n sectors starting at base_addr
 		 */

@@ -26,12 +26,16 @@
 /* write [en|dis]able : 0B addr + 0 dummy */
 #define FLASH_WRDIS    0x04
 #define FLASH_WREN     0x06
+/* sector (4Kb) erase */
+#define FLASH_SE       0x20
 /* write function register (at least ISSI) */
 #define FLASH_WRFR     0x42
 /* read function register (at least ISSI) */
 #define FLASH_RDFR     0x48
 /* Read OTP : 3 B addr + 8 clk cycle*/
 #define FLASH_ROTP     0x4B
+/* block (32Kb) erase */
+#define FLASH_BE32     0x52
 #define FLASH_POWER_UP 0xAB
 #define FLASH_POWER_DOWN 0xB9
 /* read/write non volatile register: 0B addr + 0 dummy */
@@ -41,9 +45,9 @@
 #define FLASH_RDVCR    0x85
 #define FLASH_WRVCR    0x81
 /* bulk erase */
-#define FLASH_BE       0xC7
-/* sector (64kb) erase */
-#define FLASH_SE       0xD8
+#define FLASH_CE       0xC7
+/* block (64kb) erase */
+#define FLASH_BE64     0xD8
 /* read/write lock register : 3B addr + 0 dummy */
 #define FLASH_WRLR     0xE5
 #define FLASH_RDLR     0xE8
@@ -71,10 +75,11 @@ int SPIFlash::bulk_erase()
 {
 	if (write_enable() == -1)
 		return -1;
-	_spi->spi_put(FLASH_BE, NULL, NULL, 0);
+	_spi->spi_put(FLASH_CE, NULL, NULL, 0);
 	return _spi->spi_wait(FLASH_RDSR, FLASH_RDSR_WIP, 0x00, 100000, true);
 }
 
+/* sector -> subsector for micron */
 int SPIFlash::sector_erase(int addr)
 {
 	uint8_t tx[4];
@@ -86,20 +91,54 @@ int SPIFlash::sector_erase(int addr)
 	return 0;
 }
 
+int SPIFlash::block32_erase(int addr)
+{
+	uint8_t tx[4] = {
+		static_cast<uint8_t>(FLASH_BE32         ),
+		static_cast<uint8_t>(0xff & (addr >> 16)),
+		static_cast<uint8_t>(0xff & (addr >>  8)),
+		static_cast<uint8_t>(0xff & (addr      ))};
+	_spi->spi_put(tx, NULL, 4);
+	return 0;
+}
+
+/* block64 -> sector for micron */
+int SPIFlash::block64_erase(int addr)
+{
+	uint8_t tx[4] = {
+		static_cast<uint8_t>(FLASH_BE64         ),
+		static_cast<uint8_t>(0xff & (addr >> 16)),
+		static_cast<uint8_t>(0xff & (addr >>  8)),
+		static_cast<uint8_t>(0xff & (addr      ))};
+	_spi->spi_put(tx, NULL, 4);
+	return 0;
+}
+
 int SPIFlash::sectors_erase(int base_addr, int size)
 {
 	int ret = 0;
 	int start_addr = base_addr;
-	int end_addr = (base_addr + size + 0xffff) & ~0xffff;
+	/* compute end_addr to be multiple of 4Kb */
+	int end_addr = (base_addr + size + 0xfff) & ~0xfff;
 	ProgressBar progress("Erasing", end_addr, 50, _verbose < 0);
+	/* start with block size (64Kb) */
+	int step = 0x10000;
 
-	for (int addr = start_addr; addr < end_addr; addr += 0x10000) {
+	for (int addr = start_addr; addr < end_addr; addr += step) {
 		if (write_enable() == -1) {
 			ret = -1;
 			break;
 		}
-		if (sector_erase(addr) == -1) {
-			ret = -1;
+
+		/* if block erase + addr end out of end_addr -> use sector_erase */
+		if (addr + 0x10000 > end_addr) {
+			step = 0x1000;
+			ret = sector_erase(addr);
+		} else {
+			ret = block64_erase(addr);
+		}
+
+		if (ret == -1) {
 			break;
 		}
 		if (_spi->spi_wait(FLASH_RDSR, FLASH_RDSR_WIP, 0x00, 100000, false) == -1) {
