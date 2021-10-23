@@ -26,8 +26,16 @@
 /* write [en|dis]able : 0B addr + 0 dummy */
 #define FLASH_WRDIS    0x04
 #define FLASH_WREN     0x06
+/* sector (4Kb) erase */
+#define FLASH_SE       0x20
+/* write function register (at least ISSI) */
+#define FLASH_WRFR     0x42
+/* read function register (at least ISSI) */
+#define FLASH_RDFR     0x48
 /* Read OTP : 3 B addr + 8 clk cycle*/
 #define FLASH_ROTP     0x4B
+/* block (32Kb) erase */
+#define FLASH_BE32     0x52
 #define FLASH_POWER_UP 0xAB
 #define FLASH_POWER_DOWN 0xB9
 /* read/write non volatile register: 0B addr + 0 dummy */
@@ -37,9 +45,9 @@
 #define FLASH_RDVCR    0x85
 #define FLASH_WRVCR    0x81
 /* bulk erase */
-#define FLASH_BE       0xC7
-/* sector (64kb) erase */
-#define FLASH_SE       0xD8
+#define FLASH_CE       0xC7
+/* block (64kb) erase */
+#define FLASH_BE64     0xD8
 /* read/write lock register : 3B addr + 0 dummy */
 #define FLASH_WRLR     0xE5
 #define FLASH_RDLR     0xE8
@@ -56,8 +64,9 @@
 /* Global Block Protection unlock */
 #define FLASH_ULBPR 0x98
 
-SPIFlash::SPIFlash(SPIInterface *spi, int8_t verbose):_spi(spi),
-	_verbose(verbose), _jedec_id(0), _flash_model(NULL)
+SPIFlash::SPIFlash(SPIInterface *spi, int8_t verbose):
+	_spi(spi), _verbose(verbose), _jedec_id(0),
+	_flash_model(NULL)
 {
 	read_id();
 }
@@ -66,10 +75,11 @@ int SPIFlash::bulk_erase()
 {
 	if (write_enable() == -1)
 		return -1;
-	_spi->spi_put(FLASH_BE, NULL, NULL, 0);
+	_spi->spi_put(FLASH_CE, NULL, NULL, 0);
 	return _spi->spi_wait(FLASH_RDSR, FLASH_RDSR_WIP, 0x00, 100000, true);
 }
 
+/* sector -> subsector for micron */
 int SPIFlash::sector_erase(int addr)
 {
 	uint8_t tx[4];
@@ -81,20 +91,54 @@ int SPIFlash::sector_erase(int addr)
 	return 0;
 }
 
+int SPIFlash::block32_erase(int addr)
+{
+	uint8_t tx[4] = {
+		static_cast<uint8_t>(FLASH_BE32         ),
+		static_cast<uint8_t>(0xff & (addr >> 16)),
+		static_cast<uint8_t>(0xff & (addr >>  8)),
+		static_cast<uint8_t>(0xff & (addr      ))};
+	_spi->spi_put(tx, NULL, 4);
+	return 0;
+}
+
+/* block64 -> sector for micron */
+int SPIFlash::block64_erase(int addr)
+{
+	uint8_t tx[4] = {
+		static_cast<uint8_t>(FLASH_BE64         ),
+		static_cast<uint8_t>(0xff & (addr >> 16)),
+		static_cast<uint8_t>(0xff & (addr >>  8)),
+		static_cast<uint8_t>(0xff & (addr      ))};
+	_spi->spi_put(tx, NULL, 4);
+	return 0;
+}
+
 int SPIFlash::sectors_erase(int base_addr, int size)
 {
 	int ret = 0;
 	int start_addr = base_addr;
-	int end_addr = (base_addr + size + 0xffff) & ~0xffff;
+	/* compute end_addr to be multiple of 4Kb */
+	int end_addr = (base_addr + size + 0xfff) & ~0xfff;
 	ProgressBar progress("Erasing", end_addr, 50, _verbose < 0);
+	/* start with block size (64Kb) */
+	int step = 0x10000;
 
-	for (int addr = start_addr; addr < end_addr; addr += 0x10000) {
+	for (int addr = start_addr; addr < end_addr; addr += step) {
 		if (write_enable() == -1) {
 			ret = -1;
 			break;
 		}
-		if (sector_erase(addr) == -1) {
-			ret = -1;
+
+		/* if block erase + addr end out of end_addr -> use sector_erase */
+		if (addr + 0x10000 > end_addr) {
+			step = 0x1000;
+			ret = sector_erase(addr);
+		} else {
+			ret = block64_erase(addr);
+		}
+
+		if (ret == -1) {
 			break;
 		}
 		if (_spi->spi_wait(FLASH_RDSR, FLASH_RDSR_WIP, 0x00, 100000, false) == -1) {
@@ -200,8 +244,6 @@ int SPIFlash::erase_and_prog(int base_addr, uint8_t *data, int len)
 	} else {
 		uint8_t status = read_status_reg();
 		if ((status & 0x1c) !=0) {
-			if (write_enable() != 0)
-				return -1;
 			if (disable_protection() != 0)
 				return -1;
 		}
@@ -321,18 +363,31 @@ void SPIFlash::read_id()
 	}
 }
 
+void SPIFlash::display_status_reg(uint8_t reg)
+{
+	uint8_t tb, bp;
+	if (!_flash_model) {
+		tb = (reg >> 5) & 0x01;
+		bp = (((reg >> 6) & 0x01) << 3) | ((reg >> 2) & 0x07);
+	} else {
+		tb = (reg & _flash_model->tb_offset) ? 1 : 0;
+		bp = 0;
+		for (int i = 0; i < _flash_model->bp_len; i++)
+			if (reg & _flash_model->bp_offset[i])
+				bp |= 1 << i;
+	}
+	printf("RDSR : %02x\n", reg);
+	printf("WIP  : %d\n", reg&0x01);
+	printf("WEL  : %d\n", (reg>>1)&0x01);
+	printf("BP   : %x\n", bp);
+	printf("TB   : %d\n", tb);
+	printf("SRWD : %d\n", (((reg>>7)&0x01)));
+}
+
 uint8_t SPIFlash::read_status_reg()
 {
 	uint8_t rx;
 	_spi->spi_put(FLASH_RDSR, NULL, &rx, 1);
-	if (_verbose > 0) {
-		printf("RDSR : %02x\n", rx);
-		printf("WIP  : %d\n", rx&0x01);
-		printf("WEL  : %d\n", (rx>>1)&0x01);
-		printf("BP   : %x\n", (((rx>>6)&0x01)<<3) | ((rx >> 2) & 0x07));
-		printf("TB   : %d\n", (((rx>>5)&0x01)));
-		printf("SRWD : %d\n", (((rx>>7)&0x01)));
-	}
 	return rx;
 }
 
@@ -391,6 +446,8 @@ int SPIFlash::write_disable()
 int SPIFlash::disable_protection()
 {
 	uint8_t data = 0x00;
+	if (write_enable() == -1)
+		return -1;
 	_spi->spi_put(FLASH_WRSR, &data, NULL, 1);
 	if (_spi->spi_wait(FLASH_RDSR, 0xff, 0, 1000) < 0)
 		return -1;
@@ -401,6 +458,111 @@ int SPIFlash::disable_protection()
 		return -1;
 	} else
 		return 0;
+}
+
+/* write protect code to status register
+ * no check for TB
+ */
+int SPIFlash::enable_protection(uint8_t protect_code)
+{
+	/* enable write (required to access WRSR) */
+	if (write_enable() == -1) {
+		printError("Error: can't enable write");
+		return -1;
+	}
+
+	/* write status register and wait until Flash idle */
+	_spi->spi_put(FLASH_WRSR, &protect_code, NULL, 1);
+	if (_spi->spi_wait(FLASH_RDSR, 0xff, protect_code, 1000) < 0) {
+		printError("Error: enable protection failed\n");
+		return -1;
+	}
+
+	/* check status register update */
+	if (read_status_reg() != protect_code) {
+		printError("disable protection failed");
+		return -1;
+	}
+	if (_verbose > 0)
+		display_status_reg(read_status_reg());
+
+	return 0;
+}
+
+int SPIFlash::enable_protection(int length)
+{
+	/* flash device is not listed: can't know BPx position, nor
+	 * TB offset, nor TB non-volatile vs OTP */
+	if (!_flash_model) {
+		printError("unknown spi flash model: can't lock sectors");
+		return -1;
+	}
+
+	/* convert number of sectors to bp[3:0] mask */
+	uint8_t bp = len_to_bp(length);
+
+	/* TB bit is OTP: this modification can't be revert!
+	 * check if tb is already set and if not warn
+	 * current (temporary) policy: do nothing
+	 */
+	if (_flash_model->tb_otp) {
+		uint8_t status;
+		/* red TB: not aloways in status register */
+		switch (_flash_model->tb_register) {
+		case STATR:  // status register
+			status = read_status_reg();
+			break;
+		case FUNCR:  // function register
+			_spi->spi_put(FLASH_RDFR, NULL, &status, 1);
+			break;
+		default:  // unknown
+			printError("Unknown Top/Bottom register");
+			return -1;
+		}
+
+		/* check if TB is set */
+		if (!(status & _flash_model->tb_otp)) {
+			printError("TOP/BOTTOM bit is OTP: can't write this bit");
+			return -1;
+		}
+	}
+
+	/* if TB is located in status register -> set to 1 */
+	if (_flash_model->tb_register == STATR)
+		bp |= _flash_model->tb_offset;
+
+	/* update status register */
+	int ret = enable_protection(bp);
+
+	/* tb is in different register */
+	if (_flash_model->tb_register != STATR) {
+		if (ret == -1)  // check if enable_protection has failed
+			return ret;
+		/* update register */
+		uint8_t reg_wr, reg_rd, val;
+		if (_flash_model->tb_register == FUNCR) {
+			val = _flash_model->tb_offset;
+			reg_wr = FLASH_WRFR;
+			reg_rd = FLASH_RDFR;
+		} else {
+			printError("Unknown TOP/BOTTOM register");
+			return -1;
+		}
+
+		/* write status register and wait until Flash idle */
+		_spi->spi_put(reg_wr, &val, NULL, 1);
+		if (_spi->spi_wait(FLASH_RDSR, 0x03, 0, 1000) < 0) {
+			printError("Error: enable protection failed\n");
+			return -1;
+		}
+		_spi->spi_put(reg_rd, &val, NULL, 1);
+		if (reg_rd != val) {
+			printError("failed to update TB bit");
+			return -1;
+		}
+	}
+
+	return ret;
 }
 
 /* convert bp area (status register) to len in byte */
@@ -436,7 +598,7 @@ uint8_t SPIFlash::len_to_bp(uint32_t len)
 	/* reconstruct code based on each BPx bit */
 	uint8_t tmp = 0;
 	for (int i = 0; i < 4; i++)
-		if (bp >> i)
+		if (bp & (1 << i))
 			tmp |= _flash_model->bp_offset[i];
 
 	return tmp;

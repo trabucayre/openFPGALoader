@@ -444,7 +444,7 @@ bool Lattice::program_extFlash(unsigned int offset)
 	SPIFlash flash(this, _verbose);
 	flash.reset();
 	flash.read_id();
-	flash.read_status_reg();
+	flash.display_status_reg(flash.read_status_reg());
 	flash.erase_and_prog(offset, data, length);
 
 	int ret = true;

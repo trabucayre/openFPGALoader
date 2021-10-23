@@ -218,7 +218,7 @@ void Altera::program(unsigned int offset)
 		try {
 			epcq.reset();
 			epcq.read_id();
-			epcq.read_status_reg();
+			epcq.display_status_reg(epcq.read_status_reg());
 			epcq.erase_and_prog(offset, data, length);
 		} catch (std::exception &e) {
 			printError(e.what());

@@ -11,6 +11,11 @@
 #include <map>
 #include <string>
 
+typedef enum {
+	STATR = 0, /* status register */
+	FUNCR = 1  /* function register */
+} tb_loc_t;
+
 typedef struct {
 	std::string manufacturer; /**< manufacturer name */
 	std::string model;        /**< chip name */
@@ -21,6 +26,7 @@ typedef struct {
 	bool has_extended;
 	bool tb_otp;              /**< TOP/BOTTOM One Time Programming */
 	uint8_t tb_offset;        /**< TOP/BOTTOM bit offset */
+	tb_loc_t tb_register;     /**< TOP/BOTTOM location (register) */
 	uint8_t bp_len;           /**< BPx length */
 	uint8_t bp_offset[4];     /**< BP[0:3] bit offset */
 } flash_t;
@@ -35,6 +41,7 @@ static std::map <uint32_t, flash_t> flash_list = {
 		.has_extended = true,
 		.tb_otp = false,
 		.tb_offset = (1 << 5),
+		.tb_register = STATR,
 		.bp_len = 4,
 		.bp_offset = {(1 << 2), (1 << 3), (1 << 4), (1 << 6)}}
 	},
@@ -47,6 +54,7 @@ static std::map <uint32_t, flash_t> flash_list = {
 		.has_extended = true,
 		.tb_otp = false,
 		.tb_offset = (1 << 5),
+		.tb_register = STATR,
 		.bp_len = 4,
 		.bp_offset = {(1 << 2), (1 << 3), (1 << 4), (1 << 6)}}
 	},
@@ -59,6 +67,7 @@ static std::map <uint32_t, flash_t> flash_list = {
 		.has_extended = false,
 		.tb_otp = true,
 		.tb_offset = (1 << 5),
+		.tb_register = FUNCR,
 		.bp_len = 4,
 		.bp_offset = {(1 << 2), (1 << 3), (1 << 4), (1 << 5)}}
 	},
@@ -71,6 +80,7 @@ static std::map <uint32_t, flash_t> flash_list = {
 		.has_extended = false,
 		.tb_otp = true,
 		.tb_offset = (1 << 5),
+		.tb_register = FUNCR,
 		.bp_len = 4,
 		.bp_offset = {(1 << 2), (1 << 3), (1 << 4), (1 << 5)}}
 	},
@@ -83,6 +93,7 @@ static std::map <uint32_t, flash_t> flash_list = {
 		.has_extended = false,
 		.tb_otp = true,
 		.tb_offset = (1 << 5),
+		.tb_register = FUNCR,
 		.bp_len = 4,
 		.bp_offset = {(1 << 2), (1 << 3), (1 << 4), (1 << 5)}}
 	},
@@ -95,6 +106,7 @@ static std::map <uint32_t, flash_t> flash_list = {
 		.has_extended = false,
 		.tb_otp = false,
 		.tb_offset = (1 << 5),
+		.tb_register = STATR,
 		.bp_len = 3,
 		.bp_offset = {(1 << 2), (1 << 3), (1 << 4), 0}}
 	},

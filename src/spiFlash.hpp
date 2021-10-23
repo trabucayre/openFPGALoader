@@ -27,6 +27,18 @@ class SPIFlash {
 		 */
 		int disable_protection();
 		/*!
+		 * \brief enable protection for selected blocks
+		 * \param[in] protect_code: bp + tb combinaison
+		 * \return -1 if write enable or enabling failed
+		 */
+		int enable_protection(uint8_t protect_code = 0x1c);
+		/*!
+		 * \brief enable protection for specified area
+		 * \param[in] length: TODO
+		 * \return -1 if write enable or enabling failed
+		 */
+		int enable_protection(int len);
+		/*!
 		 * \brief unlock all sectors: specific to
 		 * Microchip SST26VF032B / SST26VF032BA
 		 * \return false if unlock fail
@@ -35,9 +47,17 @@ class SPIFlash {
 		/* erase */
 		int bulk_erase();
 		/*!
-		 * \brief erase one sector (64Kb)
+		 * \brief erase one sector (4Kb)
 		 */
 		int sector_erase(int addr);
+		/*!
+		 * \brief erase one 32Kb block
+		 */
+		int block32_erase(int addr);
+		/*!
+		 * \brief erase one 64Kb block
+		 */
+		int block64_erase(int addr);
 		/*!
 		 * \brief erase n sectors starting at base_addr
 		 */
@@ -70,8 +90,10 @@ class SPIFlash {
 		 */
 		bool verify(const int &base_addr, const uint8_t *data,
 				const int &len, int rd_burst = 0);
-		/* display/info */
+		/* return status register value */
 		uint8_t read_status_reg();
+		/* display/info */
+		void display_status_reg(uint8_t reg);
 		virtual void read_id();
 		uint16_t readNonVolatileCfgReg();
 		uint16_t readVolatileCfgReg();
