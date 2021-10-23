@@ -60,6 +60,11 @@ static std::map <int, fpga_model> fpga_list = {
 	{0x02d020dd, {"altera", "cyclone V Soc", "5CSEBA6", 10}},
 	{0x02d010dd, {"altera", "cyclone V Soc", "5CSEMA4", 10}},
 
+	{0x00000001, {"efinix", "Trion", "T4/T8",            4}},
+	{0x00210a79, {"efinix", "Trion", "T8QFP144/T13/T20", 4}},
+	{0x00220a79, {"efinix", "Trion", "T55/T85/T120",     4}},
+	{0x00240a79, {"efinix", "Trion", "T20BGA324/T35",    4}},
+
 	{0x010F0043, {"lattice", "CrosslinkNX", "LIFCL-17", 8}},
 	{0x010F1043, {"lattice", "CrosslinkNX", "LIFCL-40", 8}},
 

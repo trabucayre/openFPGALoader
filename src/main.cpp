@@ -198,7 +198,8 @@ int main(int argc, char **argv)
 
 		if (board->manufacturer == "efinix") {
 			Efinix target(spi, args.bit_file, args.file_type,
-				board->reset_pin, board->done_pin, args.verify, args.verbose);
+				board->reset_pin, board->done_pin, board->oe_pin,
+				args.verify, args.verbose);
 			if (args.prg_type == Device::RD_FLASH) {
 				if (args.file_size == 0) {
 					printError("Error: 0 size for dump");
@@ -427,6 +428,9 @@ int main(int argc, char **argv)
 		} else if (fab == "anlogic") {
 			fpga = new Anlogic(jtag, args.bit_file, args.file_type,
 				args.prg_type, args.verify, args.verbose);
+		} else if (fab == "efinix") {
+			fpga = new Efinix(jtag, args.bit_file, args.file_type,
+				/*DBUS4 | DBUS7, DBUS5*/args.board, args.verify, args.verbose);
 		} else if (fab == "Gowin") {
 			fpga = new Gowin(jtag, args.bit_file, args.file_type,
 				args.prg_type, args.external_flash, args.verify, args.verbose);
