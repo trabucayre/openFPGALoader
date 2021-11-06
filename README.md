@@ -33,6 +33,14 @@ You can also specify a JTAG cable model (complete list [here](doc/cable-compatib
 openFPGALoader -c cmsisdap fpga_bitstream.bit
 ```
 
+For detailed instructions, by vendor devices, see:
+- [Anlogic](doc/anlogic.md)
+- [Efinix](doc/efinix.md)
+- [Gowin](doc/gowin.md)
+- [Intel/Altera](doc/intel.md)
+- [Lattice](doc/lattice.md)
+- [Xilinx](doc/xilinx.md)
+
 ## Usage
 
 ```
