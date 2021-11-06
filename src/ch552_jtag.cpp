@@ -31,8 +31,7 @@ using namespace std;
 
 CH552_jtag::CH552_jtag(const FTDIpp_MPSSE::mpsse_bit_config &cable,
 			string dev, const string &serial, uint32_t clkHZ, bool verbose):
-			FTDIpp_MPSSE(cable, dev, serial, clkHZ, verbose), _ch552WA(false),
-			_write_mode(0), _read_mode(0), _to_read(0)
+			FTDIpp_MPSSE(cable, dev, serial, clkHZ, verbose), _to_read(0)
 {
 	init_internal(cable);
 }
@@ -47,8 +46,8 @@ CH552_jtag::~CH552_jtag()
 	static unsigned char tbuf[16] = { SET_BITS_LOW, 0xff, 0x00,
 		SET_BITS_HIGH, 0xff, 0x00,
 		LOOPBACK_START,
-		static_cast<unsigned char>(MPSSE_DO_READ | _read_mode |
-		MPSSE_DO_WRITE | _write_mode | MPSSE_LSB),
+		static_cast<unsigned char>(MPSSE_DO_READ |
+		MPSSE_DO_WRITE | MPSSE_WRITE_NEG | MPSSE_LSB),
 		0x04, 0x00,
 		0xaa, 0x55, 0x00, 0xff, 0xaa,
 		LOOPBACK_END
@@ -64,50 +63,28 @@ void CH552_jtag::init_internal(const FTDIpp_MPSSE::mpsse_bit_config &cable)
 {
 	display("iProduct : %s\n", _iproduct);
 
-	if (!strncmp((const char *)_iproduct, "Sipeed-Debug", 12)) {
-		_ch552WA = true;
-	}
-
 	display("%x\n", cable.bit_low_val);
 	display("%x\n", cable.bit_low_dir);
 	display("%x\n", cable.bit_high_val);
 	display("%x\n", cable.bit_high_dir);
 
 	init(5, 0xfb, BITMODE_MPSSE);
-	config_edge();
 	ftdi_set_event_char(_ftdi, 0, 0);
 	ftdi_set_error_char(_ftdi, 0, 0);
 	ftdi_set_latency_timer(_ftdi, 5);
+#if (FTDI_VERSION < 105)
+	ftdi_usb_purge_rx_buffer(_ftdi);
+	ftdi_usb_purge_tx_buffer(_ftdi);
+#else
 	ftdi_tciflush(_ftdi);
 	ftdi_tcoflush(_ftdi);
-	printInfo("fin");
+#endif
 }
 
 int CH552_jtag::setClkFreq(uint32_t clkHZ) {
 
 	int ret = FTDIpp_MPSSE::setClkFreq(clkHZ);
-	config_edge();
 	return ret;
-}
-
-void CH552_jtag::config_edge()
-{
-	/* at high (>15MHz) with digilent cable (arty)
-	 * opposite edges must be used.
-	 * Not required with classic FT2232
-	 */
-	if (!strncmp((const char *)_iproduct, "Digilent USB Device", 19)) {
-		if (FTDIpp_MPSSE::getClkFreq() < 15000000) {
-			_write_mode = MPSSE_WRITE_NEG;
-			_read_mode = 0;
-		} else {
-			_write_mode = 0;
-			_read_mode = MPSSE_READ_NEG;
-		}
-	} else {
-		_write_mode = MPSSE_WRITE_NEG;
-		_read_mode = 0;
-	}
 }
 
 int CH552_jtag::writeTMS(uint8_t *tms, uint32_t len, bool flush_buffer)
@@ -125,8 +102,8 @@ int CH552_jtag::writeTMS(uint8_t *tms, uint32_t len, bool flush_buffer)
 	flush_buffer = true;
 
 	uint8_t buf[3]= {static_cast<unsigned char>(MPSSE_WRITE_TMS | MPSSE_LSB |
-						MPSSE_BITMODE | _write_mode |
-						MPSSE_DO_READ | _read_mode),
+						MPSSE_BITMODE | MPSSE_WRITE_NEG|
+						MPSSE_DO_READ),
 						0, 0};
 	while (xfer > 0) {
 		int bit_to_send = (xfer > 6) ? 6 : xfer;
@@ -211,12 +188,12 @@ int CH552_jtag::writeTDI(uint8_t *tdi, uint8_t *tdo, uint32_t len, bool last)
 	unsigned char *rx_ptr = (unsigned char *)tdo;
 	unsigned char *tx_ptr = (unsigned char *)tdi;
 	unsigned char tx_buf[3] = {(unsigned char)(MPSSE_LSB |
-						((tdi) ? (MPSSE_DO_WRITE | _write_mode) : 0) |
-						((rd_mode) ? (MPSSE_DO_READ | _read_mode) : 0)),
+						((tdi) ? (MPSSE_DO_WRITE | MPSSE_WRITE_NEG) : 0) |
+						((rd_mode) ? (MPSSE_DO_READ) : 0)),
 						static_cast<unsigned char>((xfer - 1) & 0xff),       // low
 						static_cast<unsigned char>((((xfer - 1) >> 8) & 0xff))}; // high
 	unsigned char def_cmd = tx_buf[0];
-	unsigned char rd_cmd = def_cmd | (MPSSE_DO_READ | _read_mode);
+	unsigned char rd_cmd = def_cmd | (MPSSE_DO_READ);
 	/* read (and write) 1Byte */
 	uint8_t oneshot_buf[3] = {rd_cmd, 0, 0};
 
@@ -347,8 +324,8 @@ int CH552_jtag::writeTDI(uint8_t *tdi, uint8_t *tdo, uint32_t len, bool last)
 
 		display("%s move to EXIT1_xx and send last bit %x\n", __func__, (last_bit?0x81:0x01));
 		/* write the last bit in conjunction with TMS */
-		tx_buf[0] = MPSSE_WRITE_TMS | MPSSE_LSB | MPSSE_BITMODE | _write_mode |
-					(MPSSE_DO_READ | _read_mode);
+		tx_buf[0] = MPSSE_WRITE_TMS | MPSSE_LSB | MPSSE_BITMODE | MPSSE_WRITE_NEG |
+					(MPSSE_DO_READ);
 		tx_buf[1] = 0x0;  // send 1bit
 		tx_buf[2] = ((last_bit) ? 0x81 : 0x01);  // we know in TMS tdi is bit 7
 							// and to move to EXIT_XR TMS = 1

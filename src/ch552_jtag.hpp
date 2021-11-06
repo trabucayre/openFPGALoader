@@ -49,15 +49,6 @@ class CH552_jtag : public JtagInterface, private FTDIpp_MPSSE {
 
  private:
 	void init_internal(const FTDIpp_MPSSE::mpsse_bit_config &cable);
-	/*!
-	 * \brief configure read and write edge (pos or neg), with freq < 15MHz
-	 *        neg is used for write and pos to sample. with freq >= 15MHz
-	 *        pos is used for write and neg to sample
-	 */
-	void config_edge();
-	bool _ch552WA; /* avoid errors with SiPeed tangNano */
-	uint8_t _write_mode; /**< write edge configuration */
-	uint8_t _read_mode; /**< read edge configuration */
 	uint32_t _to_read; /*!< amount of byte to read */
 };
 #endif  // SRC_CH552_JTAG_HPP_
