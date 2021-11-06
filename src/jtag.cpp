@@ -13,6 +13,7 @@
 #include <string>
 
 #include "anlogicCable.hpp"
+#include "ch552_jtag.hpp"
 #include "display.hpp"
 #include "jtag.hpp"
 #include "ftdipp_mpsse.hpp"
@@ -90,6 +91,9 @@ void Jtag::init_internal(cable_t &cable, const string &dev, const string &serial
 		break;
 	case MODE_FTDI_SERIAL:
 		_jtag = new FtdiJtagMPSSE(cable.config, dev, serial, clkHZ, _verbose);
+		break;
+	case MODE_CH552_JTAG:
+		_jtag = new CH552_jtag(cable.config, dev, serial, clkHZ, _verbose);
 		break;
 	case MODE_DIRTYJTAG:
 		_jtag = new DirtyJtag(clkHZ, _verbose);

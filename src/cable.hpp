@@ -16,12 +16,13 @@
  */
 enum communication_type {
 	MODE_ANLOGICCABLE = 0, /*! JTAG probe from Anlogic */
-	MODE_FTDI_BITBANG = 1, /*! used with ft232RL/ft231x */
-	MODE_FTDI_SERIAL  = 2, /*! ft2232, ft232H */
-	MODE_DIRTYJTAG    = 3, /*! JTAG probe firmware for STM32F1 */
-	MODE_USBBLASTER   = 4, /*! JTAG probe firmware for USBBLASTER */
-	MODE_CMSISDAP     = 5, /*! CMSIS-DAP JTAG probe */
-	MODE_DFU          = 6, /*! DFU based probe */
+	MODE_CH552_JTAG,       /*! ch552_jtag firmware */
+	MODE_FTDI_BITBANG,     /*! used with ft232RL/ft231x */
+	MODE_FTDI_SERIAL,      /*! ft2232, ft232H */
+	MODE_DIRTYJTAG,        /*! JTAG probe firmware for STM32F1 */
+	MODE_USBBLASTER,       /*! JTAG probe firmware for USBBLASTER */
+	MODE_CMSISDAP,         /*! CMSIS-DAP JTAG probe */
+	MODE_DFU,              /*! DFU based probe */
 };
 
 typedef struct {
@@ -35,6 +36,7 @@ static std::map <std::string, cable_t> cable_list = {
 	{"anlogicCable", 		{MODE_ANLOGICCABLE, {}}},
 	{"bus_blaster",  		{MODE_FTDI_SERIAL,  {0x0403, 0x6010, INTERFACE_A, 0x08, 0x1B, 0x08, 0x0B}}},
 	{"bus_blaster_b",		{MODE_FTDI_SERIAL,  {0x0403, 0x6010, INTERFACE_B, 0x08, 0x0B, 0x08, 0x0B}}},
+	{"ch552_jtag",   		{MODE_FTDI_SERIAL,  {0x0403, 0x6010, INTERFACE_A, 0x08, 0x0B, 0x08, 0x0B}}},
 	{"cmsisdap",     		{MODE_CMSISDAP,     {0x0d28, 0x0204, 0,           0,    0,    0,    0   }}},
 	{"dfu",          		{MODE_DFU,          {}}},
 	{"digilent",     		{MODE_FTDI_SERIAL,  {0x0403, 0x6010, INTERFACE_A, 0xe8, 0xeb, 0x00, 0x60}}},
