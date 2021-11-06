@@ -331,7 +331,8 @@ int FTDIpp_MPSSE::mpsse_store(unsigned char *buff, int len)
 	if (_num + len > _buffer_size) {
 		/* flush buffer if already full */
 		if (_num == _buffer_size)
-			mpsse_write();
+			if (mpsse_write() == -1)
+				printError("mpsse_store: Fails to first flush");
 		/* loop until loop < _buffer_size */
 		while (_num + len > _buffer_size) {
 			/* we now have len enough to fill
@@ -386,7 +387,8 @@ int FTDIpp_MPSSE::mpsse_read(unsigned char *rx_buff, int len)
 
 	/* force buffer transmission before read */
 	mpsse_store(SEND_IMMEDIATE);
-	mpsse_write();
+	if (mpsse_write() == -1)
+		printError("mpsse_read: fails to write");
 
 	do {
 		n = ftdi_read_data(_ftdi, p, len);
