@@ -291,7 +291,7 @@ int CmsisDAP::setClkFreq(uint32_t clkHZ)
  * flush the buffer
  * tms states are written only if max or if flush_buffer set
  */
-int CmsisDAP::writeTMS(uint8_t *tms, int len, bool flush_buffer)
+int CmsisDAP::writeTMS(uint8_t *tms, uint32_t len, bool flush_buffer)
 {
 	/* nothing to send
 	 * check if the buffer must be flushed
@@ -303,7 +303,7 @@ int CmsisDAP::writeTMS(uint8_t *tms, int len, bool flush_buffer)
 	}
 
 	/* fill buffer with tms states */
-	for (int pos = 0; pos < len; pos++) {
+	for (uint32_t pos = 0; pos < len; pos++) {
 		/* max tms states allowed by CMSIS-DAP -> flush */
 		if (_num_tms == 256) {
 			if (flush() < 0) {
@@ -481,6 +481,8 @@ int CmsisDAP::flush()
 int CmsisDAP::xfer(uint8_t instruction, int tx_len,
 		uint8_t *rx_buff, int rx_len)
 {
+	(void)tx_len;
+
 	_ll_buffer[0] = 0;
 	_ll_buffer[1] = instruction;
 
@@ -516,6 +518,8 @@ int CmsisDAP::xfer(uint8_t instruction, int tx_len,
  */
 int CmsisDAP::xfer(int tx_len, uint8_t *rx_buff, int rx_len)
 {
+	(void)tx_len;
+
 	_ll_buffer[0] = 0;
 
 	int ret = hid_write(_dev, _ll_buffer, 65);

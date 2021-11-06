@@ -31,7 +31,7 @@ class FtdiJtagBitBang : public JtagInterface, private FTDIpp_MPSSE {
 	int setClkFreq(uint32_t clkHZ) override;
 
 	/* TMS */
-	int writeTMS(uint8_t *tms, int len, bool flush_buffer) override;
+	int writeTMS(uint8_t *tms, uint32_t len, bool flush_buffer) override;
 
 	/* TDI */
 	int writeTDI(uint8_t *tx, uint8_t *rx, uint32_t len, bool end) override;

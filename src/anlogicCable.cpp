@@ -138,7 +138,7 @@ int AnlogicCable::setClkFreq(uint32_t clkHZ)
 	return clkHZ;
 }
 
-int AnlogicCable::writeTMS(uint8_t *tms, int len, bool flush_buffer)
+int AnlogicCable::writeTMS(uint8_t *tms, uint32_t len, bool flush_buffer)
 {
 	(void) flush_buffer;
 

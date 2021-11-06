@@ -104,7 +104,7 @@ int FtdiJtagBitBang::setBitmode(uint8_t mode)
 	return ret;
 }
 
-int FtdiJtagBitBang::writeTMS(uint8_t *tms, int len, bool flush_buffer)
+int FtdiJtagBitBang::writeTMS(uint8_t *tms, uint32_t len, bool flush_buffer)
 {
 	int ret;
 
@@ -127,7 +127,7 @@ int FtdiJtagBitBang::writeTMS(uint8_t *tms, int len, bool flush_buffer)
 	}
 
 	/* fill buffer to reduce USB transaction */
-	for (int i = 0; i < len; i++) {
+	for (uint32_t i = 0; i < len; i++) {
 		_curr_tms = ((tms[i >> 3] & (1 << (i & 0x07)))? _tms_pin : 0);
 		uint8_t val = _tdi_pin | _curr_tms;
 		_buffer[_num++] = val;

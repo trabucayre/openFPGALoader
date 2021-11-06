@@ -167,7 +167,7 @@ int DirtyJtag::setClkFreq(uint32_t clkHZ)
 	return clkHZ;
 }
 
-int DirtyJtag::writeTMS(uint8_t *tms, int len, bool flush_buffer)
+int DirtyJtag::writeTMS(uint8_t *tms, uint32_t len, bool flush_buffer)
 {
 	(void) flush_buffer;
 	int actual_length;
@@ -178,7 +178,7 @@ int DirtyJtag::writeTMS(uint8_t *tms, int len, bool flush_buffer)
 	uint8_t mask = SIG_TCK | SIG_TMS;
 	uint8_t buf[64];
 	u_int buffer_idx = 0;
-	for (int i = 0; i < len; i++)
+	for (uint32_t i = 0; i < len; i++)
 	{
 		uint8_t val = (tms[i >> 3] & (1 << (i & 0x07))) ? SIG_TMS : 0;
 		buf[buffer_idx++] = CMD_SETSIG;

@@ -103,7 +103,7 @@ void FtdiJtagMPSSE::config_edge()
 	}
 }
 
-int FtdiJtagMPSSE::writeTMS(uint8_t *tms, int len, bool flush_buffer)
+int FtdiJtagMPSSE::writeTMS(uint8_t *tms, uint32_t len, bool flush_buffer)
 {
 	(void) flush_buffer;
 	display("%s %d %d\n", __func__, len, (len/8)+1);
