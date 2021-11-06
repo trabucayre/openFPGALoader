@@ -42,8 +42,16 @@ Altera::Altera(Jtag *jtag, const std::string &filename,
 					_mode = Device::MEM_MODE;
 				else
 					_mode = Device::SPI_MODE;
-			} else {
-				_mode = Device::SPI_MODE;
+			} else { // unknown type -> sanity check
+				if (prg_type == Device::WR_SRAM) {
+					printError("file has an unknown type:");
+					printError("\tplease use rbf or svf file");
+					printError("\tor use --write-flash with: ", false);
+					printError("-b board_name or --fpga_part xxxx");
+					std::runtime_error("Error: wrong file");
+				} else {
+					_mode = Device::SPI_MODE;
+				}
 			}
 		}
 	}
