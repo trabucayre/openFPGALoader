@@ -14,13 +14,14 @@
 #include "jtag.hpp"
 #include "device.hpp"
 #include "jedParser.hpp"
+#include "feaparser.hpp"
 #include "latticeBitParser.hpp"
 #include "spiInterface.hpp"
 
 class Lattice: public Device, SPIInterface {
 	public:
 		Lattice(Jtag *jtag, std::string filename, const std::string &file_type,
-			Device::prog_type_t prg_type, bool verify,
+			Device::prog_type_t prg_type, std::string flash_sector, bool verify,
 			int8_t verbose);
 		int idCode() override;
 		int userCode();
@@ -28,7 +29,7 @@ class Lattice: public Device, SPIInterface {
 		void program(unsigned int offset) override;
 		bool program_mem();
 		bool program_flash(unsigned int offset);
-		bool Verify(std::vector<std::string> data, bool unlock = false);
+		bool Verify(std::vector<std::string> data, bool unlock = false, uint32_t flash_area = 0);
 		bool dumpFlash(const std::string &filename,
 			uint32_t base_addr, uint32_t len) override;
 
@@ -62,7 +63,7 @@ class Lattice: public Device, SPIInterface {
 		bool DisableCfg();
 		bool pollBusyFlag(bool verbose = false);
 		bool flashEraseAll();
-		bool flashErase(uint8_t mask);
+		bool flashErase(uint32_t mask);
 		bool flashProg(uint32_t start_addr, const std::string &name,
 				std::vector<std::string> data);
 		bool checkStatus(uint32_t val, uint32_t mask);
@@ -77,5 +78,28 @@ class Lattice: public Device, SPIInterface {
 
 		/* test */
 		bool checkID();
+
+		/*********************** MODS FOR MacXO3D *****************************/
+		enum lattice_flash_sector_t {
+			LATTICE_FLASH_UNDEFINED = 0,
+			LATTICE_FLASH_CFG0,
+			LATTICE_FLASH_CFG1,
+			LATTICE_FLASH_UFM0,
+			LATTICE_FLASH_UFM1,
+			LATTICE_FLASH_UFM2,
+			LATTICE_FLASH_UFM3,
+			LATTICE_FLASH_FEA,
+			LATTICE_FLASH_PKEY,
+			LATTICE_FLASH_AKEY,
+			LATTICE_FLASH_CSEC,
+			LATTICE_FLASH_USEC
+		};
+
+		lattice_flash_sector_t _flash_sector;
+		bool program_intFlash_MachXO3D();
+		bool program_fea_MachXO3D();
+		bool program_pubkey_MachXO3D();
+		bool programFeatureRow_MachXO3D(uint8_t* feature_row);
+		bool programFeabits_MachXO3D(uint32_t feabits);
 };
 #endif  // LATTICE_HPP_
