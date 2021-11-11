@@ -19,7 +19,7 @@
 
 class AnlogicCable : public JtagInterface {
  public:
-	AnlogicCable(uint32_t clkHZ, bool verbose);
+	AnlogicCable(uint32_t clkHZ, uint8_t verbose);
 	virtual ~AnlogicCable();
 
 	int setClkFreq(uint32_t clkHZ) override;
@@ -43,7 +43,7 @@ class AnlogicCable : public JtagInterface {
 	int flush() override;
 
  private:
-	bool _verbose;
+	uint8_t _verbose;
 
 	int write(uint8_t *in_buf, uint8_t *out_buf, int len, int rd_len);
 

@@ -30,7 +30,7 @@ using namespace std;
 #endif
 
 CH552_jtag::CH552_jtag(const FTDIpp_MPSSE::mpsse_bit_config &cable,
-			string dev, const string &serial, uint32_t clkHZ, bool verbose):
+			string dev, const string &serial, uint32_t clkHZ, uint8_t verbose):
 			FTDIpp_MPSSE(cable, dev, serial, clkHZ, verbose), _to_read(0)
 {
 	init_internal(cable);

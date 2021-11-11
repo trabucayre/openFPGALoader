@@ -88,7 +88,7 @@ enum cmsisdap_status {
 	DAP_ERROR = 0xff
 };
 
-CmsisDAP::CmsisDAP(int vid, int pid, bool verbose):_verbose(verbose),
+CmsisDAP::CmsisDAP(int vid, int pid, uint8_t verbose):_verbose(verbose),
 		_device_idx(0),  _vid(vid), _pid(pid),
 		_serial_number(L""), _dev(NULL), _num_tms(0), _is_connect(false)
 {

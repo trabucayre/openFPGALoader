@@ -32,7 +32,7 @@ using namespace std;
 
 FtdiJtagBitBang::FtdiJtagBitBang(const FTDIpp_MPSSE::mpsse_bit_config &cable,
 			const jtag_pins_conf_t *pin_conf, string dev, const std::string &serial,
-			uint32_t clkHZ, bool verbose):
+			uint32_t clkHZ, uint8_t verbose):
 			FTDIpp_MPSSE(cable, dev, serial, clkHZ, verbose), _bitmode(0),
 			_curr_tms(0), _rx_size(0)
 {

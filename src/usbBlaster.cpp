@@ -38,7 +38,7 @@ using namespace std;
 #endif
 
 UsbBlaster::UsbBlaster(int vid, int pid, const std::string &firmware_path,
-		bool verbose):
+		uint8_t verbose):
 			_verbose(verbose), _nb_bit(0),
 			_curr_tms(0), _buffer_size(64)
 {
