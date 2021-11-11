@@ -98,7 +98,6 @@ class Lattice: public Device, SPIInterface {
 		lattice_flash_sector_t _flash_sector;
 		bool program_intFlash_MachXO3D();
 		bool program_fea_MachXO3D();
-		bool program_pubkey_MachXO3D();
 		bool programFeatureRow_MachXO3D(uint8_t* feature_row);
 		bool programFeabits_MachXO3D(uint32_t feabits);
 };
