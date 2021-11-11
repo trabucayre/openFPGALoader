@@ -97,8 +97,13 @@ int main(int argc, char **argv)
 	if (args.prg_type == Device::WR_FLASH)
 		cout << "write to flash" << endl;
 
-	if (args.board[0] != '-' && board_list.find(args.board) != board_list.end()) {
-		board = &(board_list[args.board]);
+	if (args.board[0] != '-') {
+		if (board_list.find(args.board) != board_list.end()) {
+			board = &(board_list[args.board]);
+		} else {
+			printError("Error: cannot find board \'" +args.board + "\'");
+			return EXIT_FAILURE;
+		}
 	}
 
 	/* if a board name is specified try to use this to determine cable */
