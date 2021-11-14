@@ -51,7 +51,7 @@ static std::map <int, fpga_model> fpga_list = {
 
 	{0x03727093, {"xilinx", "zynq",     "xc7z020", 6}},
 
-	{0x020f20dd, {"altera", "cyclone III", "EP3C16", 10}},
+	{0x020f20dd, {"altera", "cyclone III/IV", "EP3C16/EP4CE15", 10}},
 
 	{0x020f30dd, {"altera", "cyclone 10 LP", "10CL025", 10}},
 
