@@ -25,19 +25,19 @@
 
 using namespace std;
 
-#define ISC_ENABLE				0xC6		/* ISC_ENABLE - Offline Mode */
-#  define ISC_ENABLE_FLASH_MODE			(1 << 3)
-#  define ISC_ENABLE_SRAM_MODE			(0 << 3)
-#define ISC_ENABLE_TRANSPARANT			0x74		/* This command is used to put the device in transparent mode */
-#define ISC_DISABLE				0x26		/* ISC_DISABLE */
+#define ISC_ENABLE					0xC6		/* ISC_ENABLE - Offline Mode */
+#  define ISC_ENABLE_FLASH_MODE		(1 << 3)
+#  define ISC_ENABLE_SRAM_MODE		(0 << 3)
+#define ISC_ENABLE_TRANSPARANT		0x74		/* This command is used to put the device in transparent mode */
+#define ISC_DISABLE					0x26		/* ISC_DISABLE */
 #define READ_DEVICE_ID_CODE			0xE0		/* IDCODE_PUB */
-#define FLASH_ERASE				0x0E		/* ISC_ERASE */
+#define FLASH_ERASE					0x0E		/* ISC_ERASE */
 /* Flash areas as defined for Lattice MachXO3L/LF */
 #  define FLASH_ERASE_UFM			(1<<3)
-#  define FLASH_ERASE_CFG   			(1<<2)
-#  define FLASH_ERASE_FEATURE			(1<<1)
+#  define FLASH_ERASE_CFG   		(1<<2)
+#  define FLASH_ERASE_FEATURE		(1<<1)
 #  define FLASH_ERASE_SRAM			(1<<0)
-#  define FLASH_ERASE_ALL       		0x0F
+#  define FLASH_ERASE_ALL       	0x0F
 /* Flash areas as defined for Lattice MachXO3D, used with command: ISC_ERASE */
 #  define FLASH_SEC_CFG0			(1<<8)
 #  define FLASH_SEC_CFG1			(1<<9)
@@ -57,9 +57,9 @@ using namespace std;
  * This is document is more correct:
  *    fpga-tn-02119-1-1-using-hardened-control-functions-machxo3d-reference.pdf
  */
-#define RESET_CFG_ADDR				0x46		/* LSC_INIT_ADDRESS */
+#define RESET_CFG_ADDR					0x46		/* LSC_INIT_ADDRESS */
 /* Set the Page Address pointer to the Flash page specified */
-#define LSC_WRITE_ADDRESS			0xB4
+#define LSC_WRITE_ADDRESS				0xB4
 #  define FLASH_SET_ADDR_CFG0 			0x00
 #  define FLASH_SET_ADDR_UFM0			0x01
 #  define FLASH_SET_ADDR_FEA			0x03
@@ -74,31 +74,31 @@ using namespace std;
 /* Set the Page Address Pointer to the beginning of the UFM sectors.
  * It appears that this function is required when setting address to UFM sectors
  * The LSC_INIT_ADDRESS doesn't work when the sector is set to UFMx ... */
-#define LSC_INIT_ADDR_UFM			0x47
+#define LSC_INIT_ADDR_UFM				0x47
 #  define FLASH_UFM_ADDR_UFM0			(1<<10)
 #  define FLASH_UFM_ADDR_UFM1			(1<<11)
 #  define FLASH_UFM_ADDR_UFM2			(1<<12)
 #  define FLASH_UFM_ADDR_UFM3			(1<<13)
-#define PROG_CFG_FLASH				0x70		/* LSC_PROG_INCR_NV */
-#define READ_BUSY_FLAG				0xF0		/* LSC_CHECK_BUSY */
+#define PROG_CFG_FLASH					0x70		/* LSC_PROG_INCR_NV */
+#define READ_BUSY_FLAG					0xF0		/* LSC_CHECK_BUSY */
 /* The busy flag defines bit 7 as busy, but busy flags returns 1 for busy (bit 0). */
-#define REG_CFG_FLASH				0x73		/* LSC_READ_INCR_NV */
-#define PROG_FEATURE_ROW			0xE4		/* LSC_PROG_FEATURE */
+#define REG_CFG_FLASH					0x73		/* LSC_READ_INCR_NV */
+#define PROG_FEATURE_ROW				0xE4		/* LSC_PROG_FEATURE */
 #define READ_FEATURE_ROW        		0xE7		/* LSC_READ_FEATURE */
 /* See feaParser.hpp for FEATURE definitions */
-#define PROG_FEABITS				0xF8		/* LSC_PROG_FEABITS */
+#define PROG_FEABITS					0xF8		/* LSC_PROG_FEABITS */
 #define READ_FEABITS            		0xFB		/* LSC_READ_FEABITS */
 /* See feaParser.hpp for FEAbit definitions */
-#define PROG_DONE				0x5E		/* ISC_PROGRAM_DONE - This command is used to program the done bit */
-#define REFRESH					0x79		/* LSC_REFRESH */
+#define PROG_DONE						0x5E		/* ISC_PROGRAM_DONE - This command is used to program the done bit */
+#define REFRESH							0x79		/* LSC_REFRESH */
 #define READ_STATUS_REGISTER    		0x3C		/* LSC_READ_STATUS */
-#  define REG_STATUS_DONE			(1 << 8)	/* Flash or SRAM Done Flag (ISC_EN=0 -> 1 Successful Flash to SRAM transfer, ISC_EN=1 -> 1 Programmed) */
-#  define REG_STATUS_ISC_EN			(1 << 9)	/* Enable Configuration Interface (1=Enable, 0=Disable) */
-#  define REG_STATUS_BUSY			(1 << 12)	/* Busy Flag (1 = Busy) */
-#  define REG_STATUS_FAIL			(1 << 13)	/* Fail Flag (1 = Operation failed) */
-#  define REG_STATUS_PP_CFG			(1 << 15)	/* Password Protection All Enabled for CFG0 and CFG1 flash sectors 0=Disabled (Default), 1=Enabled */
-#  define REG_STATUS_PP_FSK			(1 << 16)	/* Password Protection Enabled for Feature and Security Key flash sectors 0=Disabled (Default), 1=Enabled */
-#  define REG_STATUS_PP_UFM			(1 << 17)	/* Password Protection enabled for all UFM flash sectors 0=Disabled (Default), 1=Enabled */
+#  define REG_STATUS_DONE				(1 << 8)	/* Flash or SRAM Done Flag (ISC_EN=0 -> 1 Successful Flash to SRAM transfer, ISC_EN=1 -> 1 Programmed) */
+#  define REG_STATUS_ISC_EN				(1 << 9)	/* Enable Configuration Interface (1=Enable, 0=Disable) */
+#  define REG_STATUS_BUSY				(1 << 12)	/* Busy Flag (1 = Busy) */
+#  define REG_STATUS_FAIL				(1 << 13)	/* Fail Flag (1 = Operation failed) */
+#  define REG_STATUS_PP_CFG				(1 << 15)	/* Password Protection All Enabled for CFG0 and CFG1 flash sectors 0=Disabled (Default), 1=Enabled */
+#  define REG_STATUS_PP_FSK				(1 << 16)	/* Password Protection Enabled for Feature and Security Key flash sectors 0=Disabled (Default), 1=Enabled */
+#  define REG_STATUS_PP_UFM				(1 << 17)	/* Password Protection enabled for all UFM flash sectors 0=Disabled (Default), 1=Enabled */
 #  define REG_STATUS_AUTH_DONE			(1 << 18)	/* Authentication done */
 #  define REG_STATUS_PRI_BOOT_FAIL		(1 << 21)	/* Primary boot failure (1= Fail) even though secondary boot successful */
 #  define REG_STATUS_CNF_CHK_MASK		(0x0f << 22)	/* Configuration Status Check */
@@ -122,15 +122,15 @@ using namespace std;
 #  define REG_STATUS1_MSPI_PERS			(1 << 20)	/* Master SPI Port Persistence 0=Disabled (Default), 1=Enabled */
 #  define REG_STATUS1_I2C_DG_FILTER		(1 << 21)	/* I2C deglitch filter enable for Primary I2C Port 0=Disabled (Default), 1=Enabled */
 #  define REG_STATUS1_I2C_DG_RANGE		(1 << 22)	/* I2C deglitch filter range selection on primary I2C port 0= 8 to 25 ns range (Default), 1= 16 to 50 ns range */
-#define PROG_ECDSA_PUBKEY0			0x59		/* This command is used to program the first 128 bits of the ECDSA Public Key. */
-#define READ_ECDSA_PUBKEY0			0x5A		/* This command is used to read the first 128 bits of the ECDSA Public Key. */
-#define PROG_ECDSA_PUBKEY1			0x5B		/* This command is used to program the second 128 bits of the ECDSA Public Key. */
-#define READ_ECDSA_PUBKEY1			0x5C		/* This command is used to read the second 128 bits of the ECDSA Public Key. */
-#define PROG_ECDSA_PUBKEY2			0x61		/* This command is used to program the third 128 bits of the ECDSA Public Key. */
-#define READ_ECDSA_PUBKEY2			0x62		/* This command is used to read the third 128 bits of the ECDSA Public Key. */
-#define PROG_ECDSA_PUBKEY3			0x63		/* This command is used to program the fourth 128 bits of the ECDSA Public Key. */
-#define READ_ECDSA_PUBKEY3			0x64		/* This command is used to read the fourth 128 bits of the ECDSA Public Key. */
-#define ISC_NOOP				0xff		/* This command is no operation command (NOOP) or null operation. */
+#define PROG_ECDSA_PUBKEY0				0x59		/* This command is used to program the first 128 bits of the ECDSA Public Key. */
+#define READ_ECDSA_PUBKEY0				0x5A		/* This command is used to read the first 128 bits of the ECDSA Public Key. */
+#define PROG_ECDSA_PUBKEY1				0x5B		/* This command is used to program the second 128 bits of the ECDSA Public Key. */
+#define READ_ECDSA_PUBKEY1				0x5C		/* This command is used to read the second 128 bits of the ECDSA Public Key. */
+#define PROG_ECDSA_PUBKEY2				0x61		/* This command is used to program the third 128 bits of the ECDSA Public Key. */
+#define READ_ECDSA_PUBKEY2				0x62		/* This command is used to read the third 128 bits of the ECDSA Public Key. */
+#define PROG_ECDSA_PUBKEY3				0x63		/* This command is used to program the fourth 128 bits of the ECDSA Public Key. */
+#define READ_ECDSA_PUBKEY3				0x64		/* This command is used to read the fourth 128 bits of the ECDSA Public Key. */
+#define ISC_NOOP						0xff		/* This command is no operation command (NOOP) or null operation. */
 
 Lattice::Lattice(Jtag *jtag, const string filename, const string &file_type,
 	Device::prog_type_t prg_type, std::string flash_sector, bool verify, int8_t verbose):
@@ -1385,7 +1385,7 @@ bool Lattice::programFeabits_MachXO3D(uint32_t feabits)
 
 	if (_verify) {
 		for(int i = 0; i < 4; i++) {
-			if ((feabits >> (8*i)) & 0xff != rx[i]) {
+			if (((feabits >> (8*i)) & 0xff) != rx[i]) {
 				printf("\tVerify Failed...\n");
 				return false;
 			}
@@ -1533,9 +1533,7 @@ bool Lattice::program_fea_MachXO3D()
 
 bool Lattice::program_intFlash_MachXO3D()
 {
-	bool err, ufm_flag;
-	uint64_t featuresRow;
-	uint16_t feabits;
+	bool err;
 	uint32_t erase_op = 0, prog_op = 0;
 	vector<string> data;
 	int offset, fuse_count;
@@ -1570,7 +1568,7 @@ bool Lattice::program_intFlash_MachXO3D()
 	/* this is the size of an CFGx+UFMx area in bits (hence the / 128) */
 	fuse_count = _jed.get_fuse_count() / 128;
 
-	for (int i = 0; i < _jed.nb_section(); i++) {
+	for (size_t i = 0; i < _jed.nb_section(); i++) {
 		std::string area_name;
 
 		data = _jed.data_for_section(i);
@@ -1583,7 +1581,6 @@ bool Lattice::program_intFlash_MachXO3D()
 
 		erase_op = 0;
 		prog_op = 0;
-		ufm_flag = false;
 
 		/* if the offset > total fuse count, then this file must be configured
 		 * for the 2nd config sector (CFG1), so adjust offset */
@@ -1634,7 +1631,6 @@ bool Lattice::program_intFlash_MachXO3D()
 					prog_op = FLASH_UFM_ADDR_UFM1;
 					area_name = "EBR (UFM1)";
 				}
-				ufm_flag = true;
 			}
 			else {
 				/* NOT SUPPORTING NON-ZERO OFFSET WRITES...*/
@@ -1697,7 +1693,6 @@ bool Lattice::program_intFlash_MachXO3D()
 				}
 				area_name = "UFM3";
 			}
-			ufm_flag = true;
 		}
 		else {
 			printf("Processing CFG data (offset: %d (0x%x))\n", offset, offset);
