@@ -52,7 +52,7 @@ class Lattice: public Device, SPIInterface {
 
 		lattice_family_t _fpga_family;
 
-		bool program_intFlash();
+		bool program_intFlash(JedParser& _jed);
 		bool program_extFlash(unsigned int offset);
 		bool wr_rd(uint8_t cmd, uint8_t *tx, int tx_len,
 				uint8_t *rx, int rx_len, bool verbose = false);
@@ -96,7 +96,7 @@ class Lattice: public Device, SPIInterface {
 		};
 
 		lattice_flash_sector_t _flash_sector;
-		bool program_intFlash_MachXO3D();
+		bool program_intFlash_MachXO3D(JedParser& _jed);
 		bool program_fea_MachXO3D();
 		bool programFeatureRow_MachXO3D(uint8_t* feature_row);
 		bool programFeabits_MachXO3D(uint32_t feabits);

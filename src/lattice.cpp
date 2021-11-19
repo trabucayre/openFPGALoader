@@ -161,28 +161,28 @@ Lattice::Lattice(Jtag *jtag, const string filename, const string &file_type,
 	else if (family == "MachXO3D") {
 		_fpga_family = MACHXO3D_FAMILY;
 
-	        if (flash_sector == "CFG0") {
-        	        _flash_sector = LATTICE_FLASH_CFG0;
-                	printInfo("Flash Sector: CFG0", true);
-	        } else if (flash_sector == "CFG1") {
-                	_flash_sector = LATTICE_FLASH_CFG1;
-	                printInfo("Flash Sector: CFG1", true);
-        	} else if (flash_sector == "UFM0") {
-	                _flash_sector = LATTICE_FLASH_UFM0;
-	                printInfo("Flash Sector: UFM0", true);
-	        } else if (flash_sector == "UFM1") {
-	                _flash_sector = LATTICE_FLASH_UFM1;
-	                printInfo("Flash Sector: UFM1", true);
-	        } else if (flash_sector == "UFM2") {
-	                _flash_sector = LATTICE_FLASH_UFM2;
-	                printInfo("Flash Sector: UFM2", true);
-	        } else if (flash_sector == "UFM3") {
-	                _flash_sector = LATTICE_FLASH_UFM3;
-		        printInfo("Flash Sector: UFM3", true);
-	        } else if (flash_sector == "FEA") {
-	                _flash_sector = LATTICE_FLASH_FEA;
-	                printInfo("Flash Sector: FEA", true);
-	        } else {
+		if (flash_sector == "CFG0") {
+			_flash_sector = LATTICE_FLASH_CFG0;
+			printInfo("Flash Sector: CFG0", true);
+		} else if (flash_sector == "CFG1") {
+			_flash_sector = LATTICE_FLASH_CFG1;
+			printInfo("Flash Sector: CFG1", true);
+		} else if (flash_sector == "UFM0") {
+			_flash_sector = LATTICE_FLASH_UFM0;
+			printInfo("Flash Sector: UFM0", true);
+		} else if (flash_sector == "UFM1") {
+			_flash_sector = LATTICE_FLASH_UFM1;
+			printInfo("Flash Sector: UFM1", true);
+		} else if (flash_sector == "UFM2") {
+			_flash_sector = LATTICE_FLASH_UFM2;
+			printInfo("Flash Sector: UFM2", true);
+		} else if (flash_sector == "UFM3") {
+			_flash_sector = LATTICE_FLASH_UFM3;
+			printInfo("Flash Sector: UFM3", true);
+		} else if (flash_sector == "FEA") {
+			_flash_sector = LATTICE_FLASH_FEA;
+			printInfo("Flash Sector: FEA", true);
+		} else {
 			printError("Unknown flash sector");
 			throw std::exception();
 		}
@@ -368,31 +368,12 @@ bool Lattice::program_mem()
 	return true;
 }
 
-bool Lattice::program_intFlash()
+bool Lattice::program_intFlash(JedParser& _jed)
 {
-	bool err;
 	uint64_t featuresRow;
 	uint16_t feabits;
 	uint8_t eraseMode = 0;
 	vector<string> ufm_data, cfg_data, ebr_data;
-
-	JedParser _jed(_filename, _verbose);
-
-	printInfo("Open file ", false);
-	printSuccess("DONE");
-
-	err = _jed.parse();
-
-	printInfo("Parse file ", false);
-	if (err == EXIT_FAILURE) {
-		printError("FAIL");
-		return false;
-	} else {
-		printSuccess("DONE");
-	}
-
-	if (_verbose)
-		_jed.displayHeader();
 
 	/* bypass */
 	wr_rd(0xff, NULL, 0, NULL, 0);
@@ -604,10 +585,27 @@ bool Lattice::program_flash(unsigned int offset)
 
 	bool retval;
 	if (_file_extension == "jed") {
+		bool err;
+
+		JedParser _jed(_filename, _verbose);
+		printInfo("Open file ", false);
+		printSuccess("DONE");
+
+		err = _jed.parse();
+		printInfo("Parse file ", false);
+		if (err == EXIT_FAILURE) {
+			printError("FAIL");
+			return false;
+		} else {
+			printSuccess("DONE");
+		}
+		if (_verbose)
+			_jed.displayHeader();
+
 		if (_fpga_family == MACHXO3D_FAMILY)
-			retval = program_intFlash_MachXO3D();
+			retval = program_intFlash_MachXO3D(_jed);
 		else
-			retval = program_intFlash();
+			retval = program_intFlash(_jed);
 	}
 	else if (_file_extension == "fea") {
 		retval = program_fea_MachXO3D();
@@ -1321,9 +1319,11 @@ bool Lattice::programFeatureRow_MachXO3D(uint8_t* feature_row)
 	if (!pollBusyFlag())
 		return false;
 
-	wr_rd(READ_FEATURE_ROW, NULL, 0, rx, 15);
-	_jtag->set_state(Jtag::RUN_TEST_IDLE);
-	_jtag->toggleClk(2);
+	if (_verbose || _verify) {
+		wr_rd(READ_FEATURE_ROW, NULL, 0, rx, 15);
+		_jtag->set_state(Jtag::RUN_TEST_IDLE);
+		_jtag->toggleClk(2);
+	}
 
 	if (_verbose) {
 		printf("\tReadback Feature Row: [0x");
@@ -1371,9 +1371,11 @@ bool Lattice::programFeabits_MachXO3D(uint32_t feabits)
 	if (!pollBusyFlag())
 		return false;
 
-	wr_rd(READ_FEABITS, NULL, 0, rx, 5);
-	_jtag->set_state(Jtag::RUN_TEST_IDLE);
-	_jtag->toggleClk(2);
+	if (_verbose || _verify) {
+		wr_rd(READ_FEABITS, NULL, 0, rx, 5);
+		_jtag->set_state(Jtag::RUN_TEST_IDLE);
+		_jtag->toggleClk(2);
+	}
 
 	if (_verbose) {
 		printf("\tReadback Feabits: [0x");
@@ -1531,27 +1533,11 @@ bool Lattice::program_fea_MachXO3D()
 	return true;
 }
 
-bool Lattice::program_intFlash_MachXO3D()
+bool Lattice::program_intFlash_MachXO3D(JedParser& _jed)
 {
-	bool err;
 	uint32_t erase_op = 0, prog_op = 0;
 	vector<string> data;
 	int offset, fuse_count;
-
-	JedParser _jed(_filename, _verbose);
-	printInfo("Open file ", false);
-	printSuccess("DONE");
-
-	err = _jed.parse();
-	printInfo("Parse file ", false);
-	if (err == EXIT_FAILURE) {
-		printError("FAIL");
-		return false;
-	} else {
-		printSuccess("DONE");
-	}
-	if (_verbose)
-		_jed.displayHeader();
 
 	/* bypass */
 	wr_rd(ISC_NOOP, NULL, 0, NULL, 0);
