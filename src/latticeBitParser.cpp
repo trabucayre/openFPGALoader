@@ -93,7 +93,7 @@ int LatticeBitParser::parse()
 	_bit_length = _bit_data.size() * 8;
 
 	/* extract idcode from configuration data (area starting with 0xE2) */
-	for (int i = 0; i < _bit_data.size();i++) {
+	for (size_t i = 0; i < _bit_data.size();i++) {
 		if ((uint8_t)_bit_data[i] != 0xe2)
 			continue;
 		/* E2: verif id */
