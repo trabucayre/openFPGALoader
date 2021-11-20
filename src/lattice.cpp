@@ -81,6 +81,7 @@ using namespace std;
 #  define FLASH_UFM_ADDR_UFM3			(1<<13)
 #define PROG_CFG_FLASH					0x70		/* LSC_PROG_INCR_NV */
 #define READ_BUSY_FLAG					0xF0		/* LSC_CHECK_BUSY */
+#  define CHECK_BUSY_FLAG_BUSY          (1 << 7)
 /* The busy flag defines bit 7 as busy, but busy flags returns 1 for busy (bit 0). */
 #define REG_CFG_FLASH					0x73		/* LSC_READ_INCR_NV */
 #define PROG_FEATURE_ROW				0xE4		/* LSC_PROG_FEATURE */
@@ -101,7 +102,8 @@ using namespace std;
 #  define REG_STATUS_PP_UFM				(1 << 17)	/* Password Protection enabled for all UFM flash sectors 0=Disabled (Default), 1=Enabled */
 #  define REG_STATUS_AUTH_DONE			(1 << 18)	/* Authentication done */
 #  define REG_STATUS_PRI_BOOT_FAIL		(1 << 21)	/* Primary boot failure (1= Fail) even though secondary boot successful */
-#  define REG_STATUS_CNF_CHK_MASK		(0x0f << 22)	/* Configuration Status Check */
+#  define REG_STATUS_CNF_CHK_MASK		(0x0f << 23)	/* Configuration Status Check */
+#  define REG_STATUS_MACHXO3D_CNF_CHK_MASK	(0x0f << 22)	/* Configuration Status Check */
 #  define REG_STATUS_EXEC_ERR			(1 << 26)	/*** NOT specified for MachXO3D ***/
 #  define REG_STATUS_DEV_VERIFIED		(1 << 27)	/* I=0 Device verified correct, I=1 Device failed to verify */
 #define READ_STATUS_REGISTER_1			0x3D        	/* LSC_READ_STATUS_1 */
@@ -334,7 +336,13 @@ bool Lattice::program_mem()
 		_jtag->shiftDR(tmp, NULL, size*8, next_state);
 	}
 
-	if (checkStatus(0, REG_STATUS_CNF_CHK_MASK)) {
+	uint32_t status_mask;
+	if (_fpga_family == MACHXO3D_FAMILY)
+		status_mask = REG_STATUS_MACHXO3D_CNF_CHK_MASK;
+	else
+		status_mask = REG_STATUS_CNF_CHK_MASK;
+
+	if (checkStatus(0, status_mask)) {
 		progress.done();
 	} else {
 		progress.fail();
