@@ -154,11 +154,11 @@ Lattice::Lattice(Jtag *jtag, const string filename, const string &file_type,
 	/* check device family */
 	uint32_t idcode = _jtag->get_target_device_id();
 	string family = fpga_list[idcode].family;
-	if (family == "MachXO2")
+	if (family == "MachXO2") {
 		_fpga_family = MACHXO2_FAMILY;
-	else if (family == "MachXO3LF")
+	} else if (family == "MachXO3LF") {
 		_fpga_family = MACHXO3_FAMILY;
-	else if (family == "MachXO3D") {
+	} else if (family == "MachXO3D") {
 		_fpga_family = MACHXO3D_FAMILY;
 
 		if (flash_sector == "CFG0") {
@@ -186,13 +186,13 @@ Lattice::Lattice(Jtag *jtag, const string filename, const string &file_type,
 			printError("Unknown flash sector");
 			throw std::exception();
 		}
-	} else if (family == "ECP5")
+	} else if (family == "ECP5") {
 		_fpga_family = ECP5_FAMILY;
-	else if (family == "CrosslinkNX")
+	} else if (family == "CrosslinkNX") {
 		_fpga_family = NEXUS_FAMILY;
-	else if (family == "CertusNX")
+	} else if (family == "CertusNX") {
 		_fpga_family = NEXUS_FAMILY;
-	else {
+	} else {
 		printError("Unknown device family");
 		throw std::exception();
 	}
@@ -275,7 +275,7 @@ bool Lattice::program_mem()
 		displayReadReg(readStatusReg());
 	}
 
-    /* The command code 0x1C is not listed in the manual? */
+	/* The command code 0x1C is not listed in the manual? */
 	/* preload 0x1C */
 	uint8_t tx_buf[26];
 	memset(tx_buf, 0xff, 26);
@@ -334,9 +334,9 @@ bool Lattice::program_mem()
 		_jtag->shiftDR(tmp, NULL, size*8, next_state);
 	}
 
-	if (checkStatus(0, REG_STATUS_CNF_CHK_MASK))
+	if (checkStatus(0, REG_STATUS_CNF_CHK_MASK)) {
 		progress.done();
-	else {
+	} else {
 		progress.fail();
 		displayReadReg(readStatusReg());
 		return false;
@@ -606,12 +606,11 @@ bool Lattice::program_flash(unsigned int offset)
 			retval = program_intFlash_MachXO3D(_jed);
 		else
 			retval = program_intFlash(_jed);
-	}
-	else if (_file_extension == "fea") {
+	} else if (_file_extension == "fea") {
 		retval = program_fea_MachXO3D();
-	}
-	else
+	} else {
 		retval = program_extFlash(offset);
+	}
 
 	if (!retval)
 		return false;
@@ -638,7 +637,7 @@ bool Lattice::program_flash(unsigned int offset)
 
 void Lattice::program(unsigned int offset)
 {
-	bool retval;
+	bool retval = true;
 	if (_mode == FLASH_MODE)
 		retval = program_flash(offset);
 	else if (_mode == MEM_MODE)
@@ -829,7 +828,7 @@ bool Lattice::wr_rd(uint8_t cmd,
 	uint8_t xfer_rx[xfer_len];
 	memset(xfer_tx, 0, xfer_len);
 	int i;
-	if (tx != NULL) {
+	if (tx) {
 		for (i = 0; i < tx_len; i++)
 			xfer_tx[i] = tx[i];
 	}
@@ -845,7 +844,7 @@ bool Lattice::wr_rd(uint8_t cmd,
 				printf("%02x ", xfer_rx[i]);
 			printf("\n");
 		}
-	    for (i = 0; i < rx_len; i++)
+		for (i = 0; i < rx_len; i++)
 			rx[i] = (xfer_rx[i]);
 	}
 	return true;
@@ -1037,8 +1036,7 @@ bool Lattice::flashErase(uint32_t  mask)
 			(uint8_t)((mask >> 16) & 0xff)
 		};
 		wr_rd(FLASH_ERASE, tx, 2, NULL, 0);
-	}
-	else {
+	} else {
 		uint8_t tx[1] = {(uint8_t)(mask & 0xff)};
 		wr_rd(FLASH_ERASE, tx, 1, NULL, 0);
 	}
@@ -1077,15 +1075,15 @@ bool Lattice::Verify(std::vector<std::string> data, bool unlock, uint32_t flash_
 	if (unlock)
 		EnableISC(0x08);
 
-    if (_fpga_family == MACHXO3D_FAMILY) {
+	if (_fpga_family == MACHXO3D_FAMILY) {
 		uint8_t tx[2] = { (
 			uint8_t)((flash_area >> 8) & 0xff),
 			(uint8_t)((flash_area >> 16) & 0xff)
 		};
-        wr_rd(RESET_CFG_ADDR, tx, 2, NULL, 0);
-    } else {
-        wr_rd(RESET_CFG_ADDR, NULL, 0, NULL, 0);
-    }
+		wr_rd(RESET_CFG_ADDR, tx, 2, NULL, 0);
+	} else {
+		wr_rd(RESET_CFG_ADDR, NULL, 0, NULL, 0);
+	}
 
 	_jtag->set_state(Jtag::RUN_TEST_IDLE);
 	_jtag->toggleClk(1000);
@@ -1212,7 +1210,7 @@ int Lattice::spi_put(uint8_t cmd, uint8_t *tx, uint8_t *rx, uint32_t len)
 
 	jtx[0] = LatticeBitParser::reverseByte(cmd);
 
-	if (tx != NULL) {
+	if (tx) {
 		for (uint32_t i=0; i < len; i++)
 			jtx[i+1] = LatticeBitParser::reverseByte(tx[i]);
 	}
@@ -1236,7 +1234,7 @@ int Lattice::spi_put(uint8_t *tx, uint8_t *rx, uint32_t len)
 	uint8_t jtx[xfer_len];
 	uint8_t jrx[xfer_len];
 
-	if (tx != NULL) {
+	if (tx) {
 		for (uint32_t i=0; i < len; i++)
 			jtx[i] = LatticeBitParser::reverseByte(tx[i]);
 	}
@@ -1255,7 +1253,7 @@ int Lattice::spi_put(uint8_t *tx, uint8_t *rx, uint32_t len)
 }
 
 int Lattice::spi_wait(uint8_t cmd, uint8_t mask, uint8_t cond,
-            uint32_t timeout, bool verbose)
+		uint32_t timeout, bool verbose)
 {
 	uint8_t rx;
 	uint8_t dummy[2];
@@ -1272,7 +1270,7 @@ int Lattice::spi_wait(uint8_t cmd, uint8_t mask, uint8_t cond,
 	do {
 		_jtag->shiftDR(dummy, &rx, 8, Jtag::SHIFT_DR);
 		tmp = (LatticeBitParser::reverseByte(rx));
-		count ++;
+		count++;
 		if (count == timeout){
 			printf("timeout: %x %x %u\n", tmp, rx, count);
 			break;
@@ -1287,8 +1285,8 @@ int Lattice::spi_wait(uint8_t cmd, uint8_t mask, uint8_t cond,
 		printf("%x\n", tmp);
 		std::cout << "wait: Error" << std::endl;
 		return -ETIME;
-	} else
-		return 0;
+	}
+	return 0;
 }
 
 
@@ -1299,9 +1297,8 @@ bool Lattice::programFeatureRow_MachXO3D(uint8_t* feature_row)
 	uint8_t tx[16] = { 0 };
 	uint8_t rx[15] = { 0 };
 
-	for (int i = 0; i < 12; i++) {
+	for (int i = 0; i < 12; i++)
 		tx[i] = feature_row[i];
-	}
 
 	if (_verbose) {
 		printf("\tProgramming feature row: [0x");
@@ -1357,7 +1354,7 @@ bool Lattice::programFeabits_MachXO3D(uint32_t feabits)
 
 	if (_verbose) {
 		printf("\tProgramming FEAbits: [0x");
-		for (int i = 4; i >= 0; i--) {
+		for (int i = 3; i >= 0; i--) {
 			printf("%02x", tx[i]);
 		}
 		printf("]\n");
@@ -1483,8 +1480,7 @@ bool Lattice::program_fea_MachXO3D()
 		if (flashErase(FLASH_SEC_FEA) == false) {
 			printError("FAIL");
 			return false;
-		}
-		else {
+		} else {
 			printSuccess("DONE");
 		}
 
@@ -1493,8 +1489,7 @@ bool Lattice::program_fea_MachXO3D()
 		if (!programFeatureRow_MachXO3D(feature_row)) {
 			printError("FAIL");
 			return false;
-		}
-		else {
+		} else {
 			printSuccess("DONE");
 		}
 
@@ -1503,8 +1498,7 @@ bool Lattice::program_fea_MachXO3D()
 		if (!programFeabits_MachXO3D(feabits)) {
 			printError("FAIL");
 			return false;
-		}
-		else {
+		} else {
 			printSuccess("DONE");
 		}
 	}
@@ -1592,18 +1586,16 @@ bool Lattice::program_intFlash_MachXO3D(JedParser& _jed)
 			if (_flash_sector == LATTICE_FLASH_CFG0) {
 				prog_op = (FLASH_SET_ADDR_CFG0 << 14) | (offset);
 				area_name = "Padding (CFG0)";
-			}
-			else if (_flash_sector == LATTICE_FLASH_CFG1) {
+			} else if (_flash_sector == LATTICE_FLASH_CFG1) {
 				prog_op = (FLASH_SET_ADDR_CFG1 << 14) | (offset);
 				area_name = "Padding (CFG1)";
 			}
 
 			/* offset should not be zero */
 			if (offset == 0) {
-				printf("Warning: offset (%u) is for programming PADDING\n", offset);
+				printf("Warning: offset (%d) is for programming PADDING\n", offset);
 			}
-		}
-		else if (note == "EBR_INIT DATA") {
+		} else if (note == "EBR_INIT DATA") {
 			printf("Processing EBR_INIT data (offset: %d (0x%x))\n", offset, offset);
 			/* EBR - Embedded Block RAM initialisation data */
 			if (offset == 0) {
@@ -1611,67 +1603,57 @@ bool Lattice::program_intFlash_MachXO3D(JedParser& _jed)
 					erase_op = FLASH_SEC_UFM0;
 					prog_op = FLASH_UFM_ADDR_UFM0;
 					area_name = "EBR (UFM0)";
-				}
-				else if (_flash_sector == LATTICE_FLASH_CFG1) {
+				} else if (_flash_sector == LATTICE_FLASH_CFG1) {
 					erase_op = FLASH_SEC_UFM1;
 					prog_op = FLASH_UFM_ADDR_UFM1;
 					area_name = "EBR (UFM1)";
 				}
-			}
-			else {
+			} else {
 				/* NOT SUPPORTING NON-ZERO OFFSET WRITES...*/
 				continue;
 			}
-		}
-		else if (note.compare(0, 16, "USER MEMORY DATA") == 0) {
+		} else if (note.compare(0, 16, "USER MEMORY DATA") == 0) {
 			printf("Processing UFM data (offset: %d (0x%x))\n", offset, offset);
 			if ((_flash_sector == LATTICE_FLASH_CFG0)||
 						(_flash_sector == LATTICE_FLASH_UFM0)) {
 				if (offset == 0) {
 					erase_op = FLASH_SEC_UFM0;
 					prog_op = FLASH_UFM_ADDR_UFM0;
-				}
-				else {
+				} else {
 					erase_op = 0;
 					/* We need to use the 'LSC_WRITE_ADDRESS' command to set the
 					 * flash sector and the page number. */
 					prog_op = (FLASH_SET_ADDR_UFM0 << 14) | (offset);
 				}
 				area_name = "UFM0";
-			}
-			else if ((_flash_sector == LATTICE_FLASH_CFG1)||
+			} else if ((_flash_sector == LATTICE_FLASH_CFG1)||
 							(_flash_sector == LATTICE_FLASH_UFM1)) {
 				if (offset == 0) {
 					erase_op = FLASH_SEC_UFM1;
 					prog_op = FLASH_UFM_ADDR_UFM1;
-				}
-				else {
+				} else {
 					erase_op = 0;
 					/* We need to use the 'LSC_WRITE_ADDRESS' command to set the
 					 * flash sector and the page number. */
 					prog_op = (FLASH_SET_ADDR_UFM1 << 14) | (offset);
 				}
 				area_name = "UFM1";
-			}
-			else if (_flash_sector == LATTICE_FLASH_UFM2) {
+			} else if (_flash_sector == LATTICE_FLASH_UFM2) {
 				if (offset == 0) {
 					erase_op = FLASH_SEC_UFM2;
 					prog_op = FLASH_UFM_ADDR_UFM2;
-				}
-				else {
+				} else {
 					erase_op = 0;
 					/* We need to use the 'LSC_WRITE_ADDRESS' command to set the
 					 * flash sector and the page number. */
 					prog_op = (FLASH_SET_ADDR_UFM2 << 14) | (offset);
 				}
 				area_name = "UFM2";
-			}
-			else if (_flash_sector == LATTICE_FLASH_UFM3) {
+			} else if (_flash_sector == LATTICE_FLASH_UFM3) {
 				if (offset == 0) {
 					erase_op = FLASH_SEC_UFM3;
 					prog_op = FLASH_UFM_ADDR_UFM3;
-				}
-				else {
+				} else {
 					erase_op = 0;
 					/* We need to use the 'LSC_WRITE_ADDRESS' command to set the
 					 * flash sector and the page number. */
@@ -1679,15 +1661,13 @@ bool Lattice::program_intFlash_MachXO3D(JedParser& _jed)
 				}
 				area_name = "UFM3";
 			}
-		}
-		else {
+		} else {
 			printf("Processing CFG data (offset: %d (0x%x))\n", offset, offset);
 			if (_flash_sector == LATTICE_FLASH_CFG0) {
 				erase_op = FLASH_SEC_CFG0;
 				prog_op = FLASH_SEC_CFG0;
 				area_name = "Data (CFG0)";
-			}
-			else if (_flash_sector == LATTICE_FLASH_CFG1) {
+			} else if (_flash_sector == LATTICE_FLASH_CFG1) {
 				erase_op = FLASH_SEC_CFG1;
 				prog_op = FLASH_SEC_CFG1;
 				area_name = "Data (CFG1)";
@@ -1695,7 +1675,7 @@ bool Lattice::program_intFlash_MachXO3D(JedParser& _jed)
 
 			/* offset should be zero */
 			if (offset != 0) {
-				printf("Warning: offset (%u) is not 0 for programming CFG\n", offset);
+				printf("Warning: offset (%d) is not 0 for programming CFG\n", offset);
 			}
 		}
 
@@ -1706,9 +1686,7 @@ bool Lattice::program_intFlash_MachXO3D(JedParser& _jed)
 				printError("FAIL");
 				return false;
 			}
-			else {
-				printSuccess("DONE");
-			}
+			printSuccess("DONE");
 		}
 
 		if (offset == 0) {
@@ -1719,8 +1697,7 @@ bool Lattice::program_intFlash_MachXO3D(JedParser& _jed)
 			};
 			printf("address (I): 0x%x 0x%x\n", tx[0], tx[1]);
 			wr_rd(RESET_CFG_ADDR, tx, 2, NULL, 0);
-		}
-		else {
+		} else {
 			/* LSC_WRITE_ADDRESS */
 			uint8_t tx[3] = {
 				(uint8_t)(prog_op & 0xff),
@@ -1746,15 +1723,14 @@ bool Lattice::program_intFlash_MachXO3D(JedParser& _jed)
 
 	/* @TODO: missing usercode update */
 
-    /* LSC_INIT_ADDRESS */
+	/* LSC_INIT_ADDRESS */
 	if (_flash_sector == LATTICE_FLASH_CFG0) {
 		uint8_t tx[2] = {
 			(uint8_t)((FLASH_SEC_CFG0 >> 8) & 0xff),
 			(uint8_t)((FLASH_SEC_CFG0 >> 16) & 0xff)
 		};
 		wr_rd(RESET_CFG_ADDR, tx, 2, NULL, 0);
-	}
-	else if (_flash_sector == LATTICE_FLASH_CFG1) {
+	} else if (_flash_sector == LATTICE_FLASH_CFG1) {
 		uint8_t tx[2] = {
 			(uint8_t)((FLASH_SEC_CFG1 >> 8) & 0xff),
 			(uint8_t)((FLASH_SEC_CFG1 >> 16) & 0xff)

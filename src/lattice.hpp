@@ -3,8 +3,8 @@
  * Copyright (C) 2019 Gwenhael Goavec-Merou <gwenhael.goavec-merou@trabucayre.com>
  */
 
-#ifndef LATTICE_HPP_
-#define LATTICE_HPP_
+#ifndef SRC_LATTICE_HPP_
+#define SRC_LATTICE_HPP_
 
 #include <stdint.h>
 #include <iostream>
@@ -29,7 +29,8 @@ class Lattice: public Device, SPIInterface {
 		void program(unsigned int offset) override;
 		bool program_mem();
 		bool program_flash(unsigned int offset);
-		bool Verify(std::vector<std::string> data, bool unlock = false, uint32_t flash_area = 0);
+		bool Verify(std::vector<std::string> data, bool unlock = false,
+				uint32_t flash_area = 0);
 		bool dumpFlash(const std::string &filename,
 			uint32_t base_addr, uint32_t len) override;
 
@@ -38,7 +39,7 @@ class Lattice: public Device, SPIInterface {
 		uint32_t len) override;
 		int spi_put(uint8_t *tx, uint8_t *rx, uint32_t len) override;
 		int spi_wait(uint8_t cmd, uint8_t mask, uint8_t cond,
-				uint32_t timeout, bool verbose=false) override;
+				uint32_t timeout, bool verbose = false) override;
 
 	private:
 		enum lattice_family_t {
@@ -101,4 +102,4 @@ class Lattice: public Device, SPIInterface {
 		bool programFeatureRow_MachXO3D(uint8_t* feature_row);
 		bool programFeabits_MachXO3D(uint32_t feabits);
 };
-#endif  // LATTICE_HPP_
+#endif  // SRC_LATTICE_HPP_
