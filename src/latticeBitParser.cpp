@@ -92,5 +92,19 @@ int LatticeBitParser::parse()
 	std::move(_raw_data.begin()+_endHeader, _raw_data.end(), _bit_data.begin());
 	_bit_length = _bit_data.size() * 8;
 
+	/* extract idcode from configuration data (area starting with 0xE2) */
+	for (int i = 0; i < _bit_data.size();i++) {
+		if ((uint8_t)_bit_data[i] != 0xe2)
+			continue;
+		/* E2: verif id */
+		uint32_t idcode = (((uint32_t)_bit_data[i+4]) << 24) |
+						(((uint32_t)_bit_data[i+5]) << 16) |
+						(((uint32_t)_bit_data[i+6]) <<  8) |
+						(((uint32_t)_bit_data[i+7]) <<  0);
+		_hdr["idcode"] = string(8, ' ');
+		snprintf(&_hdr["idcode"][0], 9, "%08x", idcode);
+		break;
+	}
+
 	return 0;
 }
