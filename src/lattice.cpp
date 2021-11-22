@@ -274,8 +274,13 @@ bool Lattice::program_mem()
 	/* read ID Code 0xE0 and compare to bitstream */
 	uint32_t bit_idcode = std::stoul(_bit.getHeaderVal("idcode").c_str(), NULL, 16);
 	uint32_t idcode = idCode();
-	if (idcode != bit_idcode)
-		throw std::runtime_error("mismatch between target's idcode and bitstream idcode");
+	if (idcode != bit_idcode) {
+		char mess[256];
+		sprintf(mess, "mismatch between target's idcode and bitstream idcode\n"
+			"\tbitstream has 0x%08X hardware requires 0x%08x", bit_idcode, idcode);
+		printError(mess);
+		return false;
+	}
 
 	if (_verbose) {
 		printf("IDCode : %x\n", idcode);
@@ -529,8 +534,14 @@ bool Lattice::program_extFlash(unsigned int offset)
 	if (_file_extension == "bit") {
 		uint32_t bit_idcode = std::stoul(_bit->getHeaderVal("idcode").c_str(), NULL, 16);
 		uint32_t idcode = idCode();
-		if (idcode != bit_idcode)
-			throw std::runtime_error("mismatch between target's idcode and bitstream idcode");
+		if (idcode != bit_idcode) {
+			char mess[256];
+			sprintf(mess, "mismatch between target's idcode and bitstream idcode\n"
+				"\tbitstream has 0x%08X hardware requires 0x%08x", bit_idcode, idcode);
+			printError(mess);
+			delete _bit;
+			return false;
+		}
 	}
 
 	/*IR = 0h3A, DR=0hFE,0h68. Enter RUNTESTIDLE.
