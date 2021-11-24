@@ -19,6 +19,9 @@ Device::Device(Jtag *jtag, string filename, const string &file_type,
 {
 	if (!file_type.empty())
 		_file_extension = file_type;
+	else if (!filename.empty() && (filename.find_last_of(".")) == string::npos)
+		_file_extension = "raw";
+
 	_jtag = jtag;
 	if (verbose > 0)
 		cout << "File type : " << _file_extension << endl;
