@@ -151,8 +151,11 @@ Lattice::Lattice(Jtag *jtag, const string filename, const string &file_type,
 				_mode = Device::FLASH_MODE;
 			else
 				_mode = Device::MEM_MODE;
-		} else {
-			throw std::runtime_error("incompatible file format");
+		} else { /* unknown type: */
+			if (prg_type == Device::WR_FLASH) /* to flash: OK */
+				_mode = Device::FLASH_MODE;
+			else /* otherwise: KO */
+				throw std::runtime_error("incompatible file format");
 		}
 	}
 	/* check device family */

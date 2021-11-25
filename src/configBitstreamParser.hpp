@@ -47,6 +47,16 @@ class ConfigBitstreamParser {
 
 		static uint8_t reverseByte(uint8_t src);
 
+	private:
+		/**
+		 * \brief decompress bitstream in gzip format
+		 * \param[in] source: raw compressed data
+		 * \param[out] dest: raw uncompressed data
+		 * \return false if openFPGALoader is build without zlib or
+		 *              if uncompress fails
+		 */
+		bool decompress_bitstream(std::string source, std::string *dest);
+
 	protected:
 		std::string _filename;
 		int _bit_length;

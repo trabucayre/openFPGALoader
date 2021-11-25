@@ -37,6 +37,7 @@ if(USE_PKGCONFIG)
 	pkg_check_modules(LIBFTDI REQUIRED libftdi1)
 	pkg_check_modules(LIBUSB REQUIRED libusb-1.0)
 	pkg_check_modules(HIDAPI hidapi-hidraw)
+	pkg_check_modules(ZLIB zlib)
 	# if hidraw not found try with libusb
 	if(NOT HIDAPI_FOUND)
 		pkg_check_modules(HIDAPI hidapi-libusb)
@@ -198,13 +199,19 @@ else()
 endif()
 endif(ENABLE_CMSISDAP)
 
+if (ZLIB_FOUND)
+	include_directories(${ZLIB_INCLUDE_DIRS})
+	target_link_libraries(openFPGALoader ${ZLIB_LIBRARIES})
+	add_definitions(-DHAS_ZLIB=1)
+else()
+	message("zlib library not found: can't flash intel/altera devices")
+endif()
 endif()
 
 if (LINK_CMAKE_THREADS)
 	find_package(Threads REQUIRED)
 	target_link_libraries(openFPGALoader Threads::Threads)
 endif()
-
 
 # libftdi < 1.4 as no usb_addr
 # libftdi >= 1.5 as purge_buffer obsolete
@@ -218,9 +225,11 @@ add_definitions(-DFTDI_VERSION=${FTDI_VAL})
 install(TARGETS openFPGALoader DESTINATION bin)
 file(GLOB BITS_FILES spiOverJtag/spiOverJtag_*.bit)
 file(GLOB RBF_FILES spiOverJtag/spiOverJtag_*.rbf)
+file(GLOB GZ_FILES spiOverJtag/spiOverJtag_*.rbf.gz)
 install(FILES 
 	test_sfl.svf
 	${BITS_FILES}
 	${RBF_FILES}
+	${GZ_FILES}
 	DESTINATION ${CMAKE_INSTALL_DATAROOTDIR}/openFPGALoader
 )

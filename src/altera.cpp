@@ -156,7 +156,11 @@ bool Altera::load_bridge()
 
 	// DATA_DIR is defined at compile time.
 	std::string bitname = DATA_DIR "/openFPGALoader/spiOverJtag_";
+#ifdef HAS_ZLIB
+	bitname += _device_package + ".rbf.gz";
+#else
 	bitname += _device_package + ".rbf";
+#endif
 
 	std::cout << "use: " << bitname << std::endl;
 

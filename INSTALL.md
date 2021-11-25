@@ -24,7 +24,8 @@ sudo dnf install openFPGALoader
 This application uses **libftdi1**, so this library must be installed (and,
 depending of the distribution, headers too)
 ```bash
-apt-get install libftdi1-2 libftdi1-dev libhidapi-hidraw0 libhidapi-dev libudev-dev cmake pkg-config make g++
+apt-get install libftdi1-2 libftdi1-dev libhidapi-hidraw0 libhidapi-dev libudev-dev \
+	zlib1g-dev cmake pkg-config make g++
 ```
 **libudev-dev** is optional, may be replaced by **eudev-dev** or just not installed.
 
