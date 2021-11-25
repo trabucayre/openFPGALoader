@@ -2042,26 +2042,27 @@ bool Lattice::program_pubkey_MachXO3D()
 
 	/* Programming and Verify the AUTH_EN2 and AUTH_EN1 Fuses..."
 	 * -- This is undocumented (extracted from USB capture) */
-	uint8_t tx_byte = 0x01;
-	wr_rd(0xc4, &tx, 1, NULL, 0);
+	uint8_t tx_byte = 0x03;
+	wr_rd(0xc4, &tx_byte, 1, NULL, 0);
 	_jtag->set_state(Jtag::RUN_TEST_IDLE);
 	_jtag->toggleClk(2);
 
 	wr_rd(ISC_NOOP, NULL, 0, NULL, 0);
 
 	/* lattice diamond sends this twice... ? */
-	wr_rd(0xc4, &tx, 1, NULL, 0);
+	wr_rd(0xc4, &tx_byte, 1, NULL, 0);
 	_jtag->set_state(Jtag::RUN_TEST_IDLE);
 	_jtag->toggleClk(2);
 
 	wr_rd(ISC_NOOP, NULL, 0, NULL, 0);
 
+	if (_verbose) {
+		wr_rd(READ_STATUS_REGISTER_1, NULL, 0, rxkey, 4);
+		_jtag->set_state(Jtag::RUN_TEST_IDLE);
+		_jtag->toggleClk(2);
 
-	wr_rd(READ_STATUS_REGISTER_1, NULL, 0, rxkey, 4);
-	_jtag->set_state(Jtag::RUN_TEST_IDLE);
-	_jtag->toggleClk(2);
-
-	printf("Auth Mode: [0x%x]\n", rxkey >> 0x08 & 0x03);
+		printf("Auth Mode: [%s] (0x%x)\n", (rxkey[1] & 0x03 ? "ECDSA Signature Verification" : rxkey[1] & 0x01 ? "HMAC Authentication" : "No Authentication"), rxkey[1] & 0x03);
+	}
 
 	/* ISC program done 0x5E */
 	printInfo("Write program Done: ", false);
