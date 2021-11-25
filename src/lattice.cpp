@@ -134,6 +134,8 @@ using namespace std;
 #define READ_ECDSA_PUBKEY3				0x64		/* This command is used to read the fourth 128 bits of the ECDSA Public Key. */
 #define ISC_NOOP						0xff		/* This command is no operation command (NOOP) or null operation. */
 
+#define PUBKEY_LENGTH_BYTES				64			/* length of the public key (MachXO3D) in bytes */
+
 Lattice::Lattice(Jtag *jtag, const string filename, const string &file_type,
 	Device::prog_type_t prg_type, std::string flash_sector, bool verify, int8_t verbose):
 		Device(jtag, filename, file_type, verify, verbose),
@@ -187,6 +189,9 @@ Lattice::Lattice(Jtag *jtag, const string filename, const string &file_type,
 		} else if (flash_sector == "FEA") {
 			_flash_sector = LATTICE_FLASH_FEA;
 			printInfo("Flash Sector: FEA", true);
+		} else if (flash_sector == "PKEY") {
+			_flash_sector = LATTICE_FLASH_PKEY;
+			printInfo("Flash Sector: PKEY", true);
 		} else {
 			printError("Unknown flash sector");
 			throw std::exception();
@@ -642,6 +647,8 @@ bool Lattice::program_flash(unsigned int offset)
 			retval = program_intFlash(_jed);
 	} else if (_file_extension == "fea") {
 		retval = program_fea_MachXO3D();
+	} else if (_file_extension == "pub") {
+		retval = program_pubkey_MachXO3D();
 	} else {
 		retval = program_extFlash(offset);
 	}
@@ -1428,6 +1435,104 @@ bool Lattice::programFeabits_MachXO3D(uint32_t feabits)
 	return true;
 }
 
+bool Lattice::programPubKey_MachXO3D(uint8_t* pubkey)
+{
+	uint8_t rxkey[PUBKEY_LENGTH_BYTES] = { 0 };
+	uint8_t tx[16];
+	int i;
+
+	if (_verbose) {
+		printf("\tProgramming ECDSA PubKey: [");
+		for (i = 0; i < PUBKEY_LENGTH_BYTES; i++) {
+			printf("%02x", pubkey[i]);
+		}
+		printf("]\n");
+	}
+
+	for(i = 0; i < 16; i++) {
+		tx[i] = pubkey[63 - i];
+	}
+	wr_rd(PROG_ECDSA_PUBKEY0, tx, 16, NULL, 0);
+	_jtag->set_state(Jtag::RUN_TEST_IDLE);
+	_jtag->toggleClk(2);
+
+	wr_rd(0xff, NULL, 0, NULL, 0);
+	if (!pollBusyFlag())
+		return false;
+
+	for(i = 0; i < 16; i++) {
+		tx[i] = pubkey[47 - i];
+	}
+	wr_rd(PROG_ECDSA_PUBKEY1, tx, 16, NULL, 0);
+	_jtag->set_state(Jtag::RUN_TEST_IDLE);
+	_jtag->toggleClk(2);
+
+	wr_rd(0xff, NULL, 0, NULL, 0);
+	if (!pollBusyFlag())
+		return false;
+
+	for(i = 0; i < 16; i++) {
+		tx[i] = pubkey[31 - i];
+	}
+	wr_rd(PROG_ECDSA_PUBKEY2, tx, 16, NULL, 0);
+	_jtag->set_state(Jtag::RUN_TEST_IDLE);
+	_jtag->toggleClk(2);
+
+	wr_rd(0xff, NULL, 0, NULL, 0);
+	if (!pollBusyFlag())
+		return false;
+
+	for(i = 0; i < 16; i++) {
+		tx[i] = pubkey[15 - i];
+	}
+	wr_rd(PROG_ECDSA_PUBKEY3, tx, 16, NULL, 0);
+	_jtag->set_state(Jtag::RUN_TEST_IDLE);
+	_jtag->toggleClk(2);
+
+	wr_rd(0xff, NULL, 0, NULL, 0);
+	if (!pollBusyFlag())
+		return false;
+
+	if (_verbose || _verify) {
+		/* read the current feature row */
+		wr_rd(READ_ECDSA_PUBKEY0, NULL, 0, rxkey, 16);
+		_jtag->set_state(Jtag::RUN_TEST_IDLE);
+		_jtag->toggleClk(2);
+
+		wr_rd(READ_ECDSA_PUBKEY1, NULL, 0, rxkey + 16, 16);
+		_jtag->set_state(Jtag::RUN_TEST_IDLE);
+		_jtag->toggleClk(2);
+
+		wr_rd(READ_ECDSA_PUBKEY2, NULL, 0, rxkey + 32, 16);
+		_jtag->set_state(Jtag::RUN_TEST_IDLE);
+		_jtag->toggleClk(2);
+
+		wr_rd(READ_ECDSA_PUBKEY3, NULL, 0, rxkey + 48, 16);
+		_jtag->set_state(Jtag::RUN_TEST_IDLE);
+		_jtag->toggleClk(2);
+	}
+
+	if (_verbose) {
+		printf("Readback PubKey: [");
+		for (i=PUBKEY_LENGTH_BYTES-1; i >= 0; i--) {
+			printf("%02x", rxkey[i]);
+			if (i && (i%16 == 0)) printf(" ");
+		}
+		printf("]\n");
+	}
+
+	if (_verify) {
+		for (int i = 0; i < PUBKEY_LENGTH_BYTES; i++) {
+			if (pubkey[i] != rxkey[PUBKEY_LENGTH_BYTES - i - 1]) {
+				printf("\tVerify Failed...\n");
+				return false;
+			}
+		}
+	}
+
+	return true;
+}
+
 bool Lattice::program_fea_MachXO3D()
 {
 	bool err;
@@ -1773,6 +1878,200 @@ bool Lattice::program_intFlash_MachXO3D(JedParser& _jed)
 	}
 	_jtag->set_state(Jtag::RUN_TEST_IDLE);
 	_jtag->toggleClk(1000);
+
+	/* ISC program done 0x5E */
+	printInfo("Write program Done: ", false);
+	if (writeProgramDone() == false) {
+		printError("FAIL");
+		return false;
+	} else {
+		printSuccess("DONE");
+	}
+
+	/* bypass */
+	wr_rd(ISC_NOOP, NULL, 0, NULL, 0);
+
+	/* disable configuration mode */
+	printInfo("Disable configuration: ", false);
+	if (!DisableISC()) {
+		printError("FAIL");
+		return false;
+	} else {
+		printSuccess("DONE");
+	}
+
+	return true;
+}
+
+bool Lattice::program_pubkey_MachXO3D()
+{
+	bool err, same = true;
+	int len, i, j;
+	uint8_t pubkey[PUBKEY_LENGTH_BYTES];
+	uint8_t rxkey[PUBKEY_LENGTH_BYTES];
+
+	RawParser _pk(_filename, false);
+	printInfo("Open file: ", false);
+	printSuccess("DONE");
+
+	err = _pk.parse();
+	printInfo("Parse file: ", false);
+	if (err == EXIT_FAILURE) {
+		printError("FAIL");
+		return false;
+	} else {
+		printSuccess("DONE");
+	}
+
+	uint8_t* data = _pk.getData();
+	len =  _pk.getLength()/8;
+
+	if (data[0] == 0x0f && data[1] == 0xf0) {
+		for (i = 2; i < len; i++) {
+			if (data[i] == 0xf0 && data[i+1] == 0x0f) {
+				if (_verbose) printf("Header: [%.*s]\n", i-2, ((char *)data)+2);
+				i+=2;
+				break;
+			}
+		}
+
+		memcpy(pubkey, data+i, PUBKEY_LENGTH_BYTES);
+		i += PUBKEY_LENGTH_BYTES;
+/*
+		As read from file:
+		...
+		7dbc273a6e614a0f5289070524a1a59d
+		3a5d518b5cff00bc521f1ef62c4227ce
+		dd7987ecb63768e3310864f4b44daf90
+		ebf86ce8a9b17842821551a85b2235cc
+		...
+
+		As Sent by diamond programmer:
+		0x59: cc35225ba85115824278b1a9e86cf8eb
+		0x5B: 90af4db4f4640831e36837b6ec8779dd
+		0x61: ce27422cf61e1f52bc00ff5c8b515d3a
+		0x63: 9da5a124050789520f4a616e3a27bc7d
+*/
+		if (_verbose) {
+			printf("PubKey: [");
+			for (j=0; j < PUBKEY_LENGTH_BYTES; j++) {
+				if (j && (j%16 == 0)) printf(" ");
+				printf("%02x", pubkey[j]);
+			}
+			printf("]\n");
+		}
+
+		if (_verbose) {
+			printf("Trailing bytes: [");
+			for (; i < len; i++) {
+				printf("%02x ", data[i]);
+			}
+			printf("\b]\n");
+		}
+	}
+	else {
+		printError("Failed to find header in public key file");
+		return false;
+	}
+
+
+	/* bypass */
+	wr_rd(ISC_NOOP, NULL, 0, NULL, 0);
+	/* ISC Enable 0xC6 with operand of 0x08 (Enable Offline mode) */
+	printInfo("Enable configuration: ", false);
+	if (!EnableISC(0x08)) {
+		printError("FAIL");
+		displayReadReg(readStatusReg());
+		return false;
+	} else {
+		printSuccess("DONE");
+	}
+
+	/* read the current feature row */
+	wr_rd(READ_ECDSA_PUBKEY0, NULL, 0, rxkey, 16);
+	_jtag->set_state(Jtag::RUN_TEST_IDLE);
+	_jtag->toggleClk(2);
+
+	wr_rd(READ_ECDSA_PUBKEY1, NULL, 0, rxkey + 16, 16);
+	_jtag->set_state(Jtag::RUN_TEST_IDLE);
+	_jtag->toggleClk(2);
+
+	wr_rd(READ_ECDSA_PUBKEY2, NULL, 0, rxkey + 32, 16);
+	_jtag->set_state(Jtag::RUN_TEST_IDLE);
+	_jtag->toggleClk(2);
+
+	wr_rd(READ_ECDSA_PUBKEY3, NULL, 0, rxkey + 48, 16);
+	_jtag->set_state(Jtag::RUN_TEST_IDLE);
+	_jtag->toggleClk(2);
+
+	if (_verbose) {
+		printf("Read PubKey: [");
+		for (j=PUBKEY_LENGTH_BYTES-1; j >= 0; j--) {
+			printf("%02x", rxkey[j]);
+			if (j && (j%16 == 0)) printf(" ");
+		}
+		printf("]\n");
+	}
+
+	for (int i = 0; i < PUBKEY_LENGTH_BYTES; i++) {
+		if (pubkey[i] != rxkey[PUBKEY_LENGTH_BYTES - i - 1])
+			same = false;
+	}
+
+	printf("PubKey Compare: %s\n", same ? "Same" : "Different");
+	if (same == false) {
+		uint8_t tx[2];
+		/* LSC_INIT_ADDRESS */
+		tx[0] = (uint8_t)((FLASH_SEC_PKEY >> 8) & 0xff);
+		tx[1] = (uint8_t)((FLASH_SEC_PKEY >> 16) & 0xff);
+		if (_verbose)
+			printf("Selected address (I): 0x%x 0x%x\n", tx[0], tx[1]);
+		wr_rd(RESET_CFG_ADDR, tx, 2, NULL, 0);
+
+		/* ISC ERASE */
+		printInfo("Flash erase: ", false);
+		if (flashErase(FLASH_SEC_PKEY) == false) {
+			printError("FAIL");
+			return false;
+		}
+		else {
+			printSuccess("DONE");
+		}
+
+		/* Public Key */
+		printInfo("Program Public Key: ", true);
+		if (!programPubKey_MachXO3D(pubkey)) {
+			printError("FAIL");
+			return false;
+		}
+		else {
+			printSuccess("DONE");
+		}
+	}
+
+	/* Programming and Verify the AUTH_EN2 and AUTH_EN1 Fuses..."
+	 * -- This is undocumented (extracted from USB capture) */
+	uint8_t tx_byte = 0x03;
+	wr_rd(0xc4, &tx_byte, 1, NULL, 0);
+	_jtag->set_state(Jtag::RUN_TEST_IDLE);
+	_jtag->toggleClk(2);
+
+	wr_rd(ISC_NOOP, NULL, 0, NULL, 0);
+
+	/* lattice diamond sends this twice... ? */
+	wr_rd(0xc4, &tx_byte, 1, NULL, 0);
+	_jtag->set_state(Jtag::RUN_TEST_IDLE);
+	_jtag->toggleClk(2);
+
+	wr_rd(ISC_NOOP, NULL, 0, NULL, 0);
+
+	if (_verbose) {
+		wr_rd(READ_STATUS_REGISTER_1, NULL, 0, rxkey, 4);
+		_jtag->set_state(Jtag::RUN_TEST_IDLE);
+		_jtag->toggleClk(2);
+
+		printf("Auth Mode: [%s] (0x%x)\n", (rxkey[1] & 0x03 ? "ECDSA Signature Verification" : rxkey[1] & 0x01 ? "HMAC Authentication" : "No Authentication"), rxkey[1] & 0x03);
+	}
 
 	/* ISC program done 0x5E */
 	printInfo("Write program Done: ", false);
