@@ -34,7 +34,8 @@ jobs:
           libhidapi-dev \
           libudev-dev \
           pkg-config \
-          tree
+          tree \
+          zlib1g-dev
 
     - name: '🚧 Build tarball'
       run: |
@@ -86,7 +87,8 @@ jobs:
         sudo apt install -y \
           libftdi1-2 \
           libhidapi-hidraw0 \
-          udev
+          udev \
+          zlib1g
 
     - name: '📥 Download artifact: package'
       uses: actions/download-artifact@v2
