@@ -17,10 +17,32 @@ Device::Device(Jtag *jtag, string filename, const string &file_type,
 		_mode(NONE_MODE), _verify(verify), _verbose(verbose > 0),
 		_quiet(verbose < 0)
 {
-	if (!file_type.empty())
+	/* extension overwritten by user */
+	if (!file_type.empty()) {
 		_file_extension = file_type;
-	else if (!filename.empty() && (filename.find_last_of(".")) == string::npos)
-		_file_extension = "raw";
+		/* check if extension and some specific type */
+	} else if (!filename.empty()) {
+		size_t offset = filename.find_last_of(".");
+		/* no extension => consider raw */
+		if (offset == string::npos) {
+			_file_extension = "raw";
+		/* compressed file ? */
+		} else if  (_file_extension.substr(0, 2) == "gz") {
+			size_t offset2 = filename.find_last_of(".", offset - 1);
+			/* no more extension -> error */
+			if (offset2 == string::npos) {
+				char mess[256];
+				snprintf(mess, sizeof(mess), "\nfile %s is compressed\n"
+						"but can't determine real type\n"
+						"please add correct extension or use --file-type",
+						filename.c_str());
+				throw std::runtime_error(mess);
+			} else { /* extract sub extension */
+				_file_extension = _filename.substr(offset2 + 1,
+						offset - offset2 - 1);
+			}
+		}
+	}
 
 	_jtag = jtag;
 	if (verbose > 0)
