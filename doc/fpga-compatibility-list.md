@@ -11,7 +11,7 @@
 |         | Cyclone 10 LP [10CL025](https://www.intel.com/content/www/us/en/products/programmable/fpga/cyclone-10.html)                      | OK     | OK    |
 | Lattice | [CrossLink-NX (LIFCL-40)](https://www.latticesemi.com/en/Products/FPGAandCPLD/CrossLink-NX)                                      | OK     | OK    |
 |         | [ECP5 (25F, 5G 85F](http://www.latticesemi.com/Products/FPGAandCPLD/ECP5)                                                        | OK     | OK    |
-|         | [iCE40 (HX1K,HX8K, UP5K)](https://www.latticesemi.com/en/Products/FPGAandCPLD/iCE40)                                             | OK     | NT    |
+|         | [iCE40 (HX1K, HX4K, HX8K, UP5K)](https://www.latticesemi.com/en/Products/FPGAandCPLD/iCE40)                                      | OK     | NT    |
 |         | [MachXO2](https://www.latticesemi.com/en/Products/FPGAandCPLD/MachXO2)                                                           | OK     | OK    |
 |         | [MachXO3D](http://www.latticesemi.com/en/Products/FPGAandCPLD/MachXO3D.aspx)                                                     | OK     | OK    |
 |         | [MachXO3LF](http://www.latticesemi.com/en/Products/FPGAandCPLD/MachXO3.aspx)                                                     | OK     | OK    |
