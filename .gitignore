@@ -38,3 +38,6 @@ openFPGALoader
 # Build directory
 build/
 
+# Documentation
+/doc/_build
+/doc/_theme
