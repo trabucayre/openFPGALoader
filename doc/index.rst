@@ -16,9 +16,9 @@ Welcome to the documentation of openFPGALoader (a universal utility for programm
   :caption: Compatibility
   :hidden:
 
-  fpga-compatibility-list
-  board-compatibility-list
-  cable-compatibility-list
+  compatibility/fpga
+  compatibility/board
+  compatibility/cable
 
 .. toctree::
   :caption: Vendors
