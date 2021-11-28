@@ -49,7 +49,7 @@ Boards
              nexysVideo `Digilent Nexys Video <https://reference.digilentinc.com/reference/programmable-logic/nexys-video/start>`__                                       Artix xc7a200tsbg484          OK        OK
              orangeCrab `Orange Crab <https://github.com/gregdavill/OrangeCrab>`__                                                                                        ECP5 LFE5U-25F-8MG285C        OK (JTAG) OK (DFU)
             pipistrello `Saanlima Pipistrello LX45 <http://pipistrello.saanlima.com/index.php?title=Welcome_to_Pipistrello>`__                                            Spartan6 xc6slx45-csg324      OK        OK
-        qmtechCycloneIV `QMTech CycloneIV Core Board <https://fr.aliexpress.com/item/32949281189.html>`__                                                                 Cyclone IV EP4CE15F23C8N      OK        NT
+        qmtechCycloneIV `QMTech CycloneIV Core Board <https://fr.aliexpress.com/item/32949281189.html>`__                                                                 Cyclone IV EP4CE15F23C8N      OK        OK
          qmtechCycloneV `QMTech CycloneV Core Board <https://fr.aliexpress.com/i/1000006622149.html>`__                                                                   Cyclone V 5CEFA2F23I7         OK        OK
                  runber `SeeedStudio Gowin RUNBER <https://www.seeedstudio.com/Gowin-RUNBER-Development-Board-p-4779.html>`__                                             littleBee GW1N-4              OK        IF/EF
                  runber `Scarab Hardware MiniSpartan6+ <https://www.kickstarter.com/projects/1812459948/minispartan6-a-powerful-fpga-board-and-easy-to-use>`__            Spartan6 xc6slx25-3-ftg256    OK        NT

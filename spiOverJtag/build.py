@@ -81,6 +81,7 @@ else:
     full_part = {
         "10cl025256": "10CL025YU256C8G",
         "ep4ce2217" : "EP4CE22F17C6",
+        "ep4ce1523" : "EP4CE15F23C8",
         "5ce223"    : "5CEFA2F23I7",
         "5ce423"    : "5CEBA4F23C8",
         "5cse423"   : "5CSEMA4U23C6",
