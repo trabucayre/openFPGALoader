@@ -1,7 +1,11 @@
 # openFPGALoader
 
 <p align="right">
-  <a title="'Test' workflow Status" href="https://github.com/trabucayre/openFPGALoader/actions?query=workflow%3ATest"><img alt="'Test' workflow Status" src="https://img.shields.io/github/workflow/status/trabucayre/openFPGALoader/Test?longCache=true&style=flat-square&label=Test&logo=github%20actions&logoColor=fff"></a>
+  <a title="Documentation" href="https://trabucayre.github.io/openFPGALoader"><img src="https://img.shields.io/website.svg?label=trabucayre.github.io%2FopenFPGALoader&longCache=true&style=flat-square&url=http%3A%2F%2Ftrabucayre.github.io%2FopenFPGALoader%2Findex.html&logo=GitHub"></a><!--
+  -->
+  <a title="'Test' workflow Status" href="https://github.com/trabucayre/openFPGALoader/actions?query=workflow%3ATest"><img alt="'Test' workflow Status" src="https://img.shields.io/github/workflow/status/trabucayre/openFPGALoader/Test?longCache=true&style=flat-square&label=Test&logo=github%20actions&logoColor=fff"></a><!--
+  -->
+  <a title="Releases" href="https://github.com/trabucayre/openFPGALoader/releases"><img src="https://img.shields.io/github/commits-since/trabucayre/openFPGALoader/latest.svg?longCache=true&style=flat-square&logo=git&logoColor=fff"></a>
 </p>
 
 <p align="center">
@@ -61,7 +65,7 @@ openFPGALoader -- a program to flash FPGA
       --detect              detect FPGA
       --dfu                 DFU mode
       --dump-flash          Dump flash mode
-      --external-flash      select ext flash for device with internal and  
+      --external-flash      select ext flash for device with internal and
                             external storage
       --file-size arg       provides size in Byte to dump, must be used with
                             dump-flash
