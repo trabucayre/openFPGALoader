@@ -9,41 +9,39 @@
 </p>
 
 <p align="center">
-  <strong><a href="doc/first-steps.md">First steps</a> • <a href="INSTALL.md">Install</a> • <a href="doc/troubleshooting.md">Troubleshooting</a></strong> • <a href="doc/advanced-usage.md">Advanced usage</a>
+  <strong><a href="https://trabucayre.github.io/openFPGALoader/guide/first-steps.html">First steps</a> • <a href="https://trabucayre.github.io/openFPGALoader/guide/install.html">Install</a> • <a href="https://trabucayre.github.io/openFPGALoader/guide/troubleshooting.html">Troubleshooting</a></strong> • <a href="https://trabucayre.github.io/openFPGALoader/guide/advanced.html">Advanced usage</a>
 </p>
 
-Universal utility for programming FPGAs. Compatible with many boards, cables and FPGA from major manufacturers (Xilinx, Altera/Intel, Lattice, Gowin, Efinix, Anlogic). openFPGALoader works on [Linux](INSTALL.md#linux), [Windows](INSTALL.md#windows) and [macOS](INSTALL.md#macos).
+Universal utility for programming FPGAs. Compatible with many boards, cables and FPGA from major manufacturers (Xilinx, Altera/Intel, Lattice, Gowin, Efinix, Anlogic). openFPGALoader works on Linux, Windows and macOS.
 
 Not sure if your hardware is supported? Check the hardware compatibility lists:
 
- * [FPGA compatibility list](doc/fpga-compatibility-list.md)
- * [Board compatibility list](doc/board-compatibility-list.md)
- * [Cable compatibility list](doc/cable-compatibility-list.md)
+ * [FPGA compatibility list](https://trabucayre.github.io/openFPGALoader/compatibility/fpga.html)
+ * [Board compatibility list](https://trabucayre.github.io/openFPGALoader/compatibility/board.html)
+ * [Cable compatibility list](https://trabucayre.github.io/openFPGALoader/compatibility/cable.html)
 
-Also checkout the vendor-specific documentation: [Anlogic](doc/anlogic.md), [Efinix](doc/efinix.md), [Gowin](doc/gowin.md), [Intel/Altera](doc/intel.md), [Lattice](doc/lattice.md), [Xilinx](doc/xilinx.md).
+Also checkout the vendor-specific documentation:
+[Anlogic](https://trabucayre.github.io/openFPGALoader/vendors/anlogic.html),
+[Efinix](https://trabucayre.github.io/openFPGALoader/vendors/efinix.html),
+[Gowin](https://trabucayre.github.io/openFPGALoader/vendors/gowin.html),
+[Intel/Altera](https://trabucayre.github.io/openFPGALoader/vendors/intel.html),
+[Lattice](https://trabucayre.github.io/openFPGALoader/vendors/lattice.html),
+[Xilinx](https://trabucayre.github.io/openFPGALoader/vendors/xilinx.html).
 
 ## Quick Usage
 
-`arty` in the example below is one of the many FPGA board configurations listed [here](doc/board-compatibility-list.md).
+`arty` in the example below is one of the many FPGA board configurations listed [here](https://trabucayre.github.io/openFPGALoader/compatibility/board.html).
 
 ```bash
 openFPGALoader -b arty arty_bitstream.bit # Loading in SRAM
 openFPGALoader -b arty -f arty_bitstream.bit # Writing in flash
 ```
 
-You can also specify a JTAG cable model (complete list [here](doc/cable-compatibility-list.md)) instead of the board model:
+You can also specify a JTAG cable model (complete list [here](https://trabucayre.github.io/openFPGALoader/compatibility/cable.html)) instead of the board model:
 
 ```bash
 openFPGALoader -c cmsisdap fpga_bitstream.bit
 ```
-
-For detailed instructions, by vendor devices, see:
-- [Anlogic](doc/anlogic.md)
-- [Efinix](doc/efinix.md)
-- [Gowin](doc/gowin.md)
-- [Intel/Altera](doc/intel.md)
-- [Lattice](doc/lattice.md)
-- [Xilinx](doc/xilinx.md)
 
 ## Usage
 
