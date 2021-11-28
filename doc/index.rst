@@ -7,10 +7,10 @@ Welcome to the documentation of openFPGALoader (a universal utility for programm
   :caption: User Guide
   :hidden:
 
-  first-steps
-  install
-  troubleshooting
-  advanced-usage
+  guide/first-steps
+  guide/install
+  guide/troubleshooting
+  guide/advanced
 
 .. toctree::
   :caption: Compatibility
