@@ -1,7 +1,26 @@
 openFPGALoader: universal utility for programming FPGA
 ######################################################
 
-Welcome to the documentation of openFPGALoader (a universal utility for programming FPGA)!
+Welcome to the documentation of openFPGALoader!
+
+openFPGALoader is a universal utility for programming FPGAs.
+Compatible with many boards, cables and FPGA from major manufacturers (Xilinx, Altera/Intel, Lattice, Gowin, Efinix, Anlogic).
+openFPGALoader works on Linux, Windows and macOS.
+
+Not sure if your hardware is supported? Check the hardware compatibility lists:
+
+* :ref:`compatibility:fpgas`
+* :ref:`compatibility:boards`
+* :ref:`compatibility:cables`
+
+Also checkout the vendor-specific documentation:
+
+* `Anlogic <https://trabucayre.github.io/openFPGALoader/vendors/anlogic.html>`__
+* `Efinix <https://trabucayre.github.io/openFPGALoader/vendors/efinix.html>`__
+* `Gowin <https://trabucayre.github.io/openFPGALoader/vendors/gowin.html>`__
+* `Intel/Altera <https://trabucayre.github.io/openFPGALoader/vendors/intel.html>`__
+* `Lattice <https://trabucayre.github.io/openFPGALoader/vendors/lattice.html>`__
+* `Xilinx <https://trabucayre.github.io/openFPGALoader/vendors/xilinx.html>`__
 
 .. toctree::
   :caption: User Guide
