@@ -8,6 +8,26 @@ on:
 jobs:
 
 
+  doc:
+    runs-on: ubuntu-latest
+    name: '📓 Docs'
+    steps:
+
+    - name: '🧰 Checkout'
+      uses: actions/checkout@v2
+
+    - name: '📓 BuildTheDocs (BTD)'
+      uses: buildthedocs/btd@v0
+      with:
+        token: ${{ github.token }}
+        skip-deploy: ${{ github.event_name == 'pull_request' }}
+
+    - name: '📤 Upload artifact: HTML'
+      uses: actions/upload-artifact@v2
+      with:
+        path: doc/_build/html
+
+
   lin-build:
     strategy:
       fail-fast: false
