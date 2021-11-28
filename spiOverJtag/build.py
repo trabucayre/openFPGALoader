@@ -82,11 +82,12 @@ else:
         "10cl025256": "10CL025YU256C8G",
         "ep4ce2217" : "EP4CE22F17C6",
         "5ce223"    : "5CEFA2F23I7",
+        "5ce423"    : "5CEBA4F23C8",
         "5cse423"   : "5CSEMA4U23C6",
         "5cse623"   : "5CSEBA6U23I7"}[part]
     files.append({'name': currDir + 'altera_spiOverJtag.v',
                   'file_type': 'verilogSource'})
-    files.append({'name': currDir + 'test_jtag.sdc',
+    files.append({'name': currDir + 'altera_spiOverJtag.sdc',
                   'file_type': 'SDC'})
     tool_options = {'device': full_part, 'family':family}
 
