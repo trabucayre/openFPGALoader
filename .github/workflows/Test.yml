@@ -22,6 +22,10 @@ jobs:
         token: ${{ github.token }}
         skip-deploy: ${{ github.event_name == 'pull_request' }}
 
+    - name: '🧹 Clean HTML build'
+      if: ${{ github.event_name != 'pull_request' }}
+      run: sudo rm -rf doc/_build/html/.git
+
     - name: '📤 Upload artifact: HTML'
       uses: actions/upload-artifact@v2
       with:
