@@ -25,6 +25,7 @@ jobs:
     - name: '📤 Upload artifact: HTML'
       uses: actions/upload-artifact@v2
       with:
+        name: openFPGALoader-Documentation
         path: doc/_build/html
 
 
