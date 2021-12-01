@@ -124,16 +124,32 @@ jobs:
         openFPGALoader --detect || true
 
 
+  win-jobs:
+    name: ⬜ Generate list of MSYS2 jobs
+    runs-on: ubuntu-latest
+    outputs:
+      jobs: ${{ steps.jobs.outputs.jobs }}
+    steps:
+    - name: Generate list of jobs
+      shell: python
+      id: jobs
+      run: |
+        jobs = [
+          { 'icon': '⬛', 'sys': 'mingw32' },
+          { 'icon': '🟦', 'sys': 'mingw64' },
+          { 'icon': '🟨', 'sys': 'ucrt64'  }, # Experimental!
+          { 'icon': '🟧', 'sys': 'clang64' }, # Experimental!
+        ]
+        print(f"::set-output name=jobs::{jobs!s}")
+
+
   win-makepkg:
     runs-on: windows-latest
+    needs: win-jobs
     strategy:
       fail-fast: false
       matrix:
-        include:
-          - { icon: '⬛', sys: mingw32 }
-          - { icon: '🟦', sys: mingw64 }
-          - { icon: '🟨', sys: ucrt64  } # Experimental!
-          - { icon: '🟧', sys: clang64 } # Experimental!
+        include: ${{ fromJson(needs.win-jobs.outputs.jobs) }}
     name: '🚧${{ matrix.icon }} ${{ matrix.sys }} | makepkg'
     defaults:
       run:
@@ -182,16 +198,14 @@ jobs:
 
 
   win-test:
-    needs: win-makepkg
+    needs:
+      - win-jobs
+      - win-makepkg
     runs-on: windows-latest
     strategy:
       fail-fast: false
       matrix:
-        include:
-          - { icon: '⬛', sys: mingw32 }
-          - { icon: '🟦', sys: mingw64 }
-          - { icon: '🟨', sys: ucrt64  } # Experimental!
-          - { icon: '🟧', sys: clang64 } # Experimental!
+        include: ${{ fromJson(needs.win-jobs.outputs.jobs) }}
     name: '🚦${{ matrix.icon }} ${{ matrix.sys }} | test'
     defaults:
       run:
