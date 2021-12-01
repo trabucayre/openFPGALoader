@@ -128,10 +128,10 @@ jobs:
       fail-fast: false
       matrix:
         include:
-          - { icon: '⬛', sys: mingw32, env: i686 }
-          - { icon: '🟦', sys: mingw64, env: x86_64 }
-          - { icon: '🟨', sys: ucrt64,  env: ucrt-x86_64 }  # Experimental!
-          - { icon: '🟧', sys: clang64, env: clang-x86_64 } # Experimental!
+          - { icon: '⬛', sys: mingw32 }
+          - { icon: '🟦', sys: mingw64 }
+          - { icon: '🟨', sys: ucrt64  } # Experimental!
+          - { icon: '🟧', sys: clang64 } # Experimental!
     name: '🚧${{ matrix.icon }} ${{ matrix.sys }} | makepkg'
     defaults:
       run:
@@ -158,7 +158,7 @@ jobs:
           git
           base-devel
           tree
-          mingw-w64-${{ matrix.env }}-toolchain
+        pacboy: toolchain:p
 
     - name: '🚧 Build package'
       run: |
@@ -169,7 +169,7 @@ jobs:
       uses: actions/upload-artifact@v2
       with:
         name: ${{ matrix.sys }}-openFPGALoader
-        path: scripts/msys2/*${{ matrix.env }}*.zst
+        path: scripts/msys2/*.zst
 
     - name: '🔍 Show package content'
       run: |
@@ -186,10 +186,10 @@ jobs:
       fail-fast: false
       matrix:
         include:
-          - { icon: '⬛', sys: mingw32, env: i686 }
-          - { icon: '🟦', sys: mingw64, env: x86_64 }
-          - { icon: '🟨', sys: ucrt64,  env: ucrt-x86_64 }  # Experimental!
-          - { icon: '🟧', sys: clang64, env: clang-x86_64 } # Experimental!
+          - { icon: '⬛', sys: mingw32 }
+          - { icon: '🟦', sys: mingw64 }
+          - { icon: '🟨', sys: ucrt64  } # Experimental!
+          - { icon: '🟧', sys: clang64 } # Experimental!
     name: '🚦${{ matrix.icon }} ${{ matrix.sys }} | test'
     defaults:
       run:
