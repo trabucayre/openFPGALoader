@@ -259,4 +259,4 @@ jobs:
       with:
         token: ${{ github.token }}
         tag: 'nightly'
-        files: artifact/*-openFPGALoader/*
+        files: artifact/**/*
