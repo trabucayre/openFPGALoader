@@ -22,9 +22,14 @@ jobs:
         token: ${{ github.token }}
         skip-deploy: ${{ github.event_name == 'pull_request' }}
 
+    - name: '🧹 Clean HTML build'
+      if: ${{ github.event_name != 'pull_request' }}
+      run: sudo rm -rf doc/_build/html/.git
+
     - name: '📤 Upload artifact: HTML'
       uses: actions/upload-artifact@v2
       with:
+        name: openFPGALoader-Documentation
         path: doc/_build/html
 
 
@@ -242,10 +247,16 @@ jobs:
       with:
         path: artifact
 
+    - name: '✉️ Package Documentation'
+      run: |
+        cd artifact
+        tar cvzf openFPGALoader-Documentation.tar.gz openFPGALoader-Documentation
+        rm -rf openFPGALoader-Documentation
+
     # Tagged: create a pre-release or a release (semver)
     # Untagged: update the assets of pre-release 'nightly'
-    - uses: eine/tip@master
+    - uses: '📦 eine/tip@master'
       with:
         token: ${{ github.token }}
         tag: 'nightly'
-        files: artifact/*-openFPGALoader/*
+        files: artifact/**/*
