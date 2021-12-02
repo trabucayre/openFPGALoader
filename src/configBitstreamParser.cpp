@@ -11,7 +11,15 @@
 #include <unistd.h>
 
 #ifdef HAS_ZLIB
+#ifdef HAS_ZLIBNG
+#include <zlib-ng.h>
+#define z_stream zng_stream
+#define inflateInit2(_strm, _windowBits) zng_inflateInit2(_strm, _windowBits)
+#define inflate(_strm, __flush)          zng_inflate(_strm, __flush)
+#define inflateEnd(_strm)                zng_inflateEnd(_strm)
+#else
 #include <zlib.h>
+#endif
 #endif
 
 #include "display.hpp"
