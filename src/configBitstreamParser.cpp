@@ -39,12 +39,9 @@ ConfigBitstreamParser::ConfigBitstreamParser(const string &filename, int mode,
 
 		FILE *_fd = fopen(filename.c_str(), "rb");
 		if (!_fd) {
-			printf("1\n");
 			/* if file not found it's maybe a gz -> try without gz */
 			if (offset != string::npos) {
-				printf("2\n");
 				_filename = filename.substr(0, offset);
-				printf("%s\n", _filename.c_str());
 				_fd = fopen(_filename.c_str(), "rb");
 			}
 
