@@ -32,7 +32,7 @@ This application uses ``libftdi1``, so this library must be installed (and, depe
 
 .. code-block:: bash
 
-    apt-get install
+    sudo apt install \
       libftdi1-2 \
       libftdi1-dev \
       libhidapi-hidraw0 \
@@ -82,11 +82,12 @@ To build the app:
 
 .. code-block:: bash
 
+    git clone https://github.com/trabucayre/openFPGALoader
     mkdir build
     cd build
-    cmake ../ # add -DBUILD_STATIC=ON to build a static version
-              # add -DENABLE_UDEV=OFF to disable udev support and -d /dev/xxx
-              # add -DENABLE_CMSISDAP=OFF to disable CMSIS DAP support
+    cmake ../openFPGALoader # add -DBUILD_STATIC=ON to build a static version
+                            # add -DENABLE_UDEV=OFF to disable udev support and -d /dev/xxx
+                            # add -DENABLE_CMSISDAP=OFF to disable CMSIS DAP support
     cmake --build .
     # or
     make -j$(nproc)
