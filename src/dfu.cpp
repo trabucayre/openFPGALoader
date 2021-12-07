@@ -57,37 +57,36 @@ DFU::DFU(const string &filename, uint16_t vid, uint16_t pid,
 	struct dfu_status status;
 	int dfu_vid = 0, dfu_pid = 0;
 
-	if (!filename.empty()) {
-		printInfo("Open file " + filename + " ", false);
-		try {
-			_bit = new DFUFileParser(filename, _verbose > 0);
-			printSuccess("DONE");
-		} catch (std::exception &e) {
-			printError("FAIL");
-			throw runtime_error("Error: Fail to open file");
-		}
+	printInfo("Open file ", false);
 
-		printInfo("Parse file ", false);
-		try {
-			_bit->parse();
-			printSuccess("DONE");
-		} catch (std::exception &e) {
-			printError("FAIL");
-			delete _bit;
-			throw runtime_error("Error: Fail to parse file");
-		}
+	try {
+		_bit = new DFUFileParser(filename, _verbose > 0);
+		printSuccess("DONE");
+	} catch (std::exception &e) {
+		printError("FAIL");
+		throw runtime_error("Error: Fail to open file");
+	}
 
-		if (_verbose > 0)
-			_bit->displayHeader();
+	printInfo("Parse file ", false);
+	try {
+		_bit->parse();
+		printSuccess("DONE");
+	} catch (std::exception &e) {
+		printError("FAIL");
+		delete _bit;
+		throw runtime_error("Error: Fail to parse file");
+	}
 
-		/* get VID and PID from dfu file */
-		try {
-			dfu_vid = std::stoi(_bit->getHeaderVal("idVendor"), 0, 16);
-			dfu_pid = std::stoi(_bit->getHeaderVal("idProduct"), 0, 16);
-		} catch (std::exception &e) {
-			if (_verbose)
-				printWarn(e.what());
-		}
+	if (_verbose > 0)
+		_bit->displayHeader();
+
+	/* get VID and PID from dfu file */
+	try {
+		dfu_vid = std::stoi(_bit->getHeaderVal("idVendor"), 0, 16);
+		dfu_pid = std::stoi(_bit->getHeaderVal("idProduct"), 0, 16);
+	} catch (std::exception &e) {
+		if (_verbose)
+			printWarn(e.what());
 	}
 
 	if (libusb_init(&usb_ctx) < 0) {
