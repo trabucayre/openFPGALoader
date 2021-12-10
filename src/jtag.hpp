@@ -92,6 +92,8 @@ class Jtag {
 	/* utilities */
 	void setVerbose(int8_t verbose){_verbose = verbose;}
 
+	JtagInterface *_jtag;
+
  private:
 	void init_internal(cable_t &cable, const std::string &dev, const std::string &serial,
 		const jtag_pins_conf_t *pin_conf, uint32_t clkHZ,
@@ -102,7 +104,6 @@ class Jtag {
 	int _num_tms;
 	unsigned char *_tms_buffer;
 	std::string _board_name;
-	JtagInterface *_jtag;
 
 	int device_index; /*!< index for targeted FPGA */
 	std::vector<int32_t> _devices_list; /*!< ordered list of devices idcode */

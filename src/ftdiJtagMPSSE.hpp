@@ -20,7 +20,7 @@
  * \author Gwenhael Goavec-Merou
  */
 
-class FtdiJtagMPSSE : public JtagInterface, private FTDIpp_MPSSE {
+class FtdiJtagMPSSE : public JtagInterface, public FTDIpp_MPSSE {
  public:
 	FtdiJtagMPSSE(const FTDIpp_MPSSE::mpsse_bit_config &cable, std::string dev,
 		const std::string &serial, uint32_t clkHZ, uint8_t verbose = 0);

@@ -103,6 +103,8 @@ set(OPENFPGALOADER_SOURCE
 	src/bitparser.cpp
 	src/xilinx.cpp
 	src/xilinxMapParser.cpp
+	src/colognechip.cpp
+	src/colognechipCfgParser.cpp
 )
 
 set(OPENFPGALOADER_HEADERS
@@ -150,6 +152,8 @@ set(OPENFPGALOADER_HEADERS
 	src/latticeBitParser.hpp
 	src/xilinx.hpp
 	src/xilinxMapParser.hpp
+	src/colognechip.hpp
+	src/colognechipCfgParser.hpp
 )
 
 add_executable(openFPGALoader
