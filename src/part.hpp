@@ -19,6 +19,7 @@ typedef struct {
 /* Highest nibble (version) must always be set to 0 */
 static std::map <int, fpga_model> fpga_list = {
 	{0x0a014c35, {"anlogic", "eagle s20", "EG4S20BG256", 8}},
+	{0x00004c37, {"anlogic", "elf2", "EF2M45", 8}},
 
 	{0x0362D093, {"xilinx", "artix a7 35t", "xc7a35", 6}},
 	{0x0362c093, {"xilinx", "artix a7 50t",  "xc7a50t", 6}},
