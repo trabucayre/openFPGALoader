@@ -23,8 +23,7 @@ CologneChip::CologneChip(FtdiSpi *spi, const std::string &filename,
 
 	if (prg_type == Device::WR_SRAM) {
 		_mode = Device::MEM_MODE;
-	}
-	else {
+	} else {
 		_mode = Device::FLASH_MODE;
 	}
 }
@@ -39,8 +38,7 @@ CologneChip::CologneChip(Jtag* jtag, const std::string &filename,
 	std::string spi_board_name;
 	if (board_name != "-") {
 		spi_board_name = std::regex_replace(board_name, std::regex("jtag"), "spi");
-	}
-	else if (cable_name == "gatemate_pgm") {
+	} else if (cable_name == "gatemate_pgm") {
 		spi_board_name = "gatemate_pgm_spi";
 	}
 
@@ -61,8 +59,7 @@ CologneChip::CologneChip(Jtag* jtag, const std::string &filename,
 
 	if (prg_type == Device::WR_SRAM) {
 		_mode = Device::MEM_MODE;
-	}
-	else {
+	} else {
 		_mode = Device::FLASH_MODE;
 	}
 }
@@ -72,14 +69,11 @@ CologneChip::CologneChip(Jtag* jtag, const std::string &filename,
  */
 void CologneChip::reset()
 {
-	if (_spi)
-	{
+	if (_spi) {
 		_spi->gpio_clear(_rstn_pin | _oen_pin);
 		usleep(SLEEP_US);
 		_spi->gpio_set(_rstn_pin);
-	}
-	else if (_ftdi_jtag)
-	{
+	} else if (_ftdi_jtag) {
 		_ftdi_jtag->gpio_clear(_rstn_pin | _oen_pin);
 		usleep(SLEEP_US);
 		_ftdi_jtag->gpio_set(_rstn_pin);
@@ -95,8 +89,7 @@ bool CologneChip::cfgDone()
 	uint16_t status = 0;
 	if (_spi) {
 		status = _spi->gpio_get(true);
-	}
-	else if (_ftdi_jtag) {
+	} else if (_ftdi_jtag) {
 		status = _ftdi_jtag->gpio_get(true);
 	}
 	bool done = (status & _done_pin) > 0;
@@ -113,8 +106,7 @@ bool CologneChip::dumpFlash(const std::string &filename, uint32_t base_addr,
 	if (_spi) {
 		/* enable output and hold reset */
 		_spi->gpio_clear(_rstn_pin | _oen_pin);
-	}
-	else if (_ftdi_jtag) {
+	} else if (_ftdi_jtag) {
 		/* enable output and disable reset */
 		_ftdi_jtag->gpio_clear(_oen_pin);
 		_ftdi_jtag->gpio_set(_rstn_pin);
@@ -126,8 +118,7 @@ bool CologneChip::dumpFlash(const std::string &filename, uint32_t base_addr,
 		SPIFlash *flash;
 		if (_spi) {
 			flash = new SPIFlash(reinterpret_cast<SPIInterface *>(_spi), _verbose);
-		}
-		else if (_ftdi_jtag) {
+		} else if (_ftdi_jtag) {
 			flash = new SPIFlash(this, _verbose);
 		}
 		flash->reset();
@@ -142,8 +133,7 @@ bool CologneChip::dumpFlash(const std::string &filename, uint32_t base_addr,
 	if (_spi) {
 		/* disable output and release reset */
 		_spi->gpio_set(_rstn_pin | _oen_pin);
-	}
-	else if (_ftdi_jtag) {
+	} else if (_ftdi_jtag) {
 		/* disable output */
 		_ftdi_jtag->gpio_set(_oen_pin);
 	}
@@ -161,8 +151,7 @@ void CologneChip::program(unsigned int offset)
 	ConfigBitstreamParser *cfg;
 	if (_file_extension == "bit") {
 		cfg = new RawParser(_filename, false);
-	}
-	else if (_file_extension == "cfg") {
+	} else if (_file_extension == "cfg") {
 		cfg = new CologneChipCfgParser(_filename, false);
 	}
 
@@ -175,16 +164,14 @@ void CologneChip::program(unsigned int offset)
 		case Device::FLASH_MODE:
 			if (_jtag != NULL) {
 				programJTAG_flash(offset, data, length);
-			}
-			else if (_jtag == NULL) {
+			} else if (_jtag == NULL) {
 				programSPI_flash(offset, data, length);
 			}
 			break;
 		case Device::MEM_MODE:
 			if (_jtag != NULL) {
 				programJTAG_sram(data, length);
-			}
-			else if (_jtag == NULL) {
+			} else if (_jtag == NULL) {
 				programSPI_sram(data, length);
 			}
 			break;
@@ -213,8 +200,7 @@ void CologneChip::programSPI_sram(uint8_t *data, int length)
 	} while (!cfgDone() && timeout > 0);
 	if (timeout == 0) {
 		printError("FAIL");
-	}
-	else {
+	} else {
 		printSuccess("DONE");
 	}
 
@@ -257,8 +243,7 @@ void CologneChip::programSPI_flash(unsigned int offset, uint8_t *data, int lengt
 	} while (!cfgDone() && timeout > 0);
 	if (timeout == 0) {
 		printError("FAIL");
-	}
-	else {
+	} else {
 		printSuccess("DONE");
 	}
 
@@ -283,11 +268,9 @@ void CologneChip::programJTAG_sram(uint8_t *data, int length)
 
 	_jtag->shiftIR(JTAG_CONFIGURE, 6, Jtag::SELECT_DR_SCAN);
 
-	//ProgressBar progress("Loading", length, 50, _quiet);
+	ProgressBar progress("Load SRAM via JTAG", length, 50, _quiet);
 
 	for (int i = 0; i < length; i += size) {
-		//progress.display(i);
-
 		if (length < i + size)
 			size = length-i;
 
@@ -295,9 +278,10 @@ void CologneChip::programJTAG_sram(uint8_t *data, int length)
 			tmp[ii] = data[i+ii];
 
 		_jtag->shiftDR(tmp, NULL, size*8, Jtag::SHIFT_DR);
+		progress.display(i);
 	}
 
-	//progress.done();
+	progress.done();
 	_jtag->set_state(Jtag::RUN_TEST_IDLE);
 
 	printInfo("Wait for CFG_DONE ", false);
@@ -307,8 +291,7 @@ void CologneChip::programJTAG_sram(uint8_t *data, int length)
 	} while (!cfgDone() && timeout > 0);
 	if (timeout == 0) {
 		printError("FAIL");
-	}
-	else {
+	} else {
 		printSuccess("DONE");
 	}
 
@@ -418,8 +401,7 @@ int CologneChip::spi_wait(uint8_t cmd, uint8_t mask, uint8_t cond,
 			uint8_t b0 = ConfigBitstreamParser::reverseByte(rx[0]);
 			uint8_t b1 = ConfigBitstreamParser::reverseByte(rx[1]);
 			tmp = (b0 << 1) | ((b1 >> 7) & 0x01);
-		}
-		else {
+		} else {
 			_jtag->read_write(dummy, rx, 8, 0);
 			tmp = ConfigBitstreamParser::reverseByte(rx[0]);
 		}

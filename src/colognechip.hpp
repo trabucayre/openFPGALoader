@@ -17,6 +17,7 @@
 #include "rawParser.hpp"
 #include "colognechipCfgParser.hpp"
 #include "spiFlash.hpp"
+#include "progressBar.hpp"
 
 class CologneChip: public Device, SPIInterface {
 	public:
