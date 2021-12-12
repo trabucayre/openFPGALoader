@@ -21,8 +21,8 @@ Boards
                    arty `Digilent Analog Discovery 2 <https://reference.digilentinc.com/test-and-measurement/analog-discovery-2/start>`__                                 Spartan6 xc6slx25             OK        NT
                    arty `Digilent Digital Discovery <https://reference.digilentinc.com/test-and-measurement/digital-discovery/start>`__                                   Spartan6 xc6slx25             OK        NT
                  basys3 `Digilent Basys3 <https://reference.digilentinc.com/reference/programmable-logic/basys-3/start>`__                                                Artix xc7a35tcpg236           OK        OK
-      gatemate_evb_jtag `Cologne Chip GateMate FPGA Evaluation Boad (JTAG mode) <https://colognechip.com/programmable-logic/gatemate/>`__                                 Cologne Chip GateMate Series  OK        OK
-       gatemate_evb_spi `Cologne Chip GateMate FPGA Evaluation Boad (SPI mode) <https://colognechip.com/programmable-logic/gatemate/>`__                                  Cologne Chip GateMate Series  OK        OK
+      gatemate_evb_jtag `Cologne Chip GateMate FPGA Evaluation Board (JTAG mode) <https://colognechip.com/programmable-logic/gatemate/>`__                                 Cologne Chip GateMate Series  OK        OK
+       gatemate_evb_spi `Cologne Chip GateMate FPGA Evaluation Board (SPI mode) <https://colognechip.com/programmable-logic/gatemate/>`__                                  Cologne Chip GateMate Series  OK        OK
        gatemate_pgm_spi `Cologne Chip GateMate FPGA Programmer (SPI mode) <https://colognechip.com/programmable-logic/gatemate/>`__                                       Cologne Chip GateMate Series  OK        OK
              colorlight `Colorlight 5A-75B (version 7) <https://fr.aliexpress.com/item/32281130824.html>`__                                                               ECP5 LFE5U-25F-6BG256C        OK        OK
           colorlight_i5 `Colorlight I5 <https://www.colorlight-led.com/product/colorlight-i5-led-display-receiver-card.html>`__                                           ECP5 LFE5U-25F-6BG381C        OK        OK
