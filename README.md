@@ -12,7 +12,7 @@
   <strong><a href="https://trabucayre.github.io/openFPGALoader/guide/first-steps.html">First steps</a> • <a href="https://trabucayre.github.io/openFPGALoader/guide/install.html">Install</a> • <a href="https://trabucayre.github.io/openFPGALoader/guide/troubleshooting.html">Troubleshooting</a></strong> • <a href="https://trabucayre.github.io/openFPGALoader/guide/advanced.html">Advanced usage</a>
 </p>
 
-Universal utility for programming FPGAs. Compatible with many boards, cables and FPGA from major manufacturers (Xilinx, Altera/Intel, Lattice, Gowin, Efinix, Anlogic). openFPGALoader works on Linux, Windows and macOS.
+Universal utility for programming FPGAs. Compatible with many boards, cables and FPGA from major manufacturers (Xilinx, Altera/Intel, Lattice, Gowin, Efinix, Anlogic, Cologne Chip). openFPGALoader works on Linux, Windows and macOS.
 
 Not sure if your hardware is supported? Check the hardware compatibility lists:
 
@@ -22,6 +22,7 @@ Not sure if your hardware is supported? Check the hardware compatibility lists:
 
 Also checkout the vendor-specific documentation:
 [Anlogic](https://trabucayre.github.io/openFPGALoader/vendors/anlogic.html),
+[Cologne Chip](https://trabucayre.github.io/openFPGALoader/vendors/colognechip.html),
 [Efinix](https://trabucayre.github.io/openFPGALoader/vendors/efinix.html),
 [Gowin](https://trabucayre.github.io/openFPGALoader/vendors/gowin.html),
 [Intel/Altera](https://trabucayre.github.io/openFPGALoader/vendors/intel.html),
