@@ -84,7 +84,7 @@ void CologneChip::reset()
  * Obtain CFG_DONE and ~CFG_FAILED signals. Configuration is successfull iff
  * CFG_DONE=true and ~CFG_FAILED=false.
  */
-bool CologneChip::cfgDone()
+bool CologneChip::waitCfgDone()
 {
 	uint16_t status = 0;
 	if (_spi) {
@@ -152,7 +152,7 @@ void CologneChip::program(unsigned int offset)
 	if (_file_extension == "bit") {
 		cfg = new RawParser(_filename, false);
 	} else if (_file_extension == "cfg") {
-		cfg = new CologneChipCfgParser(_filename, false);
+		cfg = new CologneChipCfgParser(_filename);
 	}
 
 	cfg->parse();
@@ -197,7 +197,7 @@ void CologneChip::programSPI_sram(uint8_t *data, int length)
 	do {
 		timeout--;
 		usleep(SLEEP_US);
-	} while (!cfgDone() && timeout > 0);
+	} while (!waitCfgDone() && timeout > 0);
 	if (timeout == 0) {
 		printError("FAIL");
 	} else {
@@ -240,7 +240,7 @@ void CologneChip::programSPI_flash(unsigned int offset, uint8_t *data, int lengt
 	do {
 		timeout--;
 		usleep(SLEEP_US);
-	} while (!cfgDone() && timeout > 0);
+	} while (!waitCfgDone() && timeout > 0);
 	if (timeout == 0) {
 		printError("FAIL");
 	} else {
@@ -288,7 +288,7 @@ void CologneChip::programJTAG_sram(uint8_t *data, int length)
 	do {
 		timeout--;
 		usleep(SLEEP_US);
-	} while (!cfgDone() && timeout > 0);
+	} while (!waitCfgDone() && timeout > 0);
 	if (timeout == 0) {
 		printError("FAIL");
 	} else {

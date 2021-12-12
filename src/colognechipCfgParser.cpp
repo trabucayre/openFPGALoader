@@ -8,9 +8,9 @@
 
 #include "colognechipCfgParser.hpp"
 
-CologneChipCfgParser::CologneChipCfgParser(const std::string &filename, bool reverseOrder):
+CologneChipCfgParser::CologneChipCfgParser(const std::string &filename):
 		ConfigBitstreamParser(filename, ConfigBitstreamParser::ASCII_MODE,
-		false), _reverseOrder(reverseOrder)
+		false)
 {}
 
 int CologneChipCfgParser::parse()

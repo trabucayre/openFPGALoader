@@ -14,12 +14,9 @@
 
 class CologneChipCfgParser: public ConfigBitstreamParser {
 	public:
-		CologneChipCfgParser(const std::string &filename, bool reverseOrder);
+		CologneChipCfgParser(const std::string &filename);
 
 		int parse() override;
-
-	private:
-		bool _reverseOrder;
 };
 
 #endif  // SRC_COLOGNECHIPCFGPARSER_HPP_

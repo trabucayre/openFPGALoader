@@ -9,6 +9,7 @@
 
 #include <unistd.h>
 #include <regex>
+#include <string>
 
 #include "device.hpp"
 #include "jtag.hpp"
@@ -31,7 +32,7 @@ class CologneChip: public Device, SPIInterface {
 			bool verify, int8_t verbose);
 		~CologneChip() {}
 
-		bool cfgDone();
+		bool waitCfgDone();
 		bool dumpFlash(const std::string &filename, uint32_t base_addr, uint32_t len);
 		void program(unsigned int offset = 0) override;
 
