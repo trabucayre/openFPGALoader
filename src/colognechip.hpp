@@ -32,7 +32,8 @@ class CologneChip: public Device, SPIInterface {
 			bool verify, int8_t verbose);
 		~CologneChip() {}
 
-		bool waitCfgDone();
+		bool cfgDone();
+		void waitCfgDone();
 		bool dumpFlash(const std::string &filename, uint32_t base_addr, uint32_t len);
 		void program(unsigned int offset = 0) override;
 

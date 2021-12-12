@@ -84,7 +84,7 @@ void CologneChip::reset()
  * Obtain CFG_DONE and ~CFG_FAILED signals. Configuration is successfull iff
  * CFG_DONE=true and ~CFG_FAILED=false.
  */
-bool CologneChip::waitCfgDone()
+bool CologneChip::cfgDone()
 {
 	uint16_t status = 0;
 	if (_spi) {
@@ -95,6 +95,25 @@ bool CologneChip::waitCfgDone()
 	bool done = (status & _done_pin) > 0;
 	bool fail = (status & _failn_pin) == 0;
 	return (done && !fail);
+}
+
+/**
+ * Prints information if configuration was successfull.
+ */
+void CologneChip::waitCfgDone()
+{
+	uint32_t timeout = 1000;
+
+	printInfo("Wait for CFG_DONE ", false);
+	do {
+		timeout--;
+		usleep(SLEEP_US);
+	} while (!cfgDone() && timeout > 0);
+	if (timeout == 0) {
+		printError("FAIL");
+	} else {
+		printSuccess("DONE");
+	}
 }
 
 /**
@@ -149,10 +168,16 @@ bool CologneChip::dumpFlash(const std::string &filename, uint32_t base_addr,
 void CologneChip::program(unsigned int offset)
 {
 	ConfigBitstreamParser *cfg;
-	if (_file_extension == "bit") {
-		cfg = new RawParser(_filename, false);
-	} else if (_file_extension == "cfg") {
+	if (_file_extension == "cfg") {
 		cfg = new CologneChipCfgParser(_filename);
+	} else if (_file_extension == "bit") {
+		cfg = new RawParser(_filename, false);
+	} else { /* unknown type: */
+		if (_mode == Device::FLASH_MODE) {
+			cfg = new RawParser(_filename, false);
+		} else {
+			throw std::runtime_error("incompatible file format");
+		}
 	}
 
 	cfg->parse();
@@ -184,8 +209,6 @@ void CologneChip::program(unsigned int offset)
  */
 void CologneChip::programSPI_sram(uint8_t *data, int length)
 {
-	uint32_t timeout = 1000;
-
 	/* hold device in reset for a moment */
 	reset();
 
@@ -193,16 +216,7 @@ void CologneChip::programSPI_sram(uint8_t *data, int length)
 	_spi->gpio_set(_rstn_pin);
 	_spi->spi_put(data, recv, length); // TODO _spi->spi_put(data, null, length) does not work?
 
-	printInfo("Wait for CFG_DONE ", false);
-	do {
-		timeout--;
-		usleep(SLEEP_US);
-	} while (!waitCfgDone() && timeout > 0);
-	if (timeout == 0) {
-		printError("FAIL");
-	} else {
-		printSuccess("DONE");
-	}
+	waitCfgDone();
 
 	_spi->gpio_set(_oen_pin);
 	delete [] recv;
@@ -215,8 +229,6 @@ void CologneChip::programSPI_sram(uint8_t *data, int length)
  */
 void CologneChip::programSPI_flash(unsigned int offset, uint8_t *data, int length)
 {
-	uint32_t timeout = 1000;
-
 	/* hold device in reset during flash write access */
 	_spi->gpio_clear(_rstn_pin | _oen_pin);
 	usleep(SLEEP_US);
@@ -236,16 +248,7 @@ void CologneChip::programSPI_flash(unsigned int offset, uint8_t *data, int lengt
 	_spi->gpio_set(_rstn_pin);
 	usleep(SLEEP_US);
 
-	printInfo("Wait for CFG_DONE ", false);
-	do {
-		timeout--;
-		usleep(SLEEP_US);
-	} while (!waitCfgDone() && timeout > 0);
-	if (timeout == 0) {
-		printError("FAIL");
-	} else {
-		printSuccess("DONE");
-	}
+	waitCfgDone();
 
 	_spi->gpio_set(_oen_pin);
 }
@@ -256,8 +259,6 @@ void CologneChip::programSPI_flash(unsigned int offset, uint8_t *data, int lengt
  */
 void CologneChip::programJTAG_sram(uint8_t *data, int length)
 {
-	uint32_t timeout = 1000;
-
 	/* hold device in reset for a moment */
 	reset();
 
@@ -284,16 +285,7 @@ void CologneChip::programJTAG_sram(uint8_t *data, int length)
 	progress.done();
 	_jtag->set_state(Jtag::RUN_TEST_IDLE);
 
-	printInfo("Wait for CFG_DONE ", false);
-	do {
-		timeout--;
-		usleep(SLEEP_US);
-	} while (!waitCfgDone() && timeout > 0);
-	if (timeout == 0) {
-		printError("FAIL");
-	} else {
-		printSuccess("DONE");
-	}
+	waitCfgDone();
 
 	_ftdi_jtag->gpio_set(_oen_pin);
 }
