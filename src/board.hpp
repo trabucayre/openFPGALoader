@@ -120,6 +120,11 @@ static std::map <std::string, target_board_t> board_list = {
 	SPI_BOARD("fireant",              "efinix", "ft232",
 			DBUS4, DBUS5, 0, DBUS3, DBUS0, DBUS1, DBUS2, DBUS6, 0, CABLE_DEFAULT),
 	DFU_BOARD("fomu",             "", "dfu", 0x1209, 0x5bf0, 0),
+	SPI_BOARD("gatemate_pgm_spi",   "colognechip", "gatemate_pgm",
+			DBUS4, DBUS5, CBUS0, DBUS3, DBUS0, DBUS1, DBUS2, 0, 0, CABLE_DEFAULT),
+	JTAG_BOARD("gatemate_evb_jtag", "", "gatemate_evb_jtag", 0, 0, CABLE_DEFAULT),
+	SPI_BOARD("gatemate_evb_spi",   "colognechip", "gatemate_evb_spi",
+			DBUS4, DBUS5, CBUS0, DBUS3, DBUS0, DBUS1, DBUS2, 0, 0, CABLE_DEFAULT),
 	/* most ice40 boards uses the same pinout */
 	SPI_BOARD("ice40_generic",    "lattice", "ft2232",
 			DBUS7, DBUS6, 0,

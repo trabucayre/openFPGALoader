@@ -108,6 +108,9 @@ static std::map <int, fpga_model> fpga_list = {
 	{0x0100381B, {"Gowin", "GW1N", "GW1N-4", 8}},
 	{0x0300181b, {"Gowin", "GW1NS", "GW1NS-2C", 8}},
 	{0x0100981b, {"Gowin", "GW1NSR", "GW1NSR-4C", 8}},
+
+	/* keep highest nibble to prevent confusion with Efinix T4/T8 IDCODE */
+	{0x20000001, {"colognechip", "GateMate Series", "GM1Ax", 6}},
 };
 
 /* device potentially in JTAG chain but not handled */

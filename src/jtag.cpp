@@ -136,7 +136,13 @@ int Jtag::detectChain(int max_dev)
 		for (int ii=0; ii < 4; ii++)
 			tmp |= (rx_buff[ii] << (8*ii));
 		if (tmp != 0 && tmp != 0xffffffff) {
-			tmp &= 0x0fffffff;
+			/* ckeck highest nibble to prevent confusion between Cologne Chip
+			 * GateMate and Efinix Trion T4/T8 devices
+			 */
+			if (tmp != 0x20000001)
+				tmp &= 0x0fffffff;
+			else
+				tmp &= 0xffffffff;
 			_devices_list.insert(_devices_list.begin(), tmp);
 
 			/* search for irlength in fpga_list or misc_dev_list */

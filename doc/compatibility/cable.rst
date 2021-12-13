@@ -20,3 +20,4 @@ Cables
 * `Tang Nano 4k USB-JTAG interface <https://github.com/sipeed/RV-Debugger-BL702>`__: USB-JTAG/UART debugger based on BL702 microcontroler.
 * `Tigard <https://www.crowdsupply.com/securinghw/tigard>`__: SWD/JTAG/UART/SPI programmer based on Ftdi FT2232HQ
 * `honeycomb USB-JTAG interface <https://github.com/Disasm/f042-ftdi>`__: FT2232C clone based on STM32F042 microcontroler
+* `Cologne Chip GateMate FPGA Programmer <https://colognechip.com/programmable-logic/gatemate/>`__: FT232H-based JTAG/SPI programmer cable
