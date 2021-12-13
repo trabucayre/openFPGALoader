@@ -10,6 +10,7 @@ FPGAs
      Anlogic  `EF2M45 <http://www.anlogic.com/prod_view.aspx?TypeId=12&Id=170&FId=t3:12:3>`__                                                     OK     OK
 Cologne Chip  `GateMate Series <https://colognechip.com/programmable-logic/gatemate/>`__                                                          OK     OK
       Efinix  `Trion T8 <https://www.efinixinc.com/products-trion.html>`__                                                                        NA     OK
+      Efinix  `Titanium Ti60 <https://www.efinixinc.com/products-titanium.html>`__                                                                NA     OK
        Gowin  `GW1N (GW1N-1, GW1N-4, GW1NR-9, GW1NS-2C, GW1NSR-4C) <https://www.gowinsemi.com/en/product/detail/2/>`__                            OK     IF
        Intel  Cyclone III `EP3C16 <https://www.intel.com/content/www/us/en/programmable/products/fpga/cyclone-series/cyclone-iii/support.html>`__ OK     OK
        Intel  Cyclone IV CE `EP4CE22 <https://www.intel.com/content/www/us/en/products/programmable/fpga/cyclone-iv/features.html>`__             OK     OK
