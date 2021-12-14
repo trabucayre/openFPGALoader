@@ -53,6 +53,8 @@ Efinix::Efinix(Jtag* jtag, const std::string &filename,
 		spi_board_name = "xyloni_spi";
 	} else if (board_name == "trion_t120_bga576_jtag") {
 		spi_board_name = "trion_t120_bga576";
+	} else if (board_name == "titanium_ti60_f225_jtag") {
+		spi_board_name = "titanium_ti60_f225";
 	} else {
 		throw std::runtime_error("Error: unknown board name");
 	}

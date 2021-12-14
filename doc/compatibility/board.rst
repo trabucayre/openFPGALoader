@@ -63,6 +63,7 @@ Boards
                    xtrx `FairWaves XTRXPro <https://www.crowdsupply.com/fairwaves/xtrx>`__                                                                                Artix xc7a50tcpg236           OK        OK
              xyloni_spi `Efinix Xyloni <https://www.efinixinc.com/products-devkits-xyloni.html>`__                                                                        Trion T8F81                   NA        AS
   trion_t120_bga576_spi `Efinix Trion T120 BGA576 Dev Kit <https://www.efinixinc.com/products-devkits-triont120bga576.html>`__                                            Trion T120BGA576              NA        AS
+    trion_ti60_f225_spi `Efinix Titanium F225 Dev Kit <https://www.efinixinc.com/products-devkits-titaniumti60f225.html>`__                                               Titanium Ti60F225             NA        AS
                    xmf3 `PLDkit XMF3 <https://pldkit.com/xilinx/xmf3>`__                                                                                                  Xilinx xc3s200ft256, xcf01s   OK        OK
                zedboard `Avnet ZedBoard <https://www.avnet.com/wps/portal/us/products/avnet-boards/avnet-board-families/zedboard/>`__                                     zynq7000 xc7z020clg484        OK        NA
 ======================= ================================================================================================================================================= ============================= ========= ========
