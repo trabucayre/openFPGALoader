@@ -15,6 +15,14 @@ openFPGALoader is available in the default repositories:
 
     sudo pacman -S openfpgaloader
 
+Alternatively, you could build from source. First: install required libraries:
+
+.. code-block:: bash
+
+   sudo pacman -S git cmake make gcc pkgconf libftdi libusb zlib hidapi
+
+Build step is similar as Debian
+
 Fedora
 ------
 
