@@ -169,7 +169,7 @@ void JedParser::displayHeader()
 
 	for (size_t i = 0; i < _data_list.size(); i++) {
 		printf("area[%zd] %4d %4d ", i, _data_list[i].offset, _data_list[i].len);
-		printf("%ld ", _data_list[i].data.size());
+		printf("%zu ", _data_list[i].data.size());
 		for (size_t ii = 0; ii < _data_list[i].data.size(); ii++)
 			for (size_t iii = 0; iii < _data_list[i].data[ii].size(); iii++)
 				printf("%02x", (uint8_t)_data_list[i].data[ii][iii]);
