@@ -57,6 +57,7 @@ if tool in ["ise", "vivado"]:
         "xc7a100tfgg484"   : "xc7a_fgg484",
         "xc7a200tsbg484"   : "xc7a_sbg484",
         "xc7a200tfbg484"   : "xc7a_fbg484",
+        "xc7s25csga324"    : "xc7s_csga324",
         "xc7s50csga324"    : "xc7s_csga324"
         }[part]
     if tool == "ise":
