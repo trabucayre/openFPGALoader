@@ -239,7 +239,7 @@ add_definitions(-DFTDI_VERSION=${FTDI_VAL})
 install(TARGETS openFPGALoader DESTINATION bin)
 file(GLOB BITS_FILES spiOverJtag/spiOverJtag_*.bit)
 file(GLOB RBF_FILES spiOverJtag/spiOverJtag_*.rbf)
-file(GLOB GZ_FILES spiOverJtag/spiOverJtag_*.rbf.gz)
+file(GLOB GZ_FILES spiOverJtag/spiOverJtag_*.*.gz)
 install(FILES 
 	test_sfl.svf
 	${BITS_FILES}
