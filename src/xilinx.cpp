@@ -248,7 +248,7 @@ bool Xilinx::load_bridge()
 
 	// DATA_DIR is defined at compile time.
 	std::string bitname = DATA_DIR "/openFPGALoader/spiOverJtag_";
-	bitname += _device_package + ".bit";
+	bitname += _device_package + ".bit.gz";
 
 	std::cout << "use: " << bitname << std::endl;
 
