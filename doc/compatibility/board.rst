@@ -19,6 +19,8 @@ Boards
                    arty `Digilent Arty A7 <https://reference.digilentinc.com/reference/programmable-logic/arty-a7/start>`__                                               Artix xc7a35ticsg324          OK        OK
              arty_s7_25 `Digilent Arty S7 <https://reference.digilentinc.com/reference/programmable-logic/arty-s7/start>`__                                               Spartan7 xc7s25csga324        OK        OK
              arty_s7_50 `Digilent Arty S7 <https://reference.digilentinc.com/reference/programmable-logic/arty-s7/start>`__                                               Spartan7 xc7s50csga324        OK        OK
+             arty_z7_10 `Digilent Arty S7 <https://reference.digilentinc.com/reference/programmable-logic/arty-z7/start>`__                                               Zynq7000 xc7z010csg400        OK        NA
+             arty_z7_20 `Digilent Arty S7 <https://reference.digilentinc.com/reference/programmable-logic/arty-z7/start>`__                                               Zynq7000 xc7z020csg400        OK        NA
                    arty `Digilent Analog Discovery 2 <https://reference.digilentinc.com/test-and-measurement/analog-discovery-2/start>`__                                 Spartan6 xc6slx25             OK        NT
                    arty `Digilent Digital Discovery <https://reference.digilentinc.com/test-and-measurement/digital-discovery/start>`__                                   Spartan6 xc6slx25             OK        NT
                  basys3 `Digilent Basys3 <https://reference.digilentinc.com/reference/programmable-logic/basys-3/start>`__                                                Artix xc7a35tcpg236           OK        OK
