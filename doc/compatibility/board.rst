@@ -16,7 +16,8 @@ Boards
 ======================= ================================================================================================================================================= ============================= ========= ========
             acornCle215 `Acorn CLE 215+ <http://squirrelsresearch.com/acorn-cle-215/>`__                                                                                  Artix xc7a200tsbg484          OK        OK
             alchitry_au `Alchitry Au <https://alchitry.com/products/alchitry-au-fpga-development-board>`__                                                                Artix xc7a35tftg256           OK        OK
-                   arty `Digilent Arty A7 <https://reference.digilentinc.com/reference/programmable-logic/arty-a7/start>`__                                               Artix xc7a35ticsg324          OK        OK
+            arty_a7_35t `Digilent Arty A7 <https://reference.digilentinc.com/reference/programmable-logic/arty-a7/start>`__                                               Artix xc7a35ticsg324          OK        OK
+           arty_a7_100t `Digilent Arty A7 <https://reference.digilentinc.com/reference/programmable-logic/arty-a7/start>`__                                               Artix xc7a100tcsg324          OK        OK
              arty_s7_25 `Digilent Arty S7 <https://reference.digilentinc.com/reference/programmable-logic/arty-s7/start>`__                                               Spartan7 xc7s25csga324        OK        OK
              arty_s7_50 `Digilent Arty S7 <https://reference.digilentinc.com/reference/programmable-logic/arty-s7/start>`__                                               Spartan7 xc7s50csga324        OK        OK
              arty_z7_10 `Digilent Arty S7 <https://reference.digilentinc.com/reference/programmable-logic/arty-z7/start>`__                                               Zynq7000 xc7z010csg400        OK        NA
