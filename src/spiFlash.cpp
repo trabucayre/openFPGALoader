@@ -8,6 +8,7 @@
 #include <stdlib.h>
 #include <unistd.h>
 #include <cmath>
+#include <map>
 #include <iostream>
 
 #include "progressBar.hpp"
@@ -28,6 +29,8 @@
 #define FLASH_WREN     0x06
 /* sector (4Kb) erase */
 #define FLASH_SE       0x20
+/* read configuration register */
+#define FLASH_RDCR     0x35
 /* write function register (at least ISSI) */
 #define FLASH_WRFR     0x42
 /* read function register (at least ISSI) */
@@ -64,10 +67,12 @@
 /* Global Block Protection unlock */
 #define FLASH_ULBPR 0x98
 
-SPIFlash::SPIFlash(SPIInterface *spi, int8_t verbose):
+SPIFlash::SPIFlash(SPIInterface *spi, bool unprotect, int8_t verbose):
 	_spi(spi), _verbose(verbose), _jedec_id(0),
-	_flash_model(NULL)
+	_flash_model(NULL), _unprotect(unprotect)
 {
+	reset();
+	power_up();
 	read_id();
 }
 
@@ -130,8 +135,8 @@ int SPIFlash::sectors_erase(int base_addr, int size)
 			break;
 		}
 
-		/* if block erase + addr end out of end_addr -> use sector_erase */
-		if (addr + 0x10000 > end_addr) {
+		/* if block erase + addr end out of end_addr -> use sector_erase (4Kb) */
+		if (addr + 0x10000 > end_addr && _flash_model && _flash_model->subsector_erase) {
 			step = 0x1000;
 			ret = sector_erase(addr);
 		} else {
@@ -236,19 +241,75 @@ int SPIFlash::erase_and_prog(int base_addr, uint8_t *data, int len)
 {
 	if (_jedec_id == 0)
 		read_id();
+	bool must_relock = false;  // used to relock after write;
 
-	/* check Block Protect Bits */
-	if (_jedec_id == 0xbf2642bf) { // microchip SST26VF032B
+	/* microchip SST26VF032B have global lock set
+	 * at powerup. global unlock must be send inconditionally
+	 * with or without block protection
+	 */
+	if (_jedec_id == 0xbf2642bf) {  // microchip SST26VF032B
 		if (!global_unlock())
 			return -1;
-	} else {
-		uint8_t status = read_status_reg();
-		if ((status & 0x1c) !=0) {
+	}
+	/* check Block Protect Bits (hide WIP/WEN bits) */
+	uint8_t status = read_status_reg() & ~0x03;
+	if (_verbose > 0)
+		display_status_reg(status);
+	/* if known chip */
+	if (_flash_model) {
+		/* check if offset + len fit in flash */
+		if ((unsigned int)(base_addr + len) > (_flash_model->nr_sector * 0x10000) - 1) {
+			printError("flash overflow");
+			return -1;
+		}
+		/* compute protected area */
+		int8_t tb = get_tb();
+		if (tb == -1)
+			return -1;
+		std::map<std::string, uint32_t> lock_len = bp_to_len(status, tb);
+		printf("%08x %08x %08x %02x\n", base_addr,
+				lock_len["start"], lock_len["end"], status);
+
+		/* if some blocks are locked */
+		if (lock_len["start"] != 0 || lock_len["end"] != 0) {
+			/* if overlap */
+			if (tb == 1) {  // bottom blocks are protected
+							// check if start is in protected blocks
+				if ((uint32_t)base_addr <= lock_len["end"])
+					must_relock = true;
+			} else {  // top blocks
+				if ((uint32_t)(base_addr + len) >= lock_len["start"])
+					must_relock = true;
+			}
+		}
+		/* ISSI IS25LP032 seems have a bug:
+		 * block protection is always in top mode regardless of
+		 * the TB bit: if write is not at offset 0 -> force unlock
+		 */
+		if ((_jedec_id >> 8) == 0x9d6016 && tb == 1 && base_addr != 0) {
+			_unprotect = true;
+			must_relock = true;
+		}
+	} else {  // unknown chip: basic test
+		printWarn("flash chip unknown: use basic protection detection");
+		if ((status & 0x1c) != 0)
+			must_relock = true;
+	}
+
+	/* if it's needs to unlock */
+	if (must_relock) {
+		printf("unlock blocks\n");
+		if (!_unprotect) {
+			printError("Error: block protection is set");
+			printError("       can't unlock without --unprotect-flash");
+			return -1;
+		} else  {
 			if (disable_protection() != 0)
 				return -1;
 		}
 	}
 
+	/* Now we can erase sector and write new data */
 	ProgressBar progress("Writing", len, 50, _verbose < 0);
 	if (sectors_erase(base_addr, len) == -1)
 		return -1;
@@ -262,6 +323,13 @@ int SPIFlash::erase_and_prog(int base_addr, uint8_t *data, int len)
 		progress.display(addr);
 	}
 	progress.done();
+
+	/* and if required: relock blocks */
+	if (must_relock) {
+		enable_protection(status);
+		if (_verbose > 0)
+			display_status_reg(read_status_reg());
+	}
 	return 0;
 }
 
@@ -376,12 +444,41 @@ void SPIFlash::display_status_reg(uint8_t reg)
 			if (reg & _flash_model->bp_offset[i])
 				bp |= 1 << i;
 	}
+
 	printf("RDSR : %02x\n", reg);
 	printf("WIP  : %d\n", reg&0x01);
 	printf("WEL  : %d\n", (reg>>1)&0x01);
 	printf("BP   : %x\n", bp);
-	printf("TB   : %d\n", tb);
-	printf("SRWD : %d\n", (((reg>>7)&0x01)));
+	if ((_jedec_id >> 8) != 0x9d60) {
+		printf("TB   : %d\n", tb);
+	} else {  // ISSI IS25LP
+		printf("QE   : %d\n", ((reg >> 6) & 0x01));
+	}
+	printf("SRWD : %d\n", ((reg >> 7) & 0x01));
+
+	/* function register */
+	switch (_jedec_id >> 8) {
+		case 0x9d60:
+			_spi->spi_put(FLASH_RDFR, NULL, &reg, 1);
+			printf("\nFunction Register\n");
+			printf("RDFR : %02x\n", reg);
+			printf("RES  : %d\n", ((reg >> 0) & 0x01));
+			printf("TBS  : %d\n", ((reg >> 1) & 0x01));
+			printf("PSUS : %d\n", ((reg >> 2) & 0x01));
+			printf("ESUS : %d\n", ((reg >> 3) & 0x01));
+			printf("IRL  : %x\n", ((reg >> 4) & 0x0f));
+			break;
+		case 0x010216:
+			_spi->spi_put(FLASH_RDCR, NULL, &reg, 1);
+			printf("\nConfiguration Register\n");
+			printf("RDCR   : %02x\n", reg);
+			printf("FREEZE : %d\n", ((reg >> 0) & 0x01));
+			printf("QUAD   : %d\n", ((reg >> 1) & 0x01));
+			printf("TBPARM : %d\n", ((reg >> 2) & 0x01));
+			printf("BPNV   : %d\n", ((reg >> 3) & 0x01));
+			printf("TBPROT : %d\n", ((reg >> 5) & 0x01));
+			break;
+	}
 }
 
 uint8_t SPIFlash::read_status_reg()
@@ -456,8 +553,9 @@ int SPIFlash::disable_protection()
 	if (read_status_reg() != 0) {
 		std::cout << "disable protection failed" << std::endl;
 		return -1;
-	} else
-		return 0;
+	}
+
+	return 0;
 }
 
 /* write protect code to status register
@@ -489,7 +587,7 @@ int SPIFlash::enable_protection(uint8_t protect_code)
 	return 0;
 }
 
-int SPIFlash::enable_protection(int length)
+int SPIFlash::enable_protection(uint32_t length)
 {
 	/* flash device is not listed: can't know BPx position, nor
 	 * TB offset, nor TB non-volatile vs OTP */
@@ -506,25 +604,33 @@ int SPIFlash::enable_protection(int length)
 	 * current (temporary) policy: do nothing
 	 */
 	if (_flash_model->tb_otp) {
-		uint8_t status;
-		/* red TB: not aloways in status register */
-		switch (_flash_model->tb_register) {
-		case STATR:  // status register
-			status = read_status_reg();
-			break;
-		case FUNCR:  // function register
-			_spi->spi_put(FLASH_RDFR, NULL, &status, 1);
-			break;
-		default:  // unknown
-			printError("Unknown Top/Bottom register");
-			return -1;
-		}
-
+		uint8_t tb = get_tb();
 		/* check if TB is set */
-		if (!(status & _flash_model->tb_otp)) {
+		if (tb == 0) {
 			printError("TOP/BOTTOM bit is OTP: can't write this bit");
 			return -1;
 		}
+	}
+
+	/* spansion devices have only one instruction to write
+	 * both status register and configuration register
+	 * we have to write 2 bytes:
+	 * 0: status register
+	 * 1: configuration register
+	 */
+	if ((_jedec_id >> 8) == 0x010216) {
+		int ret = 0;
+		uint8_t status;
+		_spi->spi_put(FLASH_RDCR, NULL, &status, 1);
+		uint8_t cfg[2] = {bp, status};
+		cfg[1] |= _flash_model->tb_offset;
+		_spi->spi_put(FLASH_WRSR, cfg, NULL, 2);
+		if (_spi->spi_wait(FLASH_RDSR, 0x03, 0, 1000) < 0) {
+			printError("Error: enable protection failed\n");
+			return -1;
+		}
+
+		return ret;
 	}
 
 	/* if TB is located in status register -> set to 1 */
@@ -555,8 +661,9 @@ int SPIFlash::enable_protection(int length)
 			printError("Error: enable protection failed\n");
 			return -1;
 		}
-		_spi->spi_put(reg_rd, &val, NULL, 1);
-		if (reg_rd != val) {
+		uint8_t rd_val;
+		_spi->spi_put(reg_rd, NULL, &rd_val, 1);
+		if (rd_val != val) {
 			printError("failed to update TB bit");
 			return -1;
 		}
@@ -565,12 +672,38 @@ int SPIFlash::enable_protection(int length)
 	return ret;
 }
 
-/* convert bp area (status register) to len in byte */
-uint32_t SPIFlash::bp_to_len(uint8_t bp)
+/* retrieve TB (Top/Bottom) bit from register */
+int8_t SPIFlash::get_tb()
 {
+	uint8_t status;
+	/* read TB: not always in status register */
+	switch (_flash_model->tb_register) {
+	case STATR:  // status register
+		status = read_status_reg();
+		break;
+	case FUNCR:  // function register
+		_spi->spi_put(FLASH_RDFR, NULL, &status, 1);
+		break;
+	case CONFR:  // function register
+		_spi->spi_put(FLASH_RDCR, NULL, &status, 1);
+		break;
+	default:  // unknown
+		printError("Unknown Top/Bottom register");
+		return -1;
+	}
+
+	return (status & _flash_model->tb_offset) ? 1 : 0;
+}
+
+/* convert bp area (status register) to len in byte */
+std::map<std::string, uint32_t> SPIFlash::bp_to_len(uint8_t bp, uint8_t tb)
+{
+	std::map<std::string, uint32_t> protect_area;
+	protect_area["start"] = 0;
+	protect_area["end"] = 0;
 	/* 0 -> no block protected */
 	if (bp == 0)
-		return 0;
+		return protect_area;
 
 	/* reconstruct code based on each BPx bit */
 	uint8_t tmp = 0;
@@ -579,8 +712,17 @@ uint32_t SPIFlash::bp_to_len(uint8_t bp)
 			tmp |= (1 << i);
 	/* bp code is 2^(bp-1) blocks */
 	uint16_t nr_sectors = (1 << (tmp-1));
+	printf("nr_sectors : %d\n", nr_sectors);
+	uint32_t len = nr_sectors * 0x10000;
+	if (tb == 1) {
+		protect_area["start"] = 0;
+		protect_area["end"] = len - 1;
+	} else {
+		protect_area["end"] = (_flash_model->nr_sector * 0x10000) - 1;
+		protect_area["start"] = (protect_area["end"] + 1) - len;
+	}
 
-	return nr_sectors * 0x10000;
+	return protect_area;
 }
 
 /* convert len (in byte) to bp (block protection) */

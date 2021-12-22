@@ -6,6 +6,7 @@
 #ifndef SRC_SPIFLASH_HPP_
 #define SRC_SPIFLASH_HPP_
 
+#include <map>
 #include <string>
 
 #include "spiInterface.hpp"
@@ -13,11 +14,11 @@
 
 class SPIFlash {
 	public:
-		SPIFlash(SPIInterface *spi, int8_t verbose);
+		SPIFlash(SPIInterface *spi, bool unprotect, int8_t verbose);
 		/* power */
 		virtual void power_up();
 		virtual void power_down();
-		void reset();
+		virtual void reset();
 		/* protection */
 		int write_enable();
 		int write_disable();
@@ -37,7 +38,7 @@ class SPIFlash {
 		 * \param[in] length: TODO
 		 * \return -1 if write enable or enabling failed
 		 */
-		int enable_protection(int len);
+		int enable_protection(uint32_t len);
 		/*!
 		 * \brief unlock all sectors: specific to
 		 * Microchip SST26VF032B / SST26VF032BA
@@ -94,17 +95,28 @@ class SPIFlash {
 		uint8_t read_status_reg();
 		/* display/info */
 		void display_status_reg(uint8_t reg);
+		void display_status_reg() {display_status_reg(read_status_reg());}
 		virtual void read_id();
 		uint16_t readNonVolatileCfgReg();
 		uint16_t readVolatileCfgReg();
 
 	protected:
 		/*!
+		 * \brief retrieve TB (Top/Bottom) bit from one register
+		 *        (depends on flash)
+		 * \return -1 if unknown register, 1 or 0 otherwise
+		 */
+		int8_t get_tb();
+
+	public:
+		/*!
 		 * \brief convert block protect to len in byte
 		 * \param[in] bp: block protection
 		 * \return protect area in byte
 		 */
-		uint32_t bp_to_len(uint8_t bp);
+		std::map<std::string, uint32_t> bp_to_len(uint8_t bp, uint8_t tb);
+
+	protected:
 		/*!
 		 * \brief convert len (in byte) to corresponding block protect
 		 * \param[in] len: len in byte
@@ -116,6 +128,7 @@ class SPIFlash {
 		int8_t _verbose;
 		uint32_t _jedec_id; /**< CHIP ID */
 		flash_t *_flash_model; /**< detect flash model */
+		bool _unprotect; /**< allows to unprotect memory before write */
 };
 
 #endif  // SRC_SPIFLASH_HPP_
