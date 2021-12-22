@@ -28,7 +28,7 @@ using namespace std;
 
 FTDIpp_MPSSE::FTDIpp_MPSSE(const mpsse_bit_config &cable, const string &dev,
 				const std::string &serial, uint32_t clkHZ, uint8_t verbose):
-				_verbose(verbose), _cable(cable), _vid(0),
+				_verbose(verbose > 1), _cable(cable), _vid(0),
 				_pid(0), _bus(-1), _addr(-1),
 				_interface(cable.interface),
 				_clkHZ(clkHZ), _buffer_size(2*32768), _num(0)
