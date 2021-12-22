@@ -15,10 +15,12 @@ using namespace std;
 
 class EPCQ: public SPIFlash {
  public:
-	EPCQ(SPIInterface *spi, int8_t verbose);
+	EPCQ(SPIInterface *spi, bool unprotect_flash, int8_t verbose);
 	~EPCQ();
 
 	void read_id() override;
+
+	void reset() override;
 
 	/* not supported */
 	void power_up() override {}

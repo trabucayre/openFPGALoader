@@ -26,8 +26,9 @@
 Altera::Altera(Jtag *jtag, const std::string &filename,
 	const std::string &file_type, Device::prog_type_t prg_type,
 	const std::string &device_package, bool verify, int8_t verbose):
-	Device(jtag, filename, file_type, verify, verbose), _svf(_jtag, _verbose),
-	_device_package(device_package),
+	Device(jtag, filename, file_type, verify, verbose),
+	SPIInterface(filename, verbose, 256, verify),
+	_svf(_jtag, _verbose), _device_package(device_package),
 	_vir_addr(0x1000), _vir_length(14)
 {
 	if (prg_type == Device::RD_FLASH) {
@@ -177,7 +178,7 @@ bool Altera::load_bridge()
 	return true;
 }
 
-void Altera::program(unsigned int offset)
+void Altera::program(unsigned int offset, bool unprotect_flash)
 {
 	if (_mode == Device::NONE_MODE)
 		return;
@@ -197,14 +198,6 @@ void Altera::program(unsigned int offset)
 			programMem(_bit);
 		}
 	} else if (_mode == Device::SPI_MODE) {
-		/* try to load spiOverJtag bridge
-		 * to have an access to SPI flash
-		 */
-		if (!load_bridge()) {
-			printError("Fail to load bridge");
-			return;
-		}
-
 		// reverse only bitstream raw binaries data no
 		bool reverseOrder = false;
 		if (_file_extension == "rbf" || _file_extension == "rpd")
@@ -224,49 +217,9 @@ void Altera::program(unsigned int offset)
 			throw std::runtime_error(e.what());
 		}
 
-		/* GGM: TODO: fix this issue */
-		EPCQ epcq(this, 0);
-
-		try {
-			epcq.reset();
-			epcq.read_id();
-			epcq.display_status_reg(epcq.read_status_reg());
-			epcq.erase_and_prog(offset, data, length);
-		} catch (std::exception &e) {
-			printError(e.what());
-			throw std::runtime_error(e.what());
-		}
-
-		if (_verify)
-			epcq.verify(offset, data, length, 256);
-		reset();
+		if (!SPIInterface::write(offset, data, length, unprotect_flash))
+			throw std::runtime_error("Fail to write data");
 	}
-}
-
-bool Altera::dumpFlash(const std::string filename, uint32_t base_addr,
-		uint32_t len)
-{
-	int ret = true;
-	/* try to load spiOverJtag bridge
-	 * to have an access to SPI flash
-	 */
-	if (!load_bridge()) {
-		printError("Fail to load bridge");
-		return false;
-	}
-
-	EPCQ epcq(this, 0);
-
-	try {
-		epcq.reset();
-		ret = epcq.dump(filename, base_addr, len, 256);
-	} catch (std::exception &e) {
-		printError(e.what());
-		ret = false;
-	}
-
-	reset();
-	return ret;
 }
 
 int Altera::idCode()
@@ -308,7 +261,7 @@ int Altera::spi_put(uint8_t cmd, uint8_t *tx, uint8_t *rx, uint32_t len)
 		}
 	}
 
-	return len;
+	return 0;
 }
 int Altera::spi_put(uint8_t *tx, uint8_t *rx, uint32_t len)
 {

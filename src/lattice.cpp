@@ -139,6 +139,7 @@ using namespace std;
 Lattice::Lattice(Jtag *jtag, const string filename, const string &file_type,
 	Device::prog_type_t prg_type, std::string flash_sector, bool verify, int8_t verbose):
 		Device(jtag, filename, file_type, verify, verbose),
+		SPIInterface(filename, verbose, 0, verify),
 		_fpga_family(UNKNOWN_FAMILY), _flash_sector(LATTICE_FLASH_UNDEFINED)
 {
 	if (prg_type == Device::RD_FLASH) {
@@ -512,46 +513,11 @@ bool Lattice::program_intFlash(JedParser& _jed)
 	return true;
 }
 
-bool Lattice::program_extFlash(unsigned int offset)
+bool Lattice::prepare_flash_access()
 {
-	ConfigBitstreamParser *_bit;
-	if (_file_extension == "mcs")
-		_bit = new McsParser(_filename, true, _verbose);
-	else if (_file_extension == "bit")
-		_bit = new LatticeBitParser(_filename, _verbose);
-	else
-		_bit = new RawParser(_filename, false);
-
-	printInfo("Open file ", false);
-	printSuccess("DONE");
-
-	int err = _bit->parse();
-
-	printInfo("Parse file ", false);
-	if (err == EXIT_FAILURE) {
-		printError("FAIL");
-		delete _bit;
+	/* clear SRAM before SPI access */
+	if (!clearSRAM())
 		return false;
-	} else {
-		printSuccess("DONE");
-	}
-
-	if (_verbose)
-		_bit->displayHeader();
-
-	if (_file_extension == "bit") {
-		uint32_t bit_idcode = std::stoul(_bit->getHeaderVal("idcode").c_str(), NULL, 16);
-		uint32_t idcode = idCode();
-		if (idcode != bit_idcode) {
-			char mess[256];
-			sprintf(mess, "mismatch between target's idcode and bitstream idcode\n"
-				"\tbitstream has 0x%08X hardware requires 0x%08x", bit_idcode, idcode);
-			printError(mess);
-			delete _bit;
-			return false;
-		}
-	}
-
 	/*IR = 0h3A, DR=0hFE,0h68. Enter RUNTESTIDLE.
 	 * thank @GregDavill
 	 * https://twitter.com/GregDavill/status/1251786406441086977
@@ -559,34 +525,30 @@ bool Lattice::program_extFlash(unsigned int offset)
 	_jtag->shiftIR(0x3A, 8, Jtag::EXIT1_IR);
 	uint8_t tmp[2] = {0xFE, 0x68};
 	_jtag->shiftDR(tmp, NULL, 16);
-
-	uint8_t *data = _bit->getData();
-	int length = _bit->getLength()/8;
-
-	/* test SPI */
-	SPIFlash flash(this, _verbose);
-	flash.reset();
-	flash.read_id();
-	flash.read_status_reg();
-	flash.erase_and_prog(offset, data, length);
-
-	int ret = true;
-	if (_verify)
-		ret = flash.verify(offset, data, length);
-
-	delete _bit;
-	return ret;
+	return true;
 }
 
-bool Lattice::program_flash(unsigned int offset)
+bool Lattice::post_flash_access()
+{
+	/* ISC REFRESH 0x79 */
+	printInfo("Refresh: ", false);
+	if (loadConfiguration() == false) {
+		printError("FAIL");
+		displayReadReg(readStatusReg());
+		return false;
+	} else {
+		printSuccess("DONE");
+	}
+
+	/* bypass */
+	wr_rd(0xff, NULL, 0, NULL, 0);
+	_jtag->go_test_logic_reset();
+	return true;
+}
+
+bool Lattice::clearSRAM()
 {
 	uint32_t erase_op;
-
-	/* read ID Code 0xE0 */
-	if (_verbose) {
-		printf("IDCode : %x\n", idCode());
-		displayReadReg(readStatusReg());
-	}
 
 	/* preload 0x1C */
 	uint8_t tx_buf[26];
@@ -620,7 +582,69 @@ bool Lattice::program_flash(unsigned int offset)
 		printSuccess("DONE");
 	}
 
-	DisableISC();
+	return DisableISC();
+}
+
+bool Lattice::program_extFlash(unsigned int offset, bool unprotect_flash)
+{
+	int ret;
+	ConfigBitstreamParser *_bit;
+
+	printInfo("Open file ", false);
+	try {
+		if (_file_extension == "mcs")
+			_bit = new McsParser(_filename, true, _verbose);
+		else if (_file_extension == "bit")
+			_bit = new LatticeBitParser(_filename, _verbose);
+		else
+			_bit = new RawParser(_filename, false);
+		printSuccess("DONE");
+	} catch (std::exception &e) {
+		printError("FAIL");
+		printError(e.what());
+		return false;
+	}
+
+
+	printInfo("Parse file ", false);
+	if (_bit->parse() == EXIT_FAILURE) {
+		printError("FAIL");
+		delete _bit;
+		return false;
+	} else {
+		printSuccess("DONE");
+	}
+
+	if (_verbose)
+		_bit->displayHeader();
+
+	if (_file_extension == "bit") {
+		uint32_t bit_idcode = std::stoul(_bit->getHeaderVal("idcode").c_str(), NULL, 16);
+		uint32_t idcode = idCode();
+		if (idcode != bit_idcode) {
+			char mess[256];
+			sprintf(mess, "mismatch between target's idcode and bitstream idcode\n"
+				"\tbitstream has 0x%08X hardware requires 0x%08x", bit_idcode, idcode);
+			printError(mess);
+			delete _bit;
+			return false;
+		}
+	}
+
+	ret = SPIInterface::write(offset, _bit->getData(), _bit->getLength() / 8,
+			unprotect_flash);
+
+	delete _bit;
+	return ret;
+}
+
+bool Lattice::program_flash(unsigned int offset, bool unprotect_flash)
+{
+	/* read ID Code 0xE0 */
+	if (_verbose) {
+		printf("IDCode : %x\n", idCode());
+		displayReadReg(readStatusReg());
+	}
 
 	bool retval;
 	if (_file_extension == "jed") {
@@ -641,111 +665,39 @@ bool Lattice::program_flash(unsigned int offset)
 		if (_verbose)
 			_jed.displayHeader();
 
+		/* clear current SRAM content */
+		clearSRAM();
+
 		if (_fpga_family == MACHXO3D_FAMILY)
 			retval = program_intFlash_MachXO3D(_jed);
 		else
 			retval = program_intFlash(_jed);
+		return post_flash_access() && retval;
 	} else if (_file_extension == "fea") {
+		/* clear current SRAM content */
+		clearSRAM();
 		retval = program_fea_MachXO3D();
+		return post_flash_access() && retval;
 	} else if (_file_extension == "pub") {
+		/* clear current SRAM content */
+		clearSRAM();
 		retval = program_pubkey_MachXO3D();
 	} else {
-		retval = program_extFlash(offset);
+		return program_extFlash(offset, unprotect_flash);
 	}
 
-	if (!retval)
-		return false;
-
-	/* *************************** */
-	/* reload bitstream from flash */
-	/* *************************** */
-
-	/* ISC REFRESH 0x79 */
-	printInfo("Refresh: ", false);
-	if (loadConfiguration() == false) {
-		printError("FAIL");
-		displayReadReg(readStatusReg());
-		return false;
-	} else {
-		printSuccess("DONE");
-	}
-
-	/* bypass */
-	wr_rd(0xff, NULL, 0, NULL, 0);
-	_jtag->go_test_logic_reset();
 	return true;
 }
 
-void Lattice::program(unsigned int offset)
+void Lattice::program(unsigned int offset, bool unprotect_flash)
 {
 	bool retval = true;
 	if (_mode == FLASH_MODE)
-		retval = program_flash(offset);
+		retval = program_flash(offset, unprotect_flash);
 	else if (_mode == MEM_MODE)
 		retval = program_mem();
 	if (!retval)
 		throw std::exception();
-}
-
-bool Lattice::dumpFlash(const string &filename,
-		uint32_t base_addr, uint32_t len)
-{
-	/* idem program */
-
-	/* preload 0x1C */
-	uint8_t tx_buf[26];
-	memset(tx_buf, 0xff, 26);
-	wr_rd(0x1C, tx_buf, 26, NULL, 0);
-
-	wr_rd(0xFf, NULL, 0, NULL, 0);
-
-	/* ISC Enable 0xC6 */
-	printInfo("Enable configuration: ", false);
-	if (!EnableISC(0x00)) {
-		printError("FAIL");
-		displayReadReg(readStatusReg());
-		return false;
-	} else {
-		printSuccess("DONE");
-	}
-
-	/* ISC ERASE */
-	printInfo("SRAM erase: ", false);
-	if (flashErase(FLASH_ERASE_SRAM) == false) {
-		printError("FAIL");
-		displayReadReg(readStatusReg());
-		return false;
-	} else {
-		printSuccess("DONE");
-	}
-
-	DisableISC();
-
-	/* switch to SPI mode */
-	_jtag->shiftIR(0x3A, 8, Jtag::EXIT1_IR);
-	uint8_t tmp[2] = {0xFE, 0x68};
-	_jtag->shiftDR(tmp, NULL, 16);
-
-	/* prepare SPI access */
-	SPIFlash flash(this, _verbose);
-	flash.reset();
-	flash.dump(filename, base_addr, len);
-
-	/* ISC REFRESH 0x79 */
-	printInfo("Refresh: ", false);
-	if (loadConfiguration() == false) {
-		printError("FAIL");
-		displayReadReg(readStatusReg());
-		return false;
-	} else {
-		printSuccess("DONE");
-	}
-
-	/* bypass */
-	wr_rd(0xff, NULL, 0, NULL, 0);
-	_jtag->go_test_logic_reset();
-
-	return true;
 }
 
 /* flash mode :

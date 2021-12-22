@@ -101,7 +101,7 @@ void Efinix::reset()
 		printSuccess("DONE");
 }
 
-void Efinix::program(unsigned int offset)
+void Efinix::program(unsigned int offset, bool unprotect_flash)
 {
 	if (_file_extension.empty())
 		return;
@@ -140,7 +140,7 @@ void Efinix::program(unsigned int offset)
 	if (_ftdi_jtag)
 		programJTAG(data, length);
 	else
-		programSPI(offset, data, length);
+		programSPI(offset, data, length, unprotect_flash);
 }
 
 bool Efinix::dumpFlash(const std::string &filename,
@@ -152,7 +152,7 @@ bool Efinix::dumpFlash(const std::string &filename,
 	/* prepare SPI access */
 	printInfo("Read Flash ", false);
 	try {
-		SPIFlash flash(reinterpret_cast<SPIInterface *>(_spi), _verbose);
+		SPIFlash flash(reinterpret_cast<SPIInterface *>(_spi), false, _verbose);
 		flash.reset();
 		flash.power_up();
 		flash.dump(filename, base_addr, len);
@@ -179,13 +179,15 @@ bool Efinix::dumpFlash(const std::string &filename,
 	return false;
 }
 
-void Efinix::programSPI(unsigned int offset, uint8_t *data, int length)
+void Efinix::programSPI(unsigned int offset, uint8_t *data, int length,
+		bool unprotect_flash)
 {
 	uint32_t timeout = 1000;
 
 	_spi->gpio_clear(_rst_pin | _oe_pin);
 
-	SPIFlash flash(reinterpret_cast<SPIInterface *>(_spi), _verbose);
+	SPIFlash flash(reinterpret_cast<SPIInterface *>(_spi), unprotect_flash,
+			_verbose);
 	flash.reset();
 	flash.power_up();
 

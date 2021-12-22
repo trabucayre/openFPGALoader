@@ -26,13 +26,27 @@ class Lattice: public Device, SPIInterface {
 		int idCode() override;
 		int userCode();
 		void reset() override {}
-		void program(unsigned int offset) override;
+		void program(unsigned int offset, bool unprotect_flash) override;
 		bool program_mem();
-		bool program_flash(unsigned int offset);
+		bool program_flash(unsigned int offset, bool unprotect_flash);
 		bool Verify(std::vector<std::string> data, bool unlock = false,
 				uint32_t flash_area = 0);
-		bool dumpFlash(const std::string &filename,
-			uint32_t base_addr, uint32_t len) override;
+		bool dumpFlash(uint32_t base_addr, uint32_t len) override {
+			return SPIInterface::dump(base_addr, len);
+		}
+
+		/*!
+		 * \brief protect SPI flash blocks
+		 */
+		bool protect_flash(uint32_t len) override {
+			return SPIInterface::protect_flash(len);
+		}
+		/*!
+		 * \brief protect SPI flash blocks
+		 */
+		bool unprotect_flash() override {
+			return SPIInterface::unprotect_flash();
+		}
 
 		/* spi interface */
 		int spi_put(uint8_t cmd, uint8_t *tx, uint8_t *rx,
@@ -54,9 +68,22 @@ class Lattice: public Device, SPIInterface {
 		lattice_family_t _fpga_family;
 
 		bool program_intFlash(JedParser& _jed);
-		bool program_extFlash(unsigned int offset);
+		bool program_extFlash(unsigned int offset, bool unprotect_flash);
 		bool wr_rd(uint8_t cmd, uint8_t *tx, int tx_len,
 				uint8_t *rx, int rx_len, bool verbose = false);
+		/*!
+		 * \brief move device to SPI access
+		 */
+		bool prepare_flash_access() override;
+		/*!
+		 * \brief end of device to SPI access
+		 *        reload btistream from flash
+		 */
+		bool post_flash_access() override;
+		/*!
+		 * \brief erase SRAM
+		 */
+		bool clearSRAM();
 		void unlock();
 		bool EnableISC(uint8_t flash_mode);
 		bool DisableISC();

@@ -35,16 +35,23 @@ class CologneChip: public Device, SPIInterface {
 		bool cfgDone();
 		void waitCfgDone();
 		bool dumpFlash(const std::string &filename, uint32_t base_addr, uint32_t len);
-		void program(unsigned int offset = 0) override;
+		virtual bool protect_flash(uint32_t len) override {
+			(void) len;
+			printError("protect flash not supported"); return false;}
+		virtual bool unprotect_flash() override {
+			printError("unprotect flash not supported"); return false;}
+		void program(unsigned int offset, bool unprotect_flash) override;
 
 		int idCode() override {return 0;}
 		void reset() override;
 
 	private:
 		void programSPI_sram(uint8_t *data, int length);
-		void programSPI_flash(unsigned int offset, uint8_t *data, int length);
+		void programSPI_flash(unsigned int offset, uint8_t *data, int length,
+				bool unprotect_flash);
 		void programJTAG_sram(uint8_t *data, int length);
-		void programJTAG_flash(unsigned int offset, uint8_t *data, int length);
+		void programJTAG_flash(unsigned int offset, uint8_t *data, int length,
+				bool unprotect_flash);
 
 		/* spi interface via jtag */
 		int spi_put(uint8_t cmd, uint8_t *tx, uint8_t *rx,

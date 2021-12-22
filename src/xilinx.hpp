@@ -22,11 +22,25 @@ class Xilinx: public Device, SPIInterface {
 				bool verify, int8_t verbose);
 		~Xilinx();
 
-		void program(unsigned int offset = 0) override;
-		void program_spi(ConfigBitstreamParser * bit, unsigned int offset = 0);
+		void program(unsigned int offset, bool unprotect_flash) override;
+		void program_spi(ConfigBitstreamParser * bit, unsigned int offset,
+				bool unprotect_flash);
 		void program_mem(ConfigBitstreamParser *bitfile);
-		bool dumpFlash(const std::string &filename,
-			uint32_t base_addr, uint32_t len) override;
+		bool dumpFlash(uint32_t base_addr, uint32_t len) override;
+
+		/*!
+		 * \brief protect SPI flash blocks
+		 */
+		bool protect_flash(uint32_t len) override {
+			return SPIInterface::protect_flash(len);
+		}
+		/*!
+		 * \brief unprotect SPI flash blocks
+		 */
+		bool unprotect_flash() override {
+			return SPIInterface::unprotect_flash();
+		}
+
 		int idCode() override;
 		void reset() override;
 
@@ -104,6 +118,16 @@ class Xilinx: public Device, SPIInterface {
 		int spi_put(uint8_t *tx, uint8_t *rx, uint32_t len) override;
 		int spi_wait(uint8_t cmd, uint8_t mask, uint8_t cond,
 				uint32_t timeout, bool verbose = false) override;
+
+	protected:
+		/*!
+		 * \brief prepare SPI flash access (need to have bridge in RAM)
+		 */
+		virtual bool prepare_flash_access() override {return load_bridge();}
+		/*!
+		 * \brief end of SPI flash access
+		 */
+		virtual bool post_flash_access() override {reset(); return true;}
 
 	private:
 		/* list of xilinx family devices */

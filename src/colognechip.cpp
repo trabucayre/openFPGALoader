@@ -136,9 +136,10 @@ bool CologneChip::dumpFlash(const std::string &filename, uint32_t base_addr,
 	try {
 		SPIFlash *flash;
 		if (_spi) {
-			flash = new SPIFlash(reinterpret_cast<SPIInterface *>(_spi), _verbose);
+			flash = new SPIFlash(reinterpret_cast<SPIInterface *>(_spi), false,
+					_verbose);
 		} else if (_ftdi_jtag) {
-			flash = new SPIFlash(this, _verbose);
+			flash = new SPIFlash(this, false, _verbose);
 		}
 		flash->reset();
 		flash->power_up();
@@ -165,7 +166,7 @@ bool CologneChip::dumpFlash(const std::string &filename, uint32_t base_addr,
  * Parse bitstream from *.bit or *.cfg and program FPGA in SPI or JTAG mode
  * or write configuration to external flash via SPI or JTAG-SPI-bypass.
  */
-void CologneChip::program(unsigned int offset)
+void CologneChip::program(unsigned int offset, bool unprotect_flash)
 {
 	ConfigBitstreamParser *cfg;
 	if (_file_extension == "cfg") {
@@ -188,9 +189,9 @@ void CologneChip::program(unsigned int offset)
 	switch (_mode) {
 		case Device::FLASH_MODE:
 			if (_jtag != NULL) {
-				programJTAG_flash(offset, data, length);
+				programJTAG_flash(offset, data, length, unprotect_flash);
 			} else if (_jtag == NULL) {
-				programSPI_flash(offset, data, length);
+				programSPI_flash(offset, data, length, unprotect_flash);
 			}
 			break;
 		case Device::MEM_MODE:
@@ -227,13 +228,15 @@ void CologneChip::programSPI_sram(uint8_t *data, int length)
  * done, release reset to start FPGA in active SPI mode (load from flash).
  * CFG_MD[3:0] must be set to 0x00 (SPI active).
  */
-void CologneChip::programSPI_flash(unsigned int offset, uint8_t *data, int length)
+void CologneChip::programSPI_flash(unsigned int offset, uint8_t *data,
+		int length, bool unprotect_flash)
 {
 	/* hold device in reset during flash write access */
 	_spi->gpio_clear(_rstn_pin | _oen_pin);
 	usleep(SLEEP_US);
 
-	SPIFlash flash(reinterpret_cast<SPIInterface *>(_spi), _verbose);
+	SPIFlash flash(reinterpret_cast<SPIInterface *>(_spi), unprotect_flash,
+			_verbose);
 	flash.reset();
 	flash.power_up();
 
@@ -294,12 +297,13 @@ void CologneChip::programJTAG_sram(uint8_t *data, int length)
  * Write configuration to flash via JTAG-SPI-bypass. The FPGA will not start
  * as it is in JTAG mode with CFG_MD[3:0] set to 0xF0 (JTAG).
  */
-void CologneChip::programJTAG_flash(unsigned int offset, uint8_t *data, int length)
+void CologneChip::programJTAG_flash(unsigned int offset, uint8_t *data,
+		int length, bool unprotect_flash)
 {
 	/* hold device in reset for a moment */
 	reset();
 
-	SPIFlash flash(this, _verbose);
+	SPIFlash flash(this, unprotect_flash, _verbose);
 	flash.reset();
 	flash.power_up();
 

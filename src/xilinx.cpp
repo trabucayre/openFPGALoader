@@ -30,6 +30,7 @@ Xilinx::Xilinx(Jtag *jtag, const std::string &filename,
 	Device::prog_type_t prg_type,
 	const std::string &device_package, bool verify, int8_t verbose):
 	Device(jtag, filename, file_type, verify, verbose),
+	SPIInterface(filename, verbose, 256, verify),
 	_device_package(device_package)
 {
 	if (prg_type == Device::RD_FLASH) {
@@ -160,7 +161,7 @@ int Xilinx::idCode()
 	return id;
 }
 
-void Xilinx::program(unsigned int offset)
+void Xilinx::program(unsigned int offset, bool unprotect_flash)
 {
 	ConfigBitstreamParser *bit;
 	bool reverse = false;
@@ -226,15 +227,14 @@ void Xilinx::program(unsigned int offset)
 
 	if (_fpga_family == XCF_FAMILY) {
 		xcf_program(bit);
+		delete bit;
 		return;
 	}
 
-	if (_mode == Device::SPI_MODE) {
-		program_spi(bit, offset);
-		reset();
-	} else {
+	if (_mode == Device::SPI_MODE)
+		program_spi(bit, offset, unprotect_flash);
+	else
 		program_mem(bit);
-	}
 
 	delete bit;
 }
@@ -264,29 +264,16 @@ bool Xilinx::load_bridge()
 	return true;
 }
 
-void Xilinx::program_spi(ConfigBitstreamParser * bit, unsigned int offset)
+void Xilinx::program_spi(ConfigBitstreamParser * bit, unsigned int offset,
+		bool unprotect_flash)
 {
-	/* first need to have bridge in RAM */
-	if (load_bridge() == false)
-		return;
-
 	uint8_t *data = bit->getData();
 	int length = bit->getLength() / 8;
-
-	SPIFlash spiFlash(this, (_verbose ? 1 : (_quiet ? -1 : 0)));
-	spiFlash.reset();
-	spiFlash.read_id();
-	spiFlash.display_status_reg(spiFlash.read_status_reg());
-	spiFlash.erase_and_prog(offset, data, length);
-
-	/* verify write if required */
-	if (_verify)
-		spiFlash.verify(offset, data, length, 256);
+	SPIInterface::write(offset, data, length, unprotect_flash);
 }
 
 void Xilinx::program_mem(ConfigBitstreamParser *bitfile)
 {
-	if (_file_extension.empty()) return;
 	std::cout << "load program" << std::endl;
 	unsigned char tx_buf, rx_buf;
 	/*            comment                                TDI   TMS TCK
@@ -393,8 +380,7 @@ void Xilinx::program_mem(ConfigBitstreamParser *bitfile)
 	_jtag->go_test_logic_reset();
 }
 
-bool Xilinx::dumpFlash(const std::string &filename,
-		uint32_t base_addr, uint32_t len)
+bool Xilinx::dumpFlash(uint32_t base_addr, uint32_t len)
 {
 	if (_fpga_family == XC95_FAMILY || _fpga_family == XCF_FAMILY) {
 		std::string buffer;
@@ -412,7 +398,7 @@ bool Xilinx::dumpFlash(const std::string &filename,
 			xcf_flow_disable();
 		}
 		printInfo("Open dump file ", false);
-		FILE *fd = fopen(filename.c_str(), "wb");
+		FILE *fd = fopen(_filename.c_str(), "wb");
 		if (!fd) {
 			printError("FAIL");
 			return false;
@@ -429,26 +415,8 @@ bool Xilinx::dumpFlash(const std::string &filename,
 		return true;
 	}
 
-	int ret = true;
-	/* first need to have bridge in RAM */
-	if (load_bridge() == false)
-		return false;
-
-	/* prepare SPI access */
-	SPIFlash flash(this, _verbose);
-
-	try {
-		flash.reset();
-		ret = flash.dump(filename, base_addr, len, 256);
-	} catch (std::exception &e) {
-		printError(e.what());
-		ret = false;
-	}
-
-	/* reset device */
-	reset();
-
-	return ret;
+	/* dump SPI Flash */
+	return SPIInterface::dump(base_addr, len);
 }
 
 /*                                */

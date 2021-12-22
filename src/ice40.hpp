@@ -10,8 +10,9 @@
 
 #include "device.hpp"
 #include "ftdispi.hpp"
+#include "spiInterface.hpp"
 
-class Ice40: public Device {
+class Ice40: public Device, SPIInterface {
 	public:
 		Ice40(FtdiSpi *spi, const std::string &filename,
 			const std::string &file_type,
@@ -19,12 +20,38 @@ class Ice40: public Device {
 			bool verify, int8_t verbose);
 		~Ice40();
 
-		void program(unsigned int offset = 0) override;
-		bool dumpFlash(const std::string &filename,
-			uint32_t base_addr, uint32_t len);
+		void program(unsigned int offset, bool unprotect_flash) override;
+		bool dumpFlash(uint32_t base_addr, uint32_t len);
+		bool protect_flash(uint32_t len) override;
+		bool unprotect_flash() override;
 		/* not supported in SPI Active mode */
 		int idCode() override {return 0;}
 		void reset() override;
+
+		int spi_put(uint8_t cmd, uint8_t *tx, uint8_t *rx,
+				uint32_t len) {
+			(void)cmd; (void)tx; (void)rx; (void)len;
+			return 0;
+		}
+		int spi_put(uint8_t *tx, uint8_t *rx, uint32_t len) {
+			(void)tx; (void)rx; (void)len;
+			return 0;
+		}
+		int spi_wait(uint8_t cmd, uint8_t mask, uint8_t cond,
+				uint32_t timeout, bool verbose = false) {
+			(void)cmd; (void)mask; (void)cond; (void)timeout; (void) verbose;
+			return 0;
+		}
+
+	protected:
+		/*!
+		 * \brief prepare SPI flash access
+		 */
+		bool prepare_flash_access() override;
+		/*!
+		 * \brief end of SPI flash access
+		 */
+		bool post_flash_access() override;
 
 	private:
 		FtdiSpi *_spi;

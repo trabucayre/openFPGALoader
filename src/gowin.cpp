@@ -206,7 +206,7 @@ void Gowin::programFlash()
 		displayReadReg(readStatusReg());
 }
 
-void Gowin::program(unsigned int offset)
+void Gowin::program(unsigned int offset, bool unprotect_flash)
 {
 	(void) offset;
 
@@ -235,7 +235,8 @@ void Gowin::program(unsigned int offset)
 
 			wr_rd(0x3D, NULL, 0, NULL, 0);
 
-			SPIFlash spiFlash(this, (_verbose ? 1 : (_quiet ? -1 : 0)));
+			SPIFlash spiFlash(this, unprotect_flash,
+					(_verbose ? 1 : (_quiet ? -1 : 0)));
 			spiFlash.reset();
 			spiFlash.read_id();
 			spiFlash.display_status_reg(spiFlash.read_status_reg());

@@ -28,18 +28,23 @@
 Anlogic::Anlogic(Jtag *jtag, const std::string &filename,
 	const std::string &file_type,
 	Device::prog_type_t prg_type, bool verify, int8_t verbose):
-	Device(jtag, filename, file_type, verify, verbose), _svf(_jtag, _verbose)
+	Device(jtag, filename, file_type, verify, verbose),
+	SPIInterface(filename, verbose, 0, verify), _svf(_jtag, _verbose)
 {
-	if (!_file_extension.empty()) {
-		if (_file_extension == "svf")
+	if (prg_type == Device::RD_FLASH) {
+		_mode = Device::READ_MODE;
+	} else if (!_file_extension.empty()) {
+		if (_file_extension == "svf") {
 			_mode = Device::MEM_MODE;
-		else if (_file_extension == "bit") {
-			if (prg_type == Device::WR_SRAM)
-				_mode = Device::MEM_MODE;
-			else
+		} else if (_file_extension == "bit") {
+				_mode = (prg_type == Device::WR_SRAM)? Device::MEM_MODE:
+					Device::SPI_MODE;
+		} else {
+			if (prg_type == Device::WR_FLASH)
 				_mode = Device::SPI_MODE;
-		} else
-			throw std::runtime_error("incompatible file format");
+			else
+				throw std::runtime_error("incompatible file format");
+		}
 	}
 }
 Anlogic::~Anlogic()
@@ -54,7 +59,7 @@ void Anlogic::reset()
 	_jtag->toggleClk(200000);
 }
 
-void Anlogic::program(unsigned int offset)
+void Anlogic::program(unsigned int offset, bool unprotect_flash)
 {
 	if (_mode == Device::NONE_MODE)
 		return;
@@ -70,9 +75,9 @@ void Anlogic::program(unsigned int offset)
 	if (bit.parse() == EXIT_FAILURE) {
 		printError("FAIL");
 		return;
-	} else {
-		printSuccess("DONE");
 	}
+
+	printSuccess("DONE");
 
 	if (_verbose)
 		bit.displayHeader();
@@ -81,47 +86,10 @@ void Anlogic::program(unsigned int offset)
 	int len = bit.getLength() / 8;
 
 	if (_mode == Device::SPI_MODE) {
-		SPIFlash flash(this, _verbose);
-
-		for (int i = 0; i < 5; i++)
-			_jtag->shiftIR(BYPASS, IRLENGTH);
-		//Verify Device id.
-		//SIR 8 TDI (06) ;
-		//SDR 32 TDI (00000000) TDO (0a014c35) MASK (ffffffff) ;
-		//Boundary Scan Chain Contents
-		//Position 1: BG256
-		//Loading device with 'refresh' instruction.
-		_jtag->shiftIR(REFRESH, IRLENGTH);
-		//Loading device with 'bypass' & 'spi_program' instruction.
-		_jtag->shiftIR(BYPASS, IRLENGTH);
-		_jtag->shiftIR(SPI_PROGRAM, IRLENGTH);
-		for (int i = 0; i < 4; i++)
-			_jtag->toggleClk(50000);
-
-		flash.reset();
-		flash.read_id();
-		flash.display_status_reg(flash.read_status_reg());
-
-		flash.erase_and_prog(offset, data, len);
-
-		if (_verify)
-			printWarn("writing verification not supported");
-
-		//Loading device with 'bypass' instruction.
-		_jtag->shiftIR(BYPASS, IRLENGTH);
-		////Loading device with 'refresh' instruction.
-		_jtag->shiftIR(REFRESH, IRLENGTH);
-		_jtag->toggleClk(20);
-		////Loading device with 'bypass' instruction.
-		for (int i = 0; i < 4; i++) {
-			_jtag->shiftIR(BYPASS, IRLENGTH);
-			_jtag->toggleClk(20);
-		}
-		_jtag->shiftIR(BYPASS, IRLENGTH);
-		_jtag->toggleClk(10000);
-
+		SPIInterface::write(offset, data, len, unprotect_flash);
 		return;
 	}
+
 	if (_mode == Device::MEM_MODE) {
 
 		// Loading device with 'bypass' instruction.
@@ -194,6 +162,25 @@ int Anlogic::idCode()
 		((rx_data[1] << 8) & 0x0000ff00) |
 		((rx_data[2] << 16) & 0x00ff0000) |
 		((rx_data[3] << 24) & 0xff000000));
+}
+
+bool Anlogic::prepare_flash_access()
+{
+	for (int i = 0; i < 5; i++)
+		_jtag->shiftIR(BYPASS, IRLENGTH);
+	//Verify Device id.
+	//SIR 8 TDI (06) ;
+	//SDR 32 TDI (00000000) TDO (0a014c35) MASK (ffffffff) ;
+	//Boundary Scan Chain Contents
+	//Position 1: BG256
+	//Loading device with 'refresh' instruction.
+	_jtag->shiftIR(REFRESH, IRLENGTH);
+	//Loading device with 'bypass' & 'spi_program' instruction.
+	_jtag->shiftIR(BYPASS, IRLENGTH);
+	_jtag->shiftIR(SPI_PROGRAM, IRLENGTH);
+	for (int i = 0; i < 4; i++)
+		_jtag->toggleClk(50000);
+	return true;
 }
 
 /* SPI wrapper
