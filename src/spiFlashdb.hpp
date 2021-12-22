@@ -13,7 +13,8 @@
 
 typedef enum {
 	STATR = 0, /* status register */
-	FUNCR = 1  /* function register */
+	FUNCR = 1, /* function register */
+	CONFR = 2  /* configuration register */
 } tb_loc_t;
 
 typedef struct {
