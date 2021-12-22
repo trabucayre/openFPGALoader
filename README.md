@@ -47,8 +47,7 @@ openFPGALoader -c cmsisdap fpga_bitstream.bit
 ## Usage
 
 ```
-openFPGALoader --help
-Usage: openFPGALoader [OPTION...] BIT_FILE
+Usage: ./openFPGALoader [OPTION...] BIT_FILE
 openFPGALoader -- a program to flash FPGA
 
       --altsetting arg      DFU interface altsetting (only for DFU mode)
@@ -70,6 +69,7 @@ openFPGALoader -- a program to flash FPGA
                             dump-flash
       --file-type arg       provides file type instead of let's deduced by
                             using extension
+      --flash-sector arg    flash sector (Lattice parts only)
       --fpga-part arg       fpga model flavor + package
       --freq arg            jtag frequency (Hz)
   -f, --write-flash         write bitstream in flash (default: false)
@@ -81,9 +81,11 @@ openFPGALoader -- a program to flash FPGA
   -o, --offset arg          start offset in EEPROM
       --pins arg            pin config (only for ft232R) TDI:TDO:TCK:TMS
       --probe-firmware arg  firmware for JTAG probe (usbBlasterII)
+      --protect-flash arg   protect SPI flash area
       --quiet               Produce quiet output (no progress bar)
   -r, --reset               reset FPGA after operations
       --spi                 SPI mode (only for FTDI in serial mode)
+      --unprotect-flash     Unprotect flash blocks
   -v, --verbose             Produce verbose output
       --verbose-level arg   verbose level -1: quiet, 0: normal, 1:verbose,
                             2:debug
