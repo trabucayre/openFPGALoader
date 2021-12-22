@@ -78,6 +78,7 @@ set(OPENFPGALOADER_SOURCE
 	src/ice40.cpp
 	src/ihexParser.cpp
 	src/spiFlash.cpp
+	src/spiInterface.cpp
 	src/rawParser.cpp
 	src/usbBlaster.cpp
 	src/epcq.cpp
