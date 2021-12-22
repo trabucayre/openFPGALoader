@@ -56,6 +56,16 @@ class FtdiSpi : public FTDIpp_MPSSE, SPIInterface {
 	int spi_wait(uint8_t cmd, uint8_t mask, uint8_t cond,
 			uint32_t timeout, bool verbose=false) override;
 
+ protected:
+	/*!
+	 * \brief move device to SPI access
+	 */
+	virtual bool prepare_flash_access() override {return true;}
+	/*!
+	 * \brief end of device to SPI access
+	 */
+	virtual bool post_flash_access() override {return true;}
+
  private:
 	uint8_t _cs;
 	uint16_t _cs_bits;
