@@ -219,7 +219,7 @@ int main(int argc, char **argv)
 				target = new Ice40(spi, args.bit_file, args.file_type,
 					board->reset_pin, board->done_pin, args.verify, args.verbose);
 			} else if (board->manufacturer == "colognechip") {
-				CologneChip target(spi, args.bit_file, args.file_type, args.prg_type,
+				target = new CologneChip(spi, args.bit_file, args.file_type, args.prg_type,
 					board->reset_pin, board->done_pin, DBUS6, board->oe_pin,
 					args.verify, args.verbose);
 			}
