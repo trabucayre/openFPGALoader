@@ -442,11 +442,13 @@ int DFU::set_state(char newState)
 			 * an handle others states */
 			if (newState == STATE_appIDLE) {
 				// reset
+				ret = libusb_reset_device(dev_handle);
 				// reenum
 			} else {  // download or upload
 					  // are handled by download() and upload()
 				return -2;
 			}
+			return ret;
 			break;
 		case STATE_dfuDNLOAD_IDLE:
 			if (newState == STATE_dfuMANIFEST_SYNC) {
@@ -769,6 +771,9 @@ int DFU::download()
 				break;
 		}
 	} while (must_continue);
+
+	if (status.bState == STATE_dfuIDLE)
+		set_state(STATE_appIDLE);
 
 	return ret_val;
 }
