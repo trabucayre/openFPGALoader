@@ -98,6 +98,7 @@ DFU::DFU(const string &filename, uint16_t vid, uint16_t pid,
 	if ((dfu_vid == 0 || dfu_pid == 0) && (vid == 0 || pid == 0)) {
 		// search all DFU compatible devices
 		if (searchDFUDevices() != EXIT_SUCCESS) {
+			libusb_exit(usb_ctx);
 			delete _bit;
 			throw std::runtime_error("Devices enumeration failed");
 		}
@@ -112,9 +113,14 @@ DFU::DFU(const string &filename, uint16_t vid, uint16_t pid,
 	/* check if DFU compatible devices are present */
 	if (dfu_dev.size() != 0) {
 		/* more than one: only possible if file is not DFU */
-		if (dfu_dev.size() > 1 && !filename.empty())
+		if (dfu_dev.size() > 1 && !filename.empty()) {
+			libusb_exit(usb_ctx);
+			delete _bit;
 			throw std::runtime_error("Only one device supported");
+		}
 	} else {
+		libusb_exit(usb_ctx);
+		delete _bit;
 		throw std::runtime_error("No DFU compatible device found");
 	}
 
@@ -123,11 +129,14 @@ DFU::DFU(const string &filename, uint16_t vid, uint16_t pid,
 
 	/* don't try device without vid/pid */
 	if (_vid == 0 || _pid == 0) {
+		libusb_exit(usb_ctx);
+		delete _bit;
 		throw std::runtime_error("Can't open device vid/pid == 0");
 	}
 
 	/* open the first */
 	if (open_DFU(0) == EXIT_FAILURE) {
+		libusb_exit(usb_ctx);
 		delete _bit;
 		throw std::runtime_error("Fail to claim device");
 	}
