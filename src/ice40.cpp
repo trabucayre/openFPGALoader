@@ -75,8 +75,6 @@ void Ice40::program(unsigned int offset, bool unprotect_flash)
 
 	SPIFlash flash(reinterpret_cast<SPIInterface *>(_spi), unprotect_flash,
 			_quiet);
-	flash.reset();
-	flash.power_up();
 
 	printf("%02x\n", flash.read_status_reg());
 	flash.read_id();
