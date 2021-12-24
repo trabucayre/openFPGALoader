@@ -305,19 +305,18 @@ int DFU::searchDFUDevices()
 		if (ret != 0) {
 			char mess[256];
 			sprintf(mess,"Unable to open device: "
-				"%04x:%04x (bus %d, device %2d) Error: %s\n",
+				"%04x:%04x (bus %d, device %2d) Error: %s -> skip\n",
 				desc.idVendor, desc.idProduct,
 				libusb_get_bus_number(usb_dev),
 				libusb_get_device_address(usb_dev),
 				libusb_error_name(ret));
-			printError(mess);
-			return EXIT_FAILURE;
+			printWarn(mess);
+		} else {
+			if (searchIfDFU(handle, usb_dev, &desc) != 0) {
+				return EXIT_FAILURE;
+			}
+			libusb_close(handle);
 		}
-
-		if (searchIfDFU(handle, usb_dev, &desc) != 0) {
-			return EXIT_FAILURE;
-		}
-		libusb_close(handle);
 	}
 
 	libusb_free_device_list(dev_list, 1);
