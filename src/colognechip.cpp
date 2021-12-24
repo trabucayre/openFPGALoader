@@ -43,7 +43,6 @@ CologneChip::CologneChip(Jtag* jtag, const std::string &filename,
 	}
 
 	target_board_t *spi_board = &(board_list[spi_board_name]);
-	cable_t *spi_cable = &(cable_list[spi_board->cable_name]);
 
 	/* pin configurations valid for both evaluation board and programer */
 	_rstn_pin  = spi_board->reset_pin;
@@ -168,6 +167,10 @@ bool CologneChip::dumpFlash(const std::string &filename, uint32_t base_addr,
  */
 void CologneChip::program(unsigned int offset, bool unprotect_flash)
 {
+	/* nothing to do here */
+	if (_mode == Device::NONE_MODE || _mode == Device::READ_MODE)
+		return;
+
 	ConfigBitstreamParser *cfg;
 	if (_file_extension == "cfg") {
 		cfg = new CologneChipCfgParser(_filename);
@@ -200,6 +203,8 @@ void CologneChip::program(unsigned int offset, bool unprotect_flash)
 			} else if (_jtag == NULL) {
 				programSPI_sram(data, length);
 			}
+			break;
+		default: /* avoid warning */
 			break;
 	}
 }
