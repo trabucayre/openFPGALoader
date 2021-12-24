@@ -228,6 +228,7 @@ class DFU {
 				struct libusb_device_descriptor *desc);
 
 		bool _verbose;                       /**< display more message */
+		bool _debug;                         /**< display debug message */
 		bool _quiet;						 /**< don't use progressBar */
 		std::vector<struct dfu_dev> dfu_dev; /**< available dfu devices */
 		int dev_idx;                         /**< device index in dfu_dev */

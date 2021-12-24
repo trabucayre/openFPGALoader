@@ -48,7 +48,7 @@ enum dfu_cmd {
 
 DFU::DFU(const string &filename, uint16_t vid, uint16_t pid,
 		int16_t altsetting,
-		int verbose_lvl):_verbose(verbose_lvl > 0),
+		int verbose_lvl):_verbose(verbose_lvl > 0), _debug(verbose_lvl > 1),
 		_quiet(verbose_lvl < 0), dev_idx(0), _vid(0), _pid(0),
 		_altsetting(altsetting),
 		usb_ctx(NULL), dev_handle(NULL), curr_intf(0), transaction(0),
@@ -302,7 +302,12 @@ int DFU::searchDFUDevices()
 		}
 
 		int ret = libusb_open(usb_dev, &handle);
-		if (ret != 0) {
+		if (ret == 0) {
+			if (searchIfDFU(handle, usb_dev, &desc) != 0) {
+				return EXIT_FAILURE;
+			}
+			libusb_close(handle);
+		} else if (_debug) {
 			char mess[256];
 			sprintf(mess,"Unable to open device: "
 				"%04x:%04x (bus %d, device %2d) Error: %s -> skip\n",
@@ -311,11 +316,6 @@ int DFU::searchDFUDevices()
 				libusb_get_device_address(usb_dev),
 				libusb_error_name(ret));
 			printWarn(mess);
-		} else {
-			if (searchIfDFU(handle, usb_dev, &desc) != 0) {
-				return EXIT_FAILURE;
-			}
-			libusb_close(handle);
 		}
 	}
 
