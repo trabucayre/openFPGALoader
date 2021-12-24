@@ -162,6 +162,7 @@ static std::map <std::string, target_board_t> board_list = {
 			FT232RL_RI, FT232RL_DSR, FT232RL_CTS, FT232RL_DCD, CABLE_DEFAULT),
 	JTAG_BITBANG_BOARD("ulx3s",   "", "ft231X",  0, 0,
 			FT232RL_DCD, FT232RL_DSR, FT232RL_RI, FT232RL_CTS, CABLE_DEFAULT),
+	DFU_BOARD("ulx3s_dfu",        "", "dfu", 0x1d50, 0x614b, 0),
 	JTAG_BOARD("ecpix5",          "", "ecpix5-debug", 0, 0, CABLE_DEFAULT),
 	JTAG_BOARD("xtrx",            "xc7a50tcpg236", ""            , 0, 0, CABLE_DEFAULT),
 	JTAG_BOARD("xyloni_jtag",     "", "efinix_jtag_ft4232"       , 0, 0, CABLE_DEFAULT),

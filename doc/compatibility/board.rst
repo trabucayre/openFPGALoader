@@ -64,6 +64,8 @@ Boards
                tangnano `Sipeed Tang Nano <https://tangnano.sipeed.com/en/>`__                                                                                            littleBee GW1N-1              OK
              tangnano4k `Sipeed Tang Nano 4K <https://tangnano.sipeed.com/en/>`__                                                                                         littleBee GW1NSR-4C           OK        IF/EF
                 tec0117 `Trenz Gowin LittleBee (TEC0117) <https://shop.trenz-electronic.de/en/TEC0117-01-FPGA-Module-with-GOWIN-LittleBee-and-8-MByte-internal-SDRAM>`__  littleBee GW1NR-9             OK        IF
+                  ulx3s `Radiona ULX3S <https://radiona.org/ulx3s/>`__                                                                                                    ECP5 LFE5U                    OK        OK
+              ulx3s_dfu `Radiona ULX3S DFU mode <https://github.com/emard/had2019-playground>`__                                                                          ECP5 LFE5U                    NA        OK
                    xtrx `FairWaves XTRXPro <https://www.crowdsupply.com/fairwaves/xtrx>`__                                                                                Artix xc7a50tcpg236           OK        OK
              xyloni_spi `Efinix Xyloni <https://www.efinixinc.com/products-devkits-xyloni.html>`__                                                                        Trion T8F81                   NA        AS
   trion_t120_bga576_spi `Efinix Trion T120 BGA576 Dev Kit <https://www.efinixinc.com/products-devkits-triont120bga576.html>`__                                            Trion T120BGA576              NA        AS
