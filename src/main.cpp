@@ -209,6 +209,10 @@ int main(int argc, char **argv)
 
 		int spi_ret = EXIT_SUCCESS;
 
+		/* in spi mode force write to flash */
+		if (args.prg_type == Device::WR_SRAM)
+			args.prg_type = Device::WR_FLASH;
+
 		if (board && board->manufacturer != "none") {
 			Device *target;
 			if (board->manufacturer == "efinix") {
@@ -229,7 +233,8 @@ int main(int argc, char **argv)
 				} else {
 					target->dumpFlash(args.offset, args.file_size);
 				}
-			} else if (args.prg_type == Device::WR_FLASH) {
+			} else if ((args.prg_type == Device::WR_FLASH) ||
+						!args.bit_file.empty() || !args.file_type.empty()) {
 				target->program(args.offset, args.unprotect_flash);
 			}
 			if (args.unprotect_flash && args.bit_file.empty())
