@@ -196,7 +196,8 @@ jobs:
       run: |
         mkdir tmp
         cd tmp
-        tar -xf ../scripts/msys2/*.zst
+        zstd -d ../scripts/msys2/*.zst
+        tar -xf ../scripts/msys2/*.tar
         tree .
 
 
