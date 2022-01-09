@@ -307,6 +307,14 @@ int Jtag::shiftIR(unsigned char *tdi, unsigned char *tdo, int irlen, int end_sta
 {
 	display("%s: avant shiftIR\n", __func__);
 	int bypass_after = 0;
+	if (end_state != SHIFT_IR) {
+		/* when the device is not alone and not
+		 * the first a serie of bypass must be
+		 * send to complete send ir sequence
+		 */
+		for (int i = 0; i < device_index; i++)
+			bypass_after += _irlength_list[i];
+	}
 
 	/* if not in SHIFT IR move to this state */
 	if (_state != SHIFT_IR) {
@@ -321,10 +329,6 @@ int Jtag::shiftIR(unsigned char *tdi, unsigned char *tdo, int irlen, int end_sta
 		int bypass_before = 0;
 		for (unsigned int i = device_index + 1; i < _devices_list.size(); i++)
 			bypass_before += _irlength_list[i];
-		/* same for device after targeted device
-		 */
-		for (int i = 0; i < device_index; i++)
-			bypass_after += _irlength_list[i];
 
 		/* if > 0 send bits */
 		if (bypass_before > 0) {
