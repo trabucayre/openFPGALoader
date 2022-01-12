@@ -101,3 +101,30 @@ extlinks = {
     "ghpull": ("https://github.com/trabucayre/openFPGALoader/pull/%s", "pull request #"),
     "ghsrc": ("https://github.com/trabucayre/openFPGALoader/blob/master/%s", None),
 }
+
+# -- Read board data from boards.yml
+
+from dataclasses import dataclass
+from yaml import load as yaml_load, Loader as yaml_loader, dump as yaml_dump
+from tabulate import tabulate
+
+@dataclass
+class Board:
+    ID: str
+    Description: str = None
+    URL: str = None
+    FPGA: str = None
+    Memory: str = None
+    Flash: str = None
+
+with (ROOT / 'boards.yml').open('r', encoding='utf-8') as fptr:
+    data = [Board(**item) for item in yaml_load(fptr, yaml_loader)]
+
+table = tabulate(
+    [[item.ID, f"`{item.Description} <{item.URL}>`__", item.FPGA, item.Memory, item.Flash] for item in data],
+    headers=["Board name", "Description", "FPGA", "Memory", "Flash"],
+    tablefmt="rst"
+)
+
+with (ROOT / "compatibility/boards.inc").open("w", encoding="utf-8") as wptr:
+    wptr.write(table)
