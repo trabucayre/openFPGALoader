@@ -5,9 +5,14 @@ from os.path import abspath
 from pathlib import Path
 from json import loads
 
+
 ROOT = Path(__file__).resolve().parent
 
 sys_path.insert(0, abspath("."))
+
+
+from boards import ReadDataFromYAML, DataToTable
+
 
 # -- General configuration ------------------------------------------------
 
@@ -101,3 +106,8 @@ extlinks = {
     "ghpull": ("https://github.com/trabucayre/openFPGALoader/pull/%s", "pull request #"),
     "ghsrc": ("https://github.com/trabucayre/openFPGALoader/blob/master/%s", None),
 }
+
+# -- Generate partial board compatibility page (`board.inc`) with data from `boards.yml`
+
+with (ROOT / "compatibility/boards.inc").open("w", encoding="utf-8") as wptr:
+    wptr.write(DataToTable(ReadDataFromYAML()))

@@ -1,1 +1,3 @@
+pyyaml
 sphinx
+tabulate

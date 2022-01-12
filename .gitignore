@@ -39,5 +39,7 @@ openFPGALoader
 build/
 
 # Documentation
-/doc/_build
-/doc/_theme
+/doc/__pycache__/
+/doc/_build/
+/doc/_theme/
+/doc/compatibility/boards.inc
