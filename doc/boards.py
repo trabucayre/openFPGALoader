@@ -15,6 +15,7 @@ class Board:
     FPGA: str = None
     Memory: str = None
     Flash: str = None
+    Constraints: str = None
 
 
 def ReadDataFromYAML():
@@ -24,6 +25,13 @@ def ReadDataFromYAML():
 
 
 def DataToTable(data, tablefmt: str = "rst"):
+    def processConstraints(constraints):
+        if constraints is None:
+            return None
+        if isinstance(constraints, str):
+            constraints = [constraints]
+        return " ".join([f":ref:`{item} ➚ <constraints:boards:{item.lower()}>`" for item in constraints])
+
     return tabulate(
         [
             [
@@ -31,9 +39,10 @@ def DataToTable(data, tablefmt: str = "rst"):
                 f"`{item.Description} <{item.URL}>`__",
                 item.FPGA,
                 item.Memory,
-                item.Flash
+                item.Flash,
+                processConstraints(item.Constraints)
             ] for item in data
         ],
-        headers=["Board name", "Description", "FPGA", "Memory", "Flash"],
+        headers=["Board name", "Description", "FPGA", "Memory", "Flash", "Constraints"],
         tablefmt=tablefmt
     )

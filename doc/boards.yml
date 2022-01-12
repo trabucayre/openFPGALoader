@@ -18,6 +18,7 @@
   FPGA: Artix xc7a35ticsg324
   Memory: OK
   Flash: OK
+  Constraints: Arty-A7-35T
 
 - ID: arty_a7_100t
   Description: Digilent Arty A7
@@ -25,6 +26,7 @@
   FPGA: Artix xc7a100tcsg324
   Memory: OK
   Flash: OK
+  Constraints: Arty-A7-100T
 
 - ID: arty_s7_25
   Description: Digilent Arty S7
@@ -32,6 +34,7 @@
   FPGA: Spartan7 xc7s25csga324
   Memory: OK
   Flash: OK
+  Constraints: Arty-S7-25
 
 - ID: arty_s7_50
   Description: Digilent Arty S7
@@ -39,6 +42,7 @@
   FPGA: Spartan7 xc7s50csga324
   Memory: OK
   Flash: OK
+  Constraints: Arty-S7-50
 
 - ID: arty_z7_10
   Description: Digilent Arty S7
@@ -191,6 +195,7 @@
   FPGA: iCE40UltraPlus UP5K
   Memory: NA
   Flash: AS
+  Constraints: iCEBreaker
 
 - ID: icebreaker-bitsy
   Description: iCEBreaker-bitsy
@@ -198,6 +203,9 @@
   FPGA: iCE40UltraPlus UP5K
   Memory: NA
   Flash: OK
+  Constraints:
+    - iCEBreaker-bitsy-v0
+    - iCEBreaker-bitsy-v1
 
 - ID: ice40_generic
   Description: icestick
@@ -205,6 +213,7 @@
   FPGA: iCE40 HX1k
   Memory: NA
   Flash: AS
+  Constraints: IceStick
 
 - ID: ice40_generic
   Description: iCE40-HX8K
@@ -212,6 +221,7 @@
   FPGA: iCE40 HX8k
   Memory: NT
   Flash: AS
+  Constraints: iCE40-HX8K
 
 - ID: ice40_generic
   Description: Olimex iCE40HX1K-EVB
@@ -219,6 +229,7 @@
   FPGA: iCE40 HX1k
   Memory: NT
   Flash: AS
+  Constraints: iCE40HX1K-EVB
 
 - ID: ice40_generic
   Description: Olimex iCE40HX8K-EVB
@@ -226,6 +237,7 @@
   FPGA: iCE40 HX8k
   Memory: NT
   Flash: AS
+  Constraints: iCE40HX8K-EVB
 
 - ID: ice40_generic
   Description: Icezum Alhambra II
@@ -233,6 +245,7 @@
   FPGA: iCE40 HX4k
   Memory: NT
   Flash: AS
+  Constraints: IceZumAlhambraII
 
 - ID: kc705
   Description: Xilinx KC705
@@ -240,6 +253,7 @@
   FPGA: Kintex7 xc7k325t
   Memory: OK
   Flash: NT
+  Constraints: KC705
 
 - ID: licheeTang
   Description: Sipeed Lichee Tang
@@ -282,6 +296,7 @@
   FPGA: ECP5 LFE5U-25F-8MG285C
   Memory: OK (JTAG)
   Flash: OK (DFU)
+  Constraints: OrangeCrab-r0.2
 
 - ID: pipistrello
   Description: Saanlima Pipistrello LX45
@@ -351,6 +366,11 @@
   FPGA: ECP5 LFE5U
   Memory: OK
   Flash: OK
+  Constraints:
+    - ULX3S-12F
+    - ULX3S-25F
+    - ULX3S-45F
+    - ULX3S-85F
 
 - ID: ulx3s_dfu
   Description: Radiona ULX3S DFU mode
@@ -400,3 +420,4 @@
   FPGA: zynq7000 xc7z020clg484
   Memory: OK
   Flash: NA
+  Constraints: ZedBoard
