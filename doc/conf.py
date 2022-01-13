@@ -94,7 +94,8 @@ texinfo_documents = [
 # -- Sphinx.Ext.InterSphinx -----------------------------------------------
 
 intersphinx_mapping = {
-    "python": ("https://docs.python.org/3/", None),
+    "python":      ("https://docs.python.org/3/", None),
+    "constraints": ("https://hdl.github.io/constraints", None)
 }
 
 # -- Sphinx.Ext.ExtLinks --------------------------------------------------
