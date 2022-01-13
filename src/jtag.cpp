@@ -135,39 +135,52 @@ int Jtag::detectChain(int max_dev)
 		tmp = 0;
 		for (int ii=0; ii < 4; ii++)
 			tmp |= (rx_buff[ii] << (8*ii));
+
+		/* search IDCODE in fpga_list and misc_dev_list
+		 * since most device have idcode with high nibble masked
+		 * we start to search sub IDCODE
+		 * if IDCODE has no match: try the same with version unmasked
+		 */
 		if (tmp != 0 && tmp != 0xffffffff) {
+			bool found = false;
 			/* ckeck highest nibble to prevent confusion between Cologne Chip
 			 * GateMate and Efinix Trion T4/T8 devices
 			 */
 			if (tmp != 0x20000001)
-				tmp &= 0x0fffffff;
-			else
-				tmp &= 0xffffffff;
-			_devices_list.insert(_devices_list.begin(), tmp);
+				found = search_and_insert_device_with_idcode(tmp & 0x0fffffff);
+			if (!found) /* if masked not found -> search for full */
+				found = search_and_insert_device_with_idcode(tmp);
 
-			/* search for irlength in fpga_list or misc_dev_list */
-			uint16_t irlength = -1;
-			auto dev = fpga_list.find(tmp);
-			if (dev == fpga_list.end()) {
-				auto misc = misc_dev_list.find(tmp);
-				if (misc != misc_dev_list.end()) {
-					irlength = misc->second.irlength;
-				} else {
-					char error[256];
-					snprintf(error, 256, "Unknown device with IDCODE: 0x%08x",
-							tmp);
-					throw std::runtime_error(error);
-				}
-			} else {
-				irlength = dev->second.irlength;
+			if (!found) {
+				char error[256];
+				snprintf(error, 256, "Unknown device with IDCODE: 0x%08x",
+						tmp);
+				throw std::runtime_error(error);
 			}
-
-			_irlength_list.insert(_irlength_list.begin(), irlength);
 		}
 	}
 	go_test_logic_reset();
 	flushTMS(true);
 	return _devices_list.size();
+}
+
+bool Jtag::search_and_insert_device_with_idcode(uint32_t idcode)
+{
+	int irlength = -1;
+	auto dev = fpga_list.find(idcode);
+	if (dev != fpga_list.end())
+		irlength = dev->second.irlength;
+	if (irlength == -1) {
+		auto misc = misc_dev_list.find(idcode);
+		if (misc != misc_dev_list.end())
+			irlength = misc->second.irlength;
+	}
+	if (irlength == -1)
+		return false;
+
+	_devices_list.insert(_devices_list.begin(), idcode);
+	_irlength_list.insert(_irlength_list.begin(), irlength);
+	return true;
 }
 
 uint16_t Jtag::device_select(uint16_t index)
