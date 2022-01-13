@@ -140,11 +140,19 @@ class Xilinx: public Device, SPIInterface {
 			ARTIX_FAMILY,
 			KINTEX_FAMILY,
 			ZYNQ_FAMILY,
+			ZYNQMP_FAMILY,
 			XCF_FAMILY,
 			UNKNOWN_FAMILY  = 999
 		};
 
 		xilinx_family_t _fpga_family; /**< used to store current family */
+
+		/*!
+		 * \brief xilinx ZynqMP Ultrascale+ specific initialization
+		 * \param[in] family name
+		 * \return true if device has been correctly initilized
+		 */
+		bool zynqmp_init(const std::string &family);
 
 		/*!
 		 * \brief with xilinx devices SPI flash direct access is not possible

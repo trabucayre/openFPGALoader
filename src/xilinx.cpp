@@ -58,6 +58,10 @@ Xilinx::Xilinx(Jtag *jtag, const std::string &filename,
 		_fpga_family = SPARTAN7_FAMILY;
 	} else if (family == "zynq") {
 		_fpga_family = ZYNQ_FAMILY;
+	} else if (family.substr(0, 6) == "zynqmp") {
+		if (!zynqmp_init(family))
+			throw std::runtime_error("Error with ZynqMP init");
+		_fpga_family = ZYNQMP_FAMILY;
 	} else if (family == "kintex7") {
 		_fpga_family = KINTEX_FAMILY;
 	} else if (family == "spartan3") {
@@ -95,6 +99,67 @@ Xilinx::Xilinx(Jtag *jtag, const std::string &filename,
 	}
 }
 Xilinx::~Xilinx() {}
+
+bool Xilinx::zynqmp_init(const std::string &family)
+{
+	/* by default, at powering a zynqmp has
+	 * PL TAP and ARM DAP disabled
+	 * at this time only PS TAB and a dummy are seen
+	 * So first step is to enable PL and ARM
+	 */
+	if (family == "zynqmp_cfgn") {
+		/* PS TAP is the first device with 0xfffffe idcode */
+		_jtag->device_select(0);
+		/* send 0x03 into JTAG_CTRL register */
+		uint16_t ircode = 0x824;
+		_jtag->shiftIR(ircode & 0xff, 8, Jtag::SHIFT_IR);
+		_jtag->shiftIR((ircode >> 9) & 0x3f, 4);
+		uint8_t instr[4] = {0x3, 0, 0, 0};
+		_jtag->shiftDR(instr, NULL, 32);
+		/* synchronize everything by moving to TLR */
+		_jtag->set_state(Jtag::TEST_LOGIC_RESET);
+		_jtag->toggleClk(10);
+		_jtag->set_state(Jtag::RUN_TEST_IDLE);
+		_jtag->toggleClk(100);
+		/* force again JTAG chain detection */
+		_jtag->detectChain(5);
+	}
+	/* check if the chain is correctly configured:
+	 * 2 devices
+	 * PL at position 0
+	 * ARM at position 1
+	 */
+	char mess[256];
+	std::vector<int> listDev = _jtag->get_devices_list();
+	if (listDev.size() != 2) {
+		snprintf(mess, sizeof(mess), "ZynqMP error: wrong"
+				" JTAG length: %zu instead of 2\n",
+				listDev.size());
+		printError(mess);
+		return false;
+	}
+
+	if (fpga_list[listDev[0]].family != "zynqmp") {
+		snprintf(mess, sizeof(mess), "ZynqMP error: first device"
+				" is not the PL TAP -> 0x%08x\n",
+				listDev[0]);
+		printError(mess);
+		return false;
+	}
+
+	if (listDev[1] != 0x5ba00477) {
+		snprintf(mess, sizeof(mess), "ZynqMP error: second device"
+				" is not the ARM DAP cortex A53 -> 0x%08x\n",
+				listDev[1]);
+		printError(mess);
+		return false;
+	}
+
+	_jtag->insert_first(0xdeadbeef, 6);
+	_jtag->device_select(1);
+
+	return true;
+}
 
 #define USER1	0x02
 #define CFG_IN   0x05
