@@ -53,6 +53,15 @@ static std::map <int, fpga_model> fpga_list = {
 	{0x03722093, {"xilinx", "zynq",     "xc7z010", 6}},
 	{0x03727093, {"xilinx", "zynq",     "xc7z020", 6}},
 
+	/* When powering a zynq ultrascale+ MPSoC, PL Tap and ARM dap
+	 * are disabled and only PS tap with a specific IDCODE is seen.
+	 * 0x03 must be written into JTAG_CTRL followed by RTI and
+	 * a new scan to discover PL TAP and ARM DAP
+	 */
+	{0x08e22126, {"xilinx", "zynqmp_cfgn", "xczu2cg", 4}},
+
+	{0x04711093, {"xilinx", "zynqmp",      "xczu2cg", 6}},
+
 	{0x020f20dd, {"altera", "cyclone III/IV", "EP3C16/EP4CE15", 10}},
 
 	{0x020f30dd, {"altera", "cyclone 10 LP", "10CL025", 10}},
@@ -124,7 +133,9 @@ typedef struct {
 } misc_device;
 
 static std::map <int, misc_device> misc_dev_list = {
-	{0x0ba00477, {"ARM cortex A9", 4}},
+	{0x4ba00477, {"ARM cortex A9",         4}},
+	{0x5ba00477, {"ARM cortex A53",        4}},
+	{0xfffffffe, {"ZynqMP dummy device",   12}},
 };
 
 #endif

@@ -31,6 +31,7 @@ Cologne Chip  `GateMate Series <https://colognechip.com/programmable-logic/gatem
       Xilinx  XC2C (coolrunner II) `xc2c32a <https://www.xilinx.com/support/documentation/data_sheets/ds090.pdf>`__                               TBD    OK
       Xilinx  XCF `xcf01s, xcf02s, xcf04s <https://www.xilinx.com/products/silicon-devices/configuration-memory/platform-flash.html>`__           NA     OK
       Xilinx  Zynq7000 `xc7z010, xc7z020 <https://www.xilinx.com/products/silicon-devices/soc/zynq-7000.html>`__                                  OK     NA
+      Xilinx  ZynqMPSoC `xczu2cg <https://www.xilinx.com/products/silicon-devices/soc/zynq-ultrascale-mpsoc.html>`__                              OK     NA
 ============= =================================================================================================================================== ====== =====
 
 * IF: Internal Flash
