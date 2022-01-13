@@ -72,6 +72,13 @@
   Memory: OK
   Flash: NT
 
+- ID: axu2cga
+  Description: Alinx AXU2CGA Zynq MPSoC Dev Board
+  URL: http://www.alinx.com/en/index.php/default/content/101.html
+  FPGA: ZynqMPSoC XCZU2CG
+  Memory: OK
+  Flash: NA
+
 - ID: basys3
   Description: Digilent Basys3
   URL: https://reference.digilentinc.com/reference/programmable-logic/basys-3/start
