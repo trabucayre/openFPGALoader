@@ -178,8 +178,14 @@ bool Jtag::search_and_insert_device_with_idcode(uint32_t idcode)
 	if (irlength == -1)
 		return false;
 
-	_devices_list.insert(_devices_list.begin(), idcode);
+	return insert_first(idcode, irlength);
+}
+
+bool Jtag::insert_first(uint32_t device_id, uint16_t irlength)
+{
+	_devices_list.insert(_devices_list.begin(), device_id);
 	_irlength_list.insert(_irlength_list.begin(), irlength);
+
 	return true;
 }
 

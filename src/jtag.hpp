@@ -19,7 +19,7 @@ class Jtag {
  public:
 	Jtag(cable_t &cable, const jtag_pins_conf_t *pin_conf, std::string dev,
 		const std::string &serial, uint32_t clkHZ, int8_t verbose = 0,
-		const std::string &firmware_path="");
+		const std::string &firmware_path = "");
 	~Jtag();
 
 	/* maybe to update */
@@ -52,6 +52,13 @@ class Jtag {
 	 * \return -1 if index is out of bound, index otherwise
 	 */
 	uint16_t device_select(uint16_t index);
+	/*!
+	 * \brief inject a device into list at the begin
+	 * \param[in] device_id: idcode
+	 * \param[in] irlength: device irlength
+	 * \return false if fails
+	 */
+	bool insert_first(uint32_t device_id, uint16_t irlength);
 
 	int shiftIR(unsigned char *tdi, unsigned char *tdo, int irlen,
 		int end_state = RUN_TEST_IDLE);
@@ -95,7 +102,8 @@ class Jtag {
 	JtagInterface *_jtag;
 
  private:
-	void init_internal(cable_t &cable, const std::string &dev, const std::string &serial,
+	void init_internal(cable_t &cable, const std::string &dev,
+		const std::string &serial,
 		const jtag_pins_conf_t *pin_conf, uint32_t clkHZ,
 		const std::string &firmware_path);
 	/*!
