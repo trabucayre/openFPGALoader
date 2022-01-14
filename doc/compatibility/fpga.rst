@@ -23,7 +23,7 @@ Cologne Chip  `GateMate Series <https://colognechip.com/programmable-logic/gatem
      Lattice  `MachXO3D <http://www.latticesemi.com/en/Products/FPGAandCPLD/MachXO3D.aspx>`__                                                     OK     OK
      Lattice  `MachXO3LF <http://www.latticesemi.com/en/Products/FPGAandCPLD/MachXO3.aspx>`__                                                     OK     OK
       Xilinx  Artix 7 `xc7a35ti, xc7a50t, xc7a75t, xc7a100t, xc7a200t <https://www.xilinx.com/products/silicon-devices/fpga/artix-7.html>`__      OK     OK
-      Xilinx  Kintex 7 `xc7k325t <https://www.xilinx.com/products/silicon-devices/fpga/kintex-7.html#productTable>`__                             OK     NT
+      Xilinx  Kintex 7 `xc7k160t, xc7k325t <https://www.xilinx.com/products/silicon-devices/fpga/kintex-7.html#productTable>`__                   OK     NT
       Xilinx  Spartan 3 `xc3s200 <https://www.xilinx.com/products/silicon-devices/fpga/spartan-3.html>`__                                         OK     NA
       Xilinx  Spartan 6 `xc6slx9, xc6slx16, xc6slx25, xc6slx45 <https://www.xilinx.com/products/silicon-devices/fpga/spartan-6.html>`__           OK     OK
       Xilinx  Spartan 7 `xc7s15, xc7s25, xc7s50 <https://www.xilinx.com/products/silicon-devices/fpga/spartan-7.html>`__                          OK     OK
