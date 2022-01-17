@@ -70,7 +70,7 @@ def FPGADataToTable(data, tablefmt: str = "rst"):
     return tabulate(
         [
             [
-                vendor,
+                f":ref:`{vendor} <{vendor.lower().replace(' ','')}>`",
                 f"`{item.Description} <{item.URL}>`__",
                 item.Model if isinstance(item.Model, str) else ', '.join(item.Model),
                 item.Memory,
