@@ -43,3 +43,4 @@ build/
 /doc/_build/
 /doc/_theme/
 /doc/compatibility/boards.inc
+/doc/compatibility/fpga.inc

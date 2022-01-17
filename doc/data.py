@@ -1,3 +1,4 @@
+from typing import List, Union
 from pathlib import Path
 from dataclasses import dataclass
 from yaml import load as yaml_load, Loader as yaml_loader, dump as yaml_dump
@@ -18,13 +19,13 @@ class Board:
     Constraints: str = None
 
 
-def ReadDataFromYAML():
+def ReadBoardDataFromYAML():
     with (ROOT / 'boards.yml').open('r', encoding='utf-8') as fptr:
         data = [Board(**item) for item in yaml_load(fptr, yaml_loader)]
     return data
 
 
-def DataToTable(data, tablefmt: str = "rst"):
+def BoardDataToTable(data, tablefmt: str = "rst"):
     def processConstraints(constraints):
         if constraints is None:
             return None
@@ -44,5 +45,38 @@ def DataToTable(data, tablefmt: str = "rst"):
             ] for item in data
         ],
         headers=["Board name", "Description", "FPGA", "Memory", "Flash", "Constraints"],
+        tablefmt=tablefmt
+    )
+
+
+@dataclass
+class FPGA:
+    Model: Union[str, List[str]]
+    Description: str
+    URL: str = None
+    Memory: str = None
+    Flash: str = None
+
+
+def ReadFPGADataFromYAML():
+    with (ROOT / 'FPGAs.yml').open('r', encoding='utf-8') as fptr:
+        data = yaml_load(fptr, yaml_loader)
+        for vendor, content in data.items():
+            data[vendor] = [FPGA(**item) for item in content]
+    return data
+
+
+def FPGADataToTable(data, tablefmt: str = "rst"):
+    return tabulate(
+        [
+            [
+                vendor,
+                f"`{item.Description} <{item.URL}>`__",
+                item.Model if isinstance(item.Model, str) else ', '.join(item.Model),
+                item.Memory,
+                item.Flash
+            ] for vendor, content in data.items() for item in content
+        ],
+        headers=["Vendor", "Description", "Model", "Memory", "Flash"],
         tablefmt=tablefmt
     )

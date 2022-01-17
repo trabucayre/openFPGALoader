@@ -11,8 +11,12 @@ ROOT = Path(__file__).resolve().parent
 sys_path.insert(0, abspath("."))
 
 
-from boards import ReadDataFromYAML, DataToTable
-
+from data import (
+    ReadBoardDataFromYAML,
+    BoardDataToTable,
+    ReadFPGADataFromYAML,
+    FPGADataToTable
+)
 
 # -- General configuration ------------------------------------------------
 
@@ -111,4 +115,9 @@ extlinks = {
 # -- Generate partial board compatibility page (`board.inc`) with data from `boards.yml`
 
 with (ROOT / "compatibility/boards.inc").open("w", encoding="utf-8") as wptr:
-    wptr.write(DataToTable(ReadDataFromYAML()))
+    wptr.write(BoardDataToTable(ReadBoardDataFromYAML()))
+
+# -- Generate partial FPGA compatibility page (`fpga.inc`) with data from `FPGAs.yml`
+
+with (ROOT / "compatibility/fpga.inc").open("w", encoding="utf-8") as wptr:
+    wptr.write(FPGADataToTable(ReadFPGADataFromYAML()))
