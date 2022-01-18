@@ -80,7 +80,7 @@ int main(int argc, char **argv)
 
 	/* command line args. */
 	struct arguments args = {0, false, false, false, 0, "", "", "-", "", -1,
-			0, "-", false, false, false, false, Device::WR_SRAM, false,
+			0, "-", false, false, false, false, Device::PRG_NONE, false,
 			false, false, "", "", "", -1, 0, false, -1, 0, 0, 0, false, ""};
 	/* parse arguments */
 	try {
@@ -195,6 +195,10 @@ int main(int argc, char **argv)
 
 	/* FLASH direct access */
 	if (args.spi || (board && board->mode == COMM_SPI)) {
+		/* if no instruction from user -> select flash mode */
+		if (args.prg_type == Device::PRG_NONE)
+			args.prg_type = Device::WR_FLASH;
+
 		FtdiSpi *spi = NULL;
 		spi_pins_conf_t pins_config;
 		if (board)
@@ -209,10 +213,6 @@ int main(int argc, char **argv)
 
 		int spi_ret = EXIT_SUCCESS;
 
-		/* in spi mode force write to flash */
-		if (args.prg_type == Device::WR_SRAM)
-			args.prg_type = Device::WR_FLASH;
-
 		if (board && board->manufacturer != "none") {
 			Device *target;
 			if (board->manufacturer == "efinix") {
@@ -221,6 +221,7 @@ int main(int argc, char **argv)
 					args.verify, args.verbose);
 			} else if (board->manufacturer == "lattice") {
 				target = new Ice40(spi, args.bit_file, args.file_type,
+					args.prg_type,
 					board->reset_pin, board->done_pin, args.verify, args.verbose);
 			} else if (board->manufacturer == "colognechip") {
 				target = new CologneChip(spi, args.bit_file, args.file_type, args.prg_type,
@@ -233,7 +234,8 @@ int main(int argc, char **argv)
 				} else {
 					target->dumpFlash(args.offset, args.file_size);
 				}
-			} else if ((args.prg_type == Device::WR_FLASH) ||
+			} else if ((args.prg_type == Device::WR_FLASH ||
+						args.prg_type == Device::WR_SRAM) ||
 						!args.bit_file.empty() || !args.file_type.empty()) {
 				target->program(args.offset, args.unprotect_flash);
 			}
@@ -359,6 +361,11 @@ int main(int argc, char **argv)
 	}
 
 	/* jtag base */
+
+	/* if no instruction from user -> select load */
+	if (args.prg_type == Device::PRG_NONE)
+		args.prg_type = Device::WR_SRAM;
+
 	Jtag *jtag;
 	try {
 		jtag = new Jtag(cable, &pins_config, args.device, args.ftdi_serial,

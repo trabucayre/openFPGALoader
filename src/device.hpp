@@ -30,7 +30,8 @@ class Device {
 		typedef enum {
 			WR_SRAM = 0,
 			WR_FLASH = 1,
-			RD_FLASH = 2
+			RD_FLASH = 2,
+			PRG_NONE = 3
 		} prog_type_t;
 
 		Device(Jtag *jtag, std::string filename, const std::string &file_type,
