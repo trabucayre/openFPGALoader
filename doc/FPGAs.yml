@@ -1,0 +1,234 @@
+Anlogic:
+
+  - Description: EG4
+    Model: S20
+    URL: http://www.anlogic.com/prod_view.aspx?TypeId=10&Id=168&FId=t3:10:3
+    Memory: OK
+    Flash: AS
+
+  - Description: SALELF 2
+    Model: EF2M45
+    URL: http://www.anlogic.com/prod_view.aspx?TypeId=12&Id=170&FId=t3:12:3
+    Memory: OK
+    Flash: OK
+
+
+Cologne Chip:
+
+  - Description: GateMate Series
+    Model:
+      - CCGM1A1
+      - CCGM1A2
+      - CCGM1A4
+      - CCGM1A9
+      - CCGM1A16
+      - CCGM1A25
+    URL: https://colognechip.com/programmable-logic/gatemate/
+    Memory: OK
+    Flash: OK
+
+
+Efinix:
+
+  - Description: Trion
+    Model: T8
+    URL: https://www.efinixinc.com/products-trion.html
+    Memory: NA
+    Flash: OK
+
+  - Description: Titanium
+    Model: Ti60
+    URL: https://www.efinixinc.com/products-titanium.html
+    Memory: NA
+    Flash: OK
+
+
+Gowin:
+
+  - Description: GW1N
+    Model:
+     - GW1N-1
+     - GW1N-4
+     - GW1NR-9
+     - GW1NS-2C
+     - GW1NSR-4C
+    URL: https://www.gowinsemi.com/en/product/detail/2/
+    Memory: OK
+    Flash: IF
+
+
+Intel:
+
+  - Description: Cyclone III
+    Model: EP3C16
+    URL: https://www.intel.com/content/www/us/en/programmable/products/fpga/cyclone-series/cyclone-iii/support.html
+    Memory: OK
+    Flash: OK
+
+  - Description: Cyclone IV CE
+    Model: EP4CE22
+    URL: https://www.intel.com/content/www/us/en/products/programmable/fpga/cyclone-iv/features.html
+    Memory: OK
+    Flash: OK
+
+  - Description: Cyclone V E
+    Model:
+      - 5CEA2
+      - 5CEBA4
+    URL: https://www.intel.com/content/www/us/en/products/programmable/fpga/cyclone-v.html
+    Memory: OK
+    Flash: OK
+
+  - Description: Cyclone 10 LP
+    Model: 10CL025
+    URL: https://www.intel.com/content/www/us/en/products/programmable/fpga/cyclone-10.html
+    Memory: OK
+    Flash: OK
+
+
+Lattice:
+
+  - Description: CrossLink-NX
+    Model: LIFCL-40
+    URL: https://www.latticesemi.com/en/Products/FPGAandCPLD/CrossLink-NX
+    Memory: OK
+    Flash: OK
+
+  - Description: ECP5
+    Model:
+      - 25F
+      - 5G 85F
+    URL: http://www.latticesemi.com/Products/FPGAandCPLD/ECP5
+    Memory: OK
+    Flash: OK
+
+  - Description: iCE40
+    Model:
+      - HX1K
+      - HX4K
+      - HX8K
+      - UP5K
+    URL: https://www.latticesemi.com/en/Products/FPGAandCPLD/iCE40
+    Memory: NA
+    Flash: AS
+
+  - Description: MachXO2
+    Model:
+      - '256'
+      - '640'
+      - '640U'
+      - '1200'
+      - '1200U'
+      - '2000'
+      - '2000U'
+      - '4000'
+      - '7000'
+    URL: https://www.latticesemi.com/en/Products/FPGAandCPLD/MachXO2
+    Memory: OK
+    Flash: OK
+
+  - Description: MachXO3D
+    Model:
+      - '4300'
+      - '9400'
+    URL: http://www.latticesemi.com/en/Products/FPGAandCPLD/MachXO3D.aspx
+    Memory: OK
+    Flash: OK
+
+  - Description: MachXO3LF
+    Model:
+      - '640'
+      - '1300'
+      - '2100'
+      - '4300'
+      - '6900'
+      - '9400'
+    URL: http://www.latticesemi.com/en/Products/FPGAandCPLD/MachXO3.aspx
+    Memory: OK
+    Flash: OK
+
+
+Xilinx:
+
+  - Description: Artix 7
+    Model:
+      - xc7a35ti
+      - xc7a50t
+      - xc7a75t
+      - xc7a100t
+      - xc7a200t
+    URL: https://www.xilinx.com/products/silicon-devices/fpga/artix-7.html
+    Memory: OK
+    Flash: OK
+
+  - Description: Kintex 7
+    Model:
+      - xc7k160t
+      - xc7k325t
+    URL: https://www.xilinx.com/products/silicon-devices/fpga/kintex-7.html#productTable
+    Memory: OK
+    Flash: NT
+
+  - Description: Spartan 3
+    Model: xc3s200
+    URL: https://www.xilinx.com/products/silicon-devices/fpga/spartan-3.html
+    Memory: OK
+    Flash: NA
+
+  - Description: Spartan 6
+    Model:
+      - xc6slx9
+      - xc6slx16
+      - xc6slx25
+      - xc6slx45
+    URL: https://www.xilinx.com/products/silicon-devices/fpga/spartan-6.html
+    Memory: OK
+    Flash: OK
+
+  - Description: Spartan 7
+    Model:
+      - xc7s15
+      - xc7s25
+      - xc7s50
+    URL: https://www.xilinx.com/products/silicon-devices/fpga/spartan-7.html
+    Memory: OK
+    Flash: OK
+
+  - Description: XC9500XL
+    Model:
+      - xc9536xl
+      - xc9572xl
+      - xc95144xl
+      - xc95188xl
+    URL: https://www.xilinx.com/support/documentation/data_sheets/ds054.pdf
+    Memory: NA
+    Flash: OK
+
+  - Description: XC2C (coolrunner II)
+    Model: xc2c32a
+    URL: https://www.xilinx.com/support/documentation/data_sheets/ds090.pdf
+    Memory: TBD
+    Flash: OK
+
+  - Description: XCF
+    Model:
+      - xcf01s
+      - xcf02s
+      - xcf04s
+    URL: https://www.xilinx.com/products/silicon-devices/configuration-memory/platform-flash.html
+    Memory: NA
+    Flash: OK
+
+  - Description: Zynq7000
+    Model:
+      - xc7z010
+      - xc7z020
+    URL: https://www.xilinx.com/products/silicon-devices/soc/zynq-7000.html
+    Memory: OK
+    Flash: NA
+
+  - Description: ZynqMPSoC
+    Model: xczu2cg
+    URL: https://www.xilinx.com/products/silicon-devices/soc/zynq-ultrascale-mpsoc.html
+    Memory: OK
+    Flash: NA
