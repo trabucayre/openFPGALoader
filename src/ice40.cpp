@@ -57,6 +57,9 @@ void Ice40::reset()
 		printSuccess("DONE");
 }
 
+/* cf. TN1248 (iCE40 Programming and Configuration)
+ * Appendix A. SPI Slave Configuration Procedure
+ */
 bool Ice40::program_cram(uint8_t *data, uint32_t length)
 {
 	uint32_t timeout = 1000;
