@@ -20,6 +20,7 @@
 
 Ice40::Ice40(FtdiSpi* spi, const std::string &filename,
 			const std::string &file_type,
+			Device::prog_type_t prg_type,
 			uint16_t rst_pin, uint16_t done_pin,
 			bool verify, int8_t verbose):
 	Device(NULL, filename, file_type, verify, verbose), _rst_pin(rst_pin),
@@ -28,6 +29,11 @@ Ice40::Ice40(FtdiSpi* spi, const std::string &filename,
 	_spi = spi;
 	_spi->gpio_set_input(_done_pin);
 	_spi->gpio_set_output(_rst_pin);
+
+	if (prg_type == Device::WR_FLASH)
+		_mode = Device::SPI_MODE;
+	else
+		_mode = Device::MEM_MODE;
 }
 
 Ice40::~Ice40()
@@ -51,6 +57,56 @@ void Ice40::reset()
 		printSuccess("DONE");
 }
 
+bool Ice40::program_cram(uint8_t *data, uint32_t length)
+{
+	uint32_t timeout = 1000;
+
+	/* configure SPI */
+	_spi->setMode(3); // IDLE high, write on falling
+	_spi->setCSmode(FtdiSpi::SPI_CS_MANUAL);
+
+	/* reset device */
+	_spi->clearCs();
+	_spi->gpio_clear(_rst_pin);
+	usleep(100); // 200 ns ...
+	_spi->gpio_set(_rst_pin);
+	usleep(2000); // 800 -> 1200 us + guard
+
+	/* load configuration data MSB first
+	 */
+	ProgressBar progress("Loading to CRAM", length, 50, _verbose);
+	uint8_t *ptr = data;
+	int size = 0;
+	for (uint32_t addr = 0; addr < length; addr += size, ptr+=size) {
+		size = (addr + 256 > length)?(length-addr) : 256;
+		if (_spi->spi_put(ptr, NULL, size) == -1)
+			return -1;
+		progress.display(addr);
+	}
+	progress.done();
+
+	/* send 48 to 100 dummy bits */
+	uint8_t dummy[12];
+	_spi->spi_put(dummy, NULL, 12);
+
+	/* wait CDONE */
+	usleep(12000);
+
+	printInfo("Wait for CDONE ", false);
+	do {
+		timeout--;
+		usleep(12000);
+	} while (((_spi->gpio_get(true) & _done_pin) == 0) && timeout > 0);
+	if (timeout == 0)
+		printError("FAIL");
+	else
+		printSuccess("DONE");
+
+	_spi->setCs();
+
+	return true;
+}
+
 void Ice40::program(unsigned int offset, bool unprotect_flash)
 {
 	uint32_t timeout = 1000;
@@ -70,6 +126,11 @@ void Ice40::program(unsigned int offset, bool unprotect_flash)
 
 	uint8_t *data = bit.getData();
 	int length = bit.getLength() / 8;
+
+	if (_mode == Device::MEM_MODE) {
+		program_cram(data, length);
+		return;
+	}
 
 	_spi->gpio_clear(_rst_pin);
 

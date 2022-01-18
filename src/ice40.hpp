@@ -16,11 +16,13 @@ class Ice40: public Device, SPIInterface {
 	public:
 		Ice40(FtdiSpi *spi, const std::string &filename,
 			const std::string &file_type,
+			Device::prog_type_t prg_type,
 			uint16_t rst_pin, uint16_t done_pin,
 			bool verify, int8_t verbose);
 		~Ice40();
 
 		void program(unsigned int offset, bool unprotect_flash) override;
+		bool program_cram(uint8_t *data, uint32_t length);
 		bool dumpFlash(uint32_t base_addr, uint32_t len);
 		bool protect_flash(uint32_t len) override;
 		bool unprotect_flash() override;
