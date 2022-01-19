@@ -21,7 +21,7 @@ class FTDIpp_MPSSE {
 		} mpsse_bit_config;
 
 		FTDIpp_MPSSE(const mpsse_bit_config &cable, const std::string &dev,
-			const std::string &serial, uint32_t clkHZ, uint8_t verbose = 0);
+			const std::string &serial, uint32_t clkHZ, int8_t verbose = 0);
 		~FTDIpp_MPSSE();
 
 		int init(unsigned char latency, unsigned char bitmask_mode,
@@ -67,7 +67,7 @@ class FTDIpp_MPSSE {
 		int mpsse_get_buffer_size() {return _buffer_size;}
 		unsigned int udevstufftoint(const char *udevstring, int base);
 		bool search_with_dev(const std::string &device);
-		uint8_t _verbose;
+		int8_t _verbose;
 		mpsse_bit_config _cable;
 		int _vid;
 		int _pid;

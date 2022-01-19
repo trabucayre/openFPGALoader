@@ -27,7 +27,7 @@ using namespace std;
 	do { if (_verbose) fprintf(stdout, __VA_ARGS__);}while(0)
 
 FTDIpp_MPSSE::FTDIpp_MPSSE(const mpsse_bit_config &cable, const string &dev,
-				const std::string &serial, uint32_t clkHZ, uint8_t verbose):
+				const std::string &serial, uint32_t clkHZ, int8_t verbose):
 				_verbose(verbose > 1), _cable(cable), _vid(0),
 				_pid(0), _bus(-1), _addr(-1),
 				_interface(cable.interface),
