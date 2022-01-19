@@ -109,7 +109,7 @@ Lattice:
       - HX8K
       - UP5K
     URL: https://www.latticesemi.com/en/Products/FPGAandCPLD/iCE40
-    Memory: NA
+    Memory: OK
     Flash: AS
 
   - Description: MachXO2
