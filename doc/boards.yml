@@ -120,6 +120,7 @@
   FPGA: ECP5 LFE5U-25F-6BG381C
   Memory: OK
   Flash: OK
+  Constraints: Colorlight-i5-v7.0
 
 - ID: crosslinknx_evn
   Description: Lattice CrossLink-NX Evaluation Board
@@ -167,6 +168,7 @@
   FPGA: ECP5G LFE5UM5G-85F
   Memory: OK
   Flash: OK
+  Constraints: ECP5-EVN
 
 - ID: ecpix5
   Description: LambdaConcept ECPIX-5
@@ -174,6 +176,9 @@
   FPGA: ECP5 LFE5UM5G-85F
   Memory: OK
   Flash: OK
+  Constraints:
+    - ECPIX-5-45F
+    - ECPIX-5-85F
 
 - ID: fireant
   Description: Fireant Trion T8
@@ -188,6 +193,7 @@
   FPGA: iCE40UltraPlus UP5K
   Memory: NA
   Flash: OK
+  Constraints: Fomu-PVT
 
 - ID: honeycomb
   Description: honeycomb
