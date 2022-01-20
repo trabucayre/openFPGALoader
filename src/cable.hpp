@@ -34,6 +34,7 @@ static std::map <std::string, cable_t> cable_list = {
 	// last 4 bytes are ADBUS7-0 value, ADBUS7-0 direction, ACBUS7-0 value, ACBUS7-0 direction
 	// some cables requires explicit values on some of the I/Os
 	{"anlogicCable", 		{MODE_ANLOGICCABLE, {}}},
+	{"arm-usb-ocd-h",       {MODE_FTDI_SERIAL,  {0x15ba, 0x002b, INTERFACE_A, 0x08, 0x1B, 0x09, 0x0B}}},
 	{"bus_blaster",  		{MODE_FTDI_SERIAL,  {0x0403, 0x6010, INTERFACE_A, 0x08, 0x1B, 0x08, 0x0B}}},
 	{"bus_blaster_b",		{MODE_FTDI_SERIAL,  {0x0403, 0x6010, INTERFACE_B, 0x08, 0x0B, 0x08, 0x0B}}},
 	{"ch552_jtag",   		{MODE_FTDI_SERIAL,  {0x0403, 0x6010, INTERFACE_A, 0x08, 0x0B, 0x08, 0x0B}}},

@@ -4,6 +4,7 @@ Cables
 ######
 
 * anlogic JTAG adapter
+* `arm-usb-ocd-h <https://www.olimex.com/Products/ARM/JTAG/ARM-USB-OCD-H/>`__: jtag programmer cable from olimex
 * `digilent_hs2 <https://store.digilentinc.com/jtag-hs2-programming-cable/>`__: jtag programmer cable from digilent
 * `cmsisdap <https://os.mbed.com/docs/mbed-os/v6.11/debug-test/daplink.html>`__: ARM CMSIS DAP protocol interface (hid only)
 * `Orbtrace <https://github.com/orbcode/orbtrace>`__: Open source FPGA-based debug and trace interface
