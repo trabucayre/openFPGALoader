@@ -116,6 +116,7 @@ static std::map <int, fpga_model> fpga_list = {
 
 	{0x0129a043, {"lattice", "XP2", "LFXP2-8E", 8}},
 
+	{0x0100481b, {"Gowin", "GW1N", "GW1N(R)-9C", 8}},
 	{0x0100581b, {"Gowin", "GW1N", "GW1NR-9", 8}},
 	{0x0900281B, {"Gowin", "GW1N", "GW1N-1", 8}},
 	{0x0120681b, {"Gowin", "GW1N", "GW1N-2", 8}},

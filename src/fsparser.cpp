@@ -165,7 +165,9 @@ int FsParser::parse()
 		case 0x1100381b: /* GW1N-4B   */
 			nb_line = 494;
 			break;
-		case 0x0100481b: /* GW1N-6    */
+		case 0x0100481b: /* GW1N-6(9C ES?) */
+		case 0x1100481b: /* GW1N-9C   */
+		case 0x0100581b: /* GW1N-9(ES)*/
 		case 0x1100581b: /* GW1N-9    */
 			nb_line = 712;
 			padding = 4;
