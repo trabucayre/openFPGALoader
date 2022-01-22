@@ -366,7 +366,7 @@
   Memory: OK
   Flash: IF/EF
 
-- ID: tangnano4k
+- ID: tangnano9k
   Description: Sipeed Tang Nano 9K
   URL: https://tangnano.sipeed.com/en/
   FPGA: littleBee GW1NR-9C
