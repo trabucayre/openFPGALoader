@@ -366,6 +366,13 @@
   Memory: OK
   Flash: IF/EF
 
+- ID: tangnano4k
+  Description: Sipeed Tang Nano 9K
+  URL: https://tangnano.sipeed.com/en/
+  FPGA: littleBee GW1NR-9C
+  Memory: OK
+  Flash: IF/EF
+
 - ID: tec0117
   Description: Trenz Gowin LittleBee (TEC0117)
   URL: https://shop.trenz-electronic.de/en/TEC0117-01-FPGA-Module-with-GOWIN-LittleBee-and-8-MByte-internal-SDRAM
