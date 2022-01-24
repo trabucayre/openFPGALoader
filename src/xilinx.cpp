@@ -113,7 +113,7 @@ bool Xilinx::zynqmp_init(const std::string &family)
 		/* send 0x03 into JTAG_CTRL register */
 		uint16_t ircode = 0x824;
 		_jtag->shiftIR(ircode & 0xff, 8, Jtag::SHIFT_IR);
-		_jtag->shiftIR((ircode >> 9) & 0x3f, 4);
+		_jtag->shiftIR((ircode >> 8) & 0x0f, 4);
 		uint8_t instr[4] = {0x3, 0, 0, 0};
 		_jtag->shiftDR(instr, NULL, 32);
 		/* synchronize everything by moving to TLR */
