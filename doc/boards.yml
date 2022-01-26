@@ -268,13 +268,6 @@
   Flash: NT
   Constraints: KC705
 
-- ID: zc702
-  Description: Xilinx ZC702
-  URL: https://www.xilinx.com/products/boards-and-kits/ek-z7-zc702-g.html
-  FPGA: zynq7000 xc7z020clg484
-  Memory: OK
-  Flash: NA
-
 - ID: licheeTang
   Description: Sipeed Lichee Tang
   URL: https://tang.sipeed.com/en/hardware-overview/lichee-tang/
@@ -440,6 +433,13 @@
   FPGA: Xilinx xc3s200ft256, xcf01s
   Memory: OK
   Flash: OK
+
+- ID: zc702
+  Description: Xilinx ZC702
+  URL: https://www.xilinx.com/products/boards-and-kits/ek-z7-zc702-g.html
+  FPGA: zynq7000 xc7z020clg484
+  Memory: OK
+  Flash: NA
 
 - ID: zedboard
   Description: Avnet ZedBoard
