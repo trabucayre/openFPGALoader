@@ -1,3 +1,10 @@
+- ID: ac701
+  Description: Xilinx Artix-7 FPGA AC701 Evaluation Kit
+  URL: https://www.xilinx.com/products/boards-and-kits/ek-a7-ac701-g.html
+  FPGA: Artix xc7a200t2fbg676c
+  Memory: OK
+  Flash: NT
+
 - ID: acornCle215
   Description: Acorn CLE 215+
   URL: http://squirrelsresearch.com/acorn-cle-215
