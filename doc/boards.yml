@@ -4,6 +4,7 @@
   FPGA: Artix xc7a200t2fbg676c
   Memory: OK
   Flash: NT
+  Constraints: AC701
 
 - ID: acornCle215
   Description: Acorn CLE 215+
