@@ -102,6 +102,7 @@ typedef struct {
 	{_name, {"", _cable, _fpga_part, 0, 0, 0, COMM_DFU, {}, {}, 0, _vid, _pid, _alt}}
 
 static std::map <std::string, target_board_t> board_list = {
+	JTAG_BOARD("ac701",           "xc7a200t2fbg676c", "digilent", 0, 0, CABLE_DEFAULT),
 	JTAG_BOARD("acornCle215",     "xc7a200tsbg484", "",         0, 0, CABLE_DEFAULT),
 	JTAG_BOARD("alchitry_au",     "xc7a35tftg256",  "ft2232",   0, 0, CABLE_DEFAULT),
 	/* left for backward compatibility, use right name instead */
@@ -116,6 +117,7 @@ static std::map <std::string, target_board_t> board_list = {
 	JTAG_BOARD("basys3",          "xc7a35tcpg236",  "digilent", 0, 0, CABLE_DEFAULT),
 	JTAG_BOARD("nexysVideo",      "xc7a200tsbg484", "digilent_b", 0, 0, CABLE_DEFAULT),
 	JTAG_BOARD("kc705",           "", "digilent", 0, 0, CABLE_DEFAULT),
+	JTAG_BOARD("zc702",           "xc7z020clg484", "digilent", 0, 0, CABLE_DEFAULT),
 	JTAG_BOARD("colorlight",      "", "",           0, 0, CABLE_DEFAULT),
 	JTAG_BOARD("colorlight-i5",   "", "cmsisdap", 0, 0, CABLE_DEFAULT),
 	JTAG_BOARD("crosslinknx_evn", "", "ft2232", 0, 0, CABLE_DEFAULT),
@@ -176,7 +178,7 @@ static std::map <std::string, target_board_t> board_list = {
 	SPI_BOARD("titanium_ti60_f225","efinix", "efinix_spi_ft4232",
 			DBUS4, DBUS5, DBUS7, DBUS3, DBUS0, DBUS1, DBUS2, DBUS6, 0, CABLE_DEFAULT),
 	JTAG_BOARD("titanium_ti60_f225_jtag", "","efinix_jtag_ft4232",  0, 0, CABLE_DEFAULT),
-	JTAG_BOARD("zedboard",        "xc7z020-clg484", "digilent_hs2", 0, 0, CABLE_DEFAULT),
+	JTAG_BOARD("zedboard",        "xc7z020clg484", "digilent_hs2", 0, 0, CABLE_DEFAULT),
 };
 
 #endif
