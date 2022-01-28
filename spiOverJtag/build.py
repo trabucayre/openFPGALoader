@@ -48,6 +48,7 @@ else:
 if tool in ["ise", "vivado"]:
     pkg_name = {
         "xc6slx16ftg256"   : "xc6s_ftg256",
+        "xc6slx16csg324"   : "xc6s_csg324",
         "xc6slx45csg324"   : "xc6s_csg324",
         "xc6slx100fgg484"  : "xc6s_fgg484",
         "xc7a35tcpg236"    : "xc7a_cpg236",
@@ -67,10 +68,12 @@ if tool in ["ise", "vivado"]:
         tool_options = {'family': family,
                         'device': {
                             "xc6slx16ftg256": "xc6slx16",
+                            "xc6slx16csg324": "xc6slx16",
                             "xc6slx45csg324": "xc6slx45",
                             "xc6slx100fgg484": "xc6slx100"}[part],
                         'package': {
                             "xc6slx16ftg256": "ftg256",
+                            "xc6slx16csg324": "csg324",
                             "xc6slx45csg324": "csg324",
                             "xc6slx100fgg484": "fgg384"}[part],
                         'speed' : -3
