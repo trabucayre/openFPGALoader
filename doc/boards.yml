@@ -372,7 +372,7 @@
   URL: https://tangnano.sipeed.com/en/
   FPGA: littleBee GW1NZ-1
   Memory: OK
-  Flash: IF/EF
+  Flash: IF
 
 - ID: tangnano4k
   Description: Sipeed Tang Nano 4K
