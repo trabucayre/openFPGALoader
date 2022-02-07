@@ -258,7 +258,7 @@ int SPIFlash::erase_and_prog(int base_addr, uint8_t *data, int len)
 	/* if known chip */
 	if (_flash_model) {
 		/* check if offset + len fit in flash */
-		if ((unsigned int)(base_addr + len) > (_flash_model->nr_sector * 0x10000) - 1) {
+		if ((unsigned int)(base_addr + len) > (_flash_model->nr_sector * 0x10000)) {
 			printError("flash overflow");
 			return -1;
 		}
