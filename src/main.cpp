@@ -784,13 +784,13 @@ void displaySupported(const struct arguments &args)
 {
 	if (args.list_cables == true) {
 		stringstream t;
-		t << setw(15) << left << "cable name:" << "vid:pid";
+		t << setw(25) << left << "cable name" << "vid:pid";
 		printSuccess(t.str());
 		for (auto b = cable_list.begin(); b != cable_list.end(); b++) {
 			FTDIpp_MPSSE::mpsse_bit_config c = (*b).second.config;
 			stringstream ss;
-			ss << setw(15) << left << (*b).first;
-			ss << "0x" << hex << c.vid << ":" << c.pid;
+			ss << setw(25) << left << (*b).first;
+			ss << "0x" << hex << setw(4) << setfill('0') << c.vid << ":" << setw(4) << c.pid;
 			printInfo(ss.str());
 		}
 		cout << endl;
@@ -798,12 +798,12 @@ void displaySupported(const struct arguments &args)
 
 	if (args.list_boards) {
 		stringstream t;
-		t << setw(15) << left << "board name:" << "cable_name";
+		t << setw(25) << left << "board name" << "cable_name";
 		printSuccess(t.str());
 		for (auto b = board_list.begin(); b != board_list.end(); b++) {
 			stringstream ss;
 			target_board_t c = (*b).second;
-			ss << setw(15) << left << (*b).first << " " << c.cable_name;
+			ss << setw(25) << left << (*b).first << c.cable_name;
 			printInfo(ss.str());
 		}
 		cout << endl;
@@ -812,14 +812,14 @@ void displaySupported(const struct arguments &args)
 	if (args.list_fpga) {
 		stringstream t;
 		t << setw(12) << left << "IDCode" << setw(14) << "manufacturer";
-		t << setw(15) << "family" << setw(20) << "model";
+		t << setw(16) << "family" << setw(20) << "model";
 		printSuccess(t.str());
 		for (auto b = fpga_list.begin(); b != fpga_list.end(); b++) {
 			fpga_model fpga = (*b).second;
 			stringstream ss, idCode;
-			idCode << "0x" << hex << (*b).first;
+			idCode << "0x" << hex << setw(8) << setfill('0') << (*b).first;
 			ss << setw(12) << left << idCode.str();
-			ss << setw(14) << fpga.manufacturer << setw(15) << fpga.family;
+			ss << setw(14) << fpga.manufacturer << setw(16) << fpga.family;
 			ss << setw(20) << fpga.model;
 			printInfo(ss.str());
 		}
