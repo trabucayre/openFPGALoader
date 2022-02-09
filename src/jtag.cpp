@@ -5,8 +5,10 @@
 
 #include <libusb.h>
 
+#include <iomanip>
 #include <iostream>
 #include <map>
+#include <sstream>
 #include <vector>
 #include <stdio.h>
 #include <string.h>
@@ -152,9 +154,16 @@ int Jtag::detectChain(int max_dev)
 				found = search_and_insert_device_with_idcode(tmp);
 
 			if (!found) {
-				char error[256];
-				snprintf(error, 256, "Unknown device with IDCODE: 0x%08x",
-						tmp);
+				uint16_t mfg = IDCODE2MANUFACTURERID(tmp);
+				uint8_t part = IDCODE2PART(tmp);
+				uint8_t vers = IDCODE2VERS(tmp);
+
+				char error[1024];
+				snprintf(error, sizeof(error),
+						"Unknown device with IDCODE: 0x%08x"
+						" (manufacturer: 0x%03x (%s),"
+						" part: 0x%02x vers: 0x%x", tmp,
+						mfg, list_manufacturer[mfg].c_str(), part, vers);
 				throw std::runtime_error(error);
 			}
 		}
