@@ -141,4 +141,21 @@ static std::map <int, misc_device> misc_dev_list = {
 	{0xfffffffe, {"ZynqMP dummy device",   12}},
 };
 
+/* list of JTAG manufacturer ID */
+static std::map <uint16_t, std::string> list_manufacturer = {
+	{0x000, "CologneChip or efinix trion T4/T8"},
+	{0x021, "lattice"},
+	{0x049, "Xilinx"},
+	{0x06e, "altera"},
+	{0x093, "Xilinx"},  //  ZynqMP not configured
+	{0x40d, "Gowin"},
+	{0x53c, "efinix"},
+	{0x61a, "anlogic"},
+	{0x61b, "anlogic"},  // yes two manufacturer id for anlogic
+};
+
+#define IDCODE2MANUFACTURERID(_idcode) ((_idcode >>  1) & 0x7ff)
+#define IDCODE2PART(_idcode)           ((_idcode >> 21) & 0x07f)
+#define IDCODE2VERS(_idcode)           ((_idcode >> 28) & 0x00f)
+
 #endif
