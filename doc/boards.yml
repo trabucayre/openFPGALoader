@@ -170,6 +170,12 @@
   FPGA: Cyclone V SoC 5CSEBA6U23I7
   Memory: OK
 
+- ID: de1Soc
+  Description: Terasic DE1-SoC
+  URL: https://www.terasic.com.tw/cgi-bin/page/archive.pl?Language=English&CategoryNo=167&No=836
+  FPGA: Cyclone V SoC 5CSEMA5F31C6
+  Memory: OK
+
 - ID: ecp5_evn
   Description: Lattice ECP5 5G Evaluation Board
   URL: https://www.latticesemi.com/en/Products/DevelopmentBoardsAndKits/ECP5EvaluationBoard

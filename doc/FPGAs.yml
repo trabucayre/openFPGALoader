@@ -81,6 +81,15 @@ Intel:
     Memory: OK
     Flash: OK
 
+  - Description: Cyclone V SE SoC
+    Model:
+      - 5CSEBA6
+      - 5CSEMA4
+      - 5CSEMA5
+    URL: https://www.intel.com/content/www/us/en/products/programmable/fpga/cyclone-v.html
+    Memory: OK
+    Flash: NT
+
   - Description: Cyclone 10 LP
     Model: 10CL025
     URL: https://www.intel.com/content/www/us/en/products/programmable/fpga/cyclone-10.html
