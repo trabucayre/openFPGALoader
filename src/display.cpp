@@ -15,6 +15,7 @@
 #define KGRN  "\x1B[32m"
 #define KYEL  "\x1B[33m"
 #define KBLU  "\x1B[34m"
+#define KBLUL "\x1B[94m"
 #define KMAG  "\x1B[35m"
 #define KCYN  "\x1B[36m"
 #define KWHT  "\x1B[37m"
@@ -44,7 +45,7 @@ void printWarn(std::string warn, bool eol)
 void printInfo(std::string info, bool eol)
 {
 	if (isatty(STDOUT_FILENO))
-		std::cout << KBLU << info << "\e[0m" << std::flush;
+		std::cout << KBLUL << info << "\e[0m" << std::flush;
 	else
 		std::cout << info;
 	std::cout << std::flush;
