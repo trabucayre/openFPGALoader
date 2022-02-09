@@ -790,7 +790,7 @@ void displaySupported(const struct arguments &args)
 			FTDIpp_MPSSE::mpsse_bit_config c = (*b).second.config;
 			stringstream ss;
 			ss << setw(25) << left << (*b).first;
-			ss << "0x" << hex << setw(4) << setfill('0') << c.vid << ":" << setw(4) << c.pid;
+			ss << "0x" << hex << right << setw(4) << setfill('0') << c.vid << ":" << setw(4) << c.pid;
 			printInfo(ss.str());
 		}
 		cout << endl;
