@@ -118,6 +118,8 @@ static std::map <std::string, target_board_t> board_list = {
 	JTAG_BOARD("nexysVideo",      "xc7a200tsbg484", "digilent_b", 0, 0, CABLE_DEFAULT),
 	JTAG_BOARD("kc705",           "", "digilent", 0, 0, CABLE_DEFAULT),
 	JTAG_BOARD("zc702",           "xc7z020clg484", "digilent", 0, 0, CABLE_DEFAULT),
+	JTAG_BOARD("zybo_z7_10",      "xc7z010clg400",  "digilent", 0, 0, CABLE_DEFAULT),
+	JTAG_BOARD("zybo_z7_20",      "xc7z020clg400",  "digilent", 0, 0, CABLE_DEFAULT),
 	JTAG_BOARD("colorlight",      "", "",           0, 0, CABLE_DEFAULT),
 	JTAG_BOARD("colorlight-i5",   "", "cmsisdap", 0, 0, CABLE_DEFAULT),
 	JTAG_BOARD("crosslinknx_evn", "", "ft2232", 0, 0, CABLE_DEFAULT),

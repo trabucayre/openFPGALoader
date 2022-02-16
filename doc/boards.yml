@@ -469,3 +469,17 @@
   Memory: OK
   Flash: NA
   Constraints: ZedBoard
+
+- ID: zybo_z7_10
+  Description: Digilent Zybo Z7-10
+  URL: https://reference.digilentinc.com/reference/programmable-logic/zybo-z7/start
+  FPGA: zynq7000 xc7z010clg400
+  Memory: OK
+  Flash: NA
+
+- ID: zybo_z7_20
+  Description: Digilent Zybo Z7-20
+  URL: https://reference.digilentinc.com/reference/programmable-logic/zybo-z7/start
+  FPGA: zynq7000 xc7z020clg400
+  Memory: OK
+  Flash: NA
