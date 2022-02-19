@@ -346,6 +346,13 @@
   Memory: OK
   Flash: OK
 
+- ID: qmtechKintex7
+  Description: QMTech Kintex7 Core Board
+  URL: https://www.aliexpress.com/item/1005003668804223.html
+  FPGA: Kintex xc7k325tffg676
+  Memory: OK
+  Flash: OK
+
 - ID: runber
   Description: SeeedStudio Gowin RUNBER
   URL: https://www.seeedstudio.com/Gowin-RUNBER-Development-Board-p-4779.html
