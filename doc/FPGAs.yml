@@ -178,7 +178,7 @@ Xilinx:
       - xc7k325t
     URL: https://www.xilinx.com/products/silicon-devices/fpga/kintex-7.html#productTable
     Memory: OK
-    Flash: NT
+    Flash: OK
 
   - Description: Spartan 3
     Model: xc3s200
