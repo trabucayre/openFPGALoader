@@ -122,7 +122,7 @@
   Memory: OK
   Flash: OK
 
-- ID: colorlight_i5
+- ID: colorlight-i5
   Description: Colorlight I5
   URL: https://www.colorlight-led.com/product/colorlight-i5-led-display-receiver-card.html
   FPGA: ECP5 LFE5U-25F-6BG381C
@@ -130,7 +130,7 @@
   Flash: OK
   Constraints: Colorlight-i5-v7.0
 
-- ID: colorlight_i9
+- ID: colorlight-i9
   Description: Colorlight I9
   URL: https://www.colorlightinside.com/Products/i%20Receiving-series/34_101.html
   FPGA: ECP5 LFE5U-45F-6BG381C
