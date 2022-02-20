@@ -15,7 +15,9 @@ from data import (
     ReadBoardDataFromYAML,
     BoardDataToTable,
     ReadFPGADataFromYAML,
-    FPGADataToTable
+    FPGADataToTable,
+    ReadCableDataFromYAML,
+    CableDataToTable
 )
 
 # -- General configuration ------------------------------------------------
@@ -34,7 +36,7 @@ source_suffix = {
 
 master_doc = "index"
 project = u"openFPGALoader: universal utility for programming FPGA"
-copyright = u"2019-2021, Gwenhael Goavec-Merou and contributors"
+copyright = u"2019-2022, Gwenhael Goavec-Merou and contributors"
 author = u"Gwenhael Goavec-Merou and contributors"
 
 version = "latest"
@@ -121,3 +123,7 @@ with (ROOT / "compatibility/boards.inc").open("w", encoding="utf-8") as wptr:
 
 with (ROOT / "compatibility/fpga.inc").open("w", encoding="utf-8") as wptr:
     wptr.write(FPGADataToTable(ReadFPGADataFromYAML()))
+# -- Generate partial Cable compatibility page (`cable.inc`) with data from `cable.yml`
+
+with (ROOT / "compatibility/cable.inc").open("w", encoding="utf-8") as wptr:
+    wptr.write(CableDataToTable(ReadCableDataFromYAML()))

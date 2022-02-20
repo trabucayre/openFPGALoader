@@ -80,3 +80,38 @@ def FPGADataToTable(data, tablefmt: str = "rst"):
         headers=["Vendor", "Description", "Model", "Memory", "Flash"],
         tablefmt=tablefmt
     )
+
+
+@dataclass
+class Cable:
+    Name: str
+    Description: str
+    URL: str = None
+    Note: str = None
+
+
+def ReadCableDataFromYAML():
+    with (ROOT / 'cable.yml').open('r', encoding='utf-8') as fptr:
+        data = yaml_load(fptr, yaml_loader)
+        for keyword, content in data.items():
+            data[keyword] = [Cable(**item) for item in content]
+    return data
+
+
+def CableDataToTable(data, tablefmt: str = "rst"):
+    def processURL(name, url):
+        if url is None:
+            return f"{name}"
+        else:
+            return f"`{name} <{url}>`__"
+    return tabulate(
+        [
+            [
+                f"{vendor}",
+                processURL(item.Name, item.URL),
+                item.Description
+            ] for vendor, content in data.items() for item in content
+        ],
+        headers=["keyword", "Name", "Description"],
+        tablefmt=tablefmt
+    )
