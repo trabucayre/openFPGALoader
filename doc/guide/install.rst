@@ -62,7 +62,7 @@ If you don't want this option, use:
 
     -DENABLE_UDEV=OFF
 
-By default, ``cmsisdap`` support is enabled (used for colorlight I5).
+By default, ``cmsisdap`` support is enabled (used for colorlight I5, I9).
 If you don't want this option, use:
 
 .. code-block:: bash

@@ -122,6 +122,7 @@ static std::map <std::string, target_board_t> board_list = {
 	JTAG_BOARD("zybo_z7_20",      "xc7z020clg400",  "digilent", 0, 0, CABLE_DEFAULT),
 	JTAG_BOARD("colorlight",      "", "",           0, 0, CABLE_DEFAULT),
 	JTAG_BOARD("colorlight-i5",   "", "cmsisdap", 0, 0, CABLE_DEFAULT),
+	JTAG_BOARD("colorlight-i9",   "", "cmsisdap", 0, 0, CABLE_DEFAULT),
 	JTAG_BOARD("crosslinknx_evn", "", "ft2232", 0, 0, CABLE_DEFAULT),
 	JTAG_BOARD("cyc1000",         "10cl025256", "ft2232",     0, 0, CABLE_DEFAULT),
 	JTAG_BOARD("de0",             "", "usb-blaster",0, 0, CABLE_DEFAULT),

@@ -130,6 +130,14 @@
   Flash: OK
   Constraints: Colorlight-i5-v7.0
 
+- ID: colorlight_i9
+  Description: Colorlight I9
+  URL: https://www.colorlightinside.com/Products/i%20Receiving-series/34_101.html
+  FPGA: ECP5 LFE5U-45F-6BG381C
+  Memory: OK
+  Flash: OK
+  Constraints: Colorlight-i9-v7.2
+
 - ID: crosslinknx_evn
   Description: Lattice CrossLink-NX Evaluation Board
   URL: https://www.latticesemi.com/en/Products/DevelopmentBoardsAndKits/CrossLink-NXEvaluationBoard
