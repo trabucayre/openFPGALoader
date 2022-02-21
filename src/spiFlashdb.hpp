@@ -46,6 +46,19 @@ static std::map <uint32_t, flash_t> flash_list = {
 		.bp_len = 3,
 		.bp_offset = {(1 << 2), (1 << 3), (1 << 4), 0}}
 	},
+	{0x010219, {
+		.manufacturer = "spansion",
+		.model = "S25FL256S",
+		.nr_sector = 512,
+		.sector_erase = true,
+		.subsector_erase = false,
+		.has_extended = true,
+		.tb_otp = true,
+		.tb_offset = (1 << 5),
+		.tb_register = CONFR,
+		.bp_len = 3,
+		.bp_offset = {(1 << 2), (1 << 3), (1 << 4), 0}}
+	},
 	{0x012018, {
 		.manufacturer = "spansion",
 		.model = "S25FL128S",
@@ -53,7 +66,7 @@ static std::map <uint32_t, flash_t> flash_list = {
 		.sector_erase = true,
 		.subsector_erase = false,
 		.has_extended = true,
-		.tb_otp = false,
+		.tb_otp = true,
 		.tb_offset = (1 << 5),
 		.tb_register = CONFR,
 		.bp_len = 3,
