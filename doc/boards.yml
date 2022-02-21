@@ -361,6 +361,13 @@
   Memory: OK
   Flash: OK
 
+- ID: genesys2
+  Description: Digilent Kintex7 Evaluation Board
+  URL: https://digilent.com/reference/programmable-logic/genesys-2/start
+  FPGA: Kintex xc7k325tffg900
+  Memory: OK
+  Flash: OK
+
 - ID: runber
   Description: SeeedStudio Gowin RUNBER
   URL: https://www.seeedstudio.com/Gowin-RUNBER-Development-Board-p-4779.html
