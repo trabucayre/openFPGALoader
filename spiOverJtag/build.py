@@ -35,6 +35,9 @@ elif subpart[0:2] == '5c':
 elif subpart == "xc7a":
     family = "Artix"
     tool = "vivado"
+elif subpart == "xc7k":
+    family = "Kintex 7"
+    tool = "vivado"
 elif subpart == "xc7s":
     family = "Spartan 7"
     tool = "vivado"
@@ -60,6 +63,8 @@ if tool in ["ise", "vivado"]:
         "xc7a100tfgg484"   : "xc7a_fgg484",
         "xc7a200tsbg484"   : "xc7a_sbg484",
         "xc7a200tfbg484"   : "xc7a_fbg484",
+        "xc7k325tffg676"   : "xc7k_ffg676",
+        "xc7k325tffg900"   : "xc7k_ffg900",
         "xc7s25csga324"    : "xc7s_csga324",
         "xc7s50csga324"    : "xc7s_csga324"
         }[part]
