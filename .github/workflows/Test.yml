@@ -92,6 +92,29 @@ jobs:
         tree .
 
 
+  mac-build:
+    strategy:
+      fail-fast: false
+    name: '🚧🐧 macOS latest | build'
+    runs-on: macos-latest
+    steps:
+
+    - name: '🧰 Checkout'
+      uses: actions/checkout@v2
+
+    - name: '⚙️ Install dependencies'
+      run: |
+        brew update
+        brew install --only-dependencies openFPGALoader
+
+    - name: '🚧 Build tarball'
+      run: |
+        mkdir build
+        cd build
+        cmake ..
+        cmake --build .
+
+
   lin-test:
     needs: lin-build
     strategy:
