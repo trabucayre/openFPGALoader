@@ -121,15 +121,26 @@ int SPIFlash::block64_erase(int addr)
 
 int SPIFlash::sectors_erase(int base_addr, int size)
 {
+
+	// check if chip support sector and subsector erase
+	bool subsector_rdy = false, sector_rdy = true;
+	if (_flash_model) {
+		if (_flash_model->subsector_erase)
+			subsector_rdy = true;
+		if (!_flash_model->sector_erase)
+			sector_rdy = false;
+	}
 	int ret = 0;
 	int start_addr = base_addr;
 	/* compute end_addr to be multiple of 4Kb */
 	int end_addr = (base_addr + size + 0xfff) & ~0xfff;
-	if (!_flash_model->subsector_erase)
+	if (!subsector_rdy)
 		end_addr = (base_addr + size + 0xffff) & ~0xffff;
 	ProgressBar progress("Erasing", end_addr, 50, _verbose < 0);
 	/* start with block size (64Kb) */
 	int step = 0x10000;
+	if (!sector_rdy)
+		step = 0x1000;
 
 	for (int addr = start_addr; addr < end_addr; addr += step) {
 		if (write_enable() == -1) {
@@ -138,7 +149,7 @@ int SPIFlash::sectors_erase(int base_addr, int size)
 		}
 
 		/* if block erase + addr end out of end_addr -> use sector_erase (4Kb) */
-		if (addr + 0x10000 > end_addr && _flash_model && _flash_model->subsector_erase) {
+		if (!sector_rdy || (addr + step > end_addr && subsector_rdy)) {
 			step = 0x1000;
 			ret = sector_erase(addr);
 		} else {
@@ -358,6 +369,7 @@ bool SPIFlash::verify(const int &base_addr, const uint8_t *data,
 			printError("Failed to read flash");
 			return false;
 		}
+
 
 		for (int ii = 0; ii < rd_burst; ii++) {
 			if ((uint8_t)verify_data[ii] != data[i+ii]) {
