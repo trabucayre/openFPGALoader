@@ -450,16 +450,27 @@ void SPIFlash::display_status_reg(uint8_t reg)
 				bp |= 1 << i;
 	}
 
+	// status register
 	printf("RDSR : %02x\n", reg);
-	printf("WIP  : %d\n", reg&0x01);
-	printf("WEL  : %d\n", (reg>>1)&0x01);
-	printf("BP   : %x\n", bp);
-	if ((_jedec_id >> 8) != 0x9d60) {
-		printf("TB   : %d\n", tb);
-	} else {  // ISSI IS25LP
-		printf("QE   : %d\n", ((reg >> 6) & 0x01));
+	if ((_jedec_id >> 8) != 0xBF2642) {
+		printf("WIP  : %d\n", reg&0x01);
+		printf("WEL  : %d\n", (reg>>1)&0x01);
+		printf("BP   : %x\n", bp);
+		if ((_jedec_id >> 8) != 0x9d60) {
+			printf("TB   : %d\n", tb);
+		} else {  // ISSI IS25LP
+			printf("QE   : %d\n", ((reg >> 6) & 0x01));
+		}
+		printf("SRWD : %d\n", ((reg >> 7) & 0x01));
+	} else {
+		printf("BUSY : %d\n", (reg >> 0) & 0x01);
+		printf("WEL  : %d\n", (reg >> 1) & 0x01);
+		printf("WSE  : %d\n", (reg >> 2) & 0x01);
+		printf("WSP  : %d\n", (reg >> 3) & 0x01);
+		printf("WPLD : %d\n", (reg >> 4) & 0x01);
+		printf("SEC  : %d\n", (reg >> 5) & 0x01);
+		printf("BUSY : %d\n", (reg >> 7) & 0x01);
 	}
-	printf("SRWD : %d\n", ((reg >> 7) & 0x01));
 
 	/* function register */
 	switch (_jedec_id >> 8) {
