@@ -262,33 +262,36 @@ int SPIFlash::erase_and_prog(int base_addr, uint8_t *data, int len)
 			printError("flash overflow");
 			return -1;
 		}
-		/* compute protected area */
-		int8_t tb = get_tb();
-		if (tb == -1)
-			return -1;
-		std::map<std::string, uint32_t> lock_len = bp_to_len(status, tb);
-		printf("%08x %08x %08x %02x\n", base_addr,
-				lock_len["start"], lock_len["end"], status);
+		// if device has block protect
+		if (_flash_model->bp_len != 0) {
+			/* compute protected area */
+			int8_t tb = get_tb();
+			if (tb == -1)
+				return -1;
+			std::map<std::string, uint32_t> lock_len = bp_to_len(status, tb);
+			printf("%08x %08x %08x %02x\n", base_addr,
+					lock_len["start"], lock_len["end"], status);
 
-		/* if some blocks are locked */
-		if (lock_len["start"] != 0 || lock_len["end"] != 0) {
-			/* if overlap */
-			if (tb == 1) {  // bottom blocks are protected
-							// check if start is in protected blocks
-				if ((uint32_t)base_addr <= lock_len["end"])
-					must_relock = true;
-			} else {  // top blocks
-				if ((uint32_t)(base_addr + len) >= lock_len["start"])
-					must_relock = true;
+			/* if some blocks are locked */
+			if (lock_len["start"] != 0 || lock_len["end"] != 0) {
+				/* if overlap */
+				if (tb == 1) {  // bottom blocks are protected
+								// check if start is in protected blocks
+					if ((uint32_t)base_addr <= lock_len["end"])
+						must_relock = true;
+				} else {  // top blocks
+					if ((uint32_t)(base_addr + len) >= lock_len["start"])
+						must_relock = true;
+				}
 			}
-		}
-		/* ISSI IS25LP032 seems have a bug:
-		 * block protection is always in top mode regardless of
-		 * the TB bit: if write is not at offset 0 -> force unlock
-		 */
-		if ((_jedec_id >> 8) == 0x9d6016 && tb == 1 && base_addr != 0) {
-			_unprotect = true;
-			must_relock = true;
+			/* ISSI IS25LP032 seems have a bug:
+			 * block protection is always in top mode regardless of
+			 * the TB bit: if write is not at offset 0 -> force unlock
+			 */
+			if ((_jedec_id >> 8) == 0x9d6016 && tb == 1 && base_addr != 0) {
+				_unprotect = true;
+				must_relock = true;
+			}
 		}
 	} else {  // unknown chip: basic test
 		printWarn("flash chip unknown: use basic protection detection");
@@ -437,7 +440,7 @@ void SPIFlash::display_status_reg(uint8_t reg)
 	if (!_flash_model) {
 		tb = (reg >> 5) & 0x01;
 		bp = (((reg >> 6) & 0x01) << 3) | ((reg >> 2) & 0x07);
-	} else {
+	} else if (_flash_model->bp_len == 0) {
 		tb = (reg & _flash_model->tb_offset) ? 1 : 0;
 		bp = 0;
 		for (int i = 0; i < _flash_model->bp_len; i++)
@@ -542,6 +545,9 @@ int SPIFlash::write_disable()
 
 int SPIFlash::disable_protection()
 {
+	// nothing to do
+	if (_flash_model && _flash_model->bp_len == 0)
+		return 0;
 	uint8_t data = 0x00;
 	if (write_enable() == -1)
 		return -1;
@@ -563,6 +569,12 @@ int SPIFlash::disable_protection()
  */
 int SPIFlash::enable_protection(uint8_t protect_code)
 {
+	// known device but no bp
+	if (_flash_model && _flash_model->bp_len == 0) {
+		printWarn("device has no block protection");
+		return -1;
+	}
+
 	/* enable write (required to access WRSR) */
 	if (write_enable() == -1) {
 		printError("Error: can't enable write");
@@ -593,6 +605,12 @@ int SPIFlash::enable_protection(uint32_t length)
 	 * TB offset, nor TB non-volatile vs OTP */
 	if (!_flash_model) {
 		printError("unknown spi flash model: can't lock sectors");
+		return -1;
+	}
+
+	// if device has no block protect
+	if (_flash_model->bp_len == 0) {
+		printWarn("device has no block protection");
 		return -1;
 	}
 
