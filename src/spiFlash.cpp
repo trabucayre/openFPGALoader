@@ -125,6 +125,8 @@ int SPIFlash::sectors_erase(int base_addr, int size)
 	int start_addr = base_addr;
 	/* compute end_addr to be multiple of 4Kb */
 	int end_addr = (base_addr + size + 0xfff) & ~0xfff;
+	if (!_flash_model->subsector_erase)
+		end_addr = (base_addr + size + 0xffff) & ~0xffff;
 	ProgressBar progress("Erasing", end_addr, 50, _verbose < 0);
 	/* start with block size (64Kb) */
 	int step = 0x10000;
