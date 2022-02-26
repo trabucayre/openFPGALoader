@@ -12,9 +12,10 @@
 #include <string>
 
 typedef enum {
-	STATR = 0, /* status register */
-	FUNCR = 1, /* function register */
-	CONFR = 2  /* configuration register */
+	STATR = 0,  /* status register */
+	FUNCR = 1,  /* function register */
+	CONFR = 2,  /* configuration register */
+	NONER = 99, /* configuration register */
 } tb_loc_t;
 
 typedef struct {
@@ -131,11 +132,11 @@ static std::map <uint32_t, flash_t> flash_list = {
 		.sector_erase = true,
 		.subsector_erase = false,
 		.has_extended = false,
-		.tb_otp = true,
+		.tb_otp = false,
 		.tb_offset = 0,
-		.tb_register = 0,
+		.tb_register = NONER,
 		.bp_len = 0,
-		.bp_offset = {}}
+		.bp_offset = {0, 0, 0, 0}}
 	},
 	{0x9d6016, {
 		.manufacturer = "ISSI",
