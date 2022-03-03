@@ -91,11 +91,12 @@ To build the app:
 .. code-block:: bash
 
     git clone https://github.com/trabucayre/openFPGALoader
+    cd openFPGALoader
     mkdir build
     cd build
-    cmake ../openFPGALoader # add -DBUILD_STATIC=ON to build a static version
-                            # add -DENABLE_UDEV=OFF to disable udev support and -d /dev/xxx
-                            # add -DENABLE_CMSISDAP=OFF to disable CMSIS DAP support
+    cmake .. # add -DBUILD_STATIC=ON to build a static version
+             # add -DENABLE_UDEV=OFF to disable udev support and -d /dev/xxx
+             # add -DENABLE_CMSISDAP=OFF to disable CMSIS DAP support
     cmake --build .
     # or
     make -j$(nproc)
