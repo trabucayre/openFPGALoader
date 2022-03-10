@@ -26,6 +26,7 @@ class SPIInterface {
 
 	bool protect_flash(uint32_t len);
 	bool unprotect_flash();
+	bool bulk_erase_flash();
 	/*!
 	 * \brief write len byte into flash starting at offset,
 	 *        optionnally verify after write and unprotect

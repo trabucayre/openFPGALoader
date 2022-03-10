@@ -34,6 +34,8 @@ class Gowin: public Device, SPIInterface {
 			printError("protect flash not supported"); return false;}
 		virtual bool unprotect_flash() override {
 			printError("unprotect flash not supported"); return false;}
+		virtual bool bulk_erase_flash() override {
+			printError("bulk erase flash not supported"); return false;}
 		int spi_put(uint8_t cmd, uint8_t *tx, uint8_t *rx,
 			uint32_t len) override;
 		int spi_put(uint8_t *tx, uint8_t *rx, uint32_t len) override;

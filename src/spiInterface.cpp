@@ -85,6 +85,37 @@ bool SPIInterface::unprotect_flash()
 	return post_flash_access() && ret;
 }
 
+bool SPIInterface::bulk_erase_flash()
+{
+	bool ret = true;
+	printInfo("bulk_erase: ", false);
+
+	/* move device to spi access */
+	if (!prepare_flash_access()) {
+		printError("Fail");
+		return false;
+	}
+
+	/* spi flash access */
+	try {
+		SPIFlash flash(this, false, _spif_verbose);
+
+		/* bulk erase flash */
+		ret = (flash.bulk_erase() == 0);
+		if (!ret)
+			printError("Fail");
+		else
+			printSuccess("Done");
+	} catch (std::exception &e) {
+		printError("Fail");
+		printError(e.what());
+		ret = false;
+	}
+
+	/* reload bitstream */
+	return post_flash_access() && ret;
+}
+
 bool SPIInterface::write(uint32_t offset, uint8_t *data, uint32_t len,
 		bool unprotect_flash)
 {
