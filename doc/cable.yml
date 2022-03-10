@@ -175,7 +175,7 @@ ecpix5-debug:
 jtag-smt2-nc:
 
   - Name: jtag-smt2-nc
-    Description: JTAG-SMT2-NC: Surface-mount Programming Module
+    Description: JTAG-SMT2-NC Surface-mount Programming Module
     URL: https://digilent.com/shop/jtag-smt2-nc-surface-mount-programming-module
 
 
