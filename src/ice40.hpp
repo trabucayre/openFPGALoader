@@ -23,7 +23,7 @@ class Ice40: public Device, SPIInterface {
 
 		void program(unsigned int offset, bool unprotect_flash) override;
 		bool program_cram(uint8_t *data, uint32_t length);
-		bool dumpFlash(uint32_t base_addr, uint32_t len);
+		bool dumpFlash(uint32_t base_addr, uint32_t len) override;
 		bool protect_flash(uint32_t len) override;
 		bool unprotect_flash() override;
 		/* not supported in SPI Active mode */
@@ -31,16 +31,16 @@ class Ice40: public Device, SPIInterface {
 		void reset() override;
 
 		int spi_put(uint8_t cmd, uint8_t *tx, uint8_t *rx,
-				uint32_t len) {
+				uint32_t len) override {
 			(void)cmd; (void)tx; (void)rx; (void)len;
 			return 0;
 		}
-		int spi_put(uint8_t *tx, uint8_t *rx, uint32_t len) {
+		int spi_put(uint8_t *tx, uint8_t *rx, uint32_t len) override {
 			(void)tx; (void)rx; (void)len;
 			return 0;
 		}
 		int spi_wait(uint8_t cmd, uint8_t mask, uint8_t cond,
-				uint32_t timeout, bool verbose = false) {
+				uint32_t timeout, bool verbose = false) override {
 			(void)cmd; (void)mask; (void)cond; (void)timeout; (void) verbose;
 			return 0;
 		}
