@@ -491,6 +491,14 @@
   Memory: OK
   Flash: NA
 
+- ID: zc706
+  Description: Xilinx ZC706
+  URL: https://www.xilinx.com/products/boards-and-kits/ek-z7-zc706-g.html
+  FPGA: zynq7000 xc7z045ffg900
+  Memory: OK
+  Flash: NA
+  Constraints: ZC706
+
 - ID: zedboard
   Description: Avnet ZedBoard
   URL: https://www.avnet.com/wps/portal/us/products/avnet-boards/avnet-board-families/zedboard/
