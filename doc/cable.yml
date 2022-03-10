@@ -172,6 +172,13 @@ ecpix5-debug:
     URL: https://shop.lambdaconcept.com/home/46-ecpix-5.html
 
 
+jtag-smt2-nc:
+
+  - Name: jtag-smt2-nc
+    Description: JTAG-SMT2-NC: Surface-mount Programming Module
+    URL: https://digilent.com/shop/jtag-smt2-nc-surface-mount-programming-module
+
+
 orbtrace:
 
   - Name: orbtrace interface
