@@ -29,10 +29,12 @@ using namespace std;
 #endif
 
 FtdiJtagMPSSE::FtdiJtagMPSSE(const FTDIpp_MPSSE::mpsse_bit_config &cable,
-			string dev, const string &serial, uint32_t clkHZ, int8_t verbose):
+			string dev, const string &serial, uint32_t clkHZ,
+			bool invert_read_edge, int8_t verbose):
 			FTDIpp_MPSSE(cable, dev, serial, clkHZ, verbose), _ch552WA(false),
 			_write_mode(MPSSE_WRITE_NEG),  // always write on neg edge
-			_read_mode(0)
+			_read_mode(0),
+			_invert_read_edge(invert_read_edge) // false: pos, true: neg
 {
 	init_internal(cable);
 }
@@ -88,10 +90,10 @@ void FtdiJtagMPSSE::config_edge()
 {
 	/* at high (>15MHz) with digilent cable (arty)
 	 * opposite edges must be used.
-	 * Not required with classic FT2232
+	 * Not required with classic FT2232 but user selectable
 	 */
-	if (FTDIpp_MPSSE::getClkFreq() >= 15000000 &&
-			!strncmp((const char *)_iproduct, "Digilent USB Device", 19)) {
+	if (_invert_read_edge || (FTDIpp_MPSSE::getClkFreq() >= 15000000 &&
+			!strncmp((const char *)_iproduct, "Digilent USB Device", 19))) {
 		_read_mode = MPSSE_READ_NEG;
 	} else {
 		_read_mode = 0;

@@ -45,6 +45,7 @@ struct arguments {
 	string ftdi_serial;
 	int ftdi_channel;
 	uint32_t freq;
+	bool invert_read_edge;
 	string board;
 	bool pin_config;
 	bool list_cables;
@@ -80,7 +81,7 @@ int main(int argc, char **argv)
 
 	/* command line args. */
 	struct arguments args = {0, false, false, false, 0, "", "", "-", "", -1,
-			0, "-", false, false, false, false, Device::PRG_NONE, false,
+			0, false, "-", false, false, false, false, Device::PRG_NONE, false,
 			false, false, "", "", "", -1, 0, false, -1, 0, 0, 0, false, ""};
 	/* parse arguments */
 	try {
@@ -369,7 +370,8 @@ int main(int argc, char **argv)
 	Jtag *jtag;
 	try {
 		jtag = new Jtag(cable, &pins_config, args.device, args.ftdi_serial,
-				args.freq, args.verbose, args.probe_firmware);
+				args.freq, args.verbose, args.invert_read_edge,
+				args.probe_firmware);
 	} catch (std::exception &e) {
 		printError("JTAG init failed with: " + string(e.what()));
 		return EXIT_FAILURE;
@@ -579,6 +581,8 @@ int parse_opt(int argc, char **argv, struct arguments *args, jtag_pins_conf_t *p
 			("b,board",     "board name, may be used instead of cable",
 				cxxopts::value<string>(args->board))
 			("c,cable", "jtag interface", cxxopts::value<string>(args->cable))
+			("invert-read-edge", "JTAG mode / FTDI: read on negative edge instead of positive",
+				cxxopts::value<bool>(args->invert_read_edge))
 			("vid", "probe Vendor ID", cxxopts::value<uint16_t>(args->vid))
 			("pid", "probe Product ID", cxxopts::value<uint16_t>(args->pid))
 

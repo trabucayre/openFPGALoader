@@ -63,13 +63,14 @@ using namespace std;
 
 Jtag::Jtag(cable_t &cable, const jtag_pins_conf_t *pin_conf, string dev,
 			const string &serial, uint32_t clkHZ, int8_t verbose,
-			const string &firmware_path):
+			const bool invert_read_edge, const string &firmware_path):
 			_verbose(verbose),
 			_state(RUN_TEST_IDLE),
 			_tms_buffer_size(128), _num_tms(0),
 			_board_name("nope"), device_index(0)
 {
-	init_internal(cable, dev, serial, pin_conf, clkHZ, firmware_path);
+	init_internal(cable, dev, serial, pin_conf, clkHZ, firmware_path,
+			invert_read_edge);
 	detectChain(5);
 }
 
@@ -80,7 +81,8 @@ Jtag::~Jtag()
 }
 
 void Jtag::init_internal(cable_t &cable, const string &dev, const string &serial,
-	const jtag_pins_conf_t *pin_conf, uint32_t clkHZ, const string &firmware_path)
+	const jtag_pins_conf_t *pin_conf, uint32_t clkHZ, const string &firmware_path,
+	const bool invert_read_edge)
 {
 	switch (cable.type) {
 	case MODE_ANLOGICCABLE:
@@ -92,7 +94,8 @@ void Jtag::init_internal(cable_t &cable, const string &dev, const string &serial
 		_jtag = new FtdiJtagBitBang(cable.config, pin_conf, dev, serial, clkHZ, _verbose);
 		break;
 	case MODE_FTDI_SERIAL:
-		_jtag = new FtdiJtagMPSSE(cable.config, dev, serial, clkHZ, _verbose);
+		_jtag = new FtdiJtagMPSSE(cable.config, dev, serial, clkHZ,
+				invert_read_edge, _verbose);
 		break;
 	case MODE_CH552_JTAG:
 		_jtag = new CH552_jtag(cable.config, dev, serial, clkHZ, _verbose);

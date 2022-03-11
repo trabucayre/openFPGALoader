@@ -19,6 +19,7 @@ class Jtag {
  public:
 	Jtag(cable_t &cable, const jtag_pins_conf_t *pin_conf, std::string dev,
 		const std::string &serial, uint32_t clkHZ, int8_t verbose = 0,
+		const bool invert_read_edge = false,
 		const std::string &firmware_path = "");
 	~Jtag();
 
@@ -105,7 +106,8 @@ class Jtag {
 	void init_internal(cable_t &cable, const std::string &dev,
 		const std::string &serial,
 		const jtag_pins_conf_t *pin_conf, uint32_t clkHZ,
-		const std::string &firmware_path);
+		const std::string &firmware_path,
+		const bool invert_read_edge);
 	/*!
 	 * \brief search in fpga_list and misc_dev_list for a device with idcode
 	 *        if found insert idcode and irlength in _devices_list and

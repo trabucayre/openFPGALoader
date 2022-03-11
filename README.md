@@ -54,6 +54,8 @@ openFPGALoader -- a program to flash FPGA
       --bitstream arg       bitstream
   -b, --board arg           board name, may be used instead of cable
   -c, --cable arg           jtag interface
+      --invert-read-edge    JTAG mode / FTDI: read on negative edge instead
+                            of positive
       --vid arg             probe Vendor ID
       --pid arg             probe Product ID
       --ftdi-serial arg     FTDI chip serial number

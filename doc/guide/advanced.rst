@@ -10,6 +10,15 @@ Resetting an FPGA
 
     openFPGALoader [options] -r
 
+Using negative edge for TDO's sampling
+====================================
+
+If transaction are unstable you can try to change read edge by using
+
+.. code-block:: bash
+
+    openFPGALoader [options] --invert-read-edge
+
 Reading the bitstream from STDIN
 ================================
 
