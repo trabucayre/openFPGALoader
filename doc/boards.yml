@@ -340,6 +340,13 @@
   Memory: OK
   Flash: OK
 
+- ID: pynq_z2
+  Description: PYNQ-Z2
+  URL: https://www.tulembedded.com/FPGA/ProductsPYNQ-Z2.html
+  FPGA: Zynq7000 xc7z020clg400
+  Memory: OK
+  Flash: NA
+
 - ID: qmtechCycloneIV
   Description: QMTech CycloneIV Core Board
   URL: https://fr.aliexpress.com/item/32949281189.html
