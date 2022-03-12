@@ -172,6 +172,13 @@ ecpix5-debug:
     URL: https://shop.lambdaconcept.com/home/46-ecpix-5.html
 
 
+jlink:
+
+  - Name: jlink
+    Description: SEGGER J-Link Debug Probes
+    URL: https://www.segger.com/products/debug-probes/j-link
+
+
 jtag-smt2-nc:
 
   - Name: jtag-smt2-nc

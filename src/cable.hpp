@@ -19,6 +19,7 @@ enum communication_type {
 	MODE_CH552_JTAG,       /*! ch552_jtag firmware */
 	MODE_FTDI_BITBANG,     /*! used with ft232RL/ft231x */
 	MODE_FTDI_SERIAL,      /*! ft2232, ft232H */
+	MODE_JLINK,            /*! ft2232, ft232H */
 	MODE_DIRTYJTAG,        /*! JTAG probe firmware for STM32F1 */
 	MODE_USBBLASTER,       /*! JTAG probe firmware for USBBLASTER */
 	MODE_CMSISDAP,         /*! CMSIS-DAP JTAG probe */
@@ -59,6 +60,7 @@ static std::map <std::string, cable_t> cable_list = {
 	{"ft232RL",      		{MODE_FTDI_BITBANG, {0x0403, 0x6001, INTERFACE_A, 0x08, 0x0B, 0x08, 0x0B}}},
 	{"ft4232",       		{MODE_FTDI_SERIAL,  {0x0403, 0x6011, INTERFACE_A, 0x08, 0x0B, 0x08, 0x0B}}},
 	{"ecpix5-debug", 		{MODE_FTDI_SERIAL,  {0x0403, 0x6010, INTERFACE_A, 0xF8, 0xFB, 0xFF, 0xFF}}},
+	{"jlink",          		{MODE_JLINK,        {0x1366, 0x0105, 0,           0,    0,    0,    0   }}},
 	{"jtag-smt2-nc", 		{MODE_FTDI_SERIAL,  {0x0403, 0x6014, INTERFACE_A, 0xe8, 0xeb, 0x00, 0x60}}},
 	{"orbtrace",     		{MODE_CMSISDAP,     {0x1209, 0x3443, 0,           0,    0,    0,    0   }}},
 	{"tigard",       		{MODE_FTDI_SERIAL,  {0x0403, 0x6010, INTERFACE_B, 0x08, 0x3B, 0x00, 0x00}}},

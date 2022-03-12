@@ -21,6 +21,7 @@
 #include "ftdipp_mpsse.hpp"
 #include "ftdiJtagBitbang.hpp"
 #include "ftdiJtagMPSSE.hpp"
+#include "jlink.hpp"
 #ifdef ENABLE_CMSISDAP
 #include "cmsisDAP.hpp"
 #endif
@@ -102,6 +103,9 @@ void Jtag::init_internal(cable_t &cable, const string &dev, const string &serial
 		break;
 	case MODE_DIRTYJTAG:
 		_jtag = new DirtyJtag(clkHZ, _verbose);
+		break;
+	case MODE_JLINK:
+		_jtag = new Jlink(clkHZ, _verbose);
 		break;
 	case MODE_USBBLASTER:
 		_jtag = new UsbBlaster(cable.config.vid, cable.config.pid,

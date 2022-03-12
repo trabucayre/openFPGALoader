@@ -95,6 +95,7 @@ set(OPENFPGALOADER_SOURCE
 	src/latticeBitParser.cpp
 	src/gowin.cpp
 	src/device.cpp
+	src/jlink.cpp
 	src/lattice.cpp
 	src/progressBar.cpp
 	src/fsparser.cpp
@@ -129,6 +130,7 @@ set(OPENFPGALOADER_HEADERS
 	src/bitparser.hpp
 	src/ftdiJtagBitbang.hpp
 	src/ftdiJtagMPSSE.hpp
+	src/jlink.hpp
 	src/jtag.hpp
 	src/jtagInterface.hpp
 	src/fsparser.hpp
