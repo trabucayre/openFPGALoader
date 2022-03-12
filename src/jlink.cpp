@@ -284,7 +284,8 @@ bool Jlink::cmd_read(uint8_t cmd, uint8_t *val, int size)
 				&cmd, 1, &actual_length, 5000);
 	if (ret < 0) {
 		printf("Error write cmd_read %d %s %s\n", ret,
-				libusb_error_name(ret), libusb_strerror(ret));
+				libusb_error_name(ret),
+				libusb_strerror(static_cast<libusb_error>(ret)));
 		return false;
 	}
 
@@ -322,7 +323,8 @@ bool Jlink::cmd_write(uint8_t cmd, uint16_t param)
 				tx_buf, 3, &actual_length, 5000);
 	if (ret < 0) {
 		printf("Error write cmd_write %d\n", ret);
-		printf("%s %s\n", libusb_error_name(ret), libusb_strerror(ret));
+		printf("%s %s\n", libusb_error_name(ret),
+				libusb_strerror(static_cast<libusb_error>(ret)));
 		return ret;
 	}
 
@@ -338,7 +340,8 @@ bool Jlink::cmd_write(uint8_t cmd, uint8_t param)
 				tx_buf, 2, &actual_length, 5000);
 	if (ret < 0) {
 		printf("Error write cmd_write %d\n", ret);
-		printf("%s %s\n", libusb_error_name(ret), libusb_strerror(ret));
+		printf("%s %s\n", libusb_error_name(ret),
+				libusb_strerror(static_cast<libusb_error>(ret)));
 		return false;
 	}
 
@@ -364,7 +367,7 @@ int Jlink::read_device(uint8_t *buf, uint32_t size)
 			char toto[256];
 			snprintf(toto, sizeof(toto), "Error read length %d %d %u %s %s\n",
 					ret, actual_length, size, libusb_error_name(ret),
-					libusb_strerror(ret));
+					libusb_strerror(static_cast<libusb_error>(ret)));
 			return ret;
 		}
 	} while (recv < size && tries != 0);
@@ -394,7 +397,7 @@ bool Jlink::write_device(const uint8_t *buf, uint32_t size)
 		} else {
 			printf("Error write %d\n", ret);
 			printf("%s %s\n", libusb_error_name(ret),
-					libusb_strerror(ret));
+					libusb_strerror(static_cast<libusb_error>(ret)));
 			return false;
 		}
 	} while (tries > 0 && rest_size > 0);
