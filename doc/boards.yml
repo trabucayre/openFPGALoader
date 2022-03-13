@@ -354,6 +354,13 @@
   Memory: OK
   Flash: OK
 
+- ID: qmtechCycloneV_5ce523
+  Description: QMTech CycloneV Core Board
+  URL: https://fr.aliexpress.com/item/1005001782703399.html
+  FPGA: Cyclone V 5CEFA5F23I7
+  Memory: OK
+  Flash: OK
+
 - ID: qmtechKintex7
   Description: QMTech Kintex7 Core Board
   URL: https://www.aliexpress.com/item/1005003668804223.html
@@ -390,7 +397,7 @@
   Flash: NA
 
 - ID: SPEC150
-  Description: CERN Simple PCIe FMC carrier SPEC 
+  Description: CERN Simple PCIe FMC carrier SPEC
   URL: https://ohwr.org/project/spec150/wikis/home
   FPGA: Spartan6 xc6slx150Tfgg484
   Memory: OK

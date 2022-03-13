@@ -161,7 +161,7 @@ static std::map <std::string, target_board_t> board_list = {
 	DFU_BOARD("orangeCrab",       "", "dfu", 0x1209, 0x5af0, 0),
 	JTAG_BOARD("qmtechCycloneIV", "ep4ce1523", "",  0, 0, CABLE_DEFAULT),
 	JTAG_BOARD("qmtechCycloneV",  "5ce223", "",     0, 0, CABLE_DEFAULT),
-	JTAG_BOARD("qmtechCycloneV_5cefa5f23",  "5cefa5f23", "",	0,0, CABLE_DEFAULT),
+	JTAG_BOARD("qmtechCycloneV_5ce523",  "5ce523", "",	0,0, CABLE_DEFAULT),
 	JTAG_BOARD("qmtechKintex7",   "xc7k325tffg676", "", 0, 0, CABLE_DEFAULT),
 	JTAG_BOARD("genesys2",        "xc7k325tffg900", "digilent_b", 0, 0, CABLE_DEFAULT),
 	JTAG_BOARD("spec150",         "xc6slx150tfgg484", "", 0, 0, CABLE_DEFAULT),
