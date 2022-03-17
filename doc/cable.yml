@@ -126,6 +126,10 @@ ft2232:
     Description: USB-JTAG/UART debugger based on BL702 microcontroler.
     URL: https://github.com/sipeed/RV-Debugger-BL702
 
+  - Name: Sipeed RV-Debugger-BL702
+    Description: RV-Debugger-BL702 is an opensource project that implement a JTAG+UART debugger with BL702C-A0.
+    URL: https://github.com/sipeed/RV-Debugger-BL702
+
   - Name: honeycomb USB-JTAG interface.
     Description: FT2232C clone based on STM32F042 microcontroler
     URL: https://github.com/Disasm/f042-ftdi
