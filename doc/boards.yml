@@ -275,6 +275,14 @@
   Constraints: iCE40HX8K-EVB
 
 - ID: ice40_generic
+  Description: iCE40 UltraPlus Breakout Board (iCE40UP5K-B-EVN)
+  URL: https://www.latticesemi.com/Products/DevelopmentBoardsAndKits/iCE40UltraPlusBreakoutBoard
+  FPGA: iCE40-UP5K
+  Memory: NT
+  Flash: AS
+  Constraints: iCE40-UP
+
+- ID: ice40_generic
   Description: Icezum Alhambra II
   URL: https://alhambrabits.com/alhambra
   FPGA: iCE40 HX4k
