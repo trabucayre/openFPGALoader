@@ -254,7 +254,7 @@
   Description: iCE40-HX8K
   URL: https://www.latticesemi.com/Products/DevelopmentBoardsAndKits/iCE40HX8KBreakoutBoard.aspx
   FPGA: iCE40 HX8k
-  Memory: NT
+  Memory: OK
   Flash: AS
   Constraints: iCE40-HX8K
 
