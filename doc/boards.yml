@@ -521,6 +521,13 @@
   Flash: NA
   Constraints: ZC706
 
+- ID: zcu102
+  Description: Xilinx ZCU102
+  URL: https://www.xilinx.com/products/boards-and-kits/ek-u1-zcu102-g.html
+  FPGA: zynqMPSoC XCZU9EG
+  Memory: OK
+  Flash: NA
+
 - ID: zedboard
   Description: Avnet ZedBoard
   URL: https://www.avnet.com/wps/portal/us/products/avnet-boards/avnet-board-families/zedboard/
