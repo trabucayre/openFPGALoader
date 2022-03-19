@@ -141,7 +141,7 @@ typedef struct {
 	int irlength;
 } misc_device;
 
-static std::map <int, misc_device> misc_dev_list = {
+static std::map <uint32_t, misc_device> misc_dev_list = {
 	{0x4ba00477, {"ARM cortex A9",         4}},
 	{0x5ba00477, {"ARM cortex A53",        4}},
 	{0xfffffffe, {"ZynqMP dummy device",   12}},
