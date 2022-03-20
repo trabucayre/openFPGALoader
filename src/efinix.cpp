@@ -109,7 +109,7 @@ void Efinix::program(unsigned int offset, bool unprotect_flash)
 	ConfigBitstreamParser *bit;
 	try {
 		if (_file_extension == "hex") {
-			bit = new EfinixHexParser(_filename, _verbose);
+			bit = new EfinixHexParser(_filename);
 		} else {
 			if (offset == 0) {
 				printError("Error: can't write raw data at the beginning of the flash");
