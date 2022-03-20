@@ -66,7 +66,8 @@ FtdiJtagBitBang::FtdiJtagBitBang(const FTDIpp_MPSSE::mpsse_bit_config &cable,
 
 	setClkFreq(clkHZ);
 
-	init(1, _tck_pin | _tms_pin | _tdi_pin, BITMODE_BITBANG);
+	if (init(1, _tck_pin | _tms_pin | _tdi_pin, BITMODE_BITBANG) != 0)
+		throw std::runtime_error("low level FTDI init failed");
 	setBitmode(BITMODE_BITBANG);
 }
 
