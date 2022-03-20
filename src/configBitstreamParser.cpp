@@ -35,7 +35,7 @@ ConfigBitstreamParser::ConfigBitstreamParser(const string &filename, int mode,
 {
 	(void) mode;
 	if (!filename.empty()) {
-		uint32_t offset =  filename.find_last_of(".");
+		size_t offset =  filename.find_last_of(".");
 
 		FILE *_fd = fopen(filename.c_str(), "rb");
 		if (!_fd) {
