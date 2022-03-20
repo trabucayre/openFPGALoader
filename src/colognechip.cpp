@@ -20,6 +20,7 @@ CologneChip::CologneChip(FtdiSpi *spi, const std::string &filename,
 	_spi = spi;
 	_spi->gpio_set_input(_done_pin | _failn_pin);
 	_spi->gpio_set_output(_rstn_pin | _oen_pin);
+	_ftdi_jtag = nullptr;
 
 	if (prg_type == Device::WR_SRAM) {
 		_mode = Device::MEM_MODE;
@@ -34,6 +35,7 @@ CologneChip::CologneChip(Jtag* jtag, const std::string &filename,
 	bool verify, int8_t verbose) :
 	Device(jtag, filename, file_type, verify, verbose)
 {
+	_spi = nullptr;
 	/* check which cable/board we're using in order to select pin definitions */
 	std::string spi_board_name;
 	if (board_name != "-") {
@@ -72,7 +74,7 @@ void CologneChip::reset()
 		_spi->gpio_clear(_rstn_pin | _oen_pin);
 		usleep(SLEEP_US);
 		_spi->gpio_set(_rstn_pin);
-	} else if (_ftdi_jtag) {
+	} else {
 		_ftdi_jtag->gpio_clear(_rstn_pin | _oen_pin);
 		usleep(SLEEP_US);
 		_ftdi_jtag->gpio_set(_rstn_pin);
@@ -88,7 +90,7 @@ bool CologneChip::cfgDone()
 	uint16_t status = 0;
 	if (_spi) {
 		status = _spi->gpio_get(true);
-	} else if (_ftdi_jtag) {
+	} else {
 		status = _ftdi_jtag->gpio_get(true);
 	}
 	bool done = (status & _done_pin) > 0;
@@ -123,7 +125,7 @@ bool CologneChip::dumpFlash(uint32_t base_addr, uint32_t len)
 	if (_spi) {
 		/* enable output and hold reset */
 		_spi->gpio_clear(_rstn_pin | _oen_pin);
-	} else if (_ftdi_jtag) {
+	} else {
 		/* enable output and disable reset */
 		_ftdi_jtag->gpio_clear(_oen_pin);
 		_ftdi_jtag->gpio_set(_rstn_pin);
@@ -136,7 +138,7 @@ bool CologneChip::dumpFlash(uint32_t base_addr, uint32_t len)
 		if (_spi) {
 			flash = new SPIFlash(reinterpret_cast<SPIInterface *>(_spi), false,
 					_verbose);
-		} else if (_ftdi_jtag) {
+		} else {
 			flash = new SPIFlash(this, false, _verbose);
 		}
 		flash->reset();
