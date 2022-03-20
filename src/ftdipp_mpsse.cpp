@@ -33,6 +33,9 @@ FTDIpp_MPSSE::FTDIpp_MPSSE(const mpsse_bit_config &cable, const string &dev,
 				_interface(cable.interface),
 				_clkHZ(clkHZ), _buffer_size(2*32768), _num(0)
 {
+	libusb_error ret;
+	char err[256];
+
 	strcpy(_product, "");
 	if (!dev.empty()) {
 		if (!search_with_dev(dev)) {
@@ -49,7 +52,7 @@ FTDIpp_MPSSE::FTDIpp_MPSSE(const mpsse_bit_config &cable, const string &dev,
 
 	_buffer = (unsigned char *)malloc(sizeof(unsigned char) * _buffer_size);
 	if (!_buffer) {
-		cout << "_buffer malloc failed" << endl;
+		printError("_buffer malloc failed");
 		throw std::runtime_error("_buffer malloc failed");
 	}
 
@@ -58,18 +61,48 @@ FTDIpp_MPSSE::FTDIpp_MPSSE(const mpsse_bit_config &cable, const string &dev,
 	 * libusb_device_descriptor
 	 */
 	struct libusb_device * usb_dev = libusb_get_device(_ftdi->usb_dev);
+	if (!usb_dev)
+		throw std::runtime_error("can't get USB device");
+
 	struct libusb_device_descriptor usb_desc;
-	libusb_get_device_descriptor(usb_dev, &usb_desc);
-	libusb_get_string_descriptor_ascii(_ftdi->usb_dev, usb_desc.iProduct,
-		_iproduct, 200);
+	ret = (libusb_error)libusb_get_device_descriptor(usb_dev, &usb_desc);
+	if (ret != 0) {
+		snprintf(err, sizeof(err), "unable to get device descriptor: %d %s %s",
+			ret, libusb_error_name(ret), libusb_strerror(ret));
+		throw std::runtime_error(err);
+	}
+
+	ret = (libusb_error)libusb_get_string_descriptor_ascii(_ftdi->usb_dev,
+		usb_desc.iProduct, _iproduct, 200);
+	if (ret < 0) {
+		snprintf(err, sizeof(err), "unable to get string descriptor: %d %s %s",
+			ret, libusb_error_name(ret), libusb_strerror(ret));
+		throw std::runtime_error(err);
+	}
 }
 
 FTDIpp_MPSSE::~FTDIpp_MPSSE()
 {
-	ftdi_set_bitmode(_ftdi, 0, BITMODE_RESET);
+	char err[256];
+	int ret;
+	if ((ret = ftdi_set_bitmode(_ftdi, 0, BITMODE_RESET)) < 0) {
+		snprintf(err, sizeof(err), "unable to config pins : %d %s",
+			ret, ftdi_get_error_string(_ftdi));
+		printError(err);
+		free(_buffer);
+		return;
+	}
 
-	ftdi_usb_reset(_ftdi);
-	close_device();
+	if ((ret = ftdi_usb_reset(_ftdi)) < 0) {
+		snprintf(err, sizeof(err), "unable to reset device : %d %s",
+			ret, ftdi_get_error_string(_ftdi));
+		printError(err);
+		free(_buffer);
+		return;
+	}
+
+	if (close_device() == EXIT_FAILURE)
+		printError("unable to close device");
 	free(_buffer);
 }
 
@@ -88,7 +121,13 @@ void FTDIpp_MPSSE::open_device(const std::string &serial, unsigned int baudrate)
 	_ftdi->module_detach_mode = AUTO_DETACH_REATACH_SIO_MODULE;
 #endif
 
-	ftdi_set_interface(_ftdi, (ftdi_interface)_interface);
+	if ((ret = ftdi_set_interface(_ftdi, (ftdi_interface)_interface)) < 0) {
+		char err[256];
+		snprintf(err, sizeof(err), "unable to set interface : %d %s",
+			ret, ftdi_get_error_string(_ftdi));
+		throw std::runtime_error(err);
+	}
+
 	if (_bus == -1 || _addr == -1)
 		ret = ftdi_usb_open_desc(_ftdi, _vid, _pid, NULL, serial.empty() ? NULL : serial.c_str());
 	else
@@ -119,13 +158,18 @@ void FTDIpp_MPSSE::ftdi_usb_close_internal()
 
 int FTDIpp_MPSSE::close_device()
 {
+	int ret;
 	if (_ftdi == NULL)
 		return EXIT_FAILURE;
 
 	/* purge FTDI */
 #if (FTDI_VERSION < 105)
-	ftdi_usb_purge_rx_buffer(_ftdi);
-	ftdi_usb_purge_tx_buffer(_ftdi);
+	ret = ftdi_usb_purge_rx_buffer(_ftdi);
+	ret |= ftdi_usb_purge_tx_buffer(_ftdi);
+	if (ret != 0) {
+		printError("unable to purge FTDI buffers");
+		return EXIT_FAILURE;
+	}
 
 	/*
 	 * repompe de la fonction et des suivantes
@@ -147,9 +191,18 @@ int FTDIpp_MPSSE::close_device()
 	}
 	ftdi_usb_close_internal();
 #else
-	ftdi_tciflush(_ftdi);
-	ftdi_tcoflush(_ftdi);
-	ftdi_usb_close(_ftdi);
+	if ((ret = ftdi_tciflush(_ftdi)) < 0) {
+		printError("unable to purge read buffers");
+		return EXIT_FAILURE;
+	}
+	if ((ret = ftdi_tcoflush(_ftdi)) < 0) {
+		printError("unable to purge write buffers");
+		return EXIT_FAILURE;
+	}
+	if ((ret = ftdi_usb_close(_ftdi)) < 0) {
+		printError("unable to close device");
+		return EXIT_FAILURE;
+	}
 #endif
 
 	ftdi_free(_ftdi);
@@ -161,41 +214,55 @@ int FTDIpp_MPSSE::close_device()
 int FTDIpp_MPSSE::init(unsigned char latency, unsigned char bitmask_mode,
 				unsigned char mode)
 {
+	int ret;
 	unsigned char buf_cmd[6] = { SET_BITS_LOW, 0, 0,
 		SET_BITS_HIGH, 0, 0
 	};
 
-	if (ftdi_usb_reset(_ftdi) != 0) {
-		cout << "reset error" << endl;
-		return -1;
+	if ((ret = ftdi_usb_reset(_ftdi)) < 0) {
+		printError("FTDI reset error with code " +
+				std::to_string(ret) + " (" +
+				string(ftdi_get_error_string(_ftdi)) + ")");
+		return ret;
 	}
 
-	if (ftdi_set_bitmode(_ftdi, 0x00, BITMODE_RESET) < 0) {
-		cout << "bitmode_reset error" << endl;
-		return -1;
+	if ((ret = ftdi_set_bitmode(_ftdi, 0x00, BITMODE_RESET)) < 0) {
+		printError("FTDI bitmode reset error with code " +
+				std::to_string(ret) + " (" +
+				string(ftdi_get_error_string(_ftdi)) + ")");
+		return ret;
 	}
 
 #if (FTDI_VERSION < 105)
-	if (ftdi_usb_purge_buffers(_ftdi) != 0) {
+	if ((ret = ftdi_usb_purge_buffers(_ftdi)) < 0) {
 #else
-	if (ftdi_tcioflush(_ftdi) != 0) {
+	if ((ret = ftdi_tcioflush(_ftdi)) < 0) {
 #endif
-		cout << "reset error" << endl;
-		return -1;
+		printError("FTDI flush buffer error with code " +
+				std::to_string(ret) + " (" +
+				string(ftdi_get_error_string(_ftdi)) + ")");
+		return ret;
 	}
-	if (ftdi_set_latency_timer(_ftdi, latency) != 0) {
-		cout << "reset error" << endl;
-		return -1;
+	if ((ret = ftdi_set_latency_timer(_ftdi, latency)) < 0) {
+		printError("FTDI set latency timer error with code " +
+				std::to_string(ret) + " (" +
+				string(ftdi_get_error_string(_ftdi)) + ")");
+		return ret;
 	}
 	/* enable mode */
-	if (ftdi_set_bitmode(_ftdi, bitmask_mode, mode) < 0) {
-		cout << "bitmode_mpsse error" << endl;
-		return -1;
+	if ((ret = ftdi_set_bitmode(_ftdi, bitmask_mode, mode)) < 0) {
+		printError("FTDI bitmode config error with code " +
+				std::to_string(ret) + " (" +
+				string(ftdi_get_error_string(_ftdi)) + ")");
+		return ret;
 	}
 	if (mode == BITMODE_MPSSE) {
-
 		unsigned char buf1[5];
-		ftdi_read_data(_ftdi, buf1, 5);
+		if ((ret = ftdi_read_data(_ftdi, buf1, 5)) < 0) {
+			printError("fail to read data " +
+					string(ftdi_get_error_string(_ftdi)));
+			return -1;
+		}
 
 		if (setClkFreq(_clkHZ) < 0)
 			return -1;
@@ -210,12 +277,28 @@ int FTDIpp_MPSSE::init(unsigned char latency, unsigned char bitmask_mode,
 			buf_cmd[5] = _cable.bit_high_dir;  // 0x60;
 			to_wr = 6;
 		}
-		mpsse_store(buf_cmd, to_wr);
-		mpsse_write();
+		if ((ret = mpsse_store(buf_cmd, to_wr)) < 0) {
+			printError("fail to store buffer " +
+					string(ftdi_get_error_string(_ftdi)));
+			return -1;
+		}
+		if (mpsse_write() < 0) {
+			printError("fail to write buffer " +
+					string(ftdi_get_error_string(_ftdi)));
+			return -1;
+		}
 	}
 
-	ftdi_read_data_set_chunksize(_ftdi, _buffer_size);
-	ftdi_write_data_set_chunksize(_ftdi, _buffer_size);
+	if (ftdi_read_data_set_chunksize(_ftdi, _buffer_size) < 0) {
+		printError("fail to set read chunk size: " +
+				string(ftdi_get_error_string(_ftdi)));
+		return -1;
+	}
+	if (ftdi_write_data_set_chunksize(_ftdi, _buffer_size) < 0) {
+		printError("fail to set write chunk size: " +
+				string(ftdi_get_error_string(_ftdi)));
+		return -1;
+	}
 
 	return 0;
 }
@@ -242,11 +325,13 @@ int FTDIpp_MPSSE::setClkFreq(uint32_t clkHZ)
 		 */
 		if (clkHZ > 6000000) {
 			use_divide_by_5 = false;
-			mpsse_store(DIS_DIV_5);
+			if ((ret = mpsse_store(DIS_DIV_5)) < 0)
+				return ret;
 		} else {
 			use_divide_by_5 = true;
 			base_freq /= 5;
-			mpsse_store(EN_DIV_5);
+			if ((ret = mpsse_store(EN_DIV_5)) < 0)
+				return ret;
 		}
 	} else {
 		base_freq = 12000000;
@@ -268,7 +353,7 @@ int FTDIpp_MPSSE::setClkFreq(uint32_t clkHZ)
 	presc = ((base_freq /_clkHZ) -1) / 2;
 	real_freq = base_freq / ((1+presc)*2);
 	if (real_freq > _clkHZ)
-		presc ++;
+		presc++;
 	real_freq = base_freq / ((1+presc)*2);
 
 	/* just to have a better display */
@@ -279,7 +364,7 @@ int FTDIpp_MPSSE::setClkFreq(uint32_t clkHZ)
 	else if (clkHZ >= 1e3)
 		snprintf(&clkHZ_str[0], 10, "%3.2fKHz", clkHZ / 1e3);
 	else
-		snprintf(&clkHZ_str[0], 10, "%3d.00Hz", clkHZ);
+		snprintf(&clkHZ_str[0], 10, "%3u.00Hz", clkHZ);
 	if (real_freq >= 1e6)
 		snprintf(&real_freq_str[0], 9, "%2.2fMHz", real_freq / 1e6);
 	else if (real_freq >= 1e3)
@@ -290,7 +375,7 @@ int FTDIpp_MPSSE::setClkFreq(uint32_t clkHZ)
 
 	printInfo("Jtag frequency : requested " + clkHZ_str +
 			" -> real " + real_freq_str);
-	display("presc : %d input freq : %d requested freq : %d real freq : %f\n",
+	display("presc : %d input freq : %u requested freq : %u real freq : %f\n",
 			presc, base_freq, _clkHZ, real_freq);
 
 	/*printf("base freq %d div by 5 %c presc %d\n", base_freq, (use_divide_by_5)?'1':'0',
@@ -300,17 +385,27 @@ int FTDIpp_MPSSE::setClkFreq(uint32_t clkHZ)
 	buffer[1] = presc & 0xff;
 	buffer[2] = (presc >> 8) & 0xff;
 
-	mpsse_store(buffer, 3);
-	ret = mpsse_write();
-	if (ret < 0) {
+	if ((ret = mpsse_store(buffer, 3)) < 0)
+		return ret;
+	if ((ret = mpsse_write()) < 0) {
 		fprintf(stderr, "Error: write for frequency return %d\n", ret);
-		return -1;
+		return ret;
 	}
-	ret = ftdi_read_data(_ftdi, buffer, 4);
+	if ((ret = ftdi_read_data(_ftdi, buffer, 4)) < 0) {
+		printError("selfClkFreq: fail to read: " +
+				string(ftdi_get_error_string(_ftdi)));
+		return ret;
+	}
+
 #if (FTDI_VERSION < 105)
 	ftdi_usb_purge_buffers(_ftdi);
 #else
-	ftdi_tcioflush(_ftdi);
+	if ((ret = ftdi_tcioflush(_ftdi)) < 0) {
+		printError("selfClkFreq: fail to flush buffers: " +
+				string(ftdi_get_error_string(_ftdi)));
+		return ret;
+	}
+
 #endif
 
 	_clkHZ = real_freq;
@@ -326,13 +421,18 @@ int FTDIpp_MPSSE::mpsse_store(unsigned char c)
 int FTDIpp_MPSSE::mpsse_store(unsigned char *buff, int len)
 {
 	unsigned char *ptr = buff;
-	int store_size;
+	int store_size, ret;
 	/* check if _buffer as space to store all */
 	if (_num + len > _buffer_size) {
 		/* flush buffer if already full */
-		if (_num == _buffer_size)
-			if (mpsse_write() == -1)
-				printError("mpsse_store: Fails to first flush");
+		if (_num == _buffer_size) {
+			if ((ret = mpsse_write()) < 0) {
+				printError("mpsse_store: fails to first flush " +
+						std::to_string(ret) + " " +
+						string(ftdi_get_error_string(_ftdi)));
+				return ret;
+			}
+		}
 		/* loop until loop < _buffer_size */
 		while (_num + len > _buffer_size) {
 			/* we now have len enough to fill
@@ -341,14 +441,15 @@ int FTDIpp_MPSSE::mpsse_store(unsigned char *buff, int len)
 			store_size = _buffer_size - _num;
 			memcpy(_buffer + _num, ptr, store_size);
 			_num += store_size;
-			if (mpsse_write() < 0) {
-				cout << "write_data error in " << __func__ << endl;
-				return -1;
+			if ((ret = mpsse_write()) < 0) {
+				printError("mpsse_store: fails to first flush " +
+						std::to_string(ret) + " " +
+						string(ftdi_get_error_string(_ftdi)));
+				return ret;
 			}
 			ptr += store_size;
 			len -= store_size;
 		}
-
 	}
 #ifdef DEBUG
 	display("%s %d %d\n", __func__, _num, len);
@@ -371,7 +472,9 @@ int FTDIpp_MPSSE::mpsse_write()
 #endif
 
 	if ((ret = ftdi_write_data(_ftdi, _buffer, _num)) != _num) {
-		cout << "write error: " << ret << " instead of " << _num << endl;
+		printError("mpsse_write: fail to write with error " +
+				std::to_string(ret) + " (" +
+				string(ftdi_get_error_string(_ftdi)) + ")");
 		return ret;
 	}
 
@@ -381,14 +484,24 @@ int FTDIpp_MPSSE::mpsse_write()
 
 int FTDIpp_MPSSE::mpsse_read(unsigned char *rx_buff, int len)
 {
-	int n;
+	int n, ret;
 	int num_read = 0;
 	unsigned char *p = rx_buff;
 
 	/* force buffer transmission before read */
-	mpsse_store(SEND_IMMEDIATE);
-	if (mpsse_write() == -1)
-		printError("mpsse_read: fails to write");
+	if ((ret = mpsse_store(SEND_IMMEDIATE)) < 0) {
+		printError("mpsse_read: fail to store with error: " +
+				std::to_string(ret) + " (" +
+				string(ftdi_get_error_string(_ftdi)) + ")");
+		return ret;
+	}
+
+	if ((ret = mpsse_write()) < 0) {
+		printError("mpsse_read: fail to flush buffer with error: " +
+				std::to_string(ret) + " (" +
+				string(ftdi_get_error_string(_ftdi)) + ")");
+		return ret;
+	}
 
 	do {
 		n = ftdi_read_data(_ftdi, p, len);
@@ -419,8 +532,10 @@ uint16_t FTDIpp_MPSSE::gpio_get()
 {
 	uint8_t tx[2] = {GET_BITS_LOW, GET_BITS_HIGH};
 	uint8_t rx[2];
-	mpsse_store(tx, 2);
-	mpsse_read(rx, 2);
+	if (mpsse_store(tx, 2) < 0)
+		return 0;
+	if (mpsse_read(rx, 2) < 0)
+		return 0;
 
 	return (rx[1] << 8) | rx[0];
 }
@@ -435,8 +550,10 @@ uint8_t FTDIpp_MPSSE::gpio_get(bool low_pins)
 	uint8_t rx;
 
 	/* select between high and low pins */
-	mpsse_store((low_pins) ? GET_BITS_LOW : GET_BITS_HIGH);
-	mpsse_read(&rx, 1);
+	if (mpsse_store((low_pins) ? GET_BITS_LOW : GET_BITS_HIGH) < 0)
+		return 0;
+	if (mpsse_read(&rx, 1) < 0)
+		return 0;
 	return rx;
 }
 
@@ -449,11 +566,13 @@ bool FTDIpp_MPSSE::gpio_set(uint16_t gpios)
 {
 	if (gpios & 0x00ff) {
 		_cable.bit_low_val |= (0xff & gpios);
-		__gpio_write(true);
+		if (!__gpio_write(true))
+			return false;
 	}
 	if (gpios & 0xff00) {
 		_cable.bit_high_val |= (0xff & (gpios >> 8));
-		__gpio_write(false);
+		if (!__gpio_write(false))
+			return false;
 	}
 	return (mpsse_write() >= 0);
 }
@@ -470,7 +589,8 @@ bool FTDIpp_MPSSE::gpio_set(uint8_t gpios, bool low_pins)
 		_cable.bit_low_val |= gpios;
 	else
 		_cable.bit_high_val |= gpios;
-	__gpio_write(low_pins);
+	if (!__gpio_write(low_pins))
+		return false;
 	return (mpsse_write() >= 0);
 }
 
@@ -483,11 +603,13 @@ bool FTDIpp_MPSSE::gpio_clear(uint16_t gpios)
 {
 	if (gpios & 0x00ff) {
 		_cable.bit_low_val &= ~(0xff & gpios);
-		__gpio_write(true);
+		if (!__gpio_write(true))
+			return false;
 	}
 	if (gpios & 0xff00) {
 		_cable.bit_high_val &= ~(0xff & (gpios >> 8));
-		__gpio_write(false);
+		if (!__gpio_write(false))
+			return false;
 	}
 	return (mpsse_write() >= 0);
 }
@@ -505,7 +627,8 @@ bool FTDIpp_MPSSE::gpio_clear(uint8_t gpios, bool low_pins)
 	else
 		_cable.bit_high_val &= ~(gpios);
 
-	__gpio_write(low_pins);
+	if (!__gpio_write(low_pins))
+		return false;
 	return (mpsse_write() >= 0);
 }
 
@@ -518,8 +641,10 @@ bool FTDIpp_MPSSE::gpio_write(uint16_t gpio)
 {
 	_cable.bit_low_val = (0xff & gpio);
 	_cable.bit_high_val = (0xff & (gpio >> 8));
-	__gpio_write(true);
-	__gpio_write(false);
+	if (!__gpio_write(true))
+		return false;
+	if (!__gpio_write(false))
+		return false;
 	return (mpsse_write() >= 0);
 }
 
@@ -536,7 +661,8 @@ bool FTDIpp_MPSSE::gpio_write(uint8_t gpio, bool low_pins)
 	else
 		_cable.bit_high_val = gpio;
 
-	__gpio_write(low_pins);
+	if (__gpio_write(low_pins))
+		return false;
 	return (mpsse_write() >= 0);
 }
 
