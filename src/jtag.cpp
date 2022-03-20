@@ -87,7 +87,7 @@ void Jtag::init_internal(cable_t &cable, const string &dev, const string &serial
 {
 	switch (cable.type) {
 	case MODE_ANLOGICCABLE:
-		_jtag = new AnlogicCable(clkHZ, _verbose);
+		_jtag = new AnlogicCable(clkHZ);
 		break;
 	case MODE_FTDI_BITBANG:
 		if (pin_conf == NULL)
