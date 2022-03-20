@@ -118,8 +118,7 @@ void CologneChip::waitCfgDone()
 /**
  * Dump flash contents to file. Works in both SPI and JTAG-SPI-bypass mode.
  */
-bool CologneChip::dumpFlash(const std::string &filename, uint32_t base_addr,
-	uint32_t len)
+bool CologneChip::dumpFlash(uint32_t base_addr, uint32_t len)
 {
 	if (_spi) {
 		/* enable output and hold reset */
@@ -142,7 +141,7 @@ bool CologneChip::dumpFlash(const std::string &filename, uint32_t base_addr,
 		}
 		flash->reset();
 		flash->power_up();
-		flash->dump(filename, base_addr, len);
+		flash->dump(_filename, base_addr, len);
 	} catch (std::exception &e) {
 		printError("Fail");
 		printError(std::string(e.what()));
