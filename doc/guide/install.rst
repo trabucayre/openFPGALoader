@@ -134,6 +134,19 @@ openFPGALoader is available as a `Homebrew <https://brew.sh>`__ formula:
 
     brew install openfpgaloader
 
+Alternatively, if you want to build it from hand:
+
+.. code-block:: bash
+
+    brew install --only-dependencies openfpgaloader
+    brew install cmake pkg-config zlib
+    git clone https://github.com/trabucayre/openFPGALoader
+    cd openFPGALoader
+    mkdir build
+    cd build
+    cmake ..
+    make -j
+
 Windows
 =======
 
