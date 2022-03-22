@@ -1,7 +1,11 @@
 module spiOverJtag
 (
 	output csn,
+
 `ifdef spartan6
+	output sck,
+`endif
+`ifdef spartan3e
 	output sck,
 `endif
 	output sdi_dq0,
@@ -42,6 +46,10 @@ module spiOverJtag
 `ifdef spartan6
 	assign sck = drck;
 `else
+`ifdef spartan3e
+	assign sck = drck;
+	assign runtest = tmp_up_s;
+`else
 	STARTUPE2 #(
 		.PROG_USR("FALSE"),  // Activate program event security feature. Requires encrypted bitstreams.
 		.SIM_CCLK_FREQ(0.0)  // Set the Configuration Clock Frequency(ns) for simulation.
@@ -61,7 +69,27 @@ module spiOverJtag
 		.USRDONETS(1'b1)  // 1-bit input: User DONE 3-state enable output
 	);
 `endif
+`endif
 
+`ifdef spartan3e
+	BSCAN_SPARTAN3 bscane2_inst (
+		.CAPTURE(capture), // 1-bit output: CAPTURE output from TAP controller.
+		.DRCK1	(drck),    // 1-bit output: Gated TCK output. When SEL
+						   //               is asserted, DRCK toggles when
+						   //               CAPTURE or SHIFT are asserted.
+		.DRCK2  (),        // 1-bit output: USER2 function
+		.RESET  (),        // 1-bit output: Reset output for TAP controller.
+		.SEL1   (sel),     // 1-bit output: USER1 instruction active output.
+		.SEL2   (),        // 1-bit output: USER2 instruction active output.
+		.SHIFT  (),        // 1-bit output: SHIFT output from TAP controller.
+		.TDI    (tdi),     // 1-bit output: Test Data Input (TDI) output
+		                   //               from TAP controller.
+		.UPDATE (update),  // 1-bit output: UPDATE output from TAP controller
+		.TDO1   (tdo),     // 1-bit input: Test Data Output (TDO) input
+		                   //              for USER1 function.
+		.TDO2   ()         // 1-bit input: USER2 function
+	);
+`else
 `ifdef spartan6
 	BSCAN_SPARTAN6 #(
 `else
@@ -88,5 +116,6 @@ module spiOverJtag
 		.TDO     (tdo)     // 1-bit input: Test Data Output (TDO) input
 		                   //              for USER function.
 	);
+`endif
 
 endmodule
