@@ -66,9 +66,6 @@ Xilinx::Xilinx(Jtag *jtag, const std::string &filename,
 		_fpga_family = KINTEX_FAMILY;
 	} else if (family == "spartan3") {
 		_fpga_family = SPARTAN3_FAMILY;
-		if (_mode != Device::MEM_MODE) {
-			throw std::runtime_error("Error: Only load to mem is supported");
-		}
 	} else if (family == "xcf") {
 		_fpga_family = XCF_FAMILY;
 		if (_mode == Device::MEM_MODE) {
@@ -361,11 +358,16 @@ void Xilinx::program_mem(ConfigBitstreamParser *bitfile)
 	 *    the TLR (Test-Logic-Reset) state.
 	 */
 	_jtag->shiftIR(JPROGRAM, 6);
+	if (_fpga_family == SPARTAN3_FAMILY) {
+		_jtag->shiftIR(CFG_IN, 6);
+	}
 	/* test */
-	tx_buf = BYPASS;
-	do {
-		_jtag->shiftIR(&tx_buf, &rx_buf, 6);
-	} while (!(rx_buf &0x01));
+	if (_fpga_family != SPARTAN3_FAMILY) {
+		tx_buf = BYPASS;
+		do {
+			_jtag->shiftIR(&tx_buf, &rx_buf, 6);
+		} while (!(rx_buf &0x01));
+	}
 	/*
 	 * 8: Move into the RTI state.                        X     0   10,000(1)
 	 */
@@ -379,6 +381,11 @@ void Xilinx::program_mem(ConfigBitstreamParser *bitfile)
 	 *     IEEE standard.
 	 */
 	_jtag->shiftIR(CFG_IN, 6);
+	if (_fpga_family == SPARTAN3_FAMILY) {
+		_jtag->set_state(Jtag::SHIFT_DR);
+		_jtag->toggleClk(64);
+		_jtag->shiftIR(CFG_IN, 6);
+	}
 	/*
 	 * 11: Enter the SELECT-DR state.                     X     1   2
 	 */
@@ -420,7 +427,9 @@ void Xilinx::program_mem(ConfigBitstreamParser *bitfile)
 	/*
 	 * 16: Move into RTI state.                           X     0   1
 	 */
-	_jtag->set_state(Jtag::RUN_TEST_IDLE);
+	if (_fpga_family != SPARTAN3_FAMILY) {
+		_jtag->set_state(Jtag::RUN_TEST_IDLE);
+	}
 	/*
 	 * 17: Enter the SELECT-IR state.                     X     1   2
 	 * 18: Move to the SHIFT-IR state.                    X     0   2
@@ -430,19 +439,34 @@ void Xilinx::program_mem(ConfigBitstreamParser *bitfile)
 	 * 20: Load the last bit of the JSTART instruction.   0     1   1
 	 * 21: Move to the UPDATE-IR state.                   X     1   1
 	 */
-	_jtag->shiftIR(JSTART, 6, Jtag::UPDATE_IR);
+	if (_fpga_family == SPARTAN3_FAMILY) {
+		_jtag->shiftIR(JSTART, 6, Jtag::SHIFT_DR);
+	} else {
+		_jtag->shiftIR(JSTART, 6, Jtag::UPDATE_IR);
+	}
 	/*
 	 * 22: Move to the RTI state and clock the
 	 *     startup sequence by applying a minimum         X     0   2000
 	 *     of 2000 clock cycles to the TCK.
 	 */
-	_jtag->set_state(Jtag::RUN_TEST_IDLE);
-	_jtag->toggleClk(2000);
+	if (_fpga_family == SPARTAN3_FAMILY) {
+		_jtag->toggleClk(13);
+	} else {
+		_jtag->set_state(Jtag::RUN_TEST_IDLE);
+		_jtag->toggleClk(2000);
+	}
 	/*
 	 * 23: Move to the TLR state. The device is
 	 * now functional.                                    X     1   3
 	 */
-	_jtag->go_test_logic_reset();
+	if (_fpga_family == SPARTAN3_FAMILY) {
+		_jtag->set_state(Jtag::UPDATE_DR);
+		_jtag->shiftIR(BYPASS, 6);
+		_jtag->shiftIR(BYPASS, 6);
+		_jtag->set_state(Jtag::RUN_TEST_IDLE);
+	} else {
+		_jtag->go_test_logic_reset();
+	}
 }
 
 bool Xilinx::dumpFlash(uint32_t base_addr, uint32_t len)
