@@ -182,10 +182,12 @@ Xilinx:
     Flash: OK
 
   - Description: Spartan 3
-    Model: xc3s200
+    Model:
+      - xc3s200
+      - xc3s500e
     URL: https://www.xilinx.com/products/silicon-devices/fpga/spartan-3.html
     Memory: OK
-    Flash: NA
+    Flash: OK
 
   - Description: Spartan 6
     Model:
