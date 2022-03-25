@@ -197,6 +197,13 @@ orbtrace:
     URL: https://github.com/orbcode/orbtrace
 
 
+papilio:
+
+  - Name: papilio
+    Description: Papilio FPGA Platform
+    URL: https://papilio.cc/
+
+
 tigard:
 
   - Name: tigard
