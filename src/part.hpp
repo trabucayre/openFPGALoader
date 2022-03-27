@@ -110,15 +110,16 @@ static std::map <int, fpga_model> fpga_list = {
 
 	{0x012e3043, {"lattice", "MachXO3D", "LCMX03D-9400HC", 8}},
 
-	{0x01111043, {"lattice", "ECP5", "LFE5U-12/25", 8}},
-	{0x01112043, {"lattice", "ECP5", "LFE5U-45", 8}},
-	{0x01113043, {"lattice", "ECP5", "LFE5U-85", 8}},
+	{0x21111043, {"lattice", "ECP5", "LFE5U-12", 8}},
+	{0x41111043, {"lattice", "ECP5", "LFE5U-25", 8}},
+	{0x41112043, {"lattice", "ECP5", "LFE5U-45", 8}},
+	{0x41113043, {"lattice", "ECP5", "LFE5U-85", 8}},
 	{0x01111043, {"lattice", "ECP5", "LFE5UM-25", 8}},
 	{0x01112043, {"lattice", "ECP5", "LFE5UM-45", 8}},
 	{0x01113043, {"lattice", "ECP5", "LFE5UM-85", 8}},
-	{0x01111043, {"lattice", "ECP5", "LFE5UM5G-25", 8}},
-	{0x01112043, {"lattice", "ECP5", "LFE5UM5G-45", 8}},
-	{0x01113043, {"lattice", "ECP5", "LFE5UM5G-85", 8}},
+	{0x81111043, {"lattice", "ECP5", "LFE5UM5G-25", 8}},
+	{0x81112043, {"lattice", "ECP5", "LFE5UM5G-45", 8}},
+	{0x81113043, {"lattice", "ECP5", "LFE5UM5G-85", 8}},
 
 	{0x0129a043, {"lattice", "XP2", "LFXP2-8E", 8}},
 
