@@ -15,6 +15,7 @@
 #include <utility>
 
 #include "display.hpp"
+#include "part.hpp"
 
 #include "latticeBitParser.hpp"
 
@@ -82,7 +83,8 @@ int LatticeBitParser::parse()
 		return EXIT_FAILURE;
 
 	/* check preamble */
-	if ((*(uint32_t *)&_raw_data[_endHeader+1]) != 0xb3bdffff) {
+	uint32_t preamble = (*(uint32_t *)&_raw_data[_endHeader+1]);
+	if ((preamble != 0xb3bdffff) && (preamble != 0xb3bfffff)) {
 		printError("Error: missing preamble\n");
 		return EXIT_FAILURE;
 	}
@@ -92,18 +94,32 @@ int LatticeBitParser::parse()
 	std::move(_raw_data.begin()+_endHeader, _raw_data.end(), _bit_data.begin());
 	_bit_length = _bit_data.size() * 8;
 
-	/* extract idcode from configuration data (area starting with 0xE2) */
-	for (size_t i = 0; i < _bit_data.size();i++) {
-		if ((uint8_t)_bit_data[i] != 0xe2)
-			continue;
-		/* E2: verif id */
-		uint32_t idcode = (((uint32_t)_bit_data[i+4]) << 24) |
-						(((uint32_t)_bit_data[i+5]) << 16) |
-						(((uint32_t)_bit_data[i+6]) <<  8) |
-						(((uint32_t)_bit_data[i+7]) <<  0);
-		_hdr["idcode"] = string(8, ' ');
-		snprintf(&_hdr["idcode"][0], 9, "%08x", idcode);
-		break;
+	if (preamble == 0xb3bdffff) {
+		/* extract idcode from configuration data (area starting with 0xE2) */
+		for (size_t i = 0; i < _bit_data.size();i++) {
+			if ((uint8_t)_bit_data[i] != 0xe2)
+				continue;
+			/* E2: verif id */
+			uint32_t idcode = (((uint32_t)_bit_data[i+4]) << 24) |
+							(((uint32_t)_bit_data[i+5]) << 16) |
+							(((uint32_t)_bit_data[i+6]) <<  8) |
+							(((uint32_t)_bit_data[i+7]) <<  0);
+			_hdr["idcode"] = string(8, ' ');
+			snprintf(&_hdr["idcode"][0], 9, "%08x", idcode);
+			break;
+		}
+	} else { // encrypted bitstream
+		string part = getHeaderVal("Part");
+		string subpart = part.substr(0, part.find_last_of("-"));
+		for (auto && fpga : fpga_list) {
+			if (fpga.second.manufacturer != "lattice")
+				continue;
+			string model = fpga.second.model;
+			if (subpart.compare(0, model.size(), model) == 0) {
+				_hdr["idcode"] = string(8, ' ');
+				snprintf(&_hdr["idcode"][0], 9, "%08x", fpga.first);
+			}
+		}
 	}
 
 	return 0;
