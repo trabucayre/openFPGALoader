@@ -31,7 +31,7 @@ Xilinx::Xilinx(Jtag *jtag, const std::string &filename,
 	const std::string &device_package, bool verify, int8_t verbose):
 	Device(jtag, filename, file_type, verify, verbose),
 	SPIInterface(filename, verbose, 256, verify),
-	_device_package(device_package)
+	_device_package(device_package), _irlen(6)
 {
 	if (prg_type == Device::RD_FLASH) {
 		_mode = Device::READ_MODE;
@@ -52,6 +52,7 @@ Xilinx::Xilinx(Jtag *jtag, const std::string &filename,
 
 	uint32_t idcode = _jtag->get_target_device_id();
 	std::string family = fpga_list[idcode].family;
+	_irlen = fpga_list[idcode].irlength;
 	if (family.substr(0, 5) == "artix") {
 		_fpga_family = ARTIX_FAMILY;
 	} else if (family == "spartan7") {
@@ -157,6 +158,7 @@ bool Xilinx::zynqmp_init(const std::string &family)
 
 	_jtag->insert_first(0xdeadbeef, 6);
 	_jtag->device_select(1);
+	_irlen = 6;
 
 	return true;
 }
@@ -296,10 +298,14 @@ void Xilinx::program(unsigned int offset, bool unprotect_flash)
 		return;
 	}
 
-	if (_mode == Device::SPI_MODE)
+	if (_mode == Device::SPI_MODE) {
 		program_spi(bit, offset, unprotect_flash);
-	else
-		program_mem(bit);
+	} else {
+		if (_fpga_family == SPARTAN3_FAMILY)
+			xc3s_flow_program(bit);
+		else
+			program_mem(bit);
+	}
 
 	delete bit;
 }
@@ -321,7 +327,10 @@ bool Xilinx::load_bridge()
 	try {
 		BitParser bridge(bitname, true, _verbose);
 		bridge.parse();
-		program_mem(&bridge);
+		if (_fpga_family == SPARTAN3_FAMILY)
+			xc3s_flow_program(&bridge);
+		else
+			program_mem(&bridge);
 	} catch (std::exception &e) {
 		printError(e.what());
 		throw std::runtime_error(e.what());
@@ -484,26 +493,115 @@ bool Xilinx::dumpFlash(uint32_t base_addr, uint32_t len)
 	return SPIInterface::dump(base_addr, len);
 }
 
-/*                                */
-/* internal flash (xc95)          */
-/* based on ISE xx_1532.bsd files */
-/*                                */
+/* flow program for xc3s (legacy mode)          */
+/* based on ISE spartan3/data/xx_1532.bsd files */
+/*                                              */
+
+bool Xilinx::xc3s_flow_program(ConfigBitstreamParser *bit)
+{
+	int byte_length = bit->getLength() / 8;
+	int burst_len = byte_length / 100;
+	uint8_t *data = bit->getData();
+	int tx_len = burst_len * 8, tx_end = Jtag::SHIFT_DR;
+	ProgressBar progress("Flash SRAM", byte_length, 50, _quiet);
+
+	flow_enable();
+
+	if (_jtag->shiftIR(JPROGRAM, _irlen) < 0)
+		return false;
+
+	/* wait until memory cleared (DS099 v3.1 fig.30 p.52) */
+	uint8_t tx_buf = BYPASS, rx_buf;
+	do {
+		if (_jtag->shiftIR(&tx_buf, &rx_buf, _irlen) < 0)
+			return false;
+	} while (!(rx_buf & 0x10)); // wait until INIT
+
+	if (_jtag->shiftIR(JSHUTDOWN, _irlen) < 0)
+		return false;
+	_jtag->toggleClk(16);
+	if (_jtag->shiftIR(CFG_IN, _irlen) < 0)
+		return false;
+
+	for (int i = 0;byte_length > 0; byte_length-=burst_len, data+=burst_len) {
+		if (burst_len > byte_length) {
+			tx_len = byte_length * 8;
+			tx_end = Jtag::RUN_TEST_IDLE;
+		}
+		if (_jtag->shiftDR(data, NULL, tx_len, tx_end) < 0) {
+			progress.fail();
+			return false;
+		}
+		_jtag->flush();
+		progress.display(i);
+		i+= burst_len;
+	}
+	progress.done();
+	_jtag->toggleClk(1);
+	if (_jtag->shiftIR(JSTART, _irlen) < 0)
+		return false;
+	_jtag->toggleClk(32);
+	if (_jtag->shiftIR(BYPASS, _irlen) < 0)
+		return false;
+	data[0] = 0x00;
+	if (_jtag->shiftDR(data, NULL, 1) < 0)
+		return false;
+	_jtag->toggleClk(1);
+
+	flow_disable();
+	do {
+		if (_jtag->shiftIR(&tx_buf, &rx_buf, _irlen) < 0)
+			return false;
+	} while (!(rx_buf & 0x20)); // wait until DONE
+
+	return true;
+}
 
 void Xilinx::flow_enable()
 {
 	uint8_t xfer_buf = 0x15;
-	_jtag->shiftIR(XC95_ISC_ENABLE, 8);
-	_jtag->shiftDR(&xfer_buf, NULL, 6);
-	_jtag->toggleClk(1);
+	uint8_t isc_enable = XC95_ISC_ENABLE;
+	int drlen = 6, tcklen = 1;
+	if (_fpga_family == SPARTAN3_FAMILY) {
+		xfer_buf = 0x00;
+		isc_enable = ISC_ENABLE;
+		drlen = 5;
+		tcklen = 16;
+	}
+	if (_jtag->shiftIR(isc_enable, _irlen) < 0)
+		return;
+	if (_jtag->shiftDR(&xfer_buf, NULL, drlen) < 0)
+		return;
+	_jtag->toggleClk(tcklen);
 }
 
 void Xilinx::flow_disable()
 {
-	_jtag->shiftIR(XC95_ISC_DISABLE, 8);
-	_jtag->toggleClk((_jtag->getClkFreq() * 100) / 1000000);
-	_jtag->shiftIR(BYPASS, 8);
+	uint8_t isc_disable = XC95_ISC_DISABLE;
+	int tcklen = ((_jtag->getClkFreq() * 100) / 1000000);
+
+	if (_fpga_family == SPARTAN3_FAMILY) {
+		isc_disable = ISC_DISABLE;
+		tcklen = 16;
+	}
+
+	if (_jtag->shiftIR(isc_disable, _irlen) < 0)
+		return;
+	_jtag->toggleClk(tcklen);
+	if (_jtag->shiftIR(BYPASS, _irlen) < 0)
+		return;
+	if (_fpga_family == SPARTAN3_FAMILY) {
+		uint8_t xfer_buf = 0;
+		if (_jtag->shiftDR(&xfer_buf, NULL, 1) < 0)
+			return;
+	}
 	_jtag->toggleClk(1);
 }
+
+/*                                              */
+/* internal flash (xc95)                        */
+/* based on ISE xc9500yy/data/xx_1532.bsd files */
+/*                                              */
 
 bool Xilinx::flow_erase()
 {

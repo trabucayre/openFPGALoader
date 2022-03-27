@@ -45,8 +45,19 @@ class Xilinx: public Device, SPIInterface {
 		void reset() override;
 
 		/* -------------- */
-		/* xc95 managment */
+		/* xc3s managment */
 		/* -------------- */
+
+		/*!
+		 * \brief load SRAM (enable ISC, load
+		 *        and disable ISC
+		 * \return false if something wrong
+		 */
+		bool xc3s_flow_program(ConfigBitstreamParser *bit);
+
+		/* ------------------- */
+		/* xc95/xc3s managment */
+		/* ------------------- */
 
 		/*!
 		 * \brief enable ISC mode
@@ -56,6 +67,11 @@ class Xilinx: public Device, SPIInterface {
 		 * \brief disable ISC mode
 		 */
 		void flow_disable();
+
+		/* -------------- */
+		/* xc95 managment */
+		/* -------------- */
+
 		/*!
 		 * \brief erase internal flash
 		 * \return false if something wrong
@@ -166,6 +182,7 @@ class Xilinx: public Device, SPIInterface {
 		uint16_t _cpld_nb_col; /**< number of cols in a row */
 		uint16_t _cpld_addr_size; /**< number of addr bits */
 		char _cpld_base_name[7]; /**< cpld name (without package size) */
+		int _irlen; /**< IR bit length */
 };
 
 #endif
