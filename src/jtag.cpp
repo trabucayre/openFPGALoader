@@ -65,7 +65,7 @@ using namespace std;
 Jtag::Jtag(cable_t &cable, const jtag_pins_conf_t *pin_conf, string dev,
 			const string &serial, uint32_t clkHZ, int8_t verbose,
 			const bool invert_read_edge, const string &firmware_path):
-			_verbose(verbose),
+			_verbose(verbose > 1),
 			_state(RUN_TEST_IDLE),
 			_tms_buffer_size(128), _num_tms(0),
 			_board_name("nope"), device_index(0)
@@ -127,6 +127,7 @@ void Jtag::init_internal(cable_t &cable, const string &dev, const string &serial
 
 int Jtag::detectChain(int max_dev)
 {
+	char message[256];
 	unsigned char rx_buff[4];
 	/* WA for CH552/tangNano: write is always mandatory */
 	unsigned char tx_buff[4] = {0xff, 0xff, 0xff, 0xff};
@@ -139,11 +140,19 @@ int Jtag::detectChain(int max_dev)
 	go_test_logic_reset();
 	set_state(SHIFT_DR);
 
+	if (_verbose)
+		printInfo("Raw IDCODE:");
+
 	for (int i = 0; i < max_dev; i++) {
 		read_write(tx_buff, rx_buff, 32, (i == max_dev-1)?1:0);
 		tmp = 0;
 		for (int ii=0; ii < 4; ii++)
 			tmp |= (rx_buff[ii] << (8*ii));
+
+		if (_verbose) {
+			snprintf(message, sizeof(message), "- %d -> 0x%08x", i, tmp);
+			printInfo(message);
+		}
 
 		/* search IDCODE in fpga_list and misc_dev_list
 		 * since most device have idcode with high nibble masked
