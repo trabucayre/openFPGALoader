@@ -108,8 +108,16 @@ Lattice:
 
   - Description: ECP5
     Model:
-      - 25F
-      - 5G 85F
+      - LFE5U-12
+      - LFE5U-25
+      - LFE5U-45
+      - LFE5U-85
+      - LFE5UM-25
+      - LFE5UM-45
+      - LFE5UM-85
+      - LFE5UM5G-25
+      - LFE5UM5G-45
+      - LFE5UM5G-85
     URL: http://www.latticesemi.com/Products/FPGAandCPLD/ECP5
     Memory: OK
     Flash: OK
