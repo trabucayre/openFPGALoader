@@ -15,7 +15,7 @@ typedef enum {
 	STATR = 0,  /* status register */
 	FUNCR = 1,  /* function register */
 	CONFR = 2,  /* configuration register */
-	NONER = 99, /* configuration register */
+	NONER = 99, /* "none" register */
 } tb_loc_t;
 
 typedef struct {
@@ -132,9 +132,9 @@ static std::map <uint32_t, flash_t> flash_list = {
 		.sector_erase = true,
 		.subsector_erase = true,
 		.has_extended = false,
-		.tb_otp = true,
-		.tb_offset = (1 << 1),
-		.tb_register = FUNCR,
+		.tb_otp = false,
+		.tb_offset = 0,
+		.tb_register = NONER,
 		.bp_len = 4,
 		.bp_offset = {(1 << 2), (1 << 3), (1 << 4), (1 << 5)}}
 	},
