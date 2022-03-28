@@ -184,7 +184,7 @@ int FTDIpp_MPSSE::close_device()
 		/* libusb_attach_kernel_driver is only available on Linux. */
 		if (_ftdi->module_detach_mode == AUTO_DETACH_SIO_MODULE) {
 			rtn = libusb_attach_kernel_driver(_ftdi->usb_dev, _ftdi->interface);
-			if( rtn != 0)
+			if( rtn != 0 && rtn != LIBUSB_ERROR_NOT_FOUND)
 				fprintf(stderr, "detach error %d\n", rtn);
 		}
 #endif
