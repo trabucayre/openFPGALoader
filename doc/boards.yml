@@ -341,6 +341,13 @@
   Flash: OK (DFU)
   Constraints: OrangeCrab-r0.2
 
+- ID: papilio_one
+  Description: Papilio One
+  URL: https://papilio.cc/index.php?n=Papilio.PapilioOne
+  FPGA: Spartan3E xc3s500e-vq100
+  Memory: OK
+  Flash: OK
+
 - ID: pipistrello
   Description: Saanlima Pipistrello LX45
   URL: http://pipistrello.saanlima.com/index.php?title=Welcome_to_Pipistrello
