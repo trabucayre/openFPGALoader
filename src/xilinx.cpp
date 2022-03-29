@@ -65,6 +65,8 @@ Xilinx::Xilinx(Jtag *jtag, const std::string &filename,
 		_fpga_family = ZYNQMP_FAMILY;
 	} else if (family == "kintex7") {
 		_fpga_family = KINTEX_FAMILY;
+	} else if (family == "kintexus") {
+		_fpga_family = KINTEXUS_FAMILY;
 	} else if (family == "spartan3") {
 		_fpga_family = SPARTAN3_FAMILY;
 		if (_mode != Device::MEM_MODE) {
