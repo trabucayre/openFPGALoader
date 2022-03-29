@@ -31,6 +31,8 @@ static std::map <int, fpga_model> fpga_list = {
 	{0x03651093, {"xilinx", "kintex7", "xc7k325t", 6}},
 	{0x03656093, {"xilinx", "kintex7", "xc7k410t", 6}},
 
+	{0x13822093, {"xilinx", "kintexus", "xcku040", 6}},
+
 	{0x01414093, {"xilinx", "spartan3", "xc3s200",  6}},
 	{0x01c22093, {"xilinx", "spartan3", "xc3s500e", 6}},
 
@@ -65,9 +67,11 @@ static std::map <int, fpga_model> fpga_list = {
 	 */
 	{0x08e22126, {"xilinx", "zynqmp_cfgn", "xczu2cg", 4}},
 	{0x08e70126, {"xilinx", "zynqmp_cfgn", "xczu9eg", 4}},
+	{0x08e80126, {"xilinx", "zynqmp_cfgn","xczu11eg", 4}},
 
 	{0x04711093, {"xilinx", "zynqmp",      "xczu2cg", 6}},
 	{0x04738093, {"xilinx", "zynqmp",      "xczu9eg", 6}},
+	{0x04740093, {"xilinx", "zynqmp",     "xczu11eg", 6}},
 
 	{0x020f20dd, {"altera", "cyclone III/IV", "EP3C16/EP4CE15", 10}},
 
