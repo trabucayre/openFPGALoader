@@ -646,7 +646,7 @@ int SPIFlash::enable_protection(uint32_t length)
 	 * check if tb is already set and if not warn
 	 * current (temporary) policy: do nothing
 	 */
-	if (_flash_model->tb_otp) {
+	if (_flash_model->tb_otp && _flash_model->tb_register != NONER) {
 		uint8_t tb = get_tb();
 		/* check if TB is set */
 		if (tb == 0) {
@@ -682,6 +682,10 @@ int SPIFlash::enable_protection(uint32_t length)
 
 	/* update status register */
 	int ret = enable_protection(bp);
+
+	/* No TB available -> nothing to do */
+	if (_flash_model->tb_register == NONER)
+		return ret;
 
 	/* tb is in different register */
 	if (_flash_model->tb_register != STATR) {
@@ -729,6 +733,9 @@ int8_t SPIFlash::get_tb()
 		break;
 	case CONFR:  // function register
 		_spi->spi_put(FLASH_RDCR, NULL, &status, 1);
+		break;
+	case NONER:  // no TB bit
+		return 0;
 		break;
 	default:  // unknown
 		printError("Unknown Top/Bottom register");
