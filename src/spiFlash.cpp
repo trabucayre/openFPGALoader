@@ -311,10 +311,6 @@ int SPIFlash::erase_and_prog(int base_addr, uint8_t *data, int len)
 		if ((status & 0x1c) != 0)
 			must_relock = true;
 	}
-	if ((_jedec_id >> 8) == 0xbf258d) {
-		if ((status & 0x1c) != 0)
-			must_relock = true;
-	}
 
 	/* if it's needs to unlock */
 	if (must_relock) {
