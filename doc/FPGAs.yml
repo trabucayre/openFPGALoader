@@ -190,6 +190,13 @@ Xilinx:
     Memory: OK
     Flash: OK
 
+  - Description: Kintex UltraScale
+    Model:
+      - xcku040
+    URL: https://www.xilinx.com/products/silicon-devices/fpga/kintex-ultrascale.html#productTable
+    Memory: OK
+    Flash: NA
+
   - Description: Spartan 3
     Model:
       - xc3s200
@@ -252,7 +259,10 @@ Xilinx:
     Flash: NA
 
   - Description: ZynqMPSoC
-    Model: xczu2cg
+    Model:
+      - xczu2cg
+      - xczu9eg
+      - xczu11eg
     URL: https://www.xilinx.com/products/silicon-devices/soc/zynq-ultrascale-mpsoc.html
     Memory: OK
     Flash: NA
