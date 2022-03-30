@@ -334,6 +334,9 @@ int SPIFlash::erase_and_prog(int base_addr, uint8_t *data, int len)
 	int size = 0;
 	for (int addr = 0; addr < len; addr += size, ptr+=size) {
 		size = (addr + 256 > len)?(len-addr) : 256;
+		if ((_jedec_id >> 8) == 0xbf258d) {
+			size = 1;
+		}
 		if (write_page(base_addr + addr, ptr, size) == -1)
 			return -1;
 		progress.display(addr);
