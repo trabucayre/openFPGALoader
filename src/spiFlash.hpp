@@ -108,6 +108,12 @@ class SPIFlash {
 		 */
 		int8_t get_tb();
 
+		/*!
+		 * \brief retrieve BP (Block protect) bit from status register
+		 * \return BP
+		 */
+		uint8_t get_bp();
+
 	public:
 		/*!
 		 * \brief convert block protect to len in byte

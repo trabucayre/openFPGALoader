@@ -78,10 +78,30 @@ SPIFlash::SPIFlash(SPIInterface *spi, bool unprotect, int8_t verbose):
 
 int SPIFlash::bulk_erase()
 {
-	if (write_enable() == -1)
-		return -1;
-	_spi->spi_put(FLASH_CE, NULL, NULL, 0);
-	return _spi->spi_wait(FLASH_RDSR, FLASH_RDSR_WIP, 0x00, 100000, true);
+	int ret, ret2 = 0;
+	uint32_t timeout=100000;
+	uint8_t bp = get_bp();
+	if (bp != 0) {
+		if (!_unprotect) {
+			printError("Error: Can't erase flash: block protection is set");
+			printError("       can't unlock without --unprotect-flash");
+			return -1;
+		}
+
+		if ((ret = disable_protection()) != 0)
+			return ret;
+	}
+
+	if ((ret = write_enable()) != 0)
+		return ret;
+	ret2 = _spi->spi_put(FLASH_CE, NULL, NULL, 0);
+	if (ret2 == 0)
+		ret2 = _spi->spi_wait(FLASH_RDSR, FLASH_RDSR_WIP, 0x00, timeout, true);
+
+	if (bp != 0)
+		ret = enable_protection(bp);
+
+	return ret | ret2;
 }
 
 /* sector -> subsector for micron */
@@ -746,6 +766,21 @@ int8_t SPIFlash::get_tb()
 	}
 
 	return (status & _flash_model->tb_offset) ? 1 : 0;
+}
+
+/* read status register and extract bp area */
+uint8_t SPIFlash::get_bp()
+{
+	uint8_t mask = 0;
+	uint8_t status = read_status_reg();
+	if (!_flash_model) {
+		mask = 0x1C;
+	} else {
+		for (int i = 0; i < _flash_model->bp_len; i++)
+			mask |= _flash_model->bp_offset[i];
+	}
+
+	return (status & mask);
 }
 
 /* convert bp area (status register) to len in byte */
