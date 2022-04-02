@@ -67,7 +67,7 @@ Xilinx::Xilinx(Jtag *jtag, const std::string &filename,
 		_fpga_family = KINTEX_FAMILY;
 	} else if (family == "kintexus") {
 		_fpga_family = KINTEXUS_FAMILY;
-	} else if (family == "spartan3") {
+	} else if (family.substr(0, 8) == "spartan3") {
 		_fpga_family = SPARTAN3_FAMILY;
 		if (_mode != Device::MEM_MODE) {
 			throw std::runtime_error("Error: Only load to mem is supported");
@@ -551,10 +551,18 @@ bool Xilinx::xc3s_flow_program(ConfigBitstreamParser *bit)
 	_jtag->toggleClk(1);
 
 	flow_disable();
+	uint8_t mask = 0x20; // Done bit
+	uint32_t idcode = _jtag->get_target_device_id();
+	if (fpga_list[idcode].family == "spartan3e") {
+		mask = 0x10; // ISC done dit
+	}
+	int retry = 100;
 	do {
 		if (_jtag->shiftIR(&tx_buf, &rx_buf, _irlen) < 0)
 			return false;
-	} while (!(rx_buf & 0x20)); // wait until DONE
+		if (_jtag->shiftDR(data, NULL, 1) < 0)
+			return false;
+	} while (!(rx_buf & mask) && (retry-- > 0)); // wait until mask
 
 	return true;
 }
