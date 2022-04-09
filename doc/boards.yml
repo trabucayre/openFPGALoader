@@ -96,14 +96,14 @@
 
 - ID: gatemate_evb_jtag
   Description: Cologne Chip GateMate FPGA Evaluation Board (JTAG mode)
-  URL: https://colognechip.com/programmable-logic/gatemate/
+  URL: https://colognechip.com/programmable-logic/gatemate-evaluation-board/
   FPGA: Cologne Chip GateMate Series
   Memory: OK
   Flash: OK
 
 - ID: gatemate_evb_spi
   Description: Cologne Chip GateMate FPGA Evaluation Board (SPI mode)
-  URL: https://colognechip.com/programmable-logic/gatemate/
+  URL: https://colognechip.com/programmable-logic/gatemate-evaluation-board/
   FPGA: Cologne Chip GateMate Series
   Memory: OK
   Flash: OK

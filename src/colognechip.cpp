@@ -12,13 +12,13 @@
 
 CologneChip::CologneChip(FtdiSpi *spi, const std::string &filename,
 	const std::string &file_type, Device::prog_type_t prg_type,
-	uint16_t rstn_pin, uint16_t done_pin, uint16_t failn_pin, uint16_t oen_pin,
+	uint16_t rstn_pin, uint16_t done_pin, uint16_t fail_pin, uint16_t oen_pin,
 	bool verify, int8_t verbose) :
 	Device(NULL, filename, file_type, verify, verbose), _rstn_pin(rstn_pin),
-		_done_pin(done_pin), _failn_pin(failn_pin), _oen_pin(oen_pin)
+		_done_pin(done_pin), _fail_pin(fail_pin), _oen_pin(oen_pin)
 {
 	_spi = spi;
-	_spi->gpio_set_input(_done_pin | _failn_pin);
+	_spi->gpio_set_input(_done_pin | _fail_pin);
 	_spi->gpio_set_output(_rstn_pin | _oen_pin);
 	_ftdi_jtag = nullptr;
 
@@ -49,13 +49,13 @@ CologneChip::CologneChip(Jtag* jtag, const std::string &filename,
 	/* pin configurations valid for both evaluation board and programer */
 	_rstn_pin  = spi_board->reset_pin;
 	_done_pin  = spi_board->done_pin;
-	_failn_pin = DBUS6;
+	_fail_pin = DBUS6;
 	_oen_pin   = spi_board->oe_pin;
 
 	/* cast _jtag->_jtag from JtagInterface to FtdiJtagMPSSE to access GPIO */
 	_ftdi_jtag = reinterpret_cast<FtdiJtagMPSSE *>(_jtag->_jtag);
 
-	_ftdi_jtag->gpio_set_input(_done_pin | _failn_pin);
+	_ftdi_jtag->gpio_set_input(_done_pin | _fail_pin);
 	_ftdi_jtag->gpio_set_output(_rstn_pin | _oen_pin);
 
 	if (prg_type == Device::WR_SRAM) {
@@ -82,8 +82,8 @@ void CologneChip::reset()
 }
 
 /**
- * Obtain CFG_DONE and ~CFG_FAILED signals. Configuration is successfull iff
- * CFG_DONE=true and ~CFG_FAILED=false.
+ * Obtain CFG_DONE and CFG_FAILED signals. Configuration is successfull iff
+ * CFG_DONE=true and CFG_FAILED=false.
  */
 bool CologneChip::cfgDone()
 {
@@ -94,7 +94,7 @@ bool CologneChip::cfgDone()
 		status = _ftdi_jtag->gpio_get(true);
 	}
 	bool done = (status & _done_pin) > 0;
-	bool fail = (status & _failn_pin) == 0;
+	bool fail = (status & _fail_pin) > 0;
 	return (done && !fail);
 }
 
