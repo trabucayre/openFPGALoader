@@ -28,6 +28,9 @@
 #include "dirtyJtag.hpp"
 #include "part.hpp"
 #include "usbBlaster.hpp"
+#ifdef ENABLE_XVC_CLIENT
+#include "xvc_client.hpp"
+#endif
 
 using namespace std;
 
@@ -114,6 +117,11 @@ void Jtag::init_internal(cable_t &cable, const string &dev, const string &serial
 #ifdef ENABLE_CMSISDAP
 	case MODE_CMSISDAP:
 		_jtag = new CmsisDAP(cable.config.vid, cable.config.pid, _verbose);
+		break;
+#endif
+#ifdef ENABLE_XVC_CLIENT
+	case MODE_XVC_CLIENT:
+		_jtag = new XVC_client("127.0.0.1", clkHZ, _verbose);
 		break;
 #endif
 	default:

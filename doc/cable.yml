@@ -222,3 +222,10 @@ usb-blasterII:
   - Name: intel USB Blaster II interface
     Description: JTAG programmer cable from intel/altera (EZ-USB FX2 + EPM570)
     URL: https://www.intel.com/content/dam/www/programmable/us/en/pdfs/literature/ug/ug_usb_blstr_ii_cable.pdf
+
+
+xvc-client:
+
+  - Name: Xilinx Virtual Cable
+    Description: Xilinx Virtual Cable (XVC) is a TCP/IP-based protocol that acts like a JTAG cable.
+    URL: https://github.com/Xilinx/XilinxVirtualCable
