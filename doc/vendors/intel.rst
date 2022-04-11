@@ -21,7 +21,7 @@ SVF and RBF files are supported.
 
 .. code-block:: bash
 
-    quartus_cpf -c -q -g 3.3 -n 12.0MHz p project_name.sof project_name.svf
+    quartus_cpf -c -q 12.0MHz -g 3.3 -n p project_name.sof project_name.svf
 
 ``sof`` to ``rbf`` generation:
 
