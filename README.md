@@ -76,6 +76,7 @@ openFPGALoader -- a program to flash FPGA
       --freq arg            jtag frequency (Hz)
   -f, --write-flash         write bitstream in flash (default: false)
       --index-chain arg     device index in JTAG-chain
+      --ip arg              IP address (only for XVC client)
       --list-boards         list all supported boards
       --list-cables         list all supported cables
       --list-fpga           list all supported FPGA

@@ -64,6 +64,7 @@ struct arguments {
 	int16_t altsetting;
 	uint16_t vid;
 	uint16_t pid;
+	string ip_adr;
 	uint32_t protect_flash;
 	bool unprotect_flash;
 	string flash_sector;
@@ -82,7 +83,8 @@ int main(int argc, char **argv)
 	/* command line args. */
 	struct arguments args = {0, false, false, false, 0, "", "", "-", "", -1,
 			0, false, "-", false, false, false, false, Device::PRG_NONE, false,
-			false, false, "", "", "", -1, 0, false, -1, 0, 0, 0, false, ""};
+			false, false, "", "", "", -1, 0, false, -1, 0, 0, "127.0.0.1",
+			0, false, ""};
 	/* parse arguments */
 	try {
 		if (parse_opt(argc, argv, &args, &pins_config))
@@ -370,7 +372,7 @@ int main(int argc, char **argv)
 	Jtag *jtag;
 	try {
 		jtag = new Jtag(cable, &pins_config, args.device, args.ftdi_serial,
-				args.freq, args.verbose, args.invert_read_edge,
+				args.freq, args.verbose, args.ip_adr, args.invert_read_edge,
 				args.probe_firmware);
 	} catch (std::exception &e) {
 		printError("JTAG init failed with: " + string(e.what()));
@@ -610,6 +612,8 @@ int parse_opt(int argc, char **argv, struct arguments *args, jtag_pins_conf_t *p
 				"write bitstream in flash (default: false)")
 			("index-chain",  "device index in JTAG-chain",
 				cxxopts::value<int>(args->index_chain))
+			("ip", "IP address (only for XVC client)",
+				cxxopts::value<string>(args->ip_adr))
 			("list-boards", "list all supported boards",
 				cxxopts::value<bool>(args->list_boards))
 			("list-cables", "list all supported cables",

@@ -67,6 +67,7 @@ using namespace std;
 
 Jtag::Jtag(cable_t &cable, const jtag_pins_conf_t *pin_conf, string dev,
 			const string &serial, uint32_t clkHZ, int8_t verbose,
+			const string &ip_adr,
 			const bool invert_read_edge, const string &firmware_path):
 			_verbose(verbose > 1),
 			_state(RUN_TEST_IDLE),
@@ -74,7 +75,7 @@ Jtag::Jtag(cable_t &cable, const jtag_pins_conf_t *pin_conf, string dev,
 			_board_name("nope"), device_index(0)
 {
 	init_internal(cable, dev, serial, pin_conf, clkHZ, firmware_path,
-			invert_read_edge);
+			invert_read_edge, ip_adr);
 	detectChain(5);
 }
 
@@ -86,7 +87,7 @@ Jtag::~Jtag()
 
 void Jtag::init_internal(cable_t &cable, const string &dev, const string &serial,
 	const jtag_pins_conf_t *pin_conf, uint32_t clkHZ, const string &firmware_path,
-	const bool invert_read_edge)
+	const bool invert_read_edge, const string &ip_adr)
 {
 	switch (cable.type) {
 	case MODE_ANLOGICCABLE:
@@ -121,7 +122,7 @@ void Jtag::init_internal(cable_t &cable, const string &dev, const string &serial
 #endif
 #ifdef ENABLE_XVC_CLIENT
 	case MODE_XVC_CLIENT:
-		_jtag = new XVC_client("127.0.0.1", clkHZ, _verbose);
+		_jtag = new XVC_client(ip_adr, clkHZ, _verbose);
 		break;
 #endif
 	default:
