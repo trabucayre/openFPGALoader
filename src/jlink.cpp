@@ -702,7 +702,11 @@ bool Jlink::jlink_scan_usb()
 	// request interface
 	jlink_interface = device_available[0].if_idx;
 	int cfg_idx = device_available[0].cfg_idx;
-	libusb_claim_interface(jlink_handle, jlink_interface);
+	ret = libusb_claim_interface(jlink_handle, jlink_interface);
+	if (ret != 0) {
+		printError("Fail to claim interface");
+		return false;
+	}
 
 	// search for IN and OUT endpoint
 	struct libusb_config_descriptor *cfg;
