@@ -57,6 +57,17 @@ class Jlink: public JtagInterface {
 		int writeTDI(uint8_t *tx, uint8_t *rx, uint32_t len, bool end) override;
 
 		/*!
+		 * \brief access ll_write outer this class / directly receives
+		 *        fully filled tms, tdi buffers, and optionnally tdo
+		 * \param[in] tms: tms buffer
+		 * \param[in] tdi: tdi buffer
+		 * \param[out] tdo: tdo buffer
+		 * \param[in] numbits: tms/tdi/tdo buffer size (in bit)
+		 */
+		bool writeTMSTDI(const uint8_t *tms, const uint8_t *tdi, uint8_t *tdo,
+				uint32_t numbits);
+
+		/*!
 		 * \brief send a serie of clock cycle with constant TMS and TDI
 		 * \param[in] tms: tms state
 		 * \param[in] tdi: tdi state
@@ -87,16 +98,6 @@ class Jlink: public JtagInterface {
 		int get_hw_version();
 		bool get_result();
 		bool max_mem_block(uint32_t *max_mem);
-
-		/*!
-		 * \brief test method to access ll_write outer this class
-		 * \param[in] tms: tms buffer
-		 * \param[in] tdi: tdi buffer
-		 * \param[out] tdo: tdo buffer
-		 * \param[in] numbits: tms/tdi/tdo buffer size (in bit)
-		 */
-		bool write_data(const uint8_t *tms, const uint8_t *tdi, uint8_t *tdo,
-				uint16_t numbits);
 
 	private:
 		// Jlink EMU_CMD code

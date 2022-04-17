@@ -192,6 +192,46 @@ int Jlink::flush()
 	return ll_write(NULL);
 }
 
+bool Jlink::writeTMSTDI(const uint8_t *tms, const uint8_t *tdi, uint8_t *tdo,
+		uint32_t numbits)
+{
+	// use pointer to access all vectors
+	const uint8_t *tms_ptr = tms;
+	const uint8_t *tdi_ptr = tdi;
+	uint8_t *tdo_ptr = tdo;
+
+	uint32_t xfer_len = 0;
+
+	while (numbits > 0) {
+		// if bits to send are greater than internal buffer
+		// limits to buffer size
+		if (numbits > (BUF_SIZE * 8))
+			xfer_len = BUF_SIZE * 8;
+		else  // or direct xfer
+			xfer_len = numbits;
+		// convert size in Byte
+		uint16_t numbytes = (xfer_len + 7) >> 8;
+
+		// copy buffers to internals
+		memcpy(_tms, tms_ptr, numbytes);
+		memcpy(_tdi, tdi_ptr, numbytes);
+		// save size to transmit
+		_num_bits = xfer_len;
+		// send
+		if (!ll_write(tdo_ptr))
+			return false;
+		// decrement bits to send
+		numbits -= xfer_len;
+		// move pointers
+		tms_ptr += numbytes;
+		tdi_ptr += numbytes;
+		if (tdo)
+			tdo_ptr += numbytes;
+	}
+
+	return true;
+}
+
 bool Jlink::ll_write(uint8_t *tdo)
 {
 	if (_num_bits == 0)
@@ -574,19 +614,6 @@ void Jlink::read_config()
 		}
 		printf("\n");
 	}
-}
-
-bool Jlink::write_data(const uint8_t *tms, const uint8_t *tdi, uint8_t *tdo,
-		uint16_t numbits)
-{
-	if (numbits > (BUF_SIZE * 8))
-		numbits = BUF_SIZE * 8;
-	uint16_t numbytes = (numbits +7) >> 8;
-
-	memcpy(_tms, tms, numbytes);
-	memcpy(_tdi, tdi, numbytes);
-	_num_bits = numbits;
-	return ll_write(tdo);
 }
 
 bool Jlink::jlink_search_interface(libusb_device *dev,
