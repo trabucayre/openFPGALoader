@@ -478,6 +478,9 @@ void SPIFlash::display_status_reg(uint8_t reg)
 		tb = (reg >> 5) & 0x01;
 		bp = (((reg >> 6) & 0x01) << 3) | ((reg >> 2) & 0x07);
 	} else if (_flash_model->bp_len == 0) {
+		tb = 0;
+		bp = 0;
+	} else {
 		tb = (reg & _flash_model->tb_offset) ? 1 : 0;
 		bp = 0;
 		for (int i = 0; i < _flash_model->bp_len; i++)
