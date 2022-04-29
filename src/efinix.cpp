@@ -42,6 +42,8 @@ Efinix::Efinix(Jtag* jtag, const std::string &filename,
 	_spi(NULL), _rst_pin(0), _done_pin(0), _cs_pin(0),
 	_oe_pin(0)
 {
+	_ftdi_jtag = reinterpret_cast<FtdiJtagMPSSE *>(jtag);
+
 	/* WA: before using JTAG, device must restart with cs low
 	 *     but cs and rst for xyloni are connected to interfaceA (ie SPI)
 	 *     TODO: some boards have cs, reset and done in both interface
@@ -56,7 +58,8 @@ Efinix::Efinix(Jtag* jtag, const std::string &filename,
 	} else if (board_name == "titanium_ti60_f225_jtag") {
 		spi_board_name = "titanium_ti60_f225";
 	} else {
-		throw std::runtime_error("Error: unknown board name");
+		printInfo("Using efinix JTAG interface (no GPIO)");
+		return;
 	}
 
 	/* 2: retrieve spi board */
@@ -73,7 +76,6 @@ Efinix::Efinix(Jtag* jtag, const std::string &filename,
 	/* 5: open SPI interface */
 	_spi = new FtdiSpi(spi_cable->config, spi_board->spi_pins_config,
 			jtag->getClkFreq(), verbose > 0);
-	_ftdi_jtag = reinterpret_cast<FtdiJtagMPSSE *>(jtag);
 
 	/* 6: configure pins direction and default state */
 	_spi->gpio_set_output(_oe_pin | _rst_pin | _cs_pin);
@@ -111,7 +113,7 @@ void Efinix::program(unsigned int offset, bool unprotect_flash)
 		if (_file_extension == "hex") {
 			bit = new EfinixHexParser(_filename);
 		} else {
-			if (offset == 0) {
+			if (offset == 0 && _spi) {
 				printError("Error: can't write raw data at the beginning of the flash");
 				throw std::exception();
 			}
@@ -225,13 +227,15 @@ void Efinix::programJTAG(uint8_t *data, int length)
 	int xfer_len = 512, tx_end;
 	uint8_t tx[512];
 
-	/* trion has to be reseted with cs low */
-	_spi->gpio_clear(_oe_pin | _cs_pin | _rst_pin);
-	usleep(30000);
-	_spi->gpio_set(_rst_pin);  // assert RST
-	usleep(50000);
-	_spi->gpio_set(_oe_pin | _rst_pin);  // release OE
-	usleep(50000);
+	if(_spi) {
+		/* trion has to be reseted with cs low */
+		_spi->gpio_clear(_oe_pin | _cs_pin | _rst_pin);
+		usleep(30000);
+		_spi->gpio_set(_rst_pin);  // assert RST
+		usleep(50000);
+		_spi->gpio_set(_oe_pin | _rst_pin);  // release OE
+		usleep(50000);
+	}
 
 	/* force run_test_idle state */
 	_jtag->set_state(Jtag::RUN_TEST_IDLE);
