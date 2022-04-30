@@ -55,11 +55,10 @@ bool SPIInterface::protect_flash(uint32_t len)
 bool SPIInterface::unprotect_flash()
 {
 	bool ret = true;
-	printInfo("unprotect_flash: ", false);
 
 	/* move device to spi access */
 	if (!prepare_flash_access()) {
-		printError("Fail");
+		printError("SPI Flash prepare access failed");
 		return false;
 	}
 
@@ -68,13 +67,14 @@ bool SPIInterface::unprotect_flash()
 		SPIFlash flash(this, false, _spif_verbose);
 
 		/* configure flash protection */
-		ret = flash.disable_protection() != 0;
+		printInfo("unprotect_flash: ", false);
+		ret = (flash.disable_protection() == 0);
 		if (!ret)
 			printError("Fail " + std::to_string(ret));
 		else
 			printSuccess("Done");
 	} catch (std::exception &e) {
-		printError("Fail");
+		printError("SPI Flash access failed: ", false);
 		printError(e.what());
 		ret = false;
 	}
