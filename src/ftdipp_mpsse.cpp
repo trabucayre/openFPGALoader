@@ -74,10 +74,16 @@ FTDIpp_MPSSE::FTDIpp_MPSSE(const mpsse_bit_config &cable, const string &dev,
 
 	ret = (libusb_error)libusb_get_string_descriptor_ascii(_ftdi->usb_dev,
 		usb_desc.iProduct, _iproduct, 200);
+	/* when FTDI device has no iProduct, libusb return an error
+	 * but there is no distinction between
+	 * real error and empty field
+	 */
 	if (ret < 0) {
-		snprintf(err, sizeof(err), "unable to get string descriptor: %d %s %s",
-			ret, libusb_error_name(ret), libusb_strerror(ret));
-		throw std::runtime_error(err);
+		snprintf(err, sizeof(err),
+			"Can't read iProduct field from FTDI: "
+			"considered as empty string");
+		printWarn(err);
+		memset(_iproduct,'\0', 200);
 	}
 }
 
