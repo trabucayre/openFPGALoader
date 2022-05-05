@@ -109,6 +109,7 @@ else:
         "5ce223"    : "5CEFA2F23I7",
         "5ce523"    : "5CEFA5F23I7",
         "5ce423"    : "5CEBA4F23C8",
+        "5ce927"    : "5CEBA9F27C7",
         "5cse423"   : "5CSEMA4U23C6",
         "5cse623"   : "5CSEBA6U23I7"}[part]
     files.append({'name': currDir + 'altera_spiOverJtag.v',
