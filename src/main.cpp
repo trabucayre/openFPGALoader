@@ -68,6 +68,7 @@ struct arguments {
 	uint32_t protect_flash;
 	bool unprotect_flash;
 	string flash_sector;
+	bool skip_load_bridge;
 };
 
 int parse_opt(int argc, char **argv, struct arguments *args, jtag_pins_conf_t *pins_config);
@@ -84,7 +85,7 @@ int main(int argc, char **argv)
 	struct arguments args = {0, false, false, false, 0, "", "", "-", "", -1,
 			0, false, "-", false, false, false, false, Device::PRG_NONE, false,
 			false, false, "", "", "", -1, 0, false, -1, 0, 0, "127.0.0.1",
-			0, false, ""};
+			0, false, "", false};
 	/* parse arguments */
 	try {
 		if (parse_opt(argc, argv, &args, &pins_config))
@@ -466,7 +467,8 @@ int main(int argc, char **argv)
 				args.prg_type, args.fpga_part, args.verify, args.verbose);
 		} else if (fab == "altera") {
 			fpga = new Altera(jtag, args.bit_file, args.file_type,
-				args.prg_type, args.fpga_part, args.verify, args.verbose);
+				args.prg_type, args.fpga_part, args.verify, args.verbose,
+				args.skip_load_bridge);
 		} else if (fab == "anlogic") {
 			fpga = new Anlogic(jtag, args.bit_file, args.file_type,
 				args.prg_type, args.verify, args.verbose);
@@ -634,6 +636,8 @@ int parse_opt(int argc, char **argv, struct arguments *args, jtag_pins_conf_t *p
 				cxxopts::value<bool>(quiet))
 			("r,reset",   "reset FPGA after operations",
 				cxxopts::value<bool>(args->reset))
+			("skip-load-bridge", "skip writing bridge to SRAM when in write-flash mode",
+				cxxopts::value<bool>(args->skip_load_bridge))
 			("spi",   "SPI mode (only for FTDI in serial mode)",
 				cxxopts::value<bool>(args->spi))
 			("unprotect-flash",   "Unprotect flash blocks",
