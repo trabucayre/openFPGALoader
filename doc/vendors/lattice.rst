@@ -16,12 +16,15 @@ File load:
 
 .. code-block:: bash
 
-    openFPGALoader [-b yourboard] impl1/*.jed
+    openFPGALoader [-b yourboard] [--flash-sector CFG0] impl1/*.jed
 
 where ``yourboard`` may be:
 
 * ``machX02EVN``
+* ``machX03EVN``
 * ``machXO3SK``
+
+and where ``--flash-sector CFG0`` is needed for the MachXO3D Breakout Board.
 
 SRAM
 ----
@@ -37,6 +40,7 @@ File load:
 where ``yourboard`` may be:
 
 * ``machX02EVN``
+* ``machX03EVN``
 * ``machXO3SK``
 
 iCE40
