@@ -535,6 +535,13 @@
   Memory: OK
   Flash: NA
 
+- ID: zcu106
+  Description: Xilinx ZCU106
+  URL: https://www.xilinx.com/products/boards-and-kits/zcu106.html
+  FPGA: zynqMPSoC XCZU7EV
+  Memory: OK
+  Flash: NA
+
 - ID: zedboard
   Description: Avnet ZedBoard
   URL: https://www.avnet.com/wps/portal/us/products/avnet-boards/avnet-board-families/zedboard/
