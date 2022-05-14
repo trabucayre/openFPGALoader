@@ -6,6 +6,7 @@
 #ifndef PART_HPP
 #define PART_HPP
 
+#include <cstdint>
 #include <map>
 #include <string>
 
@@ -17,7 +18,7 @@ typedef struct {
 } fpga_model;
 
 /* Highest nibble (version) must always be set to 0 */
-static std::map <int, fpga_model> fpga_list = {
+static std::map <uint32_t, fpga_model> fpga_list = {
 	{0x0a014c35, {"anlogic", "eagle s20", "EG4S20BG256", 8}},
 	{0x00004c37, {"anlogic", "elf2", "EF2M45", 8}},
 
