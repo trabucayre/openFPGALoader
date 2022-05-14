@@ -190,6 +190,7 @@ static std::map <std::string, target_board_t> board_list = {
 	JTAG_BOARD("titanium_ti60_f225_jtag", "","efinix_jtag_ft4232",  0, 0, CABLE_DEFAULT),
 	JTAG_BOARD("zc706",           "xc7z045ffg900", "jtag-smt2-nc", 0, 0, CABLE_DEFAULT),
 	JTAG_BOARD("zcu102",          "xczu9egffvb1156", "jtag-smt2-nc", 0, 0, CABLE_DEFAULT),
+	JTAG_BOARD("zcu106",          "xczu9egffvb1156", "jtag-smt2-nc", 0, 0, CABLE_DEFAULT),
 	JTAG_BOARD("zedboard",        "xc7z020clg484", "digilent_hs2", 0, 0, CABLE_DEFAULT),
 	JTAG_BOARD("papilio_one",     "xc3s500evq100", "papilio", 0, 0, CABLE_DEFAULT),
 };
