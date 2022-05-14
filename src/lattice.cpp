@@ -193,7 +193,7 @@ Lattice::Lattice(Jtag *jtag, const string filename, const string &file_type,
 		} else if (flash_sector == "PKEY") {
 			_flash_sector = LATTICE_FLASH_PKEY;
 			printInfo("Flash Sector: PKEY", true);
-		} else {
+		} else if (_mode == Device::FLASH_MODE) {
 			printError("Unknown flash sector");
 			throw std::exception();
 		}
