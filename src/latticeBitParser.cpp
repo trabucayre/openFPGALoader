@@ -60,6 +60,18 @@ int LatticeBitParser::parseHeader()
 		return EXIT_FAILURE;
 	}
 
+	/* .bit for MACHXO3D seems to have more 0xff before preamble key */
+	size_t pos = _raw_data.find(0xb3, _endHeader);
+	if (pos == string::npos) {
+		printError("Preamble key not found");
+		return EXIT_FAILURE;
+	}
+	if ((uint8_t)_raw_data[pos-1] != 0xbd && (uint8_t)_raw_data[pos-1] != 0xbf) {
+		printError("Wrong preamble key");
+		return EXIT_FAILURE;
+	}
+	_endHeader = pos - 4;
+
 	/* parse header */
 	istringstream lineStream(_raw_data.substr(currPos, _endHeader-currPos));
 	string buff;
