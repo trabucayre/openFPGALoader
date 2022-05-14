@@ -36,8 +36,14 @@ elif subpart == "xc7a":
     family = "Artix"
     tool = "vivado"
 elif subpart == "xc7k":
-    family = "Kintex 7"
-    tool = "vivado"
+    device_size = int(part.split('k')[1].split('t')[0])
+    if device_size <= 160:
+        family = "Kintex 7"
+        tool = "vivado"
+    else:
+        family = "Kintex7"
+        tool = "ise"
+    speed = -2
 elif subpart == "xc7s":
     family = "Spartan 7"
     tool = "vivado"
@@ -73,6 +79,7 @@ if tool in ["ise", "vivado"]:
         "xc7a200tfbg484"   : "xc7a_fbg484",
         "xc7k325tffg676"   : "xc7k_ffg676",
         "xc7k325tffg900"   : "xc7k_ffg900",
+        "xc7k420tffg901"   : "xc7k_ffg901",
         "xc7s25csga324"    : "xc7s_csga324",
         "xc7s50csga324"    : "xc7s_csga324"
         }[part]
@@ -80,19 +87,27 @@ if tool in ["ise", "vivado"]:
         cst_type = "UCF"
         tool_options = {'family': family,
                         'device': {
-                            "xc3s500evq100": "xc3s500e",
-                            "xc6slx16ftg256": "xc6slx16",
-                            "xc6slx16csg324": "xc6slx16",
-                            "xc6slx45csg324": "xc6slx45",
-                            "xc6slx100fgg484": "xc6slx100",
-                            "xc6slx150tfgg484": "xc6slx150t"}[part],
+                            "xc3s500evq100":    "xc3s500e",
+                            "xc6slx16ftg256":   "xc6slx16",
+                            "xc6slx16csg324":   "xc6slx16",
+                            "xc6slx45csg324":   "xc6slx45",
+                            "xc6slx100fgg484":  "xc6slx100",
+                            "xc6slx150tfgg484": "xc6slx150t",
+                            "xc7k325tffg676":   "xc7k325t",
+                            "xc7k325tffg900":   "xc7k325t",
+                            "xc7k420tffg901":   "xc7k420t",
+                            }[part],
                         'package': {
-                            "xc3s500evq100": "vq100",
-                            "xc6slx16ftg256": "ftg256",
-                            "xc6slx16csg324": "csg324",
-                            "xc6slx45csg324": "csg324",
-                            "xc6slx100fgg484": "fgg384",
-                            "xc6slx150tfgg484": "fgg484"}[part],
+                            "xc3s500evq100":    "vq100",
+                            "xc6slx16ftg256":   "ftg256",
+                            "xc6slx16csg324":   "csg324",
+                            "xc6slx45csg324":   "csg324",
+                            "xc6slx100fgg484":  "fgg384",
+                            "xc6slx150tfgg484": "fgg484",
+                            "xc7k325tffg676":   "ffg676",
+                            "xc7k325tffg900":   "ffg900",
+                            "xc7k420tffg901":   "ffg901",
+                            }[part],
                         'speed' : speed
                 }
     else:
