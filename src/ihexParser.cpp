@@ -95,6 +95,8 @@ int IhexParser::parse()
 			}
 
 			ptr = (char *)&str[DATA_BASE];
+			if (_bit_data.size() < loc_addr + byteLen)
+				_bit_data.resize(2*(loc_addr + byteLen));
 			for (int i = 0; i < byteLen; i++, ptr += 2) {
 				sscanf(ptr, "%2hx", &tmp);
 				_bit_data[loc_addr + i] = (_reverseOrder)? reverseByte(tmp):tmp;
