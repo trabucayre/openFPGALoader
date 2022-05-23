@@ -25,6 +25,7 @@ enum communication_type {
 	MODE_CMSISDAP,         /*! CMSIS-DAP JTAG probe */
 	MODE_DFU,              /*! DFU based probe */
 	MODE_XVC_CLIENT,       /*! Xilinx Virtual Cable client */
+	MODE_LIBGPIOD_BITBANG, /*! Bitbang gpio pins */
 };
 
 typedef struct {
@@ -69,6 +70,7 @@ static std::map <std::string, cable_t> cable_list = {
 	{"usb-blaster",        {MODE_USBBLASTER,   {0x09Fb, 0x6001, 0,           0,    0,    0,    0,    0}}},
 	{"usb-blasterII",      {MODE_USBBLASTER,   {0x09Fb, 0x6810, 0,           0,    0,    0,    0,    0}}},
 	{"xvc-client",         {MODE_XVC_CLIENT,   {}}},
+	{"libgpiod",           {MODE_LIBGPIOD_BITBANG, {}}},
 };
 
 #endif

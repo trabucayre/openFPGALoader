@@ -617,6 +617,14 @@ static int parse_eng(string arg, double *dst) {
 	}
 }
 
+static int get_bit_index(int mask)
+{
+	for (int i = 0; i < 32; i++)
+		if (mask & (1 << i))
+			return i;
+	return -1;
+}
+
 /* arguments parser */
 int parse_opt(int argc, char **argv, struct arguments *args, jtag_pins_conf_t *pins_config)
 {
@@ -649,7 +657,7 @@ int parse_opt(int argc, char **argv, struct arguments *args, jtag_pins_conf_t *p
 
 			("ftdi-serial", "FTDI chip serial number", cxxopts::value<string>(args->ftdi_serial))
 			("ftdi-channel", "FTDI chip channel number (channels 0-3 map to A-D)", cxxopts::value<int>(args->ftdi_channel))
-#ifdef USE_UDEV
+#if defined(USE_UDEV) || defined(ENABLE_LIBGPIOD)
 			("d,device",  "device to use (/dev/ttyUSBx)",
 				cxxopts::value<string>(args->device))
 #endif
@@ -683,7 +691,7 @@ int parse_opt(int argc, char **argv, struct arguments *args, jtag_pins_conf_t *p
 				"write bitstream in SRAM (default: true)")
 			("o,offset",  "start offset in EEPROM",
 				cxxopts::value<unsigned int>(args->offset))
-			("pins", "pin config (only for ft232R) TDI:TDO:TCK:TMS",
+			("pins", "pin config TDI:TDO:TCK:TMS",
 				cxxopts::value<vector<string>>(pins))
 			("probe-firmware", "firmware for JTAG probe (usbBlasterII)",
 				cxxopts::value<string>(args->probe_firmware))
@@ -788,31 +796,25 @@ int parse_opt(int argc, char **argv, struct arguments *args, jtag_pins_conf_t *p
 			}
 
 			static std::map <std::string, int> pins_list = {
-				{"TXD", FT232RL_TXD},
-				{"RXD", FT232RL_RXD},
-				{"RTS", FT232RL_RTS},
-				{"CTS", FT232RL_CTS},
-				{"DTR", FT232RL_DTR},
-				{"DSR", FT232RL_DSR},
-				{"DCD", FT232RL_DCD},
-				{"RI" , FT232RL_RI }};
-
+				{"TXD", get_bit_index(FT232RL_TXD)},
+				{"RXD", get_bit_index(FT232RL_RXD)},
+				{"RTS", get_bit_index(FT232RL_RTS)},
+				{"CTS", get_bit_index(FT232RL_CTS)},
+				{"DTR", get_bit_index(FT232RL_DTR)},
+				{"DSR", get_bit_index(FT232RL_DSR)},
+				{"DCD", get_bit_index(FT232RL_DCD)},
+				{"RI" , get_bit_index(FT232RL_RI) }};
 
 			for (int i = 0; i < 4; i++) {
 				int pin_num;
 				try {
-					pin_num = 1 << std::stoi(pins[i], nullptr, 0);
+					pin_num = std::stoi(pins[i], nullptr, 0);
 				} catch (std::exception &e) {
 					if (pins_list.find(pins[i]) == pins_list.end()) {
 						printError("Invalid pin name");
 						throw std::exception();
 					}
 					pin_num = pins_list[pins[i]];
-				}
-
-				if (pin_num > FT232RL_RI || pin_num < FT232RL_TXD) {
-					printError("Invalid pin ID");
-					throw std::exception();
 				}
 
 				switch (i) {

@@ -21,6 +21,9 @@
 #include "ftdipp_mpsse.hpp"
 #include "ftdiJtagBitbang.hpp"
 #include "ftdiJtagMPSSE.hpp"
+#ifdef ENABLE_LIBGPIOD
+#include "libgpiodJtagBitbang.hpp"
+#endif
 #include "jlink.hpp"
 #ifdef ENABLE_CMSISDAP
 #include "cmsisDAP.hpp"
@@ -130,6 +133,13 @@ void Jtag::init_internal(cable_t &cable, const string &dev, const string &serial
 #else
 		std::cerr << "Jtag: support for xvc-client was not enabled at compile time" << std::endl;
 		throw std::exception();
+#endif
+#ifdef ENABLE_LIBGPIOD
+	case MODE_LIBGPIOD_BITBANG:
+		if (pin_conf == NULL)
+			throw std::exception();
+		_jtag = new LibgpiodJtagBitbang(pin_conf, dev, clkHZ, _verbose);
+		break;
 #endif
 	default:
 		std::cerr << "Jtag: unknown cable type" << std::endl;

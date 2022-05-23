@@ -236,3 +236,10 @@ xvc-server:
   - Name: Xilinx Virtual Cable (server side)
     Description: Xilinx Virtual Cable (XVC) is a TCP/IP-based protocol that acts like a JTAG cable.
     URL: https://github.com/Xilinx/XilinxVirtualCable
+
+
+libgpiod:
+
+  - Name: Bitbang GPIO
+    Description: Bitbang GPIO pins on Linux host.
+    URL: https://github.com/brgl/libgpiod
