@@ -87,6 +87,10 @@ openFPGALoader -- a program to flash FPGA
       --protect-flash arg   protect SPI flash area
       --quiet               Produce quiet output (no progress bar)
   -r, --reset               reset FPGA after operations
+      --skip-load-bridge    skip writing bridge to SRAM when in write-flash
+                            mode
+      --skip-reset          skip resetting the device when in write-flash
+                            mode
       --spi                 SPI mode (only for FTDI in serial mode)
       --unprotect-flash     Unprotect flash blocks
   -v, --verbose             Produce verbose output
