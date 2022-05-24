@@ -20,7 +20,8 @@ class Altera: public Device, SPIInterface {
 				const std::string &file_type,
 				Device::prog_type_t prg_type,
 				const std::string &device_package,
-				bool verify, int8_t verbose);
+				bool verify, int8_t verbose,
+				bool skip_load_bridge);
 		~Altera();
 
 		void programMem(RawParser &_bit);
@@ -64,7 +65,7 @@ class Altera: public Device, SPIInterface {
 				uint32_t timeout, bool verbose = false) override;
 
 	protected:
-		bool prepare_flash_access() override {return load_bridge();}
+		bool prepare_flash_access() override;
 		bool post_flash_access() override {reset(); return true;}
 
 	private:

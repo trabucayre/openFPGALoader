@@ -25,9 +25,10 @@
 
 Altera::Altera(Jtag *jtag, const std::string &filename,
 	const std::string &file_type, Device::prog_type_t prg_type,
-	const std::string &device_package, bool verify, int8_t verbose):
+	const std::string &device_package, bool verify, int8_t verbose,
+	bool skip_load_bridge):
 	Device(jtag, filename, file_type, verify, verbose),
-	SPIInterface(filename, verbose, 256, verify),
+	SPIInterface(filename, verbose, 256, verify, skip_load_bridge),
 	_svf(_jtag, _verbose), _device_package(device_package),
 	_vir_addr(0x1000), _vir_length(14)
 {
@@ -146,6 +147,16 @@ void Altera::programMem(RawParser &_bit)
 	_jtag->toggleClk(1000000/clk_period);
 	/* -> idle */
 	_jtag->set_state(Jtag::RUN_TEST_IDLE);
+}
+
+
+bool Altera::prepare_flash_access()
+{
+	if (_skip_load_bridge) {
+		printInfo("Skip loading bridge for spiOverjtag");
+		return true;
+	}
+	return load_bridge();
 }
 
 bool Altera::load_bridge()
