@@ -20,7 +20,8 @@ class SPIInterface {
  public:
 	SPIInterface();
 	SPIInterface(const std::string &filename, uint8_t verbose,
-			uint32_t rd_burst, bool verify, bool skip_load_bridge = false);
+			uint32_t rd_burst, bool verify, bool skip_load_bridge = false,
+			bool skip_reset = false);
 	virtual ~SPIInterface() {}
 
 	bool protect_flash(uint32_t len);
@@ -98,6 +99,7 @@ class SPIInterface {
 	uint32_t _spif_rd_burst;
 	bool _spif_verify;
 	bool _skip_load_bridge;
+	bool _skip_reset; /*!< don't reset the device after write */
  private:
 	std::string _spif_filename;
 

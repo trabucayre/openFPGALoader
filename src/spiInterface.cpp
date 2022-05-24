@@ -15,10 +15,11 @@ SPIInterface::SPIInterface():_spif_verbose(0), _spif_rd_burst(0),
 {}
 
 SPIInterface::SPIInterface(const std::string &filename, uint8_t verbose,
-		uint32_t rd_burst, bool verify, bool skip_load_bridge):
+		uint32_t rd_burst, bool verify, bool skip_load_bridge,
+		bool skip_reset):
 	_spif_verbose(verbose), _spif_rd_burst(rd_burst),
 	_spif_verify(verify), _skip_load_bridge(skip_load_bridge),
-	_spif_filename(filename)
+	_skip_reset(skip_reset), _spif_filename(filename)
 {}
 
 /* spiFlash generic acces */

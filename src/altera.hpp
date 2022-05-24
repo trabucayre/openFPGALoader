@@ -21,7 +21,7 @@ class Altera: public Device, SPIInterface {
 				Device::prog_type_t prg_type,
 				const std::string &device_package,
 				bool verify, int8_t verbose,
-				bool skip_load_bridge);
+				bool skip_load_bridge, bool skip_reset);
 		~Altera();
 
 		void programMem(RawParser &_bit);
@@ -66,7 +66,7 @@ class Altera: public Device, SPIInterface {
 
 	protected:
 		bool prepare_flash_access() override;
-		bool post_flash_access() override {reset(); return true;}
+		bool post_flash_access() override;
 
 	private:
 		/*!
