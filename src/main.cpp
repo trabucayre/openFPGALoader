@@ -252,7 +252,7 @@ int main(int argc, char **argv)
 					spi_ret = EXIT_FAILURE;
 		} else {
 			RawParser *bit = NULL;
-			if (board->reset_pin) {
+			if (board && board->reset_pin) {
 				spi->gpio_set_output(board->reset_pin, true);
 				spi->gpio_clear(board->reset_pin, true);
 			}
@@ -302,7 +302,7 @@ int main(int argc, char **argv)
 				if (!flash.enable_protection(args.protect_flash))
 					spi_ret = EXIT_FAILURE;
 
-			if (board->reset_pin)
+			if (board && board->reset_pin)
 				spi->gpio_set(board->reset_pin, true);
 		}
 
