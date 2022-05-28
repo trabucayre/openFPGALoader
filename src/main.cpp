@@ -640,7 +640,7 @@ int parse_opt(int argc, char **argv, struct arguments *args, jtag_pins_conf_t *p
 			("skip-load-bridge", "skip writing bridge to SRAM when in write-flash mode",
 				cxxopts::value<bool>(args->skip_load_bridge))
 			("skip-reset", "skip resetting the device when in write-flash mode",
-				cxxopts::value<bool>(args->skip_load_bridge))
+				cxxopts::value<bool>(args->skip_reset))
 			("spi",   "SPI mode (only for FTDI in serial mode)",
 				cxxopts::value<bool>(args->spi))
 			("unprotect-flash",   "Unprotect flash blocks",
