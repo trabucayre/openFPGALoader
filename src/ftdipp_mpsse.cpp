@@ -29,7 +29,7 @@ using namespace std;
 FTDIpp_MPSSE::FTDIpp_MPSSE(const mpsse_bit_config &cable, const string &dev,
 				const std::string &serial, uint32_t clkHZ, int8_t verbose):
 				_verbose(verbose > 2), _cable(cable), _vid(0),
-				_pid(0), _bus(-1), _addr(-1),
+				_pid(0), _index(0), _bus(-1), _addr(-1),
 				_interface(cable.interface),
 				_clkHZ(clkHZ), _buffer_size(2*32768), _num(0)
 {
@@ -45,6 +45,7 @@ FTDIpp_MPSSE::FTDIpp_MPSSE(const mpsse_bit_config &cable, const string &dev,
 	} else {
 		_vid = cable.vid;
 		_pid = cable.pid;
+		_index = cable.index;
 	}
 
 	open_device(serial, 115200);
@@ -135,7 +136,7 @@ void FTDIpp_MPSSE::open_device(const std::string &serial, unsigned int baudrate)
 	}
 
 	if (_bus == -1 || _addr == -1)
-		ret = ftdi_usb_open_desc(_ftdi, _vid, _pid, NULL, serial.empty() ? NULL : serial.c_str());
+		ret = ftdi_usb_open_desc_index(_ftdi, _vid, _pid, NULL, serial.empty() ? NULL : serial.c_str(), _index);
 	else
 #if (FTDI_VERSION < 104)
 		ret = ftdi_usb_open_desc(_ftdi, _vid, _pid, _product, NULL);
