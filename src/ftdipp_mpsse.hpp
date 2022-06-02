@@ -18,6 +18,7 @@ class FTDIpp_MPSSE {
 			int bit_low_dir;
 			int bit_high_val;
 			int bit_high_dir;
+			int index;
 		} mpsse_bit_config;
 
 		FTDIpp_MPSSE(const mpsse_bit_config &cable, const std::string &dev,
@@ -71,6 +72,7 @@ class FTDIpp_MPSSE {
 		mpsse_bit_config _cable;
 		int _vid;
 		int _pid;
+		int _index;
 	private:
 		int _bus;
 		int _addr;
