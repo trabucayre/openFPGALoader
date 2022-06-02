@@ -272,8 +272,15 @@ bool SPIFlash::dump(const std::string &filename, const int &base_addr,
 
 int SPIFlash::erase_and_prog(int base_addr, uint8_t *data, int len)
 {
-	if (_jedec_id == 0)
-		read_id();
+	if (_jedec_id == 0) {
+		try {
+			read_id();
+		} catch(std::exception &e) {
+			printError(e.what());
+			return -1;
+		}
+	}
+
 	bool must_relock = false;  // used to relock after write;
 
 	/* microchip SST26VF032B have global lock set
@@ -431,6 +438,10 @@ void SPIFlash::read_id()
 		if (_verbose > 0)
 			printf("%x ", rx[i]);
 	}
+
+	/* something wrong with read */
+	if ((_jedec_id >> 8) == 0xffff)
+		throw std::runtime_error("Read ID failed");
 
 	if (_verbose > 0)
 		printf("read %x\n", _jedec_id);
