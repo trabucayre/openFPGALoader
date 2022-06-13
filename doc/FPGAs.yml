@@ -68,7 +68,9 @@ Intel:
     Flash: OK
 
   - Description: Cyclone IV CE
-    Model: EP4CE22
+    Model:
+      - EP4CE22
+      - EP4CE115
     URL: https://www.intel.com/content/www/us/en/products/programmable/fpga/cyclone-iv/features.html
     Memory: OK
     Flash: OK
