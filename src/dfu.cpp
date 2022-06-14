@@ -366,10 +366,17 @@ int DFU::searchIfDFU(struct libusb_device_handle *handle,
 					my_dev.device = libusb_get_device_address(dev);
 					my_dev.bMaxPacketSize0 = desc->bMaxPacketSize0;
 
+					memset(my_dev.iProduct, 0, 128);
 					libusb_get_string_descriptor_ascii(handle, desc->iProduct,
 						my_dev.iProduct, 128);
+					if (strlen((char *)my_dev.iProduct) == 0)
+						snprintf((char *)my_dev.iProduct, 128, "empty");
+
+					memset(my_dev.iInterface, 0, 128);
 					libusb_get_string_descriptor_ascii(handle, intf->iInterface,
 						my_dev.iInterface, 128);
+					if (strlen((char *)my_dev.iInterface) == 0)
+						snprintf((char *)my_dev.iInterface, 128, "empty");
 
 					int r = libusb_get_port_numbers(dev, my_dev.path, sizeof(my_dev.path));
 					my_dev.path[r] = '\0';
