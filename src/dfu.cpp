@@ -162,6 +162,7 @@ DFU::~DFU()
 int DFU::open_DFU(int index)
 {
 	struct dfu_dev curr_dfu;
+	int ret;
 
 	if (_vid == 0 || _pid == 0) {
 		printError("Error: Can't open device without VID/PID");
@@ -178,15 +179,16 @@ int DFU::open_DFU(int index)
 		printError("Error: fail to open device");
 		return EXIT_FAILURE;
 	}
-	if (libusb_claim_interface(dev_handle, curr_intf) != 0) {
+	if ((ret = libusb_claim_interface(dev_handle, curr_intf)) != 0) {
 		libusb_close(dev_handle);
-		printError("Error: fail to claim interface");
+		printError("Error: fail to claim interface with error code " + std::to_string(ret));
 		return EXIT_FAILURE;
 	}
-	if (libusb_set_interface_alt_setting(dev_handle, curr_intf, 0) != 0) {
+	if ((ret = libusb_set_interface_alt_setting(dev_handle, curr_intf, _altsetting)) != 0) {
 		libusb_release_interface(dev_handle, curr_intf);
 		libusb_close(dev_handle);
-		printError("Error: fail to set interface");
+		printError("Error: fail to set interface " + std::to_string(curr_intf) +
+				   " with error code " + std::to_string(ret));
 		return EXIT_FAILURE;
 	}
 
