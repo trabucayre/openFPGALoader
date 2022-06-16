@@ -141,6 +141,18 @@ Gowin::Gowin(Jtag *jtag, const string filename, const string &file_type,
 		_spi_do  = BSCAN_GW1NSR_4C_SPI_DO;
 		_spi_msk = BSCAN_GW1NSR_4C_SPI_MSK;
 	}
+
+	/*
+	 * GW2 series has no internal flash and uses new bitstream checksum
+	 * algorithm that is not yet supported.
+	 */
+	switch (idcode) {
+		case 0x0000081b: /* GW2A(R)-18(C) */
+		case 0x0000281b: /* GW2A(R)-55(C) */
+			_external_flash = true;
+			/* FIXME: implement GW2 checksum calculation */
+			skip_checksum = true;
+	};
 }
 
 Gowin::~Gowin()
@@ -193,13 +205,15 @@ void Gowin::programFlash()
 	usleep(2*150*1000);
 
 	/* check if file checksum == checksum in FPGA */
-	status = readUserCode();
-	int checksum = static_cast<FsParser *>(_fs)->checksum();
-	if (checksum != status) {
-		printError("CRC check : FAIL");
-		printf("%04x %04x\n", checksum, status);
-	} else {
-		printSuccess("CRC check: Success");
+	if (!skip_checksum) {
+		status = readUserCode();
+		int checksum = static_cast<FsParser *>(_fs)->checksum();
+		if (checksum != status) {
+			printError("CRC check : FAIL");
+			printf("%04x %04x\n", checksum, status);
+		} else {
+			printSuccess("CRC check: Success");
+		}
 	}
 
 	if (_verbose)
@@ -276,13 +290,15 @@ void Gowin::program(unsigned int offset, bool unprotect_flash)
 		return;
 
 	/* check if file checksum == checksum in FPGA */
-	status = readUserCode();
-	uint32_t checksum = static_cast<FsParser *>(_fs)->checksum();
-	if (checksum != status) {
-		printError("SRAM Flash: FAIL");
-		printf("%04x %04x\n", checksum, status);
-	} else {
-		printSuccess("SRAM Flash: Success");
+	if (!skip_checksum) {
+		status = readUserCode();
+		uint32_t checksum = static_cast<FsParser *>(_fs)->checksum();
+		if (checksum != status) {
+			printError("SRAM Flash: FAIL");
+			printf("%04x %04x\n", checksum, status);
+		} else {
+			printSuccess("SRAM Flash: Success");
+		}
 	}
 	if (_verbose)
 		displayReadReg(readStatusReg());
