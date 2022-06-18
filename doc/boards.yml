@@ -333,6 +333,13 @@
   Memory: OK
   Flash: OK
 
+- ID: orbtrace_dfu
+  Description: ORBTrace mini (dfu mode)
+  URL: https://store.zyp.no/product/orbtrace-mini
+  FPGA: ECP5 LFE5U-25F-8BG256C
+  Memory: NA
+  Flash: OK (DFU)
+
 - ID: orangeCrab
   Description: Orange Crab
   URL: https://github.com/gregdavill/OrangeCrab
