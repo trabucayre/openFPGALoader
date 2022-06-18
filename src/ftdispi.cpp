@@ -64,7 +64,7 @@ void FtdiSpi::setMode(uint8_t mode)
 }
 
 static FTDIpp_MPSSE::mpsse_bit_config bit_conf =
-	{0x403, 0x6010, INTERFACE_B, 0x08, 0x0B, 0x08, 0x0B};
+	{0x403, 0x6010, INTERFACE_B, 0x08, 0x0B, 0x08, 0x0B, 0};
 
 FtdiSpi::FtdiSpi(int vid, int pid, unsigned char interface, uint32_t clkHZ,
 	bool verbose):
