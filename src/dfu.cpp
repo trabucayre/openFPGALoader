@@ -315,10 +315,11 @@ int DFU::searchDFUDevices()
 
 		int ret = libusb_open(usb_dev, &handle);
 		if (ret == 0) {
-			if (searchIfDFU(handle, usb_dev, &desc) != 0) {
+			ret = searchIfDFU(handle, usb_dev, &desc);
+			libusb_close(handle);
+			if (ret != 0) {
 				return EXIT_FAILURE;
 			}
-			libusb_close(handle);
 		} else if (_debug) {
 			char mess[256];
 			sprintf(mess,"Unable to open device: "
