@@ -55,7 +55,7 @@ DFU::DFU(const string &filename, bool bypass_bitstream,
 		_bit(NULL)
 {
 	struct dfu_status status;
-	int dfu_vid = 0, dfu_pid = 0;
+	int dfu_vid = 0, dfu_pid = 0, ret;
 
 	printInfo("Open file : ", false);
 
@@ -152,10 +152,14 @@ DFU::DFU(const string &filename, bool bypass_bitstream,
 
 	printf("%02x %02x\n", _vid, _pid);
 
-	char state = get_state();
 	if (_verbose > 0) {
-		printInfo("Default DFU status " + dfu_dev_state_val[state]);
-		get_status(&status);
+		if ((ret = get_status(&status)) < 0) {
+			delete _bit;
+			throw std::runtime_error("get device status failed with error code " +
+				std::to_string(ret));
+		}
+
+		printInfo("Default DFU status " + dfu_dev_state_val[status.bState]);
 	}
 }
 
@@ -453,9 +457,11 @@ int DFU::set_state(char newState)
 {
 	int ret = 0;
 	struct dfu_status status;
-	char curr_state = get_state();
-	while (curr_state != newState) {
-		switch (curr_state) {
+	if (get_status(&status) < 0)
+		return -1;
+
+	while (status.bState != newState) {
+		switch (status.bState) {
 		case STATE_appIDLE:
 			if (dfu_detach() == EXIT_FAILURE)
 				return -1;
@@ -466,7 +472,6 @@ int DFU::set_state(char newState)
 				cerr << dfu_dev_status_val[status.bStatus] << endl;
 				return -1;
 			}
-			curr_state = status.bState;
 			break;
 		case STATE_appDETACH:
 			if (newState == STATE_appIDLE) {
@@ -504,15 +509,14 @@ int DFU::set_state(char newState)
 				printError("Fails to send packet\n");
 				return ret;
 			}
-			if ((ret = get_state()) < 0)
+			if (get_status(&status) < 0)
 				return ret;
 			/* not always true:
 			 * the newState may be the next one or another */
-			if (ret != newState) {
-				printError(dfu_dev_state_val[ret]);
+			if (status.bState != newState) {
+				printError(dfu_dev_state_val[status.bState]);
 				return -1;
 			}
-			curr_state = ret;
 			break;
 		case STATE_dfuERROR:
 			if (newState == STATE_appIDLE) {
@@ -540,7 +544,6 @@ int DFU::set_state(char newState)
 				cerr << dfu_dev_status_val[status.bStatus] << endl;
 				return -1;
 			}
-			curr_state = status.bState;
 			break;
 		}
 	}
@@ -570,6 +573,10 @@ int DFU::get_status(struct dfu_status *status)
 								(((uint32_t)buffer[1] & 0xff) <<  0);
 		status->bState = buffer[4];
 		status->iString = buffer[5];
+	} else if (res < 0) {
+		printError("Get DFU status failed with error " +
+				   std::to_string(res) +
+				   "(" + std::string(libusb_error_name(res)) + ")");
 	}
 	return res;
 }
@@ -697,7 +704,9 @@ int DFU::download()
 	}
 
 	/* download must start in dfu IDLE state */
-	if (get_state() != STATE_dfuIDLE)
+	if (get_status(&status) < 0)
+		return -1;
+	if (status.bState != STATE_dfuIDLE)
 		set_state(STATE_dfuIDLE);
 
 	xfer_len = libusb_le16_to_cpu(curr_dev.dfu_desc.wTransferSize);
@@ -757,11 +766,15 @@ int DFU::download()
 	/* send the zero sized download request
 	 * dfuDNLOAD_IDLE -> dfuMANITEST-SYNC
 	 */
-	ret = set_state(STATE_dfuMANIFEST_SYNC);
+	printInfo("send zero sized download request: ", false);
+	//ret = set_state(STATE_dfuMANIFEST_SYNC);
+	ret = send(true, DFU_DNLOAD, transaction, NULL, 0);
 	if (ret < 0) {
 		printError("Error: fail to change state " + to_string(ret));
 		return -6;
 	}
+
+	printSuccess("DONE");
 
 	/* Now FSM must be in dfuMANITEST-SYNC */
 	bool must_continue = true;
