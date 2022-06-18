@@ -346,7 +346,8 @@ int main(int argc, char **argv)
 		}
 
 		try {
-			dfu = new DFU(args.bit_file, vid, pid, altsetting, args.verbose);
+			dfu = new DFU(args.bit_file, args.detect, vid, pid, altsetting,
+					args.verbose);
 		} catch (std::exception &e) {
 			printError("DFU init failed with: " + string(e.what()));
 			return EXIT_FAILURE;

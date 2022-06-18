@@ -46,8 +46,8 @@ enum dfu_cmd {
  * - index as jtag chain (fix issue when more than one device connected)
  */
 
-DFU::DFU(const string &filename, uint16_t vid, uint16_t pid,
-		int16_t altsetting,
+DFU::DFU(const string &filename, bool bypass_bitstream,
+		uint16_t vid, uint16_t pid, int16_t altsetting,
 		int verbose_lvl):_verbose(verbose_lvl > 0), _debug(verbose_lvl > 1),
 		_quiet(verbose_lvl < 0), dev_idx(0), _vid(0), _pid(0),
 		_altsetting(altsetting),
@@ -57,36 +57,41 @@ DFU::DFU(const string &filename, uint16_t vid, uint16_t pid,
 	struct dfu_status status;
 	int dfu_vid = 0, dfu_pid = 0;
 
-	printInfo("Open file ", false);
+	printInfo("Open file : ", false);
 
-	try {
-		_bit = new DFUFileParser(filename, _verbose > 0);
-		printSuccess("DONE");
-	} catch (std::exception &e) {
-		printError("FAIL");
-		throw runtime_error("Error: Fail to open file");
-	}
+	if (bypass_bitstream) {
+		_bit = nullptr;
+		printInfo("bypassed");
+	} else {
+		try {
+			_bit = new DFUFileParser(filename, _verbose > 0);
+			printSuccess("DONE");
+		} catch (std::exception &e) {
+			printError("FAIL");
+			throw runtime_error("Error: Fail to open file");
+		}
 
-	printInfo("Parse file ", false);
-	try {
-		_bit->parse();
-		printSuccess("DONE");
-	} catch (std::exception &e) {
-		printError("FAIL");
-		delete _bit;
-		throw runtime_error("Error: Fail to parse file");
-	}
+		printInfo("Parse file ", false);
+		try {
+			_bit->parse();
+			printSuccess("DONE");
+		} catch (std::exception &e) {
+			printError("FAIL");
+			delete _bit;
+			throw runtime_error("Error: Fail to parse file");
+		}
 
-	if (_verbose > 0)
-		_bit->displayHeader();
+		if (_verbose > 0)
+			_bit->displayHeader();
 
-	/* get VID and PID from dfu file */
-	try {
-		dfu_vid = std::stoi(_bit->getHeaderVal("idVendor"), 0, 16);
-		dfu_pid = std::stoi(_bit->getHeaderVal("idProduct"), 0, 16);
-	} catch (std::exception &e) {
-		if (_verbose)
-			printWarn(e.what());
+		/* get VID and PID from dfu file */
+		try {
+			dfu_vid = std::stoi(_bit->getHeaderVal("idVendor"), 0, 16);
+			dfu_pid = std::stoi(_bit->getHeaderVal("idProduct"), 0, 16);
+		} catch (std::exception &e) {
+			if (_verbose)
+				printWarn(e.what());
+		}
 	}
 
 	if (libusb_init(&usb_ctx) < 0) {
@@ -128,11 +133,15 @@ DFU::DFU(const string &filename, uint16_t vid, uint16_t pid,
 		displayDFU();
 
 	/* don't try device without vid/pid */
-	if (_vid == 0 || _pid == 0) {
+	if ((_vid == 0 || _pid == 0) && _bit) {
 		libusb_exit(usb_ctx);
 		delete _bit;
 		throw std::runtime_error("Can't open device vid/pid == 0");
 	}
+
+	/* the If bitstream has been bypassed -> it's the end */
+	if (!_bit)
+		return;
 
 	/* open the first */
 	if (open_DFU(0) == EXIT_FAILURE) {
@@ -154,7 +163,8 @@ DFU::~DFU()
 {
 	close_DFU();
 	libusb_exit(usb_ctx);
-	delete _bit;
+	if (_bit)
+		delete _bit;
 }
 
 /* open the device using VID and PID
@@ -664,6 +674,10 @@ int DFU::download()
 	 */
 	if (!dev_handle) {
 		printError("Error: No device. Can't download file");
+		return -1;
+	}
+	if (!_bit) {
+		printError("Error: No bitstream. Stop");
 		return -1;
 	}
 
