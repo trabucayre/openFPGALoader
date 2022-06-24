@@ -83,6 +83,10 @@ LibgpiodJtagBitbang::LibgpiodJtagBitbang(
 	_curr_tdi = 0;
 	_curr_tck = 0;
 	_curr_tms = 1;
+
+	// FIXME: I'm unsure how this value should be set.
+	// Maybe experiment, or think through what it should be.
+	_clkHZ = 5000000;
 }
 
 LibgpiodJtagBitbang::~LibgpiodJtagBitbang()
@@ -191,16 +195,16 @@ int LibgpiodJtagBitbang::writeTDI(uint8_t *tx, uint8_t *rx, uint32_t len, bool e
 		if (end && (i == len - 1))
 			tms = 1;
 
-		tdi = (tx[i >> 3] & (1 << (i & 7))) ? 1 : 0;
+		if (tx)
+			tdi = (tx[i >> 3] & (1 << (i & 7))) ? 1 : 0;
 
 		update_pins(0, tms, tdi);
+		update_pins(1, tms, tdi);
 
 		if (rx) {
 			if (read_tdo() > 0)
 				rx[i >> 3] |= 1 << (i & 7);
 		}
-
-		update_pins(1, tms, tdi);
 	}
 
 	update_pins(0, tms, tdi);
