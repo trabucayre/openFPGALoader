@@ -115,15 +115,21 @@ void Jtag::init_internal(cable_t &cable, const string &dev, const string &serial
 		_jtag = new UsbBlaster(cable.config.vid, cable.config.pid,
 				firmware_path, _verbose);
 		break;
-#ifdef ENABLE_CMSISDAP
 	case MODE_CMSISDAP:
+#ifdef ENABLE_CMSISDAP
 		_jtag = new CmsisDAP(cable.config.vid, cable.config.pid, _verbose);
 		break;
+#else
+		std::cerr << "Jtag: support for cmsisdap was not enabled at compile time" << std::endl;
+		throw std::exception();
 #endif
-#ifdef ENABLE_XVC_CLIENT
 	case MODE_XVC_CLIENT:
+#ifdef ENABLE_XVC_CLIENT
 		_jtag = new XVC_client(ip_adr, clkHZ, _verbose);
 		break;
+#else
+		std::cerr << "Jtag: support for xvc-client was not enabled at compile time" << std::endl;
+		throw std::exception();
 #endif
 	default:
 		std::cerr << "Jtag: unknown cable type" << std::endl;
