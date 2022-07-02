@@ -144,6 +144,10 @@ CmsisDAP::CmsisDAP(int vid, int pid, uint8_t verbose):_verbose(verbose),
 		_serial_number = wstring(dev_found[_device_idx]->serial_number);
 	/* open the device */
 	_dev = hid_open_path(dev_found[_device_idx]->path);
+	if (!_dev) {
+		throw std::runtime_error(
+				std::string("Couldn't open device. Check permissions for ") + dev_found[_device_idx]->path);
+	}
 	/* cleanup enumeration */
 	hid_free_enumeration(devs);
 
