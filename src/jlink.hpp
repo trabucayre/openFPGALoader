@@ -64,8 +64,8 @@ class Jlink: public JtagInterface {
 		 * \param[out] tdo: tdo buffer
 		 * \param[in] numbits: tms/tdi/tdo buffer size (in bit)
 		 */
-		bool writeTMSTDI(const uint8_t *tms, const uint8_t *tdi, uint8_t *tdo,
-				uint32_t numbits);
+		virtual bool writeTMSTDI(const uint8_t *tms, const uint8_t *tdi,
+				uint8_t *tdo, uint32_t numbits) override;
 
 		/*!
 		 * \brief send a serie of clock cycle with constant TMS and TDI
