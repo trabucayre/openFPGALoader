@@ -98,6 +98,8 @@ openFPGALoader -- a program to flash FPGA
                             2:debug
   -h, --help                Give this help list
       --verify              Verify write operation (SPI Flash only)
+      --xvc                 Xilinx Virtual Cable Functions
+      --port arg            Xilinx Virtual Cable Port (default 3721)
   -V, --Version             Print program version
 
 Mandatory or optional arguments to long options are also mandatory or optional

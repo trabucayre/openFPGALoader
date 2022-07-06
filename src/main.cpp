@@ -30,6 +30,7 @@
 #include "spiFlash.hpp"
 #include "rawParser.hpp"
 #include "xilinx.hpp"
+#include "xvc_server.hpp"
 
 #define DEFAULT_FREQ 	6000000
 
@@ -71,7 +72,14 @@ struct arguments {
 	string flash_sector;
 	bool skip_load_bridge;
 	bool skip_reset;
+	/* xvc server */
+	bool xvc;
+	int port;
+	string interface;
 };
+
+int run_xvc_server(const struct arguments &args, const cable_t &cable,
+	const jtag_pins_conf_t *pins_config);
 
 int parse_opt(int argc, char **argv, struct arguments *args, jtag_pins_conf_t *pins_config);
 
@@ -87,7 +95,10 @@ int main(int argc, char **argv)
 	struct arguments args = {0, false, false, false, 0, "", "", "-", "", -1,
 			0, false, "-", false, false, false, false, Device::PRG_NONE, false,
 			false, false, "", "", "", -1, 0, false, -1, 0, 0, 0, "127.0.0.1",
-			0, false, "", false, false};
+			0, false, "", false, false,
+			/* xvc server */
+			false, 3721, "-",
+	};
 	/* parse arguments */
 	try {
 		if (parse_opt(argc, argv, &args, &pins_config))
@@ -370,7 +381,15 @@ int main(int argc, char **argv)
 		return EXIT_SUCCESS;
 	}
 
+	/* ------------------- */
+	/*      XVC server     */
+	/* ------------------- */
+	if (args.xvc) {
+		return run_xvc_server(args, cable, &pins_config);
+	}
+
 	/* jtag base */
+
 
 	/* if no instruction from user -> select load */
 	if (args.prg_type == Device::PRG_NONE)
@@ -466,6 +485,7 @@ int main(int argc, char **argv)
 
 	string fab = fpga_list[idcode].manufacturer;
 
+
 	Device *fpga;
 	try {
 		if (fab == "xilinx") {
@@ -536,6 +556,30 @@ int main(int argc, char **argv)
 
 	delete(fpga);
 	delete(jtag);
+}
+
+int run_xvc_server(const struct arguments &args, const cable_t &cable,
+	const jtag_pins_conf_t *pins_config)
+{
+	//create XVC instance
+	try {
+		XVC_server *xvc = NULL;
+		xvc = new XVC_server(args.port, cable, pins_config, args.device,
+				args.ftdi_serial, args.freq, args.verbose, args.ip_adr,
+				args.invert_read_edge, args.probe_firmware);
+		/* create connection */
+		xvc->open_connection();
+		/* start loop */
+		xvc->listen_loop();
+		/* close connection */
+		xvc->close_connection();
+		delete xvc;
+	} catch (std::exception &e) {
+		printError("XVC_server failed with " + string(e.what()));
+		return EXIT_FAILURE;
+	}
+	printInfo("Xilinx Virtual Cable Stopped! ");
+	return EXIT_SUCCESS;
 }
 
 // parse double from string in engineering notation
@@ -657,6 +701,10 @@ int parse_opt(int argc, char **argv, struct arguments *args, jtag_pins_conf_t *p
 			("h,help", "Give this help list")
 			("verify", "Verify write operation (SPI Flash only)",
 				cxxopts::value<bool>(args->verify))
+			("xvc",   "Xilinx Virtual Cable Functions",
+				cxxopts::value<bool>(args->xvc))
+			("port", "Xilinx Virtual Cable Port (default 3721)",
+				cxxopts::value<int>(args->port))
 			("V,Version", "Print program version");
 
 		options.parse_positional({"bitstream"});
@@ -786,6 +834,7 @@ int parse_opt(int argc, char **argv, struct arguments *args, jtag_pins_conf_t *p
 			!args->detect &&
 			!args->protect_flash &&
 			!args->unprotect_flash &&
+			!args->xvc &&
 			!args->reset) {
 			printError("Error: bitfile not specified");
 			cout << options.help() << endl;
