@@ -120,7 +120,7 @@ bool XVC_server::open_connection()
 		return false;
 	}
 
-	char mess[256];
+	char mess[512];
 	snprintf(mess, sizeof(mess),
 		"INFO: To connect to this xvcServer instance, use: TCP:%s:%d\n\n",
 		hostname, _port);
