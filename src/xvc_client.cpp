@@ -195,8 +195,8 @@ int XVC_client::flush()
 
 int XVC_client::setClkFreq(uint32_t clkHz)
 {
-	float clk_periodf = (1 / clkHz) * 1e9;
-	uint32_t clk_period = (uint32_t)round(clk_periodf);
+	double clk_periodf = (1e9 / clkHz);
+	uint32_t clk_period = (uint32_t)floor(clk_periodf);
 
 	_xfer_buf[0] = static_cast<uint8_t>((clk_period >>  0) & 0xff);
 	_xfer_buf[1] = static_cast<uint8_t>((clk_period >>  8) & 0xff);
@@ -208,7 +208,8 @@ int XVC_client::setClkFreq(uint32_t clkHz)
 		return -EXIT_FAILURE;
 	}
 
-	printf("freq %d\n", atoi((const char *)_xfer_buf));
+	printf("freq %d %lf %d %d\n", clkHz, clk_periodf, clk_period,
+			atoi((const char *)_xfer_buf));
 	printf("%x %x %x %x\n", _xfer_buf[0], _xfer_buf[1],
 			_xfer_buf[2], _xfer_buf[3]);
 
