@@ -106,7 +106,6 @@ set(OPENFPGALOADER_SOURCE
 	src/xilinxMapParser.cpp
 	src/colognechip.cpp
 	src/colognechipCfgParser.cpp
-	src/xvc_server.cpp
 )
 
 set(OPENFPGALOADER_HEADERS
@@ -157,7 +156,6 @@ set(OPENFPGALOADER_HEADERS
 	src/xilinxMapParser.hpp
 	src/colognechip.hpp
 	src/colognechipCfgParser.hpp
-	src/xvc_server.hpp
 )
 
 link_directories(
@@ -213,12 +211,12 @@ if (ENABLE_CMSISDAP)
 endif(ENABLE_CMSISDAP)
 
 if (${CMAKE_SYSTEM_NAME} MATCHES "Linux")
-		add_definitions(-DENABLE_XVC_CLIENT=1)
-		target_sources(openFPGALoader PRIVATE src/xvc_client.cpp)
-		list (APPEND OPENFPGALOADER_HEADERS src/xvc_client.hpp)
-		message("Xilinx Virtual Server (client side) support enabled")
+		add_definitions(-DENABLE_XVC=1)
+		target_sources(openFPGALoader PRIVATE src/xvc_client.cpp src/xvc_server.cpp)
+		list (APPEND OPENFPGALOADER_HEADERS src/xvc_client.hpp src/xvc_server.cpp)
+		message("Xilinx Virtual Server support enabled")
 else()
-		message("Xilinx Virtual Server (client side) support disabled")
+		message("Xilinx Virtual Server support disabled")
 endif()
 
 if (ZLIB_FOUND)

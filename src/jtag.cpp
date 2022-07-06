@@ -28,7 +28,7 @@
 #include "dirtyJtag.hpp"
 #include "part.hpp"
 #include "usbBlaster.hpp"
-#ifdef ENABLE_XVC_CLIENT
+#ifdef ENABLE_XVC
 #include "xvc_client.hpp"
 #endif
 
@@ -124,7 +124,7 @@ void Jtag::init_internal(cable_t &cable, const string &dev, const string &serial
 		throw std::exception();
 #endif
 	case MODE_XVC_CLIENT:
-#ifdef ENABLE_XVC_CLIENT
+#ifdef ENABLE_XVC
 		_jtag = new XVC_client(ip_adr, clkHZ, _verbose);
 		break;
 #else

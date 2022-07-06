@@ -30,7 +30,9 @@
 #include "spiFlash.hpp"
 #include "rawParser.hpp"
 #include "xilinx.hpp"
+#ifdef ENABLE_XVC
 #include "xvc_server.hpp"
+#endif
 
 #define DEFAULT_FREQ 	6000000
 
@@ -381,12 +383,14 @@ int main(int argc, char **argv)
 		return EXIT_SUCCESS;
 	}
 
+#ifdef ENABLE_XVC
 	/* ------------------- */
 	/*      XVC server     */
 	/* ------------------- */
 	if (args.xvc) {
 		return run_xvc_server(args, cable, &pins_config);
 	}
+#endif
 
 	/* jtag base */
 
@@ -558,6 +562,7 @@ int main(int argc, char **argv)
 	delete(jtag);
 }
 
+#ifdef ENABLE_XVC
 int run_xvc_server(const struct arguments &args, const cable_t &cable,
 	const jtag_pins_conf_t *pins_config)
 {
@@ -581,6 +586,7 @@ int run_xvc_server(const struct arguments &args, const cable_t &cable,
 	printInfo("Xilinx Virtual Cable Stopped! ");
 	return EXIT_SUCCESS;
 }
+#endif
 
 // parse double from string in engineering notation
 // can deal with postfixes k and m, add more when required
@@ -701,8 +707,10 @@ int parse_opt(int argc, char **argv, struct arguments *args, jtag_pins_conf_t *p
 			("h,help", "Give this help list")
 			("verify", "Verify write operation (SPI Flash only)",
 				cxxopts::value<bool>(args->verify))
+#ifdef ENABLE_XVC
 			("xvc",   "Xilinx Virtual Cable Functions",
 				cxxopts::value<bool>(args->xvc))
+#endif
 			("port", "Xilinx Virtual Cable Port (default 3721)",
 				cxxopts::value<int>(args->port))
 			("V,Version", "Print program version");
