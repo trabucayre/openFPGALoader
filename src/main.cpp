@@ -78,6 +78,7 @@ struct arguments {
 	bool xvc;
 	int port;
 	string interface;
+	string mcufw;
 };
 
 int run_xvc_server(const struct arguments &args, const cable_t &cable,
@@ -506,7 +507,7 @@ int main(int argc, char **argv)
 			fpga = new Efinix(jtag, args.bit_file, args.file_type,
 				/*DBUS4 | DBUS7, DBUS5*/args.board, args.verify, args.verbose);
 		} else if (fab == "Gowin") {
-			fpga = new Gowin(jtag, args.bit_file, args.file_type,
+			fpga = new Gowin(jtag, args.bit_file, args.file_type, args.mcufw,
 				args.prg_type, args.external_flash, args.verify, args.verbose);
 		} else if (fab == "lattice") {
 			fpga = new Lattice(jtag, args.bit_file, args.file_type,
@@ -713,6 +714,8 @@ int parse_opt(int argc, char **argv, struct arguments *args, jtag_pins_conf_t *p
 #endif
 			("port", "Xilinx Virtual Cable Port (default 3721)",
 				cxxopts::value<int>(args->port))
+			("mcufw", "Microcontroller firmware",
+				cxxopts::value<std::string>(args->mcufw))
 			("V,Version", "Print program version");
 
 		options.parse_positional({"bitstream"});
