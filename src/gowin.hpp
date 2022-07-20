@@ -26,6 +26,7 @@ class Gowin: public Device, SPIInterface {
 		void reset() override;
 		void program(unsigned int offset, bool unprotect_flash) override;
 		void programFlash();
+		bool connectJtagToMCU() override;
 
 		/* spi interface */
 		virtual bool protect_flash(uint32_t len) override {

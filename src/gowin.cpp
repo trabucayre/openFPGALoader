@@ -58,6 +58,7 @@ using namespace std;
 #  define STATUS_FLASH_LOCK			(1 << 17)
 #define EF_PROGRAM			0x71
 #define EFLASH_ERASE		0x75
+#define SWITCH_TO_MCU_JTAG		0x7a
 
 /* BSCAN spi (external flash) (see below for details) */
 /* most common pins def */
@@ -573,6 +574,12 @@ bool Gowin::flashFLASH(uint32_t page, uint8_t *data, int length)
 
 	progress.done();
 	delete[] buffer;
+	return true;
+}
+
+bool Gowin::connectJtagToMCU()
+{
+	wr_rd(SWITCH_TO_MCU_JTAG, NULL, 0, NULL, 0);
 	return true;
 }
 

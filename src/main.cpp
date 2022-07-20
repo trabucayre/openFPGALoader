@@ -79,6 +79,7 @@ struct arguments {
 	int port;
 	string interface;
 	string mcufw;
+	bool conmcu;
 };
 
 int run_xvc_server(const struct arguments &args, const cable_t &cable,
@@ -538,6 +539,13 @@ int main(int argc, char **argv)
 		}
 	}
 
+	if (args.conmcu == true) {
+		fpga->connectJtagToMCU();
+		delete(fpga);
+		delete(jtag);
+		return EXIT_SUCCESS;
+	}
+
 	/* unprotect SPI flash */
 	if (args.unprotect_flash && args.bit_file.empty()) {
 		fpga->unprotect_flash();
@@ -716,6 +724,8 @@ int parse_opt(int argc, char **argv, struct arguments *args, jtag_pins_conf_t *p
 				cxxopts::value<int>(args->port))
 			("mcufw", "Microcontroller firmware",
 				cxxopts::value<std::string>(args->mcufw))
+			("conmcu", "Connect JTAG to MCU",
+				cxxopts::value<bool>(args->conmcu))
 			("V,Version", "Print program version");
 
 		options.parse_positional({"bitstream"});
@@ -846,7 +856,8 @@ int parse_opt(int argc, char **argv, struct arguments *args, jtag_pins_conf_t *p
 			!args->protect_flash &&
 			!args->unprotect_flash &&
 			!args->xvc &&
-			!args->reset) {
+			!args->reset &&
+			!args->conmcu) {
 			printError("Error: bitfile not specified");
 			cout << options.help() << endl;
 			throw std::exception();
