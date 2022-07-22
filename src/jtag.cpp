@@ -136,8 +136,6 @@ void Jtag::init_internal(cable_t &cable, const string &dev, const string &serial
 #endif
 #ifdef ENABLE_LIBGPIOD
 	case MODE_LIBGPIOD_BITBANG:
-		if (pin_conf == NULL)
-			throw std::exception();
 		_jtag = new LibgpiodJtagBitbang(pin_conf, dev, clkHZ, _verbose);
 		break;
 #endif
