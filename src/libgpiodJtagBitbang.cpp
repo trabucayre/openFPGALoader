@@ -69,7 +69,7 @@ LibgpiodJtagBitbang::LibgpiodJtagBitbang(
 		}
 	}
 
-	_chip = gpiod_chip_open_by_name(chip_dev.substr(5).c_str());
+	_chip = gpiod_chip_open(chip_dev.c_str());
 	if (!_chip) {
 		display("Unable to open gpio chip %s\n", chip_dev.c_str());
 		throw std::runtime_error("Unable to open gpio chip\n");
