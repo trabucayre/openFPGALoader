@@ -83,7 +83,9 @@ Gowin::Gowin(Jtag *jtag, const string filename, const string &file_type, std::st
 		_spi_msk(BSCAN_SPI_MSK)
 {
 	_fs = NULL;
-	uint32_t idcode = _jtag->get_target_device_id();;
+	_mcufw = NULL;
+
+	uint32_t idcode = _jtag->get_target_device_id();
 
 	if (prg_type == Device::WR_FLASH)
 		_mode = Device::FLASH_MODE;
@@ -159,23 +161,16 @@ Gowin::Gowin(Jtag *jtag, const string filename, const string &file_type, std::st
 		if (idcode != 0x0100981b)
 			throw std::runtime_error("Microcontroller firmware flashing only supported on GW1NSR-4C");
 		
-		
-		FILE *fd = fopen(mcufw.c_str(), "rb");
-		if (!fd)
-			throw std::runtime_error("Error: fail to open " + filename);
-		
-		fseek(fd, 0, SEEK_END);
-		int file_size = ftell(fd);
-		fseek(fd, 0, SEEK_SET);
+		_mcufw = new RawParser(mcufw, false);
 
-		mcufwdata.resize(file_size);
+		if (_mcufw->parse() == EXIT_FAILURE) {
+			printError("FAIL");
+			delete _mcufw;
+			throw std::runtime_error("can't parse file");
+		} else {
+			printSuccess("DONE");
+		}
 
-		int ret = fread((char *) mcufwdata.data(), sizeof(char), file_size, fd);
-		fclose(fd);
-		if (ret != file_size)
-			throw std::runtime_error("Error: fail to read " + mcufw);
-
-		/* FIXME: implement checksum calculation */
 		skip_checksum = true;
 	}
 }
@@ -184,6 +179,8 @@ Gowin::~Gowin()
 {
 	if (_fs)
 		delete _fs;
+	if (_mcufw)
+		delete _mcufw;
 }
 
 void Gowin::reset()
@@ -195,20 +192,16 @@ void Gowin::reset()
 void Gowin::programFlash()
 {
 	int status;
-	uint8_t *data;
-	int length;
-	uint8_t *mcu_data;
-	int mcu_length;
 
-	data = _fs->getData();
-	length = _fs->getLength();
+	uint8_t *data = _fs->getData();
+	int length = _fs->getLength();
 	
-	if (mcufwdata.size() == 0) {
-		mcu_data = nullptr;
-		mcu_length = 0;
-	} else {
-		mcu_data = (uint8_t *) mcufwdata.data();
-		mcu_length = mcufwdata.size() * 8;
+	uint8_t *mcu_data = nullptr;
+	int mcu_length = 0;
+	
+	if (_mcufw) {
+		mcu_data = _mcufw->getData();
+		mcu_length = _mcufw->getLength();
 	}
 
 	/* erase SRAM */

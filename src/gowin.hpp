@@ -62,6 +62,6 @@ class Gowin: public Device, SPIInterface {
 		uint8_t _spi_di;      /**< di signal (mosi) offset in bscan SPI */
 		uint8_t _spi_do;      /**< do signal (miso) offset in bscan SPI */
 		uint8_t _spi_msk;     /** default spi msk with only do out */
-		std::string mcufwdata;
+		ConfigBitstreamParser *_mcufw;
 };
 #endif  // GOWIN_HPP_
