@@ -170,8 +170,6 @@ Gowin::Gowin(Jtag *jtag, const string filename, const string &file_type, std::st
 		} else {
 			printSuccess("DONE");
 		}
-
-		skip_checksum = true;
 	}
 }
 
