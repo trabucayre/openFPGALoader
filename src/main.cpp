@@ -541,9 +541,6 @@ int main(int argc, char **argv)
 
 	if (args.conmcu == true) {
 		fpga->connectJtagToMCU();
-		delete(fpga);
-		delete(jtag);
-		return EXIT_SUCCESS;
 	}
 
 	/* unprotect SPI flash */
