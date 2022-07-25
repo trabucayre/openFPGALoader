@@ -1,10 +1,14 @@
 // SPDX-License-Identifier: Apache-2.0
 /*
- * Copyright (C) 2020 Gwenhael Goavec-Merou <gwenhael.goavec-merou@trabucayre.com>
+ * Copyright (C) 2020-2022 Gwenhael Goavec-Merou <gwenhael.goavec-merou@trabucayre.com>
+ * Copyright (C) 2022 Niklas Ekström <mail@niklasekstrom.nu>
  *
  * libgpiod bitbang driver added by Niklas Ekström <mail@niklasekstrom.nu> in 2022
  */
 
+#include "libgpiodJtagBitbang.hpp"
+
+#include <gpiod.h>
 #include <stdio.h>
 #include <string.h>
 
@@ -14,10 +18,8 @@
 #include <string>
 #include <stdexcept>
 
-#include <gpiod.h>
 
 #include "display.hpp"
-#include "libgpiodJtagBitbang.hpp"
 
 #define DEBUG 1
 
@@ -111,7 +113,7 @@ gpiod_line *LibgpiodJtagBitbang::get_line(unsigned int offset, int val, int dir)
 {
 	gpiod_line *line = gpiod_chip_get_line(_chip, offset);
 	if (!line) {
-		display("Unable to get gpio line %d\n", offset);
+		display("Unable to get gpio line %u\n", offset);
 		throw std::runtime_error("Unable to get gpio line\n");
 	}
 
@@ -123,7 +125,7 @@ gpiod_line *LibgpiodJtagBitbang::get_line(unsigned int offset, int val, int dir)
 
 	int ret = gpiod_line_request(line, &config, val);
 	if (ret < 0) {
-		display("Error requesting gpio line %d\n", offset);
+		display("Error requesting gpio line %u\n", offset);
 		throw std::runtime_error("Error requesting gpio line\n");
 	}
 

@@ -1,6 +1,7 @@
 // SPDX-License-Identifier: Apache-2.0
 /*
- * Copyright (C) 2020 Gwenhael Goavec-Merou <gwenhael.goavec-merou@trabucayre.com>
+ * Copyright (C) 2020-2022 Gwenhael Goavec-Merou <gwenhael.goavec-merou@trabucayre.com>
+ * Copyright (C) 2022 Niklas Ekström <mail@niklasekstrom.nu>
  *
  * libgpiod bitbang driver added by Niklas Ekström <mail@niklasekstrom.nu> in 2022
  */
