@@ -78,6 +78,8 @@ struct arguments {
 	bool xvc;
 	int port;
 	string interface;
+	string mcufw;
+	bool conmcu;
 };
 
 int run_xvc_server(const struct arguments &args, const cable_t &cable,
@@ -506,7 +508,7 @@ int main(int argc, char **argv)
 			fpga = new Efinix(jtag, args.bit_file, args.file_type,
 				/*DBUS4 | DBUS7, DBUS5*/args.board, args.verify, args.verbose);
 		} else if (fab == "Gowin") {
-			fpga = new Gowin(jtag, args.bit_file, args.file_type,
+			fpga = new Gowin(jtag, args.bit_file, args.file_type, args.mcufw,
 				args.prg_type, args.external_flash, args.verify, args.verbose);
 		} else if (fab == "lattice") {
 			fpga = new Lattice(jtag, args.bit_file, args.file_type,
@@ -535,6 +537,10 @@ int main(int argc, char **argv)
 			delete(jtag);
 			return EXIT_FAILURE;
 		}
+	}
+
+	if (args.conmcu == true) {
+		fpga->connectJtagToMCU();
 	}
 
 	/* unprotect SPI flash */
@@ -721,6 +727,10 @@ int parse_opt(int argc, char **argv, struct arguments *args, jtag_pins_conf_t *p
 #endif
 			("port", "Xilinx Virtual Cable Port (default 3721)",
 				cxxopts::value<int>(args->port))
+			("mcufw", "Microcontroller firmware",
+				cxxopts::value<std::string>(args->mcufw))
+			("conmcu", "Connect JTAG to MCU",
+				cxxopts::value<bool>(args->conmcu))
 			("V,Version", "Print program version");
 
 		options.parse_positional({"bitstream"});
@@ -845,7 +855,8 @@ int parse_opt(int argc, char **argv, struct arguments *args, jtag_pins_conf_t *p
 			!args->protect_flash &&
 			!args->unprotect_flash &&
 			!args->xvc &&
-			!args->reset) {
+			!args->reset &&
+			!args->conmcu) {
 			printError("Error: bitfile not specified");
 			cout << options.help() << endl;
 			throw std::exception();

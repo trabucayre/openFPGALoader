@@ -18,7 +18,7 @@
 
 class Gowin: public Device, SPIInterface {
 	public:
-		Gowin(Jtag *jtag, std::string filename, const std::string &file_type,
+		Gowin(Jtag *jtag, std::string filename, const std::string &file_type, std::string mcufw,
 				Device::prog_type_t prg_type, bool external_flash,
 				bool verify, int8_t verbose);
 		~Gowin();
@@ -26,6 +26,7 @@ class Gowin: public Device, SPIInterface {
 		void reset() override;
 		void program(unsigned int offset, bool unprotect_flash) override;
 		void programFlash();
+		bool connectJtagToMCU() override;
 
 		/* spi interface */
 		virtual bool protect_flash(uint32_t len) override {
@@ -48,7 +49,7 @@ class Gowin: public Device, SPIInterface {
 		bool eraseSRAM();
 		bool eraseFLASH();
 		bool flashSRAM(uint8_t *data, int length);
-		bool flashFLASH(uint8_t *data, int length);
+		bool flashFLASH(uint32_t page, uint8_t *data, int length);
 		void displayReadReg(uint32_t dev);
 		uint32_t readStatusReg();
 		uint32_t readUserCode();
@@ -61,5 +62,6 @@ class Gowin: public Device, SPIInterface {
 		uint8_t _spi_di;      /**< di signal (mosi) offset in bscan SPI */
 		uint8_t _spi_do;      /**< do signal (miso) offset in bscan SPI */
 		uint8_t _spi_msk;     /** default spi msk with only do out */
+		ConfigBitstreamParser *_mcufw;
 };
 #endif  // GOWIN_HPP_

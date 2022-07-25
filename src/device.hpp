@@ -52,6 +52,8 @@ class Device {
 		virtual int  idCode() = 0;
 		virtual void reset();
 
+		virtual bool connectJtagToMCU() {return false;}
+
 	protected:
 		Jtag *_jtag;
 		std::string _filename;
