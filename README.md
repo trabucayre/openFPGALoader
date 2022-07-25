@@ -29,6 +29,8 @@ Also checkout the vendor-specific documentation:
 [Lattice](https://trabucayre.github.io/openFPGALoader/vendors/lattice.html),
 [Xilinx](https://trabucayre.github.io/openFPGALoader/vendors/xilinx.html).
 
+OpenFPGALoader has a dedicated channel: (#openFPGALoader at libera.chat.)[https://web.libera.chat/#openFPGALoader].
+
 ## Quick Usage
 
 `arty` in the example below is one of the many FPGA board configurations listed [here](https://trabucayre.github.io/openFPGALoader/compatibility/board.html).
