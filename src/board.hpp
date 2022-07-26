@@ -171,6 +171,7 @@ static std::map <std::string, target_board_t> board_list = {
 	JTAG_BOARD("tangnano1k",      "", "ft2232",     0, 0, CABLE_DEFAULT),
 	JTAG_BOARD("tangnano4k",      "", "ft2232",     0, 0, CABLE_DEFAULT),
 	JTAG_BOARD("tangnano9k",      "", "ft2232",     0, 0, CABLE_DEFAULT),
+	JTAG_BOARD("tangprimer20k",   "", "ft2232",     0, 0, CABLE_DEFAULT),
 	JTAG_BOARD("tec0117",         "", "ft2232",     0, 0, CABLE_DEFAULT),
 	DFU_BOARD("orbtrace_dfu",     "", "dfu", 0x1209, 0x3442, 1),
 	JTAG_BITBANG_BOARD("ulx2s",   "", "ft232RL", 0, 0,
