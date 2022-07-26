@@ -60,6 +60,7 @@ openFPGALoader -- a program to flash FPGA
                             of positive
       --vid arg             probe Vendor ID
       --pid arg             probe Product ID
+      --cable-index arg     probe index
       --ftdi-serial arg     FTDI chip serial number
       --ftdi-channel arg    FTDI chip channel number (channels 0-3 map to
                             A-D)
@@ -102,6 +103,8 @@ openFPGALoader -- a program to flash FPGA
       --verify              Verify write operation (SPI Flash only)
       --xvc                 Xilinx Virtual Cable Functions
       --port arg            Xilinx Virtual Cable Port (default 3721)
+      --mcufw arg           Microcontroller firmware
+      --conmcu              Connect JTAG to MCU
   -V, --Version             Print program version
 
 Mandatory or optional arguments to long options are also mandatory or optional
