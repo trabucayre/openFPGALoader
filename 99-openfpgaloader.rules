@@ -1,6 +1,10 @@
 # Copy this file to /etc/udev/rules.d/
 
 ACTION!="add|change", GOTO="openfpgaloader_rules_end"
+
+# gpiochip subsystem
+SUBSYSTEM=="gpio", MODE="0664", GROUP="plugdev", TAG+="uaccess"
+
 SUBSYSTEM!="usb|tty|hidraw", GOTO="openfpgaloader_rules_end"
 
 # Original FT232/FT245 VID:PID
@@ -43,8 +47,5 @@ ATTRS{idVendor}=="1d50", ATTRS{idProduct}=="6146", MODE="664", GROUP="plugdev", 
 
 # orbtrace-mini dfu
 ATTRS{idVendor}=="1209", ATTRS{idProduct}=="3442", MODE="664", GROUP="plugdev", TAG+="uaccess"
-
-# gpiochip subsystem
-SUBSYSTEM=="gpio", MODE="0664", GROUP="plugdev", TAG+="uaccess"
 
 LABEL="openfpgaloader_rules_end"
