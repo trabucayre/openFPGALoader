@@ -102,6 +102,7 @@ int main(int argc, char **argv)
 			0, false, "", false, false,
 			/* xvc server */
 			false, 3721, "-",
+			"", false, // mcufw conmcu
 	};
 	/* parse arguments */
 	try {
