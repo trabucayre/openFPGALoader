@@ -85,6 +85,14 @@ You may also need to add this if you see link errors between ``libusb`` and ``pt
 
     -DLINK_CMAKE_THREADS=ON
 
+By default, ``libgpiod`` support is enabled
+If you don't want this option, use:
+
+.. code-block:: bash
+
+    -DENABLE_LIBGPIOD=OFF
+
+Additionnaly you have to install ``libgpiod``
 
 To build the app:
 
