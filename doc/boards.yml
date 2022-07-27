@@ -62,6 +62,13 @@
   Memory: SVF
   Flash: SVF
 
+- ID: antmicro_ddr4_tester
+  Description: Antmicro Data Center DRAM Tester
+  URL: https://opensource.antmicro.com/projects/data-center-dram-tester
+  FPGA: Kintex7 xc7k160t
+  Memory: OK
+  Flash: OK
+
 - ID: arty_a7_35t
   Description: Digilent Arty A7
   URL: https://reference.digilentinc.com/reference/programmable-logic/arty-a7/start
