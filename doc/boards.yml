@@ -69,6 +69,13 @@
   Memory: OK
   Flash: OK
 
+- ID: antmicro_ddr5_tester
+  Description: Antmicro DDR5 Tester
+  URL: https://opensource.antmicro.com/projects/ddr5-tester
+  FPGA: Kintex7 xc7k160t
+  Memory: OK
+  Flash: OK
+
 - ID: arty_a7_35t
   Description: Digilent Arty A7
   URL: https://reference.digilentinc.com/reference/programmable-logic/arty-a7/start
