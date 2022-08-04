@@ -714,7 +714,7 @@ bool Xilinx::flow_program(JedParser *jed)
 		std::string flash = flow_read();
 		int flash_pos = 0;
 		ProgressBar progress2("Verify Flash", nb_section, 50, _quiet);
-		for (size_t section = 0; section < 108; section++) {
+		for (size_t section = 0; section < nb_section; section++) {
 			for (size_t subsection = 0; subsection < 15; subsection++) {
 				int id = section * 15 + subsection;
 				std::string content = jed->data_for_section(id)[0];
