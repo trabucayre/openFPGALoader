@@ -681,7 +681,7 @@ bool Xilinx::flow_program(JedParser *jed)
 			_jtag->shiftDR(wr_buf, NULL, 8 * (_xc95_line_len + 2));
 
 			if (ii == 14)
-				_jtag->toggleClk(20000);
+				_jtag->toggleClk((_jtag->getClkFreq() * 50) / 1000);
 			else
 				_jtag->toggleClk(1);
 
