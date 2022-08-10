@@ -66,6 +66,7 @@ static std::map <std::string, cable_t> cable_list = {
 	{"jtag-smt2-nc",       {MODE_FTDI_SERIAL,  {0x0403, 0x6014, INTERFACE_A, 0xe8, 0xeb, 0x00, 0x60, 0}}},
 	{"orbtrace",           {MODE_CMSISDAP,     {0x1209, 0x3443, 0,           0,    0,    0,    0,    0}}},
 	{"papilio",            {MODE_FTDI_SERIAL,  {0x0403, 0x6010, INTERFACE_A, 0x08, 0x0B, 0x09, 0x0B, 0}}},
+	{"steppenprobe",       {MODE_FTDI_SERIAL,  {0x0403, 0x6010, INTERFACE_A, 0x58, 0xFB, 0x00, 0x99, 0}}},
 	{"tigard",             {MODE_FTDI_SERIAL,  {0x0403, 0x6010, INTERFACE_B, 0x08, 0x3B, 0x00, 0x00, 0}}},
 	{"usb-blaster",        {MODE_USBBLASTER,   {0x09Fb, 0x6001, 0,           0,    0,    0,    0,    0}}},
 	{"usb-blasterII",      {MODE_USBBLASTER,   {0x09Fb, 0x6810, 0,           0,    0,    0,    0,    0}}},

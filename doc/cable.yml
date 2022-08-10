@@ -204,6 +204,13 @@ papilio:
     URL: https://papilio.cc/
 
 
+steppenprobe:
+
+  - Name: steppenprobe
+    Description: Open Source Hardware JTAG/SWD/UART/SWO interface board based on FTDI FT2232H
+    URL: https://github.com/diegoherranz/steppenprobe
+
+
 tigard:
 
   - Name: tigard
