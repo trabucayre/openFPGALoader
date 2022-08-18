@@ -197,6 +197,7 @@ Xilinx:
 
   - Description: Kintex UltraScale
     Model:
+      - xcku035
       - xcku040
     URL: https://www.xilinx.com/products/silicon-devices/fpga/kintex-ultrascale.html#productTable
     Memory: OK
