@@ -85,7 +85,7 @@ openFPGALoader -- a program to flash FPGA
       --list-fpga           list all supported FPGA
   -m, --write-sram          write bitstream in SRAM (default: true)
   -o, --offset arg          start offset in EEPROM
-      --pins arg            pin config (only for ft232R) TDI:TDO:TCK:TMS
+      --pins arg            pin config TDI:TDO:TCK:TMS
       --probe-firmware arg  firmware for JTAG probe (usbBlasterII)
       --protect-flash arg   protect SPI flash area
       --quiet               Produce quiet output (no progress bar)

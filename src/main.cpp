@@ -624,14 +624,6 @@ static int parse_eng(string arg, double *dst) {
 	}
 }
 
-static int get_bit_index(int mask)
-{
-	for (int i = 0; i < 32; i++)
-		if (mask & (1 << i))
-			return i;
-	return -1;
-}
-
 /* arguments parser */
 int parse_opt(int argc, char **argv, struct arguments *args, jtag_pins_conf_t *pins_config)
 {
@@ -807,14 +799,14 @@ int parse_opt(int argc, char **argv, struct arguments *args, jtag_pins_conf_t *p
 			}
 
 			static std::map <std::string, int> pins_list = {
-				{"TXD", get_bit_index(FT232RL_TXD)},
-				{"RXD", get_bit_index(FT232RL_RXD)},
-				{"RTS", get_bit_index(FT232RL_RTS)},
-				{"CTS", get_bit_index(FT232RL_CTS)},
-				{"DTR", get_bit_index(FT232RL_DTR)},
-				{"DSR", get_bit_index(FT232RL_DSR)},
-				{"DCD", get_bit_index(FT232RL_DCD)},
-				{"RI" , get_bit_index(FT232RL_RI) }};
+				{"TXD", FT232RL_TXD},
+				{"RXD", FT232RL_RXD},
+				{"RTS", FT232RL_RTS},
+				{"CTS", FT232RL_CTS},
+				{"DTR", FT232RL_DTR},
+				{"DSR", FT232RL_DSR},
+				{"DCD", FT232RL_DCD},
+				{"RI" , FT232RL_RI}};
 
 			for (int i = 0; i < 4; i++) {
 				int pin_num;

@@ -12,14 +12,14 @@
 
 /* AN_232R-01_Bit_Bang_Mode_Available_For_FT232R_and_Ft245R */
 enum {
-	FT232RL_TXD = (1 << 0),
-	FT232RL_RXD = (1 << 1),
-	FT232RL_RTS = (1 << 2),
-	FT232RL_CTS = (1 << 3),
-	FT232RL_DTR = (1 << 4),
-	FT232RL_DSR = (1 << 5),
-	FT232RL_DCD = (1 << 6),
-	FT232RL_RI  = (1 << 7)
+	FT232RL_TXD = 0,
+	FT232RL_RXD = 1,
+	FT232RL_RTS = 2,
+	FT232RL_CTS = 3,
+	FT232RL_DTR = 4,
+	FT232RL_DSR = 5,
+	FT232RL_DCD = 6,
+	FT232RL_RI  = 7
 };
 
 /* AN_108_Command_Processor_for_MPSSE_and_MCU_Host_Bus_Emulation_Modes */
