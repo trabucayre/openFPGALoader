@@ -190,6 +190,13 @@ jtag-smt2-nc:
     URL: https://digilent.com/shop/jtag-smt2-nc-surface-mount-programming-module
 
 
+lpc-link2:
+
+  - Name: lpc-link2
+    Description: LPC-Link2 (OM13054) cmsisDAP firmware
+    URL: https://www.nxp.com/design/microcontrollers-developer-resources/lpc-link2:OM13054
+
+
 orbtrace:
 
   - Name: orbtrace interface

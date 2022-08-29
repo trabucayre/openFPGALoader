@@ -64,6 +64,7 @@ static std::map <std::string, cable_t> cable_list = {
 	{"ecpix5-debug",       {MODE_FTDI_SERIAL,  {0x0403, 0x6010, INTERFACE_A, 0xF8, 0xFB, 0xFF, 0xFF, 0}}},
 	{"jlink",              {MODE_JLINK,        {0x1366, 0x0105, 0,           0,    0,    0,    0,    0}}},
 	{"jtag-smt2-nc",       {MODE_FTDI_SERIAL,  {0x0403, 0x6014, INTERFACE_A, 0xe8, 0xeb, 0x00, 0x60, 0}}},
+	{"lpc-link2",          {MODE_CMSISDAP,     {0x1fc9, 0x0090, 0,           0,    0,    0,    0,    0}}},
 	{"orbtrace",           {MODE_CMSISDAP,     {0x1209, 0x3443, 0,           0,    0,    0,    0,    0}}},
 	{"papilio",            {MODE_FTDI_SERIAL,  {0x0403, 0x6010, INTERFACE_A, 0x08, 0x0B, 0x09, 0x0B, 0}}},
 	{"steppenprobe",       {MODE_FTDI_SERIAL,  {0x0403, 0x6010, INTERFACE_A, 0x58, 0xFB, 0x00, 0x99, 0}}},
