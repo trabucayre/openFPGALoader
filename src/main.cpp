@@ -67,7 +67,7 @@ struct arguments {
 	int16_t altsetting;
 	uint16_t vid;
 	uint16_t pid;
-	uint16_t cable_index;
+	int16_t cable_index;
 	string ip_adr;
 	uint32_t protect_flash;
 	bool unprotect_flash;
@@ -98,7 +98,7 @@ int main(int argc, char **argv)
 	/* command line args. */
 	struct arguments args = {0, false, false, false, 0, "", "", "-", "", -1,
 			0, false, "-", false, false, false, false, Device::PRG_NONE, false,
-			false, false, "", "", "", -1, 0, false, -1, 0, 0, 0, "127.0.0.1",
+			false, false, "", "", "", -1, 0, false, -1, 0, 0, -1, "127.0.0.1",
 			0, false, "", false, false,
 			/* xvc server */
 			false, 3721, "-",
@@ -652,7 +652,7 @@ int parse_opt(int argc, char **argv, struct arguments *args, jtag_pins_conf_t *p
 				cxxopts::value<bool>(args->invert_read_edge))
 			("vid", "probe Vendor ID", cxxopts::value<uint16_t>(args->vid))
 			("pid", "probe Product ID", cxxopts::value<uint16_t>(args->pid))
-			("cable-index", "probe index", cxxopts::value<uint16_t>(args->cable_index))
+			("cable-index", "probe index (FTDI and cmsisDAP)", cxxopts::value<int16_t>(args->cable_index))
 
 			("ftdi-serial", "FTDI chip serial number", cxxopts::value<string>(args->ftdi_serial))
 			("ftdi-channel", "FTDI chip channel number (channels 0-3 map to A-D)", cxxopts::value<int>(args->ftdi_channel))

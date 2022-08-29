@@ -60,7 +60,7 @@ openFPGALoader -- a program to flash FPGA
                             of positive
       --vid arg             probe Vendor ID
       --pid arg             probe Product ID
-      --cable-index arg     probe index
+      --cable-index arg     probe index (FTDI and cmsisDAP)
       --ftdi-serial arg     FTDI chip serial number
       --ftdi-channel arg    FTDI chip channel number (channels 0-3 map to
                             A-D)

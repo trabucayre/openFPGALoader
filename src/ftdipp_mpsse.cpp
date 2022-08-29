@@ -45,7 +45,10 @@ FTDIpp_MPSSE::FTDIpp_MPSSE(const mpsse_bit_config &cable, const string &dev,
 	} else {
 		_vid = cable.vid;
 		_pid = cable.pid;
-		_index = cable.index;
+		if (cable.index == -1)
+			_index = 0;
+		else
+			_index = cable.index;
 	}
 
 	open_device(serial, 115200);

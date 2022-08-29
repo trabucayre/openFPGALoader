@@ -21,9 +21,10 @@ class CmsisDAP: public JtagInterface {
 		 *                    else search for a compatible device
 		 * \param[in] vid: vendor id
 		 * \param[in] pid: product id
+		 * \param[in] index: interface number
 		 * \param[in] verbose: verbose level 0 normal, 1 verbose
 		 */
-		CmsisDAP(const int vid, const int pid, uint8_t verbose);
+		CmsisDAP(const int vid, const int pid, int index, uint8_t verbose);
 
 		~CmsisDAP();
 

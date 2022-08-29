@@ -88,7 +88,7 @@ enum cmsisdap_status {
 	DAP_ERROR = 0xff
 };
 
-CmsisDAP::CmsisDAP(int vid, int pid, uint8_t verbose):_verbose(verbose),
+CmsisDAP::CmsisDAP(int vid, int pid, int index, uint8_t verbose):_verbose(verbose),
 		_device_idx(0),  _vid(vid), _pid(pid),
 		_serial_number(L""), _dev(NULL), _num_tms(0), _is_connect(false)
 {
@@ -121,18 +121,36 @@ CmsisDAP::CmsisDAP(int vid, int pid, uint8_t verbose):_verbose(verbose),
 		throw std::runtime_error("No device found");
 	}
 	/* more than one device: can't continue without more information */
-	if (dev_found.size() > 1) {
+	if (dev_found.size() > 1 && index == -1) {
 		hid_exit();
 		throw std::runtime_error(
-				"Error: more than one device. Please provides VID/PID");
+				"Error: more than one device. Please provides VID/PID or cable-index");
+	}
+
+	/* if index check for if interface exist */
+	if (index != -1) {
+		bool found = false;
+		for (size_t i = 0; i < dev_found.size(); i++) {
+			if (dev_found[i]->interface_number == index) {
+				found = true;
+				_device_idx = i;
+				break;
+			}
+		}
+		if (!found) {
+			hid_exit();
+			throw std::runtime_error(
+				"Error: no compatible interface with index " + std::to_string(_device_idx));
+		}
 	}
 
 	printInfo("Found " + std::to_string(dev_found.size()) + " compatible device:");
 	for (size_t i = 0; i < dev_found.size(); i++) {
 		char val[256];
-		snprintf(val, sizeof(val), "\t0x%04x 0x%04x %ls",
+		snprintf(val, sizeof(val), "\t0x%04x 0x%04x 0x%d %ls",
 				dev_found[i]->vendor_id,
 				dev_found[i]->product_id,
+				dev_found[i]->interface_number,
 				dev_found[i]->product_string);
 		printInfo(val);
 	}

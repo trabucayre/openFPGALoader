@@ -120,7 +120,8 @@ void Jtag::init_internal(cable_t &cable, const string &dev, const string &serial
 		break;
 	case MODE_CMSISDAP:
 #ifdef ENABLE_CMSISDAP
-		_jtag = new CmsisDAP(cable.config.vid, cable.config.pid, _verbose);
+		_jtag = new CmsisDAP(cable.config.vid, cable.config.pid,
+				cable.config.index, _verbose);
 		break;
 #else
 		std::cerr << "Jtag: support for cmsisdap was not enabled at compile time" << std::endl;
