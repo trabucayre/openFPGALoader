@@ -41,7 +41,7 @@ FtdiJtagBitBang::FtdiJtagBitBang(const FTDIpp_MPSSE::mpsse_bit_config &cable,
 	/* Validate pins */
 	uint8_t pins[] = {pin_conf->tck_pin, pin_conf->tms_pin,
 		pin_conf->tdi_pin, pin_conf->tdo_pin};
-	for (int i = 0; i < sizeof(pins) / sizeof(pins[0]); i++) {
+	for (uint32_t i = 0; i < sizeof(pins) / sizeof(pins[0]); i++) {
 		if (pins[i] > FT232RL_RI || pins[i] < FT232RL_TXD) {
 			printf("%d\n", pins[i]);
 			printError("Invalid pin ID");
