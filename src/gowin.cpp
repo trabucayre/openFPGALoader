@@ -127,7 +127,10 @@ Gowin::Gowin(Jtag *jtag, const string filename, const string &file_type, std::st
 			string idcode_str = _fs->getHeaderVal("idcode");
 			uint32_t fs_idcode = std::stoul(idcode_str.c_str(), NULL, 16);
 			if ((fs_idcode & 0x0fffffff) != idcode) {
-				throw std::runtime_error("mismatch between target's idcode and fs idcode");
+				char mess[256];
+				sprintf(mess, "mismatch between target's idcode and bitstream idcode\n"
+					"\tbitstream has 0x%08X hardware requires 0x%08x", fs_idcode, idcode);
+				throw std::runtime_error(mess);
 			}
 		}
 	}
