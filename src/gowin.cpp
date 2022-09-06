@@ -77,7 +77,8 @@ using namespace std;
 Gowin::Gowin(Jtag *jtag, const string filename, const string &file_type, std::string mcufw,
 		Device::prog_type_t prg_type, bool external_flash,
 		bool verify, int8_t verbose): Device(jtag, filename, file_type,
-		verify, verbose), is_gw1n1(false), _external_flash(external_flash),
+		verify, verbose), is_gw1n1(false), is_gw2a(false),
+		_external_flash(external_flash),
 		_spi_sck(BSCAN_SPI_SCK), _spi_cs(BSCAN_SPI_CS),
 		_spi_di(BSCAN_SPI_DI), _spi_do(BSCAN_SPI_DO),
 		_spi_msk(BSCAN_SPI_MSK)
@@ -158,6 +159,7 @@ Gowin::Gowin(Jtag *jtag, const string filename, const string &file_type, std::st
 			_external_flash = true;
 			/* FIXME: implement GW2 checksum calculation */
 			skip_checksum = true;
+			is_gw2a = true;
 	};
 
 	if (mcufw.size() > 0) {
@@ -278,7 +280,12 @@ void Gowin::program(unsigned int offset, bool unprotect_flash)
 			wr_rd(XFER_DONE, NULL, 0, NULL, 0);
 			wr_rd(NOOP, NULL, 0, NULL, 0);
 
-			wr_rd(0x3D, NULL, 0, NULL, 0);
+			if (!is_gw2a) {
+				wr_rd(0x3D, NULL, 0, NULL, 0);
+			} else {
+				DisableCfg();
+				wr_rd(NOOP, NULL, 0, NULL, 0);
+			}
 
 			SPIFlash spiFlash(this, unprotect_flash,
 					(_verbose ? 1 : (_quiet ? -1 : 0)));
@@ -290,8 +297,10 @@ void Gowin::program(unsigned int offset, bool unprotect_flash)
 			if (_verify)
 				if (!spiFlash.verify(offset, data, length / 8, 256))
 					throw std::runtime_error("Error: flash vefication failed");
-			if (!DisableCfg())
-				throw std::runtime_error("Error: fail to disable configuration");
+			if (!is_gw2a) {
+				if (!DisableCfg())
+					throw std::runtime_error("Error: fail to disable configuration");
+			}
 
 			reset();
 		}
@@ -707,92 +716,139 @@ int Gowin::spi_put(uint8_t cmd, uint8_t *tx, uint8_t *rx, uint32_t len)
 
 int Gowin::spi_put(uint8_t *tx, uint8_t *rx, uint32_t len)
 {
-	/* set CS/SCK/DI low */
-	uint8_t t = _spi_msk | _spi_do;
-	t &= ~_spi_cs;
-	spi_gowin_write(&t, NULL, 8);
-	_jtag->flush();
-
-	/* send bit/bit full tx content (or set di to 0 when NULL) */
-	for (uint32_t i = 0; i < len * 8; i++) {
-		uint8_t r;
-		t = _spi_msk | _spi_do;
-		if (tx != NULL && tx[i>>3] & (1 << (7-(i&0x07))))
-			t |= _spi_di;
-		spi_gowin_write(&t, NULL, 8);
-		t |= _spi_sck;
-		spi_gowin_write(&t, (rx) ? &r : NULL, 8);
-		_jtag->flush();
-		/* if read reconstruct bytes */
-		if (rx) {
-			if (r & _spi_do)
-				rx[i >> 3] |= 1 << (7-(i & 0x07));
-			else
-				rx[i >> 3] &= ~(1 << (7-(i & 0x07)));
+	if (is_gw2a) {
+		uint8_t jtx[len];
+		uint8_t jrx[len];
+		if (rx)
+			len++;
+		if (tx != NULL) {
+			for (uint32_t i = 0; i < len; i++)
+				jtx[i] = FsParser::reverseByte(tx[i]);
 		}
-	}
-	/* set CS and unset SCK (next xfer) */
-	t &= ~_spi_sck;
-	t |= _spi_cs;
-	spi_gowin_write(&t, NULL, 8);
-	_jtag->flush();
+		bool ret = wr_rd(0x16, NULL, 0, NULL, 0, false);
+		if (!ret)
+			return -1;
+		_jtag->set_state(Jtag::EXIT2_DR);
+		ret = _jtag->shiftDR(jtx, (rx)? jrx:NULL, 8*len);
+		if (rx) {
+			for (uint32_t i=0; i < len; i++) {
+				rx[i] = FsParser::reverseByte(jrx[i]>>1) |
+					(jrx[i+1]&0x01);
+			}
+		}
+	} else {
+		/* set CS/SCK/DI low */
+		uint8_t t = _spi_msk | _spi_do;
+		t &= ~_spi_cs;
+		spi_gowin_write(&t, NULL, 8);
+		_jtag->flush();
 
+		/* send bit/bit full tx content (or set di to 0 when NULL) */
+		for (uint32_t i = 0; i < len * 8; i++) {
+			uint8_t r;
+			t = _spi_msk | _spi_do;
+			if (tx != NULL && tx[i>>3] & (1 << (7-(i&0x07))))
+				t |= _spi_di;
+			spi_gowin_write(&t, NULL, 8);
+			t |= _spi_sck;
+			spi_gowin_write(&t, (rx) ? &r : NULL, 8);
+			_jtag->flush();
+			/* if read reconstruct bytes */
+			if (rx) {
+				if (r & _spi_do)
+					rx[i >> 3] |= 1 << (7-(i & 0x07));
+				else
+					rx[i >> 3] &= ~(1 << (7-(i & 0x07)));
+			}
+		}
+		/* set CS and unset SCK (next xfer) */
+		t &= ~_spi_sck;
+		t |= _spi_cs;
+		spi_gowin_write(&t, NULL, 8);
+		_jtag->flush();
+	}
 	return 0;
 }
 
 int Gowin::spi_wait(uint8_t cmd, uint8_t mask, uint8_t cond,
 		uint32_t timeout, bool verbose)
 {
+	uint8_t tmp;
 	uint32_t count = 0;
-	uint8_t rx, t;
 
-	/* set CS/SCK/DI low */
-	t = _spi_msk | _spi_do;
-	spi_gowin_write(&t, NULL, 8);
+	if (is_gw2a) {
+		uint8_t rx[3];
+		uint8_t tx[3];
+		tx[0] = FsParser::reverseByte(cmd);
 
-	/* send command bit/bit */
-	for (int i = 0; i < 8; i++) {
+		do {
+			bool ret = wr_rd(0x16, NULL, 0, NULL, 0, false);
+			if (!ret)
+				return -1;
+			_jtag->set_state(Jtag::EXIT2_DR);
+			ret = _jtag->shiftDR(tx, rx, 8 * 3);
+
+			tmp = (FsParser::reverseByte(rx[1]>>1)) | (0x01 & rx[2]);
+			count ++;
+			if (count == timeout) {
+				printf("timeout: %x %x %x\n", tmp, rx[0], rx[1]);
+				break;
+			}
+			if (verbose) {
+				printf("%x %x %x %u\n", tmp, mask, cond, count);
+			}
+		} while ((tmp & mask) != cond);
+	} else {
+		uint8_t t;
+
+		/* set CS/SCK/DI low */
 		t = _spi_msk | _spi_do;
-		if ((cmd & (1 << (7-i))) != 0)
-			t |= _spi_di;
 		spi_gowin_write(&t, NULL, 8);
-		t |= _spi_sck;
+
+		/* send command bit/bit */
+		for (int i = 0; i < 8; i++) {
+			t = _spi_msk | _spi_do;
+			if ((cmd & (1 << (7-i))) != 0)
+				t |= _spi_di;
+			spi_gowin_write(&t, NULL, 8);
+			t |= _spi_sck;
+			spi_gowin_write(&t, NULL, 8);
+			_jtag->flush();
+		}
+
+		t = _spi_msk | _spi_do;
+		do {
+			tmp = 0;
+			/* read status register bit/bit with di == 0 */
+			for (int i = 0; i < 8; i++) {
+				uint8_t r;
+				t &= ~_spi_sck;
+				spi_gowin_write(&t, NULL, 8);
+				t |= _spi_sck;
+				spi_gowin_write(&t, &r, 8);
+				_jtag->flush();
+				if ((r & _spi_do) != 0)
+					tmp |= 1 << (7-i);
+			}
+
+			count++;
+			if (count == timeout) {
+				printf("timeout: %x\n", tmp);
+				break;
+			}
+			if (verbose)
+				printf("%x %x %x %u\n", tmp, mask, cond, count);
+		} while ((tmp & mask) != cond);
+
+		/* set CS & unset SCK (next xfer) */
+		t &= ~_spi_sck;
+		t |= _spi_cs;
 		spi_gowin_write(&t, NULL, 8);
 		_jtag->flush();
 	}
 
-	t = _spi_msk | _spi_do;
-	do {
-		rx = 0;
-		/* read status register bit/bit with di == 0 */
-		for (int i = 0; i < 8; i++) {
-			uint8_t r;
-			t &= ~_spi_sck;
-			spi_gowin_write(&t, NULL, 8);
-			t |= _spi_sck;
-			spi_gowin_write(&t, &r, 8);
-			_jtag->flush();
-			if ((r & _spi_do) != 0)
-				rx |= 1 << (7-i);
-		}
-
-		count++;
-		if (count == timeout) {
-			printf("timeout: %x\n", rx);
-			break;
-		}
-		if (verbose)
-			printf("%x %x %x %u\n", rx, mask, cond, count);
-	} while ((rx & mask) != cond);
-
-	/* set CS & unset SCK (next xfer) */
-	t &= ~_spi_sck;
-	t |= _spi_cs;
-	spi_gowin_write(&t, NULL, 8);
-	_jtag->flush();
-
 	if (count == timeout) {
-		printf("%02x\n", rx);
+		printf("%02x\n", tmp);
 		std::cout << "wait: Error" << std::endl;
 		return -ETIME;
 	}
