@@ -34,7 +34,8 @@
 
 LibgpiodJtagBitbang::LibgpiodJtagBitbang(
 		const jtag_pins_conf_t *pin_conf,
-		const std::string &dev, uint32_t clkHZ, uint8_t verbose)
+		const std::string &dev, __attribute__((unused)) uint32_t clkHZ,
+		uint8_t verbose)
 {
 	_verbose = verbose;
 
@@ -57,13 +58,13 @@ LibgpiodJtagBitbang::LibgpiodJtagBitbang(
 
 	/* Validate pins */
 	int pins[] = {_tck_pin, _tms_pin, _tdi_pin, _tdo_pin};
-	for (int i = 0; i < sizeof(pins) / sizeof(pins[0]); i++) {
+	for (uint32_t i = 0; i < sizeof(pins) / sizeof(pins[0]); i++) {
 		if (pins[i] < 0 || pins[i] >= 1000) {
 			display("Pin %d is outside of valid range\n", pins[i]);
 			throw std::runtime_error("A pin is outside of valid range\n");
 		}
 
-		for (int j = i + 1; j < sizeof(pins) / sizeof(pins[0]); j++) {
+		for (uint32_t j = i + 1; j < sizeof(pins) / sizeof(pins[0]); j++) {
 			if (pins[i] == pins[j]) {
 				display("Two or more pins are assigned to the same pin number %d\n", pins[i]);
 				throw std::runtime_error("Two or more pins are assigned to the same pin number\n");
@@ -161,7 +162,7 @@ int LibgpiodJtagBitbang::read_tdo()
 	return gpiod_line_get_value(_tdo_line);
 }
 
-int LibgpiodJtagBitbang::setClkFreq(uint32_t clkHZ)
+int LibgpiodJtagBitbang::setClkFreq(__attribute__((unused)) uint32_t clkHZ)
 {
 	// FIXME: The assumption is that calling the gpiod_line_set_value
 	// routine will limit the clock frequency to lower than what is specified.
@@ -169,7 +170,8 @@ int LibgpiodJtagBitbang::setClkFreq(uint32_t clkHZ)
 	return 0;
 }
 
-int LibgpiodJtagBitbang::writeTMS(uint8_t *tms_buf, uint32_t len, bool flush_buffer)
+int LibgpiodJtagBitbang::writeTMS(uint8_t *tms_buf, uint32_t len,
+		__attribute__((unused)) bool flush_buffer)
 {
 	int tms;
 
@@ -193,7 +195,7 @@ int LibgpiodJtagBitbang::writeTDI(uint8_t *tx, uint8_t *rx, uint32_t len, bool e
 	if (rx)
 		memset(rx, 0, len / 8);
 
-	for (uint32_t i = 0, pos = 0; i < len; i++) {
+	for (uint32_t i = 0; i < len; i++) {
 		if (end && (i == len - 1))
 			tms = 1;
 
