@@ -133,6 +133,14 @@ These rules set access right and group (``plugdev``) when a converter is plugged
 
 After that you need to unplug and replug your device.
 
+.. HINT::
+   ``usermod`` is used to add ``$USER`` as a member of ``plugdev`` group.
+   However this update is not taken into account immediately: it's required to
+   logout from current session and login again.
+   Check, by using ``id $USER``, if ``plugdev`` is mentionned after ``groups=``.
+   An alternate (and temporary) solution is to use ``sudo - $USER`` to have
+   your user seen as a member of ``plugdev`` group (works only for the current terminal).
+
 macOS
 =====
 
