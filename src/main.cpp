@@ -656,7 +656,7 @@ int parse_opt(int argc, char **argv, struct arguments *args, jtag_pins_conf_t *p
 
 			("ftdi-serial", "FTDI chip serial number", cxxopts::value<string>(args->ftdi_serial))
 			("ftdi-channel", "FTDI chip channel number (channels 0-3 map to A-D)", cxxopts::value<int>(args->ftdi_channel))
-#if defined(USE_UDEV) || defined(ENABLE_LIBGPIOD)
+#if defined(USE_DEVICE_ARG)
 			("d,device",  "device to use (/dev/ttyUSBx)",
 				cxxopts::value<string>(args->device))
 #endif

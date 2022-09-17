@@ -216,6 +216,10 @@ if (ENABLE_LIBGPIOD)
 	message("libgpiod support enabled")
 endif(ENABLE_LIBGPIOD)
 
+if (ENABLE_UDEV OR ENABLE_LIBGPIOD)
+	add_definitions(-DUSE_DEVICE_ARG)
+endif(ENABLE_UDEV OR ENABLE_LIBGPIOD)
+
 if (BUILD_STATIC)
 	set_target_properties(openFPGALoader PROPERTIES LINK_SEARCH_END_STATIC 1)
 endif()
