@@ -18,12 +18,7 @@ To recover you have to pull down this pin (before power up) to recover JTAG inte
 JTAG init failed
 ================
 
-Avoid using USB hubs like these:
-
-.. image:: media/usb_hub.jpg
-    :align: center
-
-and connect it directly to your PC USB port.
+Avoid using USB hubs and connect it directly to your PC USB port.
 
 
 Tang Primer 20k program slow and stucked (issue `#250 <https://github.com/trabucayre/openFPGALoader/issues/250>`_)
@@ -47,28 +42,4 @@ Unable to open FTDI device: -4 (usb_open() failed) (issue `#245 <https://github.
 
 Edit your `/etc/udev/rules.d/99-ftdi.rules` file exchanging your programming device permissions.
 
-To identify what is your USB programming device, with your programmer UNPLUGGED run:
-
-.. code:: bash
-
-    watch lsusb
-
-You will see your USB devices connected to your computer, then plug in your programmer. You will notice there is a new device on the list.
-
-Let's suppose you found:
-
-.. code:: text
-
-    Bus 002 Device 004: ID 0403:6010 Future Technology Devices International, Ltd FT2232C/D/H Dual UART/FIFO IC
-                           \__/ \__/ \________________________________________________________________________/
-                            |     |                     |
-                            |     |                     \-----> Device Description Name
-                            |     \---------------------------> idProduct
-                            \---------------------------------> idVendor
-
-
-in this case, you will have to add/edit your udev rule file to:
-
-.. code:: bash
-
-    ATTRS{idVendor}=="0403", ATTRS{idProduct}=="6010", MODE="0666"
+For more information, check the udev section from `this guide <install.rst>`_
