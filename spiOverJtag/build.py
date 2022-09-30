@@ -81,6 +81,7 @@ if tool in ["ise", "vivado"]:
         "xc7k325tffg676"   : "xc7k_ffg676",
         "xc7k325tffg900"   : "xc7k_ffg900",
         "xc7k420tffg901"   : "xc7k_ffg901",
+        "xc7s25csga225"    : "xc7s_csga225",
         "xc7s25csga324"    : "xc7s_csga324",
         "xc7s50csga324"    : "xc7s_csga324"
         }[part]
