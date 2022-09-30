@@ -115,6 +115,14 @@
   Memory: OK
   Flash: OK
 
+- ID: cmoda7_35t
+  Description: Digilent CmodA7
+  URL: https://digilent.com/reference/programmable-logic/cmod-a7/start
+  FPGA: Artix xc7a35tcpg236
+  Memory: OK
+  Flash: OK
+  Constraints: Cmod-A7-35T
+
 - ID: colorlight
   Description: Colorlight 5A-75B (version 7)
   URL: https://fr.aliexpress.com/item/32281130824.html
