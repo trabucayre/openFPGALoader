@@ -274,7 +274,6 @@ file(GLOB BITS_FILES spiOverJtag/spiOverJtag_*.bit)
 file(GLOB RBF_FILES spiOverJtag/spiOverJtag_*.rbf)
 file(GLOB GZ_FILES spiOverJtag/spiOverJtag_*.*.gz)
 install(FILES 
-	test_sfl.svf
 	${BITS_FILES}
 	${RBF_FILES}
 	${GZ_FILES}

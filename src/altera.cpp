@@ -20,8 +20,6 @@
 #define USER1  0x0E
 #define BYPASS 0x3FF
 #define IRLENGTH 10
-// DATA_DIR is defined at compile time.
-#define BIT_FOR_FLASH (DATA_DIR "/openFPGALoader/test_sfl.svf")
 
 Altera::Altera(Jtag *jtag, const std::string &filename,
 	const std::string &file_type, Device::prog_type_t prg_type,
