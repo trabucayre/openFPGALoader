@@ -16,6 +16,7 @@ set grade [dict create \
 	xc7a200tsbg484 -1 \
 	xc7k325tffg676 -1 \
 	xc7k325tffg900 -2 \
+	xc7s25csga225  -1 \
 	xc7s50csga324  -1 \
 	]
 
@@ -30,6 +31,7 @@ set pkg_name [dict create \
 	xc7a200tfbg484 xc7a_fbg484 \
 	xc7k325tffg676 xc7k_ffg676 \
 	xc7k325tffg900 xc7k_ffg900 \
+	xc7s25csga225  xc7s_csga225 \
 	xc7s50csga324  xc7s_csga324 \
 	]
 

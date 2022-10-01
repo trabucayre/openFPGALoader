@@ -94,6 +94,13 @@
   Memory: OK
   Flash: OK
 
+- ID: cmod_s7
+  Description: Digilent Cmod S7
+  URL: https://https://digilent.com/reference/programmable-logic/cmod-s7/start
+  FPGA: Spartan7 xc7s25csga225
+  Memory: NA
+  Flash: OK
+
 - ID: gatemate_evb_jtag
   Description: Cologne Chip GateMate FPGA Evaluation Board (JTAG mode)
   URL: https://colognechip.com/programmable-logic/gatemate-evaluation-board/
