@@ -405,8 +405,8 @@ int main(int argc, char **argv)
 	Jtag *jtag;
 	try {
 		jtag = new Jtag(cable, &pins_config, args.device, args.ftdi_serial,
-				args.freq, args.verbose, args.ip_adr, args.invert_read_edge,
-				args.probe_firmware);
+				args.freq, args.verbose, args.ip_adr, args.port,
+				args.invert_read_edge, args.probe_firmware);
 	} catch (std::exception &e) {
 		printError("JTAG init failed with: " + string(e.what()));
 		return EXIT_FAILURE;

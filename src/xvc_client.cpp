@@ -27,10 +27,11 @@
 
 using namespace std;
 
-XVC_client::XVC_client(const std::string &ip_addr, uint32_t clkHz,
-		int8_t verbose):
+XVC_client::XVC_client(const std::string &ip_addr, int port,
+		uint32_t clkHz, int8_t verbose):
 	_verbose(verbose > 0), _xfer_buf(NULL), _tms(NULL), _tditdo(NULL),
-	_num_bits(0), _last_tms(0), _last_tdi(0), _buffer_size(0), _sock(0)
+	_num_bits(0), _last_tms(0), _last_tdi(0), _buffer_size(0), _sock(0),
+	_port(port)
 {
 	if (!open_connection(ip_addr))
 		throw std::runtime_error("connection failure");
@@ -221,7 +222,7 @@ bool XVC_client::open_connection(const string &ip_addr)
 {
 	struct sockaddr_in addr;
 	addr.sin_family = AF_INET;
-	addr.sin_port = htons(2542);
+	addr.sin_port = htons(_port);
 	addr.sin_addr.s_addr = inet_addr(ip_addr.c_str());
 
 	_sock = socket(AF_INET, SOCK_STREAM, IPPROTO_TCP);

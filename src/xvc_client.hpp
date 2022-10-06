@@ -22,7 +22,8 @@ class XVC_client: public JtagInterface {
 		 * \param[in] verbose: verbose level -1 quiet, 0 normal,
 		 * 								1 verbose, 2 debug
 		 */
-		XVC_client(const std::string &ip_addr, uint32_t clkHz, int8_t verbose);
+		XVC_client(const std::string &ip_addr, int port, uint32_t clkHz,
+				int8_t verbose);
 
 		~XVC_client();
 
@@ -120,5 +121,6 @@ class XVC_client: public JtagInterface {
 		std::string _server_name;
 		std::string _server_vers;
 		int _sock;
+		int _port;                /*!< target port */
 };
 #endif  // SRC_XVC_CLIENT_HPP_

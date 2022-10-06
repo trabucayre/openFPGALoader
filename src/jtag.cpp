@@ -70,7 +70,7 @@ using namespace std;
 
 Jtag::Jtag(cable_t &cable, const jtag_pins_conf_t *pin_conf, string dev,
 			const string &serial, uint32_t clkHZ, int8_t verbose,
-			const string &ip_adr,
+			const string &ip_adr, int port,
 			const bool invert_read_edge, const string &firmware_path):
 			_verbose(verbose > 1),
 			_state(RUN_TEST_IDLE),
@@ -78,7 +78,7 @@ Jtag::Jtag(cable_t &cable, const jtag_pins_conf_t *pin_conf, string dev,
 			_board_name("nope"), device_index(0)
 {
 	init_internal(cable, dev, serial, pin_conf, clkHZ, firmware_path,
-			invert_read_edge, ip_adr);
+			invert_read_edge, ip_adr, port);
 	detectChain(5);
 }
 
@@ -90,7 +90,7 @@ Jtag::~Jtag()
 
 void Jtag::init_internal(cable_t &cable, const string &dev, const string &serial,
 	const jtag_pins_conf_t *pin_conf, uint32_t clkHZ, const string &firmware_path,
-	const bool invert_read_edge, const string &ip_adr)
+	const bool invert_read_edge, const string &ip_adr, int port)
 {
 	switch (cable.type) {
 	case MODE_ANLOGICCABLE:
@@ -129,7 +129,7 @@ void Jtag::init_internal(cable_t &cable, const string &dev, const string &serial
 #endif
 	case MODE_XVC_CLIENT:
 #ifdef ENABLE_XVC
-		_jtag = new XVC_client(ip_adr, clkHZ, _verbose);
+		_jtag = new XVC_client(ip_adr, port, clkHZ, _verbose);
 		break;
 #else
 		std::cerr << "Jtag: support for xvc-client was not enabled at compile time" << std::endl;
