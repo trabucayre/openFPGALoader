@@ -26,6 +26,7 @@ enum communication_type {
 	MODE_DFU,              /*! DFU based probe */
 	MODE_XVC_CLIENT,       /*! Xilinx Virtual Cable client */
 	MODE_LIBGPIOD_BITBANG, /*! Bitbang gpio pins */
+	MODE_JETSONNANO_BITBANG, /*! Bitbang gpio pins */
 };
 
 typedef struct {
@@ -74,6 +75,9 @@ static std::map <std::string, cable_t> cable_list = {
 	{"xvc-client",         {MODE_XVC_CLIENT,   {}}},
 #ifdef ENABLE_LIBGPIOD
 	{"libgpiod",           {MODE_LIBGPIOD_BITBANG, {}}},
+#endif
+#ifdef ENABLE_JETSONNANOGPIO
+	{"jetson-nano-gpio",   {MODE_JETSONNANO_BITBANG, {}}},
 #endif
 };
 

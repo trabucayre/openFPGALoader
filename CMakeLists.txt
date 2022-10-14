@@ -216,9 +216,16 @@ if (ENABLE_LIBGPIOD)
 	message("libgpiod support enabled")
 endif(ENABLE_LIBGPIOD)
 
-if (ENABLE_UDEV OR ENABLE_LIBGPIOD)
+if (ENABLE_JETSONNANOGPIO)
+	add_definitions(-DENABLE_JETSONNANOGPIO=1)
+	target_sources(openFPGALoader PRIVATE src/jetsonNanoJtagBitbang.cpp)
+	list (APPEND OPENFPGALOADER_HEADERS src/jetsonNanoJtagBitbang.hpp)
+	message("Jetson Nano GPIO support enabled")
+endif(ENABLE_JETSONNANOGPIO)
+
+if (ENABLE_UDEV OR ENABLE_LIBGPIOD OR ENABLE_JETSONNANOGPIO)
 	add_definitions(-DUSE_DEVICE_ARG)
-endif(ENABLE_UDEV OR ENABLE_LIBGPIOD)
+endif(ENABLE_UDEV OR ENABLE_LIBGPIOD OR ENABLE_JETSONNANOGPIO)
 
 if (BUILD_STATIC)
 	set_target_properties(openFPGALoader PROPERTIES LINK_SEARCH_END_STATIC 1)

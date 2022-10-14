@@ -257,3 +257,9 @@ libgpiod:
   - Name: Bitbang GPIO
     Description: Bitbang GPIO pins on Linux host.
     URL: https://github.com/brgl/libgpiod
+
+jetson-nano-gpio:
+
+  - Name: Bitbang GPIO
+    Description: Bitbang GPIO pins on Jetson Nano Linux host. Use /dev/mem to have a faster clock.
+    URL: https://github.com/jwatte/jetson-gpio-example

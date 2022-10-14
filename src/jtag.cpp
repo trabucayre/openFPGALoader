@@ -24,6 +24,9 @@
 #ifdef ENABLE_LIBGPIOD
 #include "libgpiodJtagBitbang.hpp"
 #endif
+#ifdef ENABLE_JETSONNANOGPIO
+#include "jetsonNanoJtagBitbang.hpp"
+#endif
 #include "jlink.hpp"
 #ifdef ENABLE_CMSISDAP
 #include "cmsisDAP.hpp"
@@ -138,6 +141,11 @@ void Jtag::init_internal(cable_t &cable, const string &dev, const string &serial
 #ifdef ENABLE_LIBGPIOD
 	case MODE_LIBGPIOD_BITBANG:
 		_jtag = new LibgpiodJtagBitbang(pin_conf, dev, clkHZ, _verbose);
+		break;
+#endif
+#ifdef ENABLE_JETSONNANOGPIO
+	case MODE_JETSONNANO_BITBANG:
+		_jtag = new JetsonNanoJtagBitbang(pin_conf, dev, clkHZ, _verbose);
 		break;
 #endif
 	default:
