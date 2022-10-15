@@ -55,8 +55,8 @@ struct cable_t {
 	communication_type type; /*! see enum communication_type */
 	int vid;                 /*! Vendor ID */
 	int pid;                 /*! Product ID */
-	int bus;                 /*! bus number (must be set to -1: user defined */
-	int device;              /*! device number (must be set -1: user defined */
+	int bus_addr;            /*! bus number (must be set to -1: user defined */
+	int device_addr;         /*! device number (must be set -1: user defined */
 	mpsse_bit_config config; /*! FTDI specific configurations */
 };
 
