@@ -29,7 +29,8 @@ using namespace std;
 FTDIpp_MPSSE::FTDIpp_MPSSE(const cable_t &cable, const string &dev,
 				const std::string &serial, uint32_t clkHZ, int8_t verbose):
 				_verbose(verbose > 2), _cable(cable.config), _vid(0),
-				_pid(0), _index(0), _bus(-1), _addr(-1),
+				_pid(0), _index(0),
+				_bus(cable.bus_addr), _addr(cable.device_addr),
 				_interface(cable.config.interface),
 				_clkHZ(clkHZ), _buffer_size(2*32768), _num(0)
 {
@@ -138,7 +139,7 @@ void FTDIpp_MPSSE::open_device(const std::string &serial, unsigned int baudrate)
 		throw std::runtime_error(err);
 	}
 
-	if (_bus == -1 || _addr == -1)
+	if (_bus == 0 || _addr == 0)
 		ret = ftdi_usb_open_desc_index(_ftdi, _vid, _pid, NULL, serial.empty() ? NULL : serial.c_str(), _index);
 	else
 #if (FTDI_VERSION < 104)
@@ -839,10 +840,10 @@ bool FTDIpp_MPSSE::search_with_dev(const string &device)
 		return false;
 	}
 
-	_bus = udevstufftoint(udev_device_get_sysattr_value(
-				usbdeviceparent, "busnum"), 10);
-	_addr = udevstufftoint(udev_device_get_sysattr_value(
-				usbdeviceparent, "devnum"), 10);
+	_bus = static_cast<uint8_t>(udevstufftoint(udev_device_get_sysattr_value(
+				usbdeviceparent, "busnum"), 10));
+	_addr = static_cast<uint8_t>(udevstufftoint(udev_device_get_sysattr_value(
+				usbdeviceparent, "devnum"), 10));
 	sprintf(_product, "%s", udev_device_get_sysattr_value(usbdeviceparent, "product"));
 	_vid = udevstufftoint(
 		udev_device_get_sysattr_value(usbdeviceparent, "idVendor"), 16);

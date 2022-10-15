@@ -65,8 +65,8 @@ class FTDIpp_MPSSE {
 		int _pid;
 		int _index;
 	private:
-		int _bus;
-		int _addr;
+		uint8_t _bus;
+		uint8_t _addr;
 		char _product[64];
 		unsigned char _interface;
 		/* gpio */
