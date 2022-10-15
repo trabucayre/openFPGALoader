@@ -61,6 +61,8 @@ openFPGALoader -- a program to flash FPGA
       --vid arg             probe Vendor ID
       --pid arg             probe Product ID
       --cable-index arg     probe index (FTDI and cmsisDAP)
+      --busdev-num arg      select a probe by it bus and device number
+                            (bus_num:device_addr)
       --ftdi-serial arg     FTDI chip serial number
       --ftdi-channel arg    FTDI chip channel number (channels 0-3 map to
                             A-D)

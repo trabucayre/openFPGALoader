@@ -68,6 +68,8 @@ struct arguments {
 	uint16_t vid;
 	uint16_t pid;
 	int16_t cable_index;
+	int8_t bus_addr;
+	int8_t device_addr;
 	string ip_adr;
 	uint32_t protect_flash;
 	bool unprotect_flash;
@@ -98,8 +100,10 @@ int main(int argc, char **argv)
 	/* command line args. */
 	struct arguments args = {0, false, false, false, 0, "", "", "-", "", -1,
 			0, false, "-", false, false, false, false, Device::PRG_NONE, false,
-			false, false, "", "", "", -1, 0, false, -1, 0, 0, -1, "127.0.0.1",
-			0, false, "", false, false,
+			false, false, "", "", "", -1, 0, false, -1,
+			/* vid, pid, index bus_addr, device_addr */
+			    0,   0,   -1,     0,         0,
+			"127.0.0.1", 0, false, "", false, false,
 			/* xvc server */
 			false, 3721, "-",
 			"", false, // mcufw conmcu
@@ -214,6 +218,9 @@ int main(int argc, char **argv)
 		printInfo("Cable PID overridden");
 		cable.pid = args.pid;
 	}
+
+	cable.bus_addr = args.bus_addr;
+	cable.device_addr = args.device_addr;
 
 	// always set this
 	cable.config.index = args.cable_index;
@@ -629,7 +636,7 @@ int parse_opt(int argc, char **argv, struct arguments *args, jtag_pins_conf_t *p
 {
 
 	string freqo;
-	vector<string> pins;
+	vector<string> pins, bus_dev_num;
 	bool verbose, quiet;
 	int8_t verbose_level = -2;
 	try {
@@ -653,7 +660,8 @@ int parse_opt(int argc, char **argv, struct arguments *args, jtag_pins_conf_t *p
 			("vid", "probe Vendor ID", cxxopts::value<uint16_t>(args->vid))
 			("pid", "probe Product ID", cxxopts::value<uint16_t>(args->pid))
 			("cable-index", "probe index (FTDI and cmsisDAP)", cxxopts::value<int16_t>(args->cable_index))
-
+			("busdev-num",  "select a probe by it bus and device number (bus_num:device_addr)",
+				cxxopts::value<vector<string>>(bus_dev_num))
 			("ftdi-serial", "FTDI chip serial number", cxxopts::value<string>(args->ftdi_serial))
 			("ftdi-channel", "FTDI chip channel number (channels 0-3 map to A-D)", cxxopts::value<int>(args->ftdi_channel))
 #if defined(USE_DEVICE_ARG)
@@ -788,6 +796,20 @@ int parse_opt(int argc, char **argv, struct arguments *args, jtag_pins_conf_t *p
 		if (result.count("ftdi-channel")) {
 			if (args->ftdi_channel < 0 || args->ftdi_channel > 3) {
 				printError("Error: valid FTDI channels are 0-3.");
+				throw std::exception();
+			}
+		}
+
+		if (result.count("busdev-num")) {
+			if (bus_dev_num.size() != 2) {
+				printError("Error: busdev-num must be xx:yy");
+				throw std::exception();
+			}
+			try {
+				args->bus_addr = static_cast<uint8_t>(std::stoi(bus_dev_num[0], nullptr, 0));
+				args->device_addr = static_cast<uint8_t>(std::stoi(bus_dev_num[1], nullptr, 0));
+			} catch (std::exception &e) {
+				printError("Error: busdev-num invalid format: must be numeric values");
 				throw std::exception();
 			}
 		}
