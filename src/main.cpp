@@ -25,6 +25,7 @@
 #include "gowin.hpp"
 #include "ice40.hpp"
 #include "lattice.hpp"
+#include "libusb_ll.hpp"
 #include "jtag.hpp"
 #include "part.hpp"
 #include "spiFlash.hpp"
@@ -40,7 +41,7 @@ using namespace std;
 
 struct arguments {
 	int8_t verbose;
-	bool reset, detect, verify;
+	bool reset, detect, verify, scan_usb;
 	unsigned int offset;
 	string bit_file;
 	string device;
@@ -98,7 +99,7 @@ int main(int argc, char **argv)
 	jtag_pins_conf_t pins_config = {0, 0, 0, 0};
 
 	/* command line args. */
-	struct arguments args = {0, false, false, false, 0, "", "", "-", "", -1,
+	struct arguments args = {0, false, false, false, false, 0, "", "", "-", "", -1,
 			0, false, "-", false, false, false, false, Device::PRG_NONE, false,
 			false, false, "", "", "", -1, 0, false, -1,
 			/* vid, pid, index bus_addr, device_addr */
@@ -708,6 +709,8 @@ int parse_opt(int argc, char **argv, struct arguments *args, jtag_pins_conf_t *p
 				cxxopts::value<bool>(quiet))
 			("r,reset",   "reset FPGA after operations",
 				cxxopts::value<bool>(args->reset))
+			("scan-usb",  "scan USB to display connected probes",
+				cxxopts::value<bool>(args->scan_usb))
 			("skip-load-bridge", "skip writing bridge to SRAM when in write-flash mode",
 				cxxopts::value<bool>(args->skip_load_bridge))
 			("skip-reset", "skip resetting the device when in write-flash mode",
@@ -860,7 +863,8 @@ int parse_opt(int argc, char **argv, struct arguments *args, jtag_pins_conf_t *p
 			args->pin_config = true;
 		}
 
-		if (args->list_cables || args->list_boards || args->list_fpga)
+		if (args->list_cables || args->list_boards || args->list_fpga ||
+			args->scan_usb)
 			args->is_list_command = true;
 
 		if (args->bit_file.empty() &&
@@ -930,6 +934,11 @@ void displaySupported(const struct arguments &args)
 			printInfo(ss.str());
 		}
 		cout << endl;
+	}
+
+	if (args.scan_usb) {
+		libusb_ll usb(0,0);
+		usb.scan();
 	}
 }
 

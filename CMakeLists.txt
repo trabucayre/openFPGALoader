@@ -105,6 +105,7 @@ set(OPENFPGALOADER_SOURCE
 	src/ftdipp_mpsse.cpp
 	src/main.cpp
 	src/latticeBitParser.cpp
+	src/libusb_ll.cpp
 	src/gowin.cpp
 	src/device.cpp
 	src/jlink.cpp
@@ -145,6 +146,7 @@ set(OPENFPGALOADER_HEADERS
 	src/jlink.hpp
 	src/jtag.hpp
 	src/jtagInterface.hpp
+	src/libusb_ll.hpp
 	src/fsparser.hpp
 	src/part.hpp
 	src/board.hpp
