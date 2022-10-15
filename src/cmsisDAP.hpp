@@ -12,6 +12,7 @@
 #include <string>
 #include <vector>
 
+#include "cable.hpp"
 #include "jtagInterface.hpp"
 
 class CmsisDAP: public JtagInterface {
@@ -24,7 +25,7 @@ class CmsisDAP: public JtagInterface {
 		 * \param[in] index: interface number
 		 * \param[in] verbose: verbose level 0 normal, 1 verbose
 		 */
-		CmsisDAP(const int vid, const int pid, int index, uint8_t verbose);
+		CmsisDAP(const cable_t &cable, int index, uint8_t verbose);
 
 		~CmsisDAP();
 

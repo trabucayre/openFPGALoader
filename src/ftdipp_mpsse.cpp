@@ -26,11 +26,11 @@ using namespace std;
 #define display(...) \
 	do { if (_verbose) fprintf(stdout, __VA_ARGS__);}while(0)
 
-FTDIpp_MPSSE::FTDIpp_MPSSE(const mpsse_bit_config &cable, const string &dev,
+FTDIpp_MPSSE::FTDIpp_MPSSE(const cable_t &cable, const string &dev,
 				const std::string &serial, uint32_t clkHZ, int8_t verbose):
-				_verbose(verbose > 2), _cable(cable), _vid(0),
+				_verbose(verbose > 2), _cable(cable.config), _vid(0),
 				_pid(0), _index(0), _bus(-1), _addr(-1),
-				_interface(cable.interface),
+				_interface(cable.config.interface),
 				_clkHZ(clkHZ), _buffer_size(2*32768), _num(0)
 {
 	libusb_error ret;
@@ -45,10 +45,10 @@ FTDIpp_MPSSE::FTDIpp_MPSSE(const mpsse_bit_config &cable, const string &dev,
 	} else {
 		_vid = cable.vid;
 		_pid = cable.pid;
-		if (cable.index == -1)
+		if (cable.config.index == -1)
 			_index = 0;
 		else
-			_index = cable.index;
+			_index = cable.config.index;
 	}
 
 	open_device(serial, 115200);

@@ -37,15 +37,14 @@ using namespace std;
 #define display(...) do {}while(0)
 #endif
 
-UsbBlaster::UsbBlaster(int vid, int pid, const std::string &firmware_path,
+UsbBlaster::UsbBlaster(const cable_t &cable, const std::string &firmware_path,
 		uint8_t verbose):
 			_verbose(verbose), _nb_bit(0),
 			_curr_tms(0), _buffer_size(64)
 {
-	(void) vid;
-	if (pid == 0x6001)
+	if (cable.pid == 0x6001)
 		ll_driver = new UsbBlasterI();
-	else if (pid == 0x6810)
+	else if (cable.pid == 0x6810)
 		ll_driver = new UsbBlasterII(firmware_path);
 	else
 		throw std::runtime_error("usb-blaster: unknown VID/PID");
@@ -60,7 +59,7 @@ UsbBlaster::UsbBlaster(int vid, int pid, const std::string &firmware_path,
 	memset(_in_buf, 0, _buffer_size);
 
 	/* Force flush internal FT245 internal buffer */
-	if (pid == 0x6001) {
+	if (cable.pid == 0x6001) {
 		uint8_t val = DEFAULT | DO_WRITE | DO_BITBB | _tms_pin;
 		uint8_t tmp_buf[4096];
 		for (_nb_bit = 0; _nb_bit < 4096; _nb_bit += 2) {

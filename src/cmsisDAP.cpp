@@ -88,8 +88,8 @@ enum cmsisdap_status {
 	DAP_ERROR = 0xff
 };
 
-CmsisDAP::CmsisDAP(int vid, int pid, int index, uint8_t verbose):_verbose(verbose),
-		_device_idx(0),  _vid(vid), _pid(pid),
+CmsisDAP::CmsisDAP(const cable_t &cable, int index, uint8_t verbose):_verbose(verbose),
+		_device_idx(0),  _vid(cable.vid), _pid(cable.pid),
 		_serial_number(L""), _dev(NULL), _num_tms(0), _is_connect(false)
 {
 	std::vector<struct hid_device_info *> dev_found;
@@ -109,7 +109,7 @@ CmsisDAP::CmsisDAP(int vid, int pid, int index, uint8_t verbose):_verbose(verbos
 	 * if vid/pid are 0 this function return all;
 	 * if vid/pid are >0 only one (or 0) device returned
 	 */
-	devs = hid_enumerate(vid, pid);
+	devs = hid_enumerate(cable.vid, cable.pid);
 
 	for (cur_dev = devs; NULL != cur_dev; cur_dev = cur_dev->next) {
 		dev_found.push_back(cur_dev);

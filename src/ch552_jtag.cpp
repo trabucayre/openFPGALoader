@@ -29,11 +29,11 @@ using namespace std;
 #define display(...) do {}while(0)
 #endif
 
-CH552_jtag::CH552_jtag(const FTDIpp_MPSSE::mpsse_bit_config &cable,
+CH552_jtag::CH552_jtag(const cable_t &cable,
 			string dev, const string &serial, uint32_t clkHZ, uint8_t verbose):
 			FTDIpp_MPSSE(cable, dev, serial, clkHZ, verbose), _to_read(0)
 {
-	init_internal(cable);
+	init_internal(cable.config);
 }
 
 CH552_jtag::~CH552_jtag()
@@ -59,7 +59,7 @@ CH552_jtag::~CH552_jtag()
 			"Loopback failed, expect problems on later runs %d\n", read);
 }
 
-void CH552_jtag::init_internal(const FTDIpp_MPSSE::mpsse_bit_config &cable)
+void CH552_jtag::init_internal(const mpsse_bit_config &cable)
 {
 	display("iProduct : %s\n", _iproduct);
 

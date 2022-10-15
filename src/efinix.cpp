@@ -66,7 +66,7 @@ Efinix::Efinix(Jtag* jtag, const std::string &filename,
 	target_board_t *spi_board = &(board_list[spi_board_name]);
 
 	/* 3: SPI cable */
-	cable_t *spi_cable = &(cable_list[spi_board->cable_name]);
+	cable_t spi_cable = (cable_list[spi_board->cable_name]);
 
 	/* 4: get pinout (cs, oe, rst) */
 	_cs_pin = spi_board->spi_pins_config.cs_pin;
@@ -74,7 +74,7 @@ Efinix::Efinix(Jtag* jtag, const std::string &filename,
 	_oe_pin = spi_board->oe_pin;
 
 	/* 5: open SPI interface */
-	_spi = new FtdiSpi(spi_cable->config, spi_board->spi_pins_config,
+	_spi = new FtdiSpi(spi_cable, spi_board->spi_pins_config,
 			jtag->getClkFreq(), verbose > 0);
 
 	/* 6: configure pins direction and default state */

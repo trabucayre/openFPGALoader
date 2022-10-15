@@ -208,11 +208,11 @@ int main(int argc, char **argv)
 
 	if (args.vid != 0) {
 		printInfo("Cable VID overridden");
-		cable.config.vid = args.vid;
+		cable.vid = args.vid;
 	}
 	if (args.pid != 0) {
 		printInfo("Cable PID overridden");
-		cable.config.pid = args.pid;
+		cable.pid = args.pid;
 	}
 
 	// always set this
@@ -230,7 +230,7 @@ int main(int argc, char **argv)
 			pins_config = board->spi_pins_config;
 
 		try {
-			spi = new FtdiSpi(cable.config, pins_config, args.freq, args.verbose > 0);
+			spi = new FtdiSpi(cable, pins_config, args.freq, args.verbose > 0);
 		} catch (std::exception &e) {
 			printError("Error: Failed to claim cable");
 			return EXIT_FAILURE;
@@ -871,7 +871,7 @@ void displaySupported(const struct arguments &args)
 		t << setw(25) << left << "cable name" << "vid:pid";
 		printSuccess(t.str());
 		for (auto b = cable_list.begin(); b != cable_list.end(); b++) {
-			FTDIpp_MPSSE::mpsse_bit_config c = (*b).second.config;
+			cable_t c = (*b).second;
 			stringstream ss;
 			ss << setw(25) << left << (*b).first;
 			ss << "0x" << hex << right << setw(4) << setfill('0') << c.vid << ":" << setw(4) << c.pid;

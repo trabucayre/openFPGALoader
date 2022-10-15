@@ -3,22 +3,18 @@
  * Copyright (C) 2020 Gwenhael Goavec-Merou <gwenhael.goavec-merou@trabucayre.com>
  */
 
-#include <libusb.h>
-
+#include <cstring>
 #include <iomanip>
 #include <iostream>
 #include <map>
 #include <sstream>
 #include <vector>
-#include <stdio.h>
-#include <string.h>
 #include <string>
 
 #include "anlogicCable.hpp"
 #include "ch552_jtag.hpp"
 #include "display.hpp"
 #include "jtag.hpp"
-#include "ftdipp_mpsse.hpp"
 #include "ftdiJtagBitbang.hpp"
 #include "ftdiJtagMPSSE.hpp"
 #ifdef ENABLE_LIBGPIOD
@@ -68,7 +64,7 @@ using namespace std;
  *           - envoyer le dernier avec 0x4B ou 0x6B
  */
 
-Jtag::Jtag(cable_t &cable, const jtag_pins_conf_t *pin_conf, string dev,
+Jtag::Jtag(const cable_t &cable, const jtag_pins_conf_t *pin_conf, string dev,
 			const string &serial, uint32_t clkHZ, int8_t verbose,
 			const string &ip_adr, int port,
 			const bool invert_read_edge, const string &firmware_path):
@@ -88,7 +84,7 @@ Jtag::~Jtag()
 	delete _jtag;
 }
 
-void Jtag::init_internal(cable_t &cable, const string &dev, const string &serial,
+void Jtag::init_internal(const cable_t &cable, const string &dev, const string &serial,
 	const jtag_pins_conf_t *pin_conf, uint32_t clkHZ, const string &firmware_path,
 	const bool invert_read_edge, const string &ip_adr, int port)
 {
@@ -99,14 +95,14 @@ void Jtag::init_internal(cable_t &cable, const string &dev, const string &serial
 	case MODE_FTDI_BITBANG:
 		if (pin_conf == NULL)
 			throw std::exception();
-		_jtag = new FtdiJtagBitBang(cable.config, pin_conf, dev, serial, clkHZ, _verbose);
+		_jtag = new FtdiJtagBitBang(cable, pin_conf, dev, serial, clkHZ, _verbose);
 		break;
 	case MODE_FTDI_SERIAL:
-		_jtag = new FtdiJtagMPSSE(cable.config, dev, serial, clkHZ,
+		_jtag = new FtdiJtagMPSSE(cable, dev, serial, clkHZ,
 				invert_read_edge, _verbose);
 		break;
 	case MODE_CH552_JTAG:
-		_jtag = new CH552_jtag(cable.config, dev, serial, clkHZ, _verbose);
+		_jtag = new CH552_jtag(cable, dev, serial, clkHZ, _verbose);
 		break;
 	case MODE_DIRTYJTAG:
 		_jtag = new DirtyJtag(clkHZ, _verbose);
@@ -115,13 +111,11 @@ void Jtag::init_internal(cable_t &cable, const string &dev, const string &serial
 		_jtag = new Jlink(clkHZ, _verbose);
 		break;
 	case MODE_USBBLASTER:
-		_jtag = new UsbBlaster(cable.config.vid, cable.config.pid,
-				firmware_path, _verbose);
+		_jtag = new UsbBlaster(cable, firmware_path, _verbose);
 		break;
 	case MODE_CMSISDAP:
 #ifdef ENABLE_CMSISDAP
-		_jtag = new CmsisDAP(cable.config.vid, cable.config.pid,
-				cable.config.index, _verbose);
+		_jtag = new CmsisDAP(cable, cable.config.index, _verbose);
 		break;
 #else
 		std::cerr << "Jtag: support for cmsisdap was not enabled at compile time" << std::endl;

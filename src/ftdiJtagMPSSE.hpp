@@ -10,6 +10,7 @@
 #include <string>
 #include <vector>
 
+#include "cable.hpp"
 #include "jtagInterface.hpp"
 #include "ftdipp_mpsse.hpp"
 
@@ -22,7 +23,7 @@
 
 class FtdiJtagMPSSE : public JtagInterface, public FTDIpp_MPSSE {
  public:
-	FtdiJtagMPSSE(const FTDIpp_MPSSE::mpsse_bit_config &cable, std::string dev,
+	FtdiJtagMPSSE(const cable_t &cable, std::string dev,
 		const std::string &serial, uint32_t clkHZ, bool invert_read_edge,
 		int8_t verbose = 0);
 	virtual ~FtdiJtagMPSSE();
@@ -59,7 +60,7 @@ class FtdiJtagMPSSE : public JtagInterface, public FTDIpp_MPSSE {
 	int flush() override;
 
  private:
-	void init_internal(const FTDIpp_MPSSE::mpsse_bit_config &cable);
+	void init_internal(const mpsse_bit_config &cable);
 	/* writeTMSTDI specifics */
 	/*!
 	 * \brief try to append tms buffer, flush content if > 6

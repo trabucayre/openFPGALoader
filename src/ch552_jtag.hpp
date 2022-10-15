@@ -10,6 +10,7 @@
 #include <string>
 #include <vector>
 
+#include "cable.hpp"
 #include "jtagInterface.hpp"
 #include "ftdipp_mpsse.hpp"
 
@@ -22,7 +23,7 @@
 
 class CH552_jtag : public JtagInterface, private FTDIpp_MPSSE {
  public:
-	CH552_jtag(const FTDIpp_MPSSE::mpsse_bit_config &cable, std::string dev,
+	CH552_jtag(const cable_t &cable, std::string dev,
 		const std::string &serial, uint32_t clkHZ, uint8_t verbose = false);
 	virtual ~CH552_jtag();
 
@@ -48,7 +49,7 @@ class CH552_jtag : public JtagInterface, private FTDIpp_MPSSE {
 	int flush() override;
 
  private:
-	void init_internal(const FTDIpp_MPSSE::mpsse_bit_config &cable);
+	void init_internal(const mpsse_bit_config &cable);
 	uint32_t _to_read; /*!< amount of byte to read */
 };
 #endif  // SRC_CH552_JTAG_HPP_

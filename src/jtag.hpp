@@ -5,19 +5,18 @@
 
 #ifndef JTAG_H
 #define JTAG_H
-#include <ftdi.h>
+
 #include <iostream>
 #include <string>
 #include <vector>
 
 #include "board.hpp"
 #include "cable.hpp"
-#include "ftdipp_mpsse.hpp"
 #include "jtagInterface.hpp"
 
 class Jtag {
  public:
-	Jtag(cable_t &cable, const jtag_pins_conf_t *pin_conf, std::string dev,
+	Jtag(const cable_t &cable, const jtag_pins_conf_t *pin_conf, std::string dev,
 		const std::string &serial, uint32_t clkHZ, int8_t verbose,
 		const std::string &ip_adr, int port,
 		const bool invert_read_edge = false,
@@ -104,7 +103,7 @@ class Jtag {
 	JtagInterface *_jtag;
 
  private:
-	void init_internal(cable_t &cable, const std::string &dev,
+	void init_internal(const cable_t &cable, const std::string &dev,
 		const std::string &serial,
 		const jtag_pins_conf_t *pin_conf, uint32_t clkHZ,
 		const std::string &firmware_path,

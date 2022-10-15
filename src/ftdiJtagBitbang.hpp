@@ -23,7 +23,7 @@
 
 class FtdiJtagBitBang : public JtagInterface, private FTDIpp_MPSSE {
  public:
-	FtdiJtagBitBang(const FTDIpp_MPSSE::mpsse_bit_config &cable,
+	FtdiJtagBitBang(const cable_t &cable,
 		const jtag_pins_conf_t *pin_conf, std::string dev, const std::string &serial,
 		uint32_t clkHZ, uint8_t verbose = 0);
 	virtual ~FtdiJtagBitBang();

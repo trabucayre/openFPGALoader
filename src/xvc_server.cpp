@@ -32,7 +32,7 @@ XVC_server::XVC_server(int port, const cable_t & cable,
 	(void)firmware_path;
 	switch (cable.type) {
 	case MODE_FTDI_SERIAL:
-		_jtag = new FtdiJtagMPSSE(cable.config, dev, serial, clkHZ,
+		_jtag = new FtdiJtagMPSSE(cable, dev, serial, clkHZ,
 					  invert_read_edge, _verbose);
 		break;
 #if 0

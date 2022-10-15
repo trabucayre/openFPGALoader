@@ -10,7 +10,7 @@
 #include <string>
 #include <vector>
 
-#include "board.hpp"
+#include "cable.hpp"
 #include "jtagInterface.hpp"
 #include "ftdipp_mpsse.hpp"
 #include "fx2_ll.hpp"
@@ -40,7 +40,7 @@ class UsbBlaster_ll {
 
 class UsbBlaster : public JtagInterface {
  public:
-	UsbBlaster(int vid, int pid, const std::string &firmware_path,
+	UsbBlaster(const cable_t &cable, const std::string &firmware_path,
 			uint8_t verbose = 0);
 	virtual ~UsbBlaster();
 

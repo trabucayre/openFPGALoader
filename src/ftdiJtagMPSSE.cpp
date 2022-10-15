@@ -30,7 +30,7 @@ using namespace std;
 #define display(...) do {}while(0)
 #endif
 
-FtdiJtagMPSSE::FtdiJtagMPSSE(const FTDIpp_MPSSE::mpsse_bit_config &cable,
+FtdiJtagMPSSE::FtdiJtagMPSSE(const cable_t &cable,
 			string dev, const string &serial, uint32_t clkHZ,
 			bool invert_read_edge, int8_t verbose):
 			FTDIpp_MPSSE(cable, dev, serial, clkHZ, verbose), _ch552WA(false),
@@ -39,7 +39,7 @@ FtdiJtagMPSSE::FtdiJtagMPSSE(const FTDIpp_MPSSE::mpsse_bit_config &cable,
 			_invert_read_edge(invert_read_edge), // false: pos, true: neg
 			_tdo_pos(0)
 {
-	init_internal(cable);
+	init_internal(cable.config);
 }
 
 FtdiJtagMPSSE::~FtdiJtagMPSSE()
@@ -65,7 +65,7 @@ FtdiJtagMPSSE::~FtdiJtagMPSSE()
 			"Loopback failed, expect problems on later runs %d\n", read);
 }
 
-void FtdiJtagMPSSE::init_internal(const FTDIpp_MPSSE::mpsse_bit_config &cable)
+void FtdiJtagMPSSE::init_internal(const mpsse_bit_config &cable)
 {
 	display("iProduct : %s\n", _iproduct);
 
