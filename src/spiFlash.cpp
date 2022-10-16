@@ -382,8 +382,11 @@ int SPIFlash::erase_and_prog(int base_addr, uint8_t *data, int len)
 bool SPIFlash::verify(const int &base_addr, const uint8_t *data,
 		const int &len, int rd_burst)
 {
-	if (rd_burst == 0)
+	if (rd_burst == 0) {
 		rd_burst = len;
+		if (rd_burst > 65536)
+			rd_burst = 65536;
+	}
 
 	printInfo("Verifying write (May take time)");
 
