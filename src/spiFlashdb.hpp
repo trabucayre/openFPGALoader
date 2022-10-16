@@ -177,6 +177,19 @@ static std::map <uint32_t, flash_t> flash_list = {
 		.bp_len = 0,
 		.bp_offset = {0, 0, 0, 0}}
 	},
+	{0xBF2643, {
+		.manufacturer = "microchip",
+		.model = "SST26VF064B",
+		.nr_sector = 128,
+		.sector_erase = true,
+		.subsector_erase = true,
+		.has_extended = false,
+		.tb_otp = false,
+		.tb_offset = 0,
+		.tb_register = NONER,
+		.bp_len = 0,
+		.bp_offset = {0, 0, 0, 0}}
+	},
 	{0x9d6016, {
 		.manufacturer = "ISSI",
 		.model = "IS25LP032",
