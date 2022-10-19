@@ -92,6 +92,15 @@ bool libusb_ll::scan()
 			continue;
 
 		int ret = libusb_open(usb_dev, &handle);
+		if (ret != 0) {
+			snprintf(mess, 1024,
+				"Error: can't open device with vid:vid = 0x%04x:0x%04x. "
+				"Error code %d %s",
+				desc.idVendor, desc.idProduct,
+				ret, libusb_strerror(static_cast<libusb_error>(ret)));
+			printError(mess);
+			continue;
+		}
 
 		uint8_t iproduct[200];
 		uint8_t iserial[200];
