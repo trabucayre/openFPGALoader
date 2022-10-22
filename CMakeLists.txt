@@ -111,6 +111,7 @@ set(OPENFPGALOADER_SOURCE
 	src/jlink.cpp
 	src/lattice.cpp
 	src/progressBar.cpp
+	src/pathHelper.cpp
 	src/fsparser.cpp
 	src/mcsParser.cpp
 	src/ftdispi.cpp
@@ -138,6 +139,7 @@ set(OPENFPGALOADER_HEADERS
 	src/ice40.hpp
 	src/ihexParser.hpp
 	src/progressBar.hpp
+	src/pathHelper.hpp
 	src/rawParser.hpp
 	src/usbBlaster.hpp
 	src/bitparser.hpp

@@ -24,6 +24,7 @@
 #include "xilinxMapParser.hpp"
 #include "part.hpp"
 #include "progressBar.hpp"
+#include "pathHelper.hpp"
 
 Xilinx::Xilinx(Jtag *jtag, const std::string &filename,
 	const std::string &file_type,
@@ -322,6 +323,11 @@ bool Xilinx::load_bridge()
 	// DATA_DIR is defined at compile time.
 	std::string bitname = DATA_DIR "/openFPGALoader/spiOverJtag_";
 	bitname += _device_package + ".bit.gz";
+
+#if defined (_WIN64) || defined (_WIN32)
+	/* Convert relative path embedded at compile time to an absolute path */
+	bitname = PathHelper::absolutePath(bitname);
+#endif
 
 	std::cout << "use: " << bitname << std::endl;
 
