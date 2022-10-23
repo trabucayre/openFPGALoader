@@ -14,6 +14,9 @@
 #include "epcq.hpp"
 #include "progressBar.hpp"
 #include "rawParser.hpp"
+#if defined (_WIN64) || defined (_WIN32)
+#include "pathHelper.hpp"
+#endif
 
 #define IDCODE 6
 #define USER0  0x0C
@@ -179,6 +182,11 @@ bool Altera::load_bridge()
 	bitname += _device_package + ".rbf.gz";
 #else
 	bitname += _device_package + ".rbf";
+#endif
+
+#if defined (_WIN64) || defined (_WIN32)
+	/* Convert relative path embedded at compile time to an absolute path */
+	bitname = PathHelper::absolutePath(bitname);
 #endif
 
 	std::cout << "use: " << bitname << std::endl;
