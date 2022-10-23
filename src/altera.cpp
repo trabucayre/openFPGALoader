@@ -13,8 +13,10 @@
 #include "device.hpp"
 #include "epcq.hpp"
 #include "progressBar.hpp"
-#include "pathHelper.hpp"
 #include "rawParser.hpp"
+#if defined (_WIN64) || defined (_WIN32)
+#include "pathHelper.hpp"
+#endif
 
 #define IDCODE 6
 #define USER0  0x0C

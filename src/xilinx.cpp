@@ -24,7 +24,9 @@
 #include "xilinxMapParser.hpp"
 #include "part.hpp"
 #include "progressBar.hpp"
+#if defined (_WIN64) || defined (_WIN32)
 #include "pathHelper.hpp"
+#endif
 
 Xilinx::Xilinx(Jtag *jtag, const std::string &filename,
 	const std::string &file_type,

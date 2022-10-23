@@ -111,7 +111,6 @@ set(OPENFPGALOADER_SOURCE
 	src/jlink.cpp
 	src/lattice.cpp
 	src/progressBar.cpp
-	src/pathHelper.cpp
 	src/fsparser.cpp
 	src/mcsParser.cpp
 	src/ftdispi.cpp
@@ -139,7 +138,6 @@ set(OPENFPGALOADER_HEADERS
 	src/ice40.hpp
 	src/ihexParser.hpp
 	src/progressBar.hpp
-	src/pathHelper.hpp
 	src/rawParser.hpp
 	src/usbBlaster.hpp
 	src/bitparser.hpp
@@ -198,6 +196,9 @@ target_link_libraries(openFPGALoader
 if (${CMAKE_SYSTEM_NAME} MATCHES "Windows")
 	# winsock provides ntohs
 	target_link_libraries(openFPGALoader ws2_32)
+	
+	target_sources(openFPGALoader PRIVATE src/pathHelper.cpp)	
+	list(APPEND OPENFPGALOADER_HEADERS src/pathHelper.hpp)
 endif()
 
 # libusb_attach_kernel_driver is only available on Linux.
