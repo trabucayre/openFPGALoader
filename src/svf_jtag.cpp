@@ -76,8 +76,7 @@ void SVF_jtag::parse_XYR(vector<string> const &vstr, svf_XYR &t)
 		write_data = ((vstr[0][1] == 'I') ? 0 : 1);
 
 	uint32_t new_length = stoul(vstr[1]);
-	if (new_length != t.len)
-	{
+	if (new_length != t.len) {
 		clear_XYR(t);
 	}
 	t.len = new_length;
@@ -159,17 +158,14 @@ void SVF_jtag::parse_XYR(vector<string> const &vstr, svf_XYR &t)
 		if (!t.tdo.empty()) {
 			unsigned char *tdobuf = parse_hex(t.tdo, byte_len, 0);
 			unsigned char *maskbuf = parse_hex(t.mask, byte_len, t.mask.empty() ? 1 : 0);
-			for (size_t i = 0; i < byte_len; i++)
-			{
-				if ((read_buffer[i] ^ tdobuf[i]) & maskbuf[i])
-				{
+			for (size_t i = 0; i < byte_len; i++) {
+				if ((read_buffer[i] ^ tdobuf[i]) & maskbuf[i]) {
 					cerr << "TDO value ";
-					for (int i = byte_len - 1; i >= 0; i--) {
-						cerr << uppercase << hex << int(read_buffer[i]);
+					for (int j = byte_len - 1; j >= 0; j--) {
+						cerr << uppercase << hex << int(read_buffer[j]);
 					}
 					cerr << " isn't the one expected: " << uppercase << t.tdo << endl;
 					throw exception();
-					break;
 				}
 			}
 			delete tdobuf;
@@ -194,7 +190,7 @@ void SVF_jtag::parse_runtest(vector<string> const &vstr)
 		run_state = fsm_state[vstr[1]];
 		pos++;
 	}
-	if (!vstr[pos + 1].compare("SEC"))	{
+	if (!vstr[pos + 1].compare("SEC")) {
 		min_duration = atof(vstr[pos].c_str());
 		pos++;
 		pos++; 
@@ -308,8 +304,7 @@ void SVF_jtag::handle_instruction(vector<string> const &vstr)
 		if (tdr.len > 0) {
 			cerr << "TDR length supported is only 0" << endl;
 		}
-		if (_verbose)
-		{
+		if (_verbose) {
 			cout << "TDR" << endl;
 			cout << "\tlen   : " << tdr.len << endl;
 			cout << "\ttdo   : " << tdr.tdo.size() * 4 << endl;
@@ -322,8 +317,7 @@ void SVF_jtag::handle_instruction(vector<string> const &vstr)
 		if (tir.len > 0) {
 			cerr << "TIR length supported is only 0" << endl;
 		}
-		if (_verbose)
-		{
+		if (_verbose) {
 			cout << "TIR" << endl;
 			cout << "\tlen   : " << tir.len << endl;
 			cout << "\ttdo   : " << tir.tdo.size() * 4 << endl;
