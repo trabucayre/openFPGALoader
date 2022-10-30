@@ -19,7 +19,14 @@
   FPGA: Artix xc7a35tftg256
   Memory: OK
   Flash: OK
-
+  
+- ID: alchitry_au_plus
+  Description: Alchitry Au+ (Plus)
+  URL: https://www.sparkfun.com/products/17514
+  FPGA: Artix xc7a100tftg256
+  Memory: OK
+  Flash: OK
+  
 - ID: arty_a7_35t
   Description: Digilent Arty A7
   URL: https://reference.digilentinc.com/reference/programmable-logic/arty-a7/start
