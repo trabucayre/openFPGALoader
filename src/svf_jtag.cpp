@@ -1,18 +1,22 @@
 // SPDX-License-Identifier: Apache-2.0
 /*
- * Copyright (C) 2019 Gwenhael Goavec-Merou <gwenhael.goavec-merou@trabucayre.com>
+ * Copyright (C) 2019-2022 Gwenhael Goavec-Merou <gwenhael.goavec-merou@trabucayre.com>
+ * Copyright (C) 2022 phdussud
+ *
  */
+
+#include "svf_jtag.hpp"
+
+#include <unistd.h>
+
 #include <algorithm>
 #include <iostream>
 #include <sstream>
 #include <fstream>
 #include <map>
 #include <vector>
-#include <unistd.h>
 
 #include "jtag.hpp"
-
-#include "svf_jtag.hpp"
 
 using namespace std;
 
@@ -33,15 +37,16 @@ void SVF_jtag::clear_XYR(svf_XYR &t)
 	t.smask.clear();
 }
 
-static unsigned char *parse_hex(string const &in, size_t byte_length, bool default_value)
+static unsigned char *parse_hex(string const &in, size_t byte_length,
+		bool default_value)
 {
 	unsigned char *txbuf = new unsigned char[byte_length];
 	char c;
-	int last_iter = ((int)in.size() - (int)(2 * byte_length));
-	for (int i = (in.size() - 1), pos = 0; i >= last_iter; i--, pos++) {
-		if (i < 0)
+	size_t last_iter = in.size() - (2 * byte_length);
+	for (size_t i = (in.size() - 1), pos = 0; i >= last_iter; i--, pos++) {
+		if (i < 0) {
 			c = default_value ? 0x0f : 0x00;
-		else {
+		} else {
 			if (in[i] <= '9')
 				c = 0x0f & (in[i] - '0');
 			else
@@ -83,7 +88,7 @@ void SVF_jtag::parse_XYR(vector<string> const &vstr, svf_XYR &t)
 	t.tdo.clear();
 	if (t.len == 0)
 		return;
-	for (long unsigned int pos = 2; pos < vstr.size(); pos++) {
+	for (size_t pos = 2; pos < vstr.size(); pos++) {
 		s = vstr[pos];
 
 		if (!s.compare("TDO")) {
@@ -148,9 +153,10 @@ void SVF_jtag::parse_XYR(vector<string> const &vstr, svf_XYR &t)
 		unsigned char *read_buffer = NULL;
 		if (!t.tdo.empty()) {
 			read_buffer = new unsigned char[byte_len];
-			read_buffer[byte_len - 1] = 0; // clear the last byte which may not be full;
-		} else
+			read_buffer[byte_len - 1] = 0;  // clear the last byte which may not be full;
+		} else {
 			read_buffer = NULL;
+		}
 		if (write_data == 0)
 			_jtag->shiftIR(write_buffer, read_buffer, t.len, _endir);
 		else
@@ -186,18 +192,18 @@ void SVF_jtag::parse_runtest(vector<string> const &vstr)
 	double min_duration = -1;
 	// 0 => RUNTEST
 	// 1 => Ca depend
-	if (isalpha(vstr[pos][0])) { 
+	if (isalpha(vstr[pos][0])) {
 		run_state = fsm_state[vstr[1]];
 		pos++;
 	}
 	if (!vstr[pos + 1].compare("SEC")) {
 		min_duration = atof(vstr[pos].c_str());
 		pos++;
-		pos++; 
+		pos++;
 	} else {
 		nb_iter = atoi(vstr[pos].c_str());
 		pos++;
-		pos++; // run_clk field, ignored.
+		pos++;  // run_clk field, ignored.
 		if (((pos + 1) < vstr.size()) &&
 			(!vstr[pos + 1].compare("SEC"))) {
 			min_duration = atof(vstr[pos].c_str());
@@ -206,24 +212,21 @@ void SVF_jtag::parse_runtest(vector<string> const &vstr)
 		}
 	}
 	auto res = find(begin(vstr) + pos, end(vstr), "ENDSTATE");
-	if (res != end(vstr))
-	{
+	if (res != end(vstr)) {
 		res++;
 		end_state = fsm_state[*res];
 	}
-	if (run_state != -1)
-	{
+	if (run_state != -1) {
 		_run_state = run_state;
 	}
-	if (end_state != -1)
-	{
+	if (end_state != -1) {
 		_end_state = end_state;
-	}
-	else if (run_state != -1)
+	} else if (run_state != -1) {
 		_end_state = run_state;
+	}
 	_jtag->set_state(_run_state);
 	_jtag->toggleClk(nb_iter);
-	if (min_duration > 0 )	{
+	if (min_duration > 0) {
 		usleep((useconds_t)(min_duration * 1.0E6));
 	}
 	_jtag->set_state(_end_state);
@@ -266,7 +269,7 @@ void SVF_jtag::handle_instruction(vector<string> const &vstr)
 		}
 	} else if (!vstr[0].compare("HDR")) {
 		parse_XYR(vstr, hdr);
-		if (hdr.len > 0 ) {
+		if (hdr.len > 0) {
 			cerr << "HDR length supported is only 0" << endl;
 		}
 		if (_verbose) {
@@ -280,7 +283,7 @@ void SVF_jtag::handle_instruction(vector<string> const &vstr)
 	} else if (!vstr[0].compare("SIR")) {
 		parse_XYR(vstr, sir);
 		if (_verbose) {
-			for (auto &&t: vstr)
+			for (auto &&t : vstr)
 			 	cout << t << " ";
 			cout << endl;
 			cout << "\tlen   : " << sir.len << endl;
@@ -342,14 +345,14 @@ SVF_jtag::SVF_jtag(Jtag *jtag, bool verbose):_verbose(verbose), _freq_hz(0),
 
 SVF_jtag::~SVF_jtag() {}
 
-bool is_space (char x) {
+bool is_space(char x) {
 	return !!isspace(x);
 }
 /* Read SVF file line by line
  * concat continuous lines
  * and pass instruction to handle_instruction
  */
-void SVF_jtag::parse(string filename) 
+void SVF_jtag::parse(string filename)
 {
 	string str;
 	vector<string> vstr;
@@ -369,7 +372,7 @@ void SVF_jtag::parse(string filename)
 				str.pop_back();
 			lineno++;
 			is_complete = false;
-			if (str[0] == '!') // comment
+			if (str[0] == '!')  // comment
 				continue;
 			if (str.back() == ';') {
 				str.pop_back();
@@ -381,7 +384,7 @@ void SVF_jtag::parse(string filename)
 				if (_verbose) {
 					if (vstr[0].compare("HDR") && vstr[0].compare("HIR")
 						&& vstr[0].compare("SDR") && vstr[0].compare("SIR")) {
-						for (auto &&word: vstr)
+						for (auto &&word : vstr)
 							cout << word << " ";
 						cout << endl;
 					}
@@ -398,5 +401,4 @@ void SVF_jtag::parse(string filename)
 	}
 
 	cout << "end of SVF file" << endl;
-
 }

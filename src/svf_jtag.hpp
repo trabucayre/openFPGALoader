@@ -1,11 +1,12 @@
 // SPDX-License-Identifier: Apache-2.0
 /*
- * Copyright (C) 2019 Gwenhael Goavec-Merou <gwenhael.goavec-merou@trabucayre.com>
+ * Copyright (C) 2019-2022 Gwenhael Goavec-Merou <gwenhael.goavec-merou@trabucayre.com>
  */
 
-#ifndef SVF_JTAG_HPP
-#define SVF_JTAG_HPP
+#ifndef SRC_SVF_JTAG_HPP_
+#define SRC_SVF_JTAG_HPP_
 #include <iostream>
+#include <string>
 #include <vector>
 #include <map>
 
@@ -68,4 +69,4 @@ class SVF_jtag {
 	svf_XYR tdr;
 	svf_XYR tir;
 };
-#endif
+#endif  // SRC_SVF_JTAG_HPP_
