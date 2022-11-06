@@ -39,8 +39,8 @@ bool SPIInterface::protect_flash(uint32_t len)
 		SPIFlash flash(this, false, _spif_verbose);
 
 		/* configure flash protection */
-		ret = flash.enable_protection(len) != 0;
-		if (ret != 0)
+		ret = (flash.enable_protection(len) == 0);
+		if (!ret)
 			printError("Fail");
 		else
 			printSuccess("Done");
@@ -72,7 +72,7 @@ bool SPIInterface::unprotect_flash()
 		printInfo("unprotect_flash: ", false);
 		ret = (flash.disable_protection() == 0);
 		if (!ret)
-			printError("Fail " + std::to_string(ret));
+			printError("Fail");
 		else
 			printSuccess("Done");
 	} catch (std::exception &e) {
