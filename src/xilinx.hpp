@@ -40,6 +40,12 @@ class Xilinx: public Device, SPIInterface {
 		bool unprotect_flash() override {
 			return SPIInterface::unprotect_flash();
 		}
+		/*!
+		 * \brief erase SPI flash blocks
+		 */
+		bool bulk_erase_flash() override {
+			return SPIInterface::bulk_erase_flash();
+		}
 
 		int idCode() override;
 		void reset() override;

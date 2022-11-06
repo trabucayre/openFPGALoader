@@ -237,6 +237,26 @@ bool Ice40::unprotect_flash()
 	return post_flash_access();
 }
 
+bool Ice40::bulk_erase_flash()
+{
+	/* SPI access */
+	prepare_flash_access();
+	/* acess */
+	try {
+		SPIFlash flash(reinterpret_cast<SPIInterface *>(_spi), false, _verbose);
+		/* bulk erase flash */
+		if (flash.bulk_erase() == -1)
+			return false;
+	} catch (std::exception &e) {
+		printError("Fail");
+		printError(std::string(e.what()));
+		return false;
+	}
+
+	/* reload */
+	return post_flash_access();
+}
+
 bool Ice40::prepare_flash_access()
 {
 	/* SPI access: shutdown ICE40 */

@@ -47,6 +47,12 @@ class Lattice: public Device, SPIInterface {
 		bool unprotect_flash() override {
 			return SPIInterface::unprotect_flash();
 		}
+		/*!
+		 * \brief bulk erase SPI flash
+		 */
+		bool bulk_erase_flash() override {
+			return SPIInterface::bulk_erase_flash();
+		}
 
 		/* spi interface */
 		int spi_put(uint8_t cmd, uint8_t *tx, uint8_t *rx,

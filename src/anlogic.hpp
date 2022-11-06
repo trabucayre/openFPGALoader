@@ -41,6 +41,13 @@ class Anlogic: public Device, SPIInterface {
 		}
 
 		/*!
+		 * \brief bulk erase SPI flash
+		 */
+		bool bulk_erase_flash() override {
+			return SPIInterface::bulk_erase_flash();
+		}
+
+		/*!
 		 * \brief dump len byte from base_addr from SPI flash
 		 * \param[in] base_addr: start offset
 		 * \param[in] len: dump len

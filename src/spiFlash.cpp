@@ -79,7 +79,7 @@ SPIFlash::SPIFlash(SPIInterface *spi, bool unprotect, int8_t verbose):
 int SPIFlash::bulk_erase()
 {
 	int ret, ret2 = 0;
-	uint32_t timeout=100000;
+	uint32_t timeout=1000000;
 	uint8_t bp = get_bp();
 	if (bp != 0) {
 		if (!_unprotect) {
@@ -96,7 +96,7 @@ int SPIFlash::bulk_erase()
 		return ret;
 	ret2 = _spi->spi_put(FLASH_CE, NULL, NULL, 0);
 	if (ret2 == 0)
-		ret2 = _spi->spi_wait(FLASH_RDSR, FLASH_RDSR_WIP, 0x00, timeout, true);
+		ret2 = _spi->spi_wait(FLASH_RDSR, FLASH_RDSR_WIP, 0x00, timeout);
 
 	if (bp != 0)
 		ret = enable_protection(bp);

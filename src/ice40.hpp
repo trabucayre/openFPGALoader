@@ -26,6 +26,7 @@ class Ice40: public Device, SPIInterface {
 		bool dumpFlash(uint32_t base_addr, uint32_t len) override;
 		bool protect_flash(uint32_t len) override;
 		bool unprotect_flash() override;
+		bool bulk_erase_flash() override;
 		/* not supported in SPI Active mode */
 		int idCode() override {return 0;}
 		void reset() override;

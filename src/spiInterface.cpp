@@ -39,8 +39,8 @@ bool SPIInterface::protect_flash(uint32_t len)
 		SPIFlash flash(this, false, _spif_verbose);
 
 		/* configure flash protection */
-		ret = flash.enable_protection(len) != 0;
-		if (ret != 0)
+		ret = (flash.enable_protection(len) == 0);
+		if (!ret)
 			printError("Fail");
 		else
 			printSuccess("Done");
@@ -72,11 +72,42 @@ bool SPIInterface::unprotect_flash()
 		printInfo("unprotect_flash: ", false);
 		ret = (flash.disable_protection() == 0);
 		if (!ret)
-			printError("Fail " + std::to_string(ret));
+			printError("Fail");
 		else
 			printSuccess("Done");
 	} catch (std::exception &e) {
 		printError("SPI Flash access failed: ", false);
+		printError(e.what());
+		ret = false;
+	}
+
+	/* reload bitstream */
+	return post_flash_access() && ret;
+}
+
+bool SPIInterface::bulk_erase_flash()
+{
+	bool ret = true;
+	printInfo("bulk_erase: ", false);
+
+	/* move device to spi access */
+	if (!prepare_flash_access()) {
+		printError("Fail");
+		return false;
+	}
+
+	/* spi flash access */
+	try {
+		SPIFlash flash(this, false, _spif_verbose);
+
+		/* bulk erase flash */
+		ret = (flash.bulk_erase() == 0);
+		if (!ret)
+			printError("Fail");
+		else
+			printSuccess("Done");
+	} catch (std::exception &e) {
+		printError("Fail");
 		printError(e.what());
 		ret = false;
 	}

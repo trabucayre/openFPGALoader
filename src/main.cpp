@@ -74,6 +74,7 @@ struct arguments {
 	string ip_adr;
 	uint32_t protect_flash;
 	bool unprotect_flash;
+	bool bulk_erase_flash;
 	string flash_sector;
 	bool skip_load_bridge;
 	bool skip_reset;
@@ -104,7 +105,7 @@ int main(int argc, char **argv)
 			false, false, "", "", "", -1, 0, false, -1,
 			/* vid, pid, index bus_addr, device_addr */
 			    0,   0,   -1,     0,         0,
-			"127.0.0.1", 0, false, "", false, false,
+			"127.0.0.1", 0, false, false, "", false, false,
 			/* xvc server */
 			false, 3721, "-",
 			"", false, // mcufw conmcu
@@ -275,6 +276,9 @@ int main(int argc, char **argv)
 			if (args.unprotect_flash && args.bit_file.empty())
 				if (!target->unprotect_flash())
 					spi_ret = EXIT_FAILURE;
+			if (args.bulk_erase_flash && args.bit_file.empty())
+				if (!target->bulk_erase_flash())
+					spi_ret = EXIT_FAILURE;
 			if (args.protect_flash)
 				if (!target->protect_flash(args.protect_flash))
 					spi_ret = EXIT_FAILURE;
@@ -325,6 +329,9 @@ int main(int argc, char **argv)
 
 			if (args.unprotect_flash && args.bit_file.empty())
 				if (!flash.disable_protection())
+					spi_ret = EXIT_FAILURE;
+			if (args.bulk_erase_flash && args.bit_file.empty())
+				if (!flash.bulk_erase())
 					spi_ret = EXIT_FAILURE;
 			if (args.protect_flash)
 				if (!flash.enable_protection(args.protect_flash))
@@ -557,6 +564,11 @@ int main(int argc, char **argv)
 		fpga->unprotect_flash();
 	}
 
+	/* bulk erase SPI flash */
+	if (args.bulk_erase_flash && args.bit_file.empty()) {
+		fpga->bulk_erase_flash();
+	}
+
 	/* protect SPI flash */
 	if (args.protect_flash != 0) {
 		fpga->protect_flash(args.protect_flash);
@@ -673,6 +685,8 @@ int parse_opt(int argc, char **argv, struct arguments *args, jtag_pins_conf_t *p
 				cxxopts::value<bool>(args->detect))
 			("dfu",   "DFU mode", cxxopts::value<bool>(args->dfu))
 			("dump-flash",  "Dump flash mode")
+			("bulk-erase",   "Bulk erase flash",
+				cxxopts::value<bool>(args->bulk_erase_flash))
 			("external-flash",
 			 	"select ext flash for device with internal and external storage",
 				cxxopts::value<bool>(args->external_flash))
@@ -873,6 +887,7 @@ int parse_opt(int argc, char **argv, struct arguments *args, jtag_pins_conf_t *p
 			!args->detect &&
 			!args->protect_flash &&
 			!args->unprotect_flash &&
+			!args->bulk_erase_flash &&
 			!args->xvc &&
 			!args->reset &&
 			!args->conmcu) {
