@@ -99,7 +99,6 @@ class Altera: public Device, SPIInterface {
 		void shiftVDR(uint8_t * tx, uint8_t * rx, uint32_t len,
 				int end_state = Jtag::UPDATE_DR, bool debug = false);
 
-		SVF_jtag _svf;
 		std::string _device_package;
 		uint32_t _vir_addr; /**< addr affected to virtual jtag */
 		uint32_t _vir_length; /**< length of virtual jtag IR */

@@ -31,7 +31,7 @@ Altera::Altera(Jtag *jtag, const std::string &filename,
 	Device(jtag, filename, file_type, verify, verbose),
 	SPIInterface(filename, verbose, 256, verify, skip_load_bridge,
 				 skip_reset),
-	_svf(_jtag, _verbose), _device_package(device_package),
+	_device_package(device_package),
 	_vir_addr(0x1000), _vir_length(14)
 {
 	if (prg_type == Device::RD_FLASH) {
@@ -216,13 +216,9 @@ void Altera::program(unsigned int offset, bool unprotect_flash)
 	 */
 	/* mem mode -> svf */
 	if (_mode == Device::MEM_MODE) {
-		if (_file_extension == "svf") {
-			_svf.parse(_filename);
-		} else {
-			RawParser _bit(_filename, false);
-			_bit.parse();
-			programMem(_bit);
-		}
+		RawParser _bit(_filename, false);
+		_bit.parse();
+		programMem(_bit);
 	} else if (_mode == Device::SPI_MODE) {
 		// reverse only bitstream raw binaries data no
 		bool reverseOrder = false;

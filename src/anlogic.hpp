@@ -73,8 +73,6 @@ class Anlogic: public Device, SPIInterface {
 		 */
 		virtual bool post_flash_access() override {reset(); return true;}
 
-	private:
-		SVF_jtag _svf;
 };
 
 #endif  // SRC_ANLOGIC_HPP_
