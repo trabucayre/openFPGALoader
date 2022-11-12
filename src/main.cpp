@@ -2,14 +2,15 @@
 /*
  * Copyright (C) 2019 Gwenhael Goavec-Merou <gwenhael.goavec-merou@trabucayre.com>
  */
-#include "cxxopts.hpp"
+
+#include <string.h>
+#include <unistd.h>
+
 #include <fstream>
 #include <iomanip>
 #include <iostream>
 #include <map>
 #include <sstream>
-#include <string.h>
-#include <unistd.h>
 #include <vector>
 
 #include "altera.hpp"
@@ -17,6 +18,7 @@
 #include "board.hpp"
 #include "cable.hpp"
 #include "colognechip.hpp"
+#include "cxxopts.hpp"
 #include "device.hpp"
 #include "dfu.hpp"
 #include "display.hpp"
@@ -90,7 +92,8 @@ struct arguments {
 int run_xvc_server(const struct arguments &args, const cable_t &cable,
 	const jtag_pins_conf_t *pins_config);
 
-int parse_opt(int argc, char **argv, struct arguments *args, jtag_pins_conf_t *pins_config);
+int parse_opt(int argc, char **argv, struct arguments *args,
+	jtag_pins_conf_t *pins_config);
 
 void displaySupported(const struct arguments &args);
 
@@ -109,7 +112,7 @@ int main(int argc, char **argv)
 			"127.0.0.1", 0, false, false, "", false, false,
 			/* xvc server */
 			false, 3721, "-",
-			"", false, // mcufw conmcu
+			"", false,  // mcufw conmcu
 	};
 	/* parse arguments */
 	try {
@@ -155,8 +158,8 @@ int main(int argc, char **argv)
 		if (t == cable_list.end()) {
 			cout << "Board " << args.board << " has not default cable" << endl;
 		} else {
-			if (args.cable[0] == '-') { // no use selection
-				args.cable = (*t).first; // use board default cable
+			if (args.cable[0] == '-') {  // no use selection
+				args.cable = (*t).first;  // use board default cable
 			} else {
 				cout << "Board default cable overridden with " << args.cable << endl;
 			}
@@ -202,7 +205,8 @@ int main(int argc, char **argv)
 			return EXIT_FAILURE;
 		}
 
-		int mapping[] = {INTERFACE_A, INTERFACE_B, INTERFACE_C, INTERFACE_D};
+		const int mapping[] = {INTERFACE_A, INTERFACE_B, INTERFACE_C,
+			INTERFACE_D};
 		cable.config.interface = mapping[args.ftdi_channel];
 	}
 
@@ -498,7 +502,8 @@ int main(int argc, char **argv)
 	jtag->device_select(index);
 
 	/* detect svf file and program the device */
-	if (!args.file_type.compare("svf") || args.bit_file.find(".svf") >= 0) {
+	if (!args.file_type.compare("svf") ||
+			args.bit_file.find(".svf") != string::npos) {
 		SVF_jtag *svf = new SVF_jtag(jtag, args.verbose);
 		try {
 			svf->parse(args.bit_file);
@@ -605,7 +610,7 @@ int main(int argc, char **argv)
 int run_xvc_server(const struct arguments &args, const cable_t &cable,
 	const jtag_pins_conf_t *pins_config)
 {
-	//create XVC instance
+	// create XVC instance
 	try {
 		XVC_server *xvc = NULL;
 		xvc = new XVC_server(args.port, cable, pins_config, args.device,
@@ -657,9 +662,9 @@ static int parse_eng(string arg, double *dst) {
 }
 
 /* arguments parser */
-int parse_opt(int argc, char **argv, struct arguments *args, jtag_pins_conf_t *pins_config)
+int parse_opt(int argc, char **argv, struct arguments *args,
+	jtag_pins_conf_t *pins_config)
 {
-
 	string freqo;
 	vector<string> pins, bus_dev_num;
 	bool verbose, quiet;
@@ -680,15 +685,21 @@ int parse_opt(int argc, char **argv, struct arguments *args, jtag_pins_conf_t *p
 			("b,board",     "board name, may be used instead of cable",
 				cxxopts::value<string>(args->board))
 			("c,cable", "jtag interface", cxxopts::value<string>(args->cable))
-			("invert-read-edge", "JTAG mode / FTDI: read on negative edge instead of positive",
+			("invert-read-edge",
+				"JTAG mode / FTDI: read on negative edge instead of positive",
 				cxxopts::value<bool>(args->invert_read_edge))
 			("vid", "probe Vendor ID", cxxopts::value<uint16_t>(args->vid))
 			("pid", "probe Product ID", cxxopts::value<uint16_t>(args->pid))
-			("cable-index", "probe index (FTDI and cmsisDAP)", cxxopts::value<int16_t>(args->cable_index))
-			("busdev-num",  "select a probe by it bus and device number (bus_num:device_addr)",
+			("cable-index", "probe index (FTDI and cmsisDAP)",
+				cxxopts::value<int16_t>(args->cable_index))
+			("busdev-num",
+				"select a probe by it bus and device number (bus_num:device_addr)",
 				cxxopts::value<vector<string>>(bus_dev_num))
-			("ftdi-serial", "FTDI chip serial number", cxxopts::value<string>(args->ftdi_serial))
-			("ftdi-channel", "FTDI chip channel number (channels 0-3 map to A-D)", cxxopts::value<int>(args->ftdi_channel))
+			("ftdi-serial", "FTDI chip serial number",
+				cxxopts::value<string>(args->ftdi_serial))
+			("ftdi-channel",
+				"FTDI chip channel number (channels 0-3 map to A-D)",
+				cxxopts::value<int>(args->ftdi_channel))
 #if defined(USE_DEVICE_ARG)
 			("d,device",  "device to use (/dev/ttyUSBx)",
 				cxxopts::value<string>(args->device))
@@ -702,12 +713,16 @@ int parse_opt(int argc, char **argv, struct arguments *args, jtag_pins_conf_t *p
 			("external-flash",
 			 	"select ext flash for device with internal and external storage",
 				cxxopts::value<bool>(args->external_flash))
-			("file-size",   "provides size in Byte to dump, must be used with dump-flash",
+			("file-size",
+				"provides size in Byte to dump, must be used with dump-flash",
 				cxxopts::value<unsigned int>(args->file_size))
-			("file-type",   "provides file type instead of let's deduced by using extension",
+			("file-type",
+				"provides file type instead of let's deduced by using extension",
 				cxxopts::value<string>(args->file_type))
-			("flash-sector","flash sector (Lattice parts only)", cxxopts::value<string>(args->flash_sector))
-			("fpga-part",   "fpga model flavor + package", cxxopts::value<string>(args->fpga_part))
+			("flash-sector", "flash sector (Lattice parts only)",
+				cxxopts::value<string>(args->flash_sector))
+			("fpga-part",   "fpga model flavor + package",
+				cxxopts::value<string>(args->fpga_part))
 			("freq",        "jtag frequency (Hz)", cxxopts::value<string>(freqo))
 			("f,write-flash",
 				"write bitstream in flash (default: false)")
@@ -835,8 +850,10 @@ int parse_opt(int argc, char **argv, struct arguments *args, jtag_pins_conf_t *p
 				throw std::exception();
 			}
 			try {
-				args->bus_addr = static_cast<uint8_t>(std::stoi(bus_dev_num[0], nullptr, 0));
-				args->device_addr = static_cast<uint8_t>(std::stoi(bus_dev_num[1], nullptr, 0));
+				args->bus_addr = static_cast<uint8_t>(std::stoi(bus_dev_num[0],
+					nullptr, 0));
+				args->device_addr = static_cast<uint8_t>(
+					std::stoi(bus_dev_num[1], nullptr, 0));
 			} catch (std::exception &e) {
 				printError("Error: busdev-num invalid format: must be numeric values");
 				throw std::exception();
@@ -907,7 +924,6 @@ int parse_opt(int argc, char **argv, struct arguments *args, jtag_pins_conf_t *p
 			cout << options.help() << endl;
 			throw std::exception();
 		}
-
 	} catch (const cxxopts::OptionException& e) {
 		cerr << "Error parsing options: " << e.what() << endl;
 		throw std::exception();
@@ -927,7 +943,8 @@ void displaySupported(const struct arguments &args)
 			cable_t c = (*b).second;
 			stringstream ss;
 			ss << setw(25) << left << (*b).first;
-			ss << "0x" << hex << right << setw(4) << setfill('0') << c.vid << ":" << setw(4) << c.pid;
+			ss << "0x" << hex << right << setw(4) << setfill('0') << c.vid
+				<< ":" << setw(4) << c.pid;
 			printInfo(ss.str());
 		}
 		cout << endl;
@@ -964,7 +981,7 @@ void displaySupported(const struct arguments &args)
 	}
 
 	if (args.scan_usb) {
-		libusb_ll usb(0,0);
+		libusb_ll usb(0, 0);
 		usb.scan();
 	}
 }
