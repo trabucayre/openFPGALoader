@@ -31,6 +31,7 @@
 #include "spiFlash.hpp"
 #include "rawParser.hpp"
 #include "xilinx.hpp"
+#include "svf_jtag.hpp"
 #ifdef ENABLE_XVC
 #include "xvc_server.hpp"
 #endif
@@ -496,7 +497,20 @@ int main(int argc, char **argv)
 
 	jtag->device_select(index);
 
-	/* check if selected device is supported
+	/* detect svf file and program the device */
+	if (!args.bit_file.empty() && 
+		((!args.file_type.empty() && args.file_type == "svf") ||
+		 (args.bit_file.substr(args.bit_file.find_last_of(".") + 1) == "svf"))) {
+		SVF_jtag *svf = new SVF_jtag(jtag, args.verbose);
+		try {
+			svf->parse(args.bit_file);
+		} catch (std::exception &e) {
+			return EXIT_FAILURE;
+		}
+		return EXIT_SUCCESS;
+	}
+
+    /* check if selected device is supported
 	 * mainly used in conjunction with --index-chain
 	 */
 	if (fpga_list.find(idcode) == fpga_list.end()) {
