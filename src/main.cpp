@@ -498,9 +498,7 @@ int main(int argc, char **argv)
 	jtag->device_select(index);
 
 	/* detect svf file and program the device */
-	if (!args.bit_file.empty() && 
-		((!args.file_type.empty() && args.file_type == "svf") ||
-		 (args.bit_file.substr(args.bit_file.find_last_of(".") + 1) == "svf"))) {
+	if (!args.file_type.compare("svf") || args.bit_file.find(".svf") >= 0) {
 		SVF_jtag *svf = new SVF_jtag(jtag, args.verbose);
 		try {
 			svf->parse(args.bit_file);
