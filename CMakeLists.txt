@@ -89,9 +89,10 @@ set(OPENFPGALOADER_SOURCE
 	src/fx2_ll.cpp
 	src/ice40.cpp
 	src/ihexParser.cpp
+	src/pofParser.cpp
+	src/rawParser.cpp
 	src/spiFlash.cpp
 	src/spiInterface.cpp
-	src/rawParser.cpp
 	src/usbBlaster.cpp
 	src/epcq.cpp
 	src/svf_jtag.cpp
@@ -137,6 +138,7 @@ set(OPENFPGALOADER_HEADERS
 	src/fx2_ll.hpp
 	src/ice40.hpp
 	src/ihexParser.hpp
+	src/pofParser.hpp
 	src/progressBar.hpp
 	src/rawParser.hpp
 	src/usbBlaster.hpp
