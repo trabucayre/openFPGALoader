@@ -62,7 +62,11 @@ Xilinx::Xilinx(Jtag *jtag, const std::string &filename,
 		_fpga_family = SPARTAN7_FAMILY;
 	} else if (family == "zynq") {
 		_fpga_family = ZYNQ_FAMILY;
+		if (_mode != Device::MEM_MODE)
+			throw std::runtime_error("Error: can't flash Zynq7000");
 	} else if (family.substr(0, 6) == "zynqmp") {
+		if (_mode != Device::MEM_MODE)
+			throw std::runtime_error("Error: can't flash ZynqMP");
 		if (!zynqmp_init(family))
 			throw std::runtime_error("Error with ZynqMP init");
 		_fpga_family = ZYNQMP_FAMILY;
