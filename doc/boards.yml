@@ -542,6 +542,20 @@
   Memory: NA
   Flash: AS
 
+- ID: usrpx300
+  Description: Ettus Research USRP X300
+  URL: https://www.ettus.com/all-products/x300-kit/
+  FPGA: Kintex xc7k325tffg900
+  Memory: OK
+  Flash: NA
+
+- ID: usrpx310
+  Description: Ettus Research USRP X300
+  URL: https://www.ettus.com/all-products/x310-kit/
+  FPGA: Kintex xc7k410tffg900
+  Memory: OK
+  Flash: NA
+
 - ID: xmf3
   Description: PLDkit XMF3
   URL: https://pldkit.com/xilinx/xmf3
