@@ -348,6 +348,22 @@
   Memory: OK
   Flash: OK
 
+- ID: nexys_a7_50
+  Description: Digilent Nexys A7(Nexys 4 DDR)
+  URL: https://digilent.com/reference/programmable-logic/nexys-a7/start
+  FPGA: Artix xc7a50tcsg324
+  Memory: OK
+  Flash: OK
+  Constraints: Nexys4DDR
+
+- ID: nexys_a7_100
+  Description: Digilent Nexys A7(Nexys 4 DDR)
+  URL: https://digilent.com/reference/programmable-logic/nexys-a7/start
+  FPGA: Artix nexys_a7_100
+  Memory: OK
+  Flash: OK
+  Constraints: Nexys4DDR
+
 - ID: nexysVideo
   Description: Digilent Nexys Video
   URL: https://reference.digilentinc.com/reference/programmable-logic/nexys-video/start
