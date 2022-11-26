@@ -145,7 +145,8 @@ Lattice::Lattice(Jtag *jtag, const string filename, const string &file_type,
 	if (prg_type == Device::RD_FLASH) {
 		_mode = READ_MODE;
 	} else if (!_file_extension.empty()) {
-		if (_file_extension == "jed" || _file_extension == "mcs" || _file_extension == "fea" || _file_extension == "pub") {
+		if (_file_extension == "jed" || _file_extension == "mcs" ||
+				_file_extension == "fea" || _file_extension == "pub") {
 			_mode = Device::FLASH_MODE;
 		} else if (_file_extension == "bit" || _file_extension == "bin") {
 			if (prg_type == Device::WR_FLASH)
@@ -262,7 +263,7 @@ bool Lattice::checkStatus(uint32_t val, uint32_t mask)
 bool Lattice::program_mem()
 {
 	bool err;
-	LatticeBitParser _bit(_filename, _verbose);
+	LatticeBitParser _bit(_filename, false, _verbose);
 
 	printInfo("Open file: ", false);
 	printSuccess("DONE");
@@ -285,7 +286,7 @@ bool Lattice::program_mem()
 	uint32_t idcode = idCode();
 	if (idcode != bit_idcode) {
 		char mess[256];
-		sprintf(mess, "mismatch between target's idcode and bitstream idcode\n"
+		snprintf(mess, 256, "mismatch between target's idcode and bitstream idcode\n"
 			"\tbitstream has 0x%08X hardware requires 0x%08x", bit_idcode, idcode);
 		printError(mess);
 		return false;
@@ -395,7 +396,7 @@ bool Lattice::program_mem()
 	return true;
 }
 
-bool Lattice::program_intFlash(JedParser& _jed)
+bool Lattice::program_intFlash(ConfigBitstreamParser *_cbp)
 {
 	uint64_t featuresRow;
 	uint16_t feabits;
@@ -415,23 +416,34 @@ bool Lattice::program_intFlash(JedParser& _jed)
 		printSuccess("DONE");
 	}
 
-	for (size_t i = 0; i < _jed.nb_section(); i++) {
-		string note = _jed.noteForSection(i);
-		if (note == "TAG DATA") {
-			eraseMode |= FLASH_ERASE_UFM;
-			ufm_data = _jed.data_for_section(i);
-		} else if (note == "END CONFIG DATA") {
-			continue;
-		} else if (note == "EBR_INIT DATA") {
-			ebr_data = _jed.data_for_section(i);
-		} else {
-			cfg_data = _jed.data_for_section(i);
+	//  If file is a jed -> classic approach for
+	//  all machXO
+	if (_file_extension == "jed") {
+		JedParser *_jed = reinterpret_cast<JedParser *>(_cbp);
+		for (size_t i = 0; i < _jed->nb_section(); i++) {
+			string note = _jed->noteForSection(i);
+			if (note == "TAG DATA") {
+				eraseMode |= FLASH_ERASE_UFM;
+				ufm_data = _jed->data_for_section(i);
+			} else if (note == "END CONFIG DATA") {
+				continue;
+			} else if (note == "EBR_INIT DATA") {
+				ebr_data = _jed->data_for_section(i);
+			} else {
+				cfg_data = _jed->data_for_section(i);
+			}
 		}
+
+		/* check if feature area must be updated */
+		featuresRow = _jed->featuresRow();
+		feabits = _jed->feabits();
+	} else {  // bit file: adapts
+		LatticeBitParser *_bit = reinterpret_cast<LatticeBitParser *>(_cbp);
+		cfg_data = _bit->getDataArray();
+		featuresRow = 0;
+		feabits = 0x460;
 	}
 
-	/* check if feature area must be updated */
-	featuresRow = _jed.featuresRow();
-	feabits = _jed.feabits();
 	eraseMode = FLASH_ERASE_CFG;
 	if (featuresRow != readFeaturesRow() || feabits != readFeabits())
 		eraseMode |= FLASH_ERASE_FEATURE;
@@ -475,7 +487,7 @@ bool Lattice::program_intFlash(JedParser& _jed)
 	if ((eraseMode & FLASH_ERASE_FEATURE) != 0) {
 		/* write feature row */
 		printInfo("Program features Row: ", false);
-		if (writeFeaturesRow(_jed.featuresRow(), true) == false) {
+		if (writeFeaturesRow(featuresRow, true) == false) {
 			printError("FAIL");
 			return false;
 		} else {
@@ -483,7 +495,7 @@ bool Lattice::program_intFlash(JedParser& _jed)
 		}
 		/* write feabits */
 		printInfo("Program feabits: ", false);
-		if (writeFeabits(_jed.feabits(), true) == false) {
+		if (writeFeabits(feabits, true) == false) {
 			printError("FAIL");
 			return false;
 		} else {
@@ -595,7 +607,7 @@ bool Lattice::program_extFlash(unsigned int offset, bool unprotect_flash)
 		if (_file_extension == "mcs")
 			_bit = new McsParser(_filename, true, _verbose);
 		else if (_file_extension == "bit")
-			_bit = new LatticeBitParser(_filename, _verbose);
+			_bit = new LatticeBitParser(_filename, false, _verbose);
 		else
 			_bit = new RawParser(_filename, false);
 		printSuccess("DONE");
@@ -623,7 +635,7 @@ bool Lattice::program_extFlash(unsigned int offset, bool unprotect_flash)
 		uint32_t idcode = idCode();
 		if (idcode != bit_idcode) {
 			char mess[256];
-			sprintf(mess, "mismatch between target's idcode and bitstream idcode\n"
+			snprintf(mess, 256, "mismatch between target's idcode and bitstream idcode\n"
 				"\tbitstream has 0x%08X hardware requires 0x%08x", bit_idcode, idcode);
 			printError(mess);
 			delete _bit;
@@ -671,7 +683,8 @@ bool Lattice::program_flash(unsigned int offset, bool unprotect_flash)
 		if (_fpga_family == MACHXO3D_FAMILY)
 			retval = program_intFlash_MachXO3D(_jed);
 		else
-			retval = program_intFlash(_jed);
+			retval = program_intFlash(
+					reinterpret_cast<ConfigBitstreamParser*>(&_jed));
 		return post_flash_access() && retval;
 	} else if (_file_extension == "fea") {
 		/* clear current SRAM content */
@@ -683,6 +696,20 @@ bool Lattice::program_flash(unsigned int offset, bool unprotect_flash)
 		clearSRAM();
 		retval = program_pubkey_MachXO3D();
 	} else {
+		//  machox2 + bit
+		if (_file_extension == "bit" && _fpga_family == MACHXO2_FAMILY) {
+			retval = true;
+			try {
+				LatticeBitParser _bit(_filename, true, _verbose);
+				_bit.parse();
+				retval = program_intFlash(
+						reinterpret_cast<ConfigBitstreamParser *>(&_bit));
+			} catch (std::exception &e) {
+				return false;
+			}
+			return post_flash_access() && retval;
+		}
+		/* !machXO and any file */
 		return program_extFlash(offset, unprotect_flash);
 	}
 
@@ -813,13 +840,13 @@ bool Lattice::wr_rd(uint8_t cmd,
 					uint8_t *rx, int rx_len,
 					bool verbose)
 {
-	int xfer_len = rx_len;
+	int kXferLen = rx_len;
 	if (tx_len > rx_len)
-		xfer_len = tx_len;
+		kXferLen = tx_len;
 
-	uint8_t xfer_tx[xfer_len];
-	uint8_t xfer_rx[xfer_len];
-	memset(xfer_tx, 0, xfer_len);
+	uint8_t xfer_tx[kXferLen];
+	uint8_t xfer_rx[kXferLen];
+	memset(xfer_tx, 0, kXferLen);
 	int i;
 	if (tx) {
 		for (i = 0; i < tx_len; i++)
@@ -828,12 +855,12 @@ bool Lattice::wr_rd(uint8_t cmd,
 
 	_jtag->shiftIR(&cmd, NULL, 8, Jtag::PAUSE_IR);
 	if (rx || tx) {
-		_jtag->shiftDR(xfer_tx, (rx) ? xfer_rx : NULL, 8 * xfer_len,
+		_jtag->shiftDR(xfer_tx, (rx) ? xfer_rx : NULL, 8 * kXferLen,
 			Jtag::PAUSE_DR);
 	}
 	if (rx) {
 		if (verbose) {
-			for (i=xfer_len-1; i >= 0; i--)
+			for (i=kXferLen-1; i >= 0; i--)
 				printf("%02x ", xfer_rx[i]);
 			printf("\n");
 		}

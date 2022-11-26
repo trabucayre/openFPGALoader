@@ -26,6 +26,8 @@ where ``yourboard`` may be:
 
 and where ``--flash-sector CFG0`` is needed for the MachXO3D Breakout Board.
 
+``.bit`` may also be used for *machXO2*
+
 SRAM
 ----
 
