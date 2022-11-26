@@ -27,6 +27,13 @@
   Memory: OK
   Flash: OK
   
+- ID: alinx_ax516
+  Description: ALINX AX516
+  URL: https://www.alinx.com/en/detail/281
+  FPGA: Spartan6 xc6slx16csg324
+  Memory: OK
+  Flash: OK
+
 - ID: arty_a7_35t
   Description: Digilent Arty A7
   URL: https://reference.digilentinc.com/reference/programmable-logic/arty-a7/start
