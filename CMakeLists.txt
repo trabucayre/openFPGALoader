@@ -203,9 +203,12 @@ if (${CMAKE_SYSTEM_NAME} MATCHES "Windows")
 	list(APPEND OPENFPGALOADER_HEADERS src/pathHelper.hpp)
 endif()
 
-# libusb_attach_kernel_driver is only available on Linux.
 if (${CMAKE_SYSTEM_NAME} MATCHES "Linux")
+	# libusb_attach_kernel_driver is only available on Linux.
 	add_definitions(-DATTACH_KERNEL)
+	# uart_ll only tested on Linux
+	target_sources(openFPGALoader PRIVATE src/uart_ll.cpp)
+	list (APPEND OPENFPGALOADER_HEADERS src/uart_ll.hpp)
 endif()
 
 if (ENABLE_UDEV)
