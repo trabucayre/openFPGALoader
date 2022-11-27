@@ -94,7 +94,7 @@ FtdiSpi::FtdiSpi(const cable_t &cable,
 	if (spi_config.holdn_pin)
 		_holdn = spi_config.holdn_pin;
 	if (spi_config.wpn_pin)
-		_holdn = spi_config.wpn_pin;
+		_wpn = spi_config.wpn_pin;
 
 	/* clk is fixed by MPSSE engine
 	 * but CS, holdn, wpn are free -> update bits direction
