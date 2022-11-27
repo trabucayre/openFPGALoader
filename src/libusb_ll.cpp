@@ -69,7 +69,7 @@ bool libusb_ll::scan()
 			else if (desc.idProduct == 0x6011)
 				snprintf(probe_type, 256, "ft4232");
 			else if (desc.idProduct == 0x6001)
-				snprintf(probe_type, 256, "ft2232RL");
+				snprintf(probe_type, 256, "ft232RL");
 			else if (desc.idProduct == 0x6014)
 				snprintf(probe_type, 256, "ft232H");
 			else if (desc.idProduct == 0x6015)
