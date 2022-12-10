@@ -55,6 +55,8 @@ openFPGALoader -- a program to flash FPGA
       --altsetting arg      DFU interface altsetting (only for DFU mode)
       --bitstream arg       bitstream
   -b, --board arg           board name, may be used instead of cable
+  -B, --bridge arg          disable spiOverJtag model detection by providing
+                            bitstream(intel/xilinx)
   -c, --cable arg           jtag interface
       --invert-read-edge    JTAG mode / FTDI: read on negative edge instead
                             of positive

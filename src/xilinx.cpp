@@ -31,10 +31,12 @@
 Xilinx::Xilinx(Jtag *jtag, const std::string &filename,
 	const std::string &file_type,
 	Device::prog_type_t prg_type,
-	const std::string &device_package, bool verify, int8_t verbose):
+	const std::string &device_package, const std::string &spiOverJtagPath,
+	bool verify, int8_t verbose):
 	Device(jtag, filename, file_type, verify, verbose),
 	SPIInterface(filename, verbose, 256, verify),
-	_device_package(device_package), _irlen(6)
+	_device_package(device_package), _spiOverJtagPath(spiOverJtagPath),
+	_irlen(6)
 {
 	if (prg_type == Device::RD_FLASH) {
 		_mode = Device::READ_MODE;
@@ -321,14 +323,19 @@ void Xilinx::program(unsigned int offset, bool unprotect_flash)
 
 bool Xilinx::load_bridge()
 {
-	if (_device_package.empty()) {
-		printError("Can't program SPI flash: missing device-package information");
-		return false;
-	}
+	std::string bitname;
+	if (!_spiOverJtagPath.empty()) {
+		bitname = _spiOverJtagPath;
+	} else {
+		if (_device_package.empty()) {
+			printError("Can't program SPI flash: missing device-package information");
+			return false;
+		}
 
-	// DATA_DIR is defined at compile time.
-	std::string bitname = DATA_DIR "/openFPGALoader/spiOverJtag_";
-	bitname += _device_package + ".bit.gz";
+		// DATA_DIR is defined at compile time.
+		bitname = DATA_DIR "/openFPGALoader/spiOverJtag_";
+		bitname += _device_package + ".bit.gz";
+	}
 
 #if defined (_WIN64) || defined (_WIN32)
 	/* Convert relative path embedded at compile time to an absolute path */

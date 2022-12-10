@@ -64,6 +64,7 @@ struct arguments {
 	bool dfu;
 	string file_type;
 	string fpga_part;
+	string bridge_path;
 	string probe_firmware;
 	int index_chain;
 	unsigned int file_size;
@@ -106,7 +107,10 @@ int main(int argc, char **argv)
 	/* command line args. */
 	struct arguments args = {0, false, false, false, false, 0, "", "", "-", "", -1,
 			0, false, "-", false, false, false, false, Device::PRG_NONE, false,
-			false, false, "", "", "", -1, 0, false, -1,
+			/* spi dfu    file_type fpga_part bridge_path probe_firmware */
+			false, false, "",       "",       "",         "",
+			/* index_chain file_size external_flash altsetting */
+			-1,            0,           false,         -1,
 			/* vid, pid, index bus_addr, device_addr */
 			    0,   0,   -1,     0,         0,
 			"127.0.0.1", 0, false, false, "", false, false,
@@ -529,11 +533,12 @@ int main(int argc, char **argv)
 	try {
 		if (fab == "xilinx") {
 			fpga = new Xilinx(jtag, args.bit_file, args.file_type,
-				args.prg_type, args.fpga_part, args.verify, args.verbose);
+				args.prg_type, args.fpga_part, args.bridge_path, args.verify,
+				args.verbose);
 		} else if (fab == "altera") {
 			fpga = new Altera(jtag, args.bit_file, args.file_type,
-				args.prg_type, args.fpga_part, args.verify, args.verbose,
-				args.skip_load_bridge, args.skip_reset);
+				args.prg_type, args.fpga_part, args.bridge_path, args.verify,
+				args.verbose, args.skip_load_bridge, args.skip_reset);
 		} else if (fab == "anlogic") {
 			fpga = new Anlogic(jtag, args.bit_file, args.file_type,
 				args.prg_type, args.verify, args.verbose);
@@ -684,6 +689,9 @@ int parse_opt(int argc, char **argv, struct arguments *args,
 				cxxopts::value<std::string>(args->bit_file))
 			("b,board",     "board name, may be used instead of cable",
 				cxxopts::value<string>(args->board))
+			("B,bridge",    "disable spiOverJtag model detection by providing "
+				"bitstream(intel/xilinx)",
+				cxxopts::value<string>(args->bridge_path))
 			("c,cable", "jtag interface", cxxopts::value<string>(args->cable))
 			("invert-read-edge",
 				"JTAG mode / FTDI: read on negative edge instead of positive",

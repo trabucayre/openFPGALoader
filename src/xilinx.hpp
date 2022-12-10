@@ -19,6 +19,7 @@ class Xilinx: public Device, SPIInterface {
 				const std::string &file_type,
 				Device::prog_type_t prg_type,
 				const std::string &device_package,
+				const std::string &spiOverJtagPath,
 				bool verify, int8_t verbose);
 		~Xilinx();
 
@@ -184,6 +185,7 @@ class Xilinx: public Device, SPIInterface {
 		 */
 		bool load_bridge();
 		std::string _device_package;
+		std::string _spiOverJtagPath; /**< spiOverJtag explicit path */
 		int _xc95_line_len; /**< xc95 only: number of col by flash line */
 		uint16_t _cpld_nb_row; /**< number of flash rows */
 		uint16_t _cpld_nb_col; /**< number of cols in a row */

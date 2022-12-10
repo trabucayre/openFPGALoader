@@ -20,6 +20,7 @@ class Altera: public Device, SPIInterface {
 				const std::string &file_type,
 				Device::prog_type_t prg_type,
 				const std::string &device_package,
+				const std::string &spiOverJtagPath,
 				bool verify, int8_t verbose,
 				bool skip_load_bridge, bool skip_reset);
 		~Altera();
@@ -100,6 +101,7 @@ class Altera: public Device, SPIInterface {
 				int end_state = Jtag::UPDATE_DR, bool debug = false);
 
 		std::string _device_package;
+		std::string _spiOverJtagPath; /**< spiOverJtag explicit path */
 		uint32_t _vir_addr; /**< addr affected to virtual jtag */
 		uint32_t _vir_length; /**< length of virtual jtag IR */
 };
