@@ -203,6 +203,13 @@ Xilinx:
     Memory: OK
     Flash: NA
 
+  - Description: Virtex UltraScale+
+    Model:
+      - xcvu9p
+    URL: https://www.xilinx.com/products/silicon-devices/fpga/virtex-ultrascale-plus.html#productTable
+    Memory: OK
+    Flash: NA
+
   - Description: Spartan 3
     Model:
       - xc3s200

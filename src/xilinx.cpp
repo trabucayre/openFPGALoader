@@ -76,6 +76,8 @@ Xilinx::Xilinx(Jtag *jtag, const std::string &filename,
 		_fpga_family = KINTEX_FAMILY;
 	} else if (family == "kintexus") {
 		_fpga_family = KINTEXUS_FAMILY;
+	} else if (family == "virtexusp") {
+		_fpga_family = VIRTEXUSP_FAMILY;
 	} else if (family.substr(0, 8) == "spartan3") {
 		_fpga_family = SPARTAN3_FAMILY;
 		if (_mode != Device::MEM_MODE) {
@@ -454,7 +456,7 @@ void Xilinx::program_mem(ConfigBitstreamParser *bitfile)
 	/*
 	 * 17: Enter the SELECT-IR state.                     X     1   2
 	 * 18: Move to the SHIFT-IR state.                    X     0   2
-	 * 19: Start loading the JSTART instruction 
+	 * 19: Start loading the JSTART instruction
 	 *     (optional). The JSTART instruction           01100   0   5
 	 *     initializes the startup sequence.
 	 * 20: Load the last bit of the JSTART instruction.   0     1   1

@@ -26,14 +26,14 @@
   FPGA: Artix xc7a35tftg256
   Memory: OK
   Flash: OK
-  
+
 - ID: alchitry_au_plus
   Description: Alchitry Au+ (Plus)
   URL: https://www.sparkfun.com/products/17514
   FPGA: Artix xc7a100tftg256
   Memory: OK
   Flash: OK
-  
+
 - ID: alinx_ax516
   Description: ALINX AX516
   URL: https://www.alinx.com/en/detail/281
@@ -641,5 +641,12 @@
   Description: Digilent Zybo Z7-20
   URL: https://reference.digilentinc.com/reference/programmable-logic/zybo-z7/start
   FPGA: zynq7000 xc7z020clg400
+  Memory: OK
+  Flash: NA
+
+- ID: vcu118
+  Description: Xilinx VCU118
+  URL: https://www.xilinx.com/products/boards-and-kits/vcu118.html
+  FPGA: Virtex UltraScale+ xcvu9pl2flga2104e
   Memory: OK
   Flash: NA
