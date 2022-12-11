@@ -104,6 +104,7 @@ typedef struct {
 static std::map <std::string, target_board_t> board_list = {
 	JTAG_BOARD("ac701",           "xc7a200t2fbg676c", "digilent", 0, 0, CABLE_DEFAULT),
 	JTAG_BOARD("acornCle215",     "xc7a200tsbg484", "",         0, 0, CABLE_DEFAULT),
+	JTAG_BOARD("litex-acorn-baseboard-mini", "xc7a200tsbg484", "", 0, 0, CABLE_DEFAULT),
 	JTAG_BOARD("alchitry_au",     "xc7a35tftg256",  "ft2232",   0, 0, CABLE_DEFAULT),
 	JTAG_BOARD("alchitry_au_plus","xc7a100tftg256",  "ft2232",   0, 0, CABLE_DEFAULT),
 	/* left for backward compatibility, use right name instead */
