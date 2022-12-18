@@ -17,7 +17,7 @@ class EPCQ: public SPIFlash {
 
 	void read_id() override;
 
-	//void program(unsigned int start_offet, string filename, bool reverse=true);
+	//void program(unsigned int start_offset, string filename, bool reverse=true);
 	//int erase_sector(char start_sector, char nb_sectors);
 	//void dumpflash(char *dest_file, int size);
 

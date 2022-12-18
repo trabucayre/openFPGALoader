@@ -18,7 +18,7 @@
 class CmsisDAP: public JtagInterface {
 	public:
 		/*!
-		 * \brief contructor: open device with vid/pid if != 0
+		 * \brief constructor: open device with vid/pid if != 0
 		 *                    else search for a compatible device
 		 * \param[in] vid: vendor id
 		 * \param[in] pid: product id
@@ -79,13 +79,13 @@ class CmsisDAP: public JtagInterface {
 	private:
 		/*!
 		 * \brief connect device in JTAG mode
-		 * \return 1 if success <= 0 otherwhise
+		 * \return 1 if success <= 0 otherwise
 		 */
 		int dapConnect();
 
 		/*!
 		 * \brief disconnect device
-		 * \return 1 if success <= 0 otherwhise
+		 * \return 1 if success <= 0 otherwise
 		 */
 		int dapDisconnect();
 		int dapResetTarget();

@@ -50,7 +50,7 @@ enum ftdi_if {
 };
 
 /*!
- * \brief cable caracteristics
+ * \brief cable characteristics
  */
 struct cable_t {
 	communication_type type; /*! see enum communication_type */

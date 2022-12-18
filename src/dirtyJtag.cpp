@@ -44,7 +44,7 @@ enum CommandModifier {
 
 struct version_specific
 {
-	uint8_t no_read;  // command modifer for xfer no read
+	uint8_t no_read;  // command modifier for xfer no read
 	uint16_t max_bits;  // max bit count that can be transferred
 };
 

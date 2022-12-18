@@ -60,7 +60,7 @@ SPI flash
 .. NOTE::
   ``.bit``, ``.bin``, and ``.mcs`` are supported for FLASH.
 
-``.mcs`` must be generated through vivado with a tcl script like:
+``.mcs`` must be generated through Vivado with a tcl script like:
 
 .. code-block:: tcl
 
@@ -94,5 +94,5 @@ File load:
 .. NOTE::
   ``--fpga-part`` is only required if this information is not provided at ``board.hpp`` level or if the board is not
   officially supported.
-  device/packagee format is something like xc7a35tcsg324 (arty model).
+  device/package format is something like xc7a35tcsg324 (arty model).
   See :ghsrc:`src/board.hpp <src/board.hpp>`, or :ghsrc:`spiOverJtag <spiOverJtag>` directory for examples.

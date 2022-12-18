@@ -239,7 +239,7 @@ int FtdiSpi::spi_put(uint8_t cmd, uint8_t *tx, uint8_t *rx, uint32_t len)
 	if (tx != NULL)
 		memcpy(jtx+1, tx, len);
 
-	/* send first alreay stored cmd,
+	/* send first already stored cmd,
 	 * in the same time store each byte
 	 * to next
 	 */

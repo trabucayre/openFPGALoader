@@ -731,7 +731,7 @@ namespace cxxopts
     }
 
     // The fallback parser. It uses the stringstream parser to parse all types
-    // that have not been overloaded explicitly.  It has to be placed in the
+    // that have not been overloaded explicitly. It has to be placed in the
     // source code before all other more specialized templates.
     template <typename T>
     void

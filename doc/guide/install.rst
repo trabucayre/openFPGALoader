@@ -41,6 +41,7 @@ This application uses ``libftdi1``, so this library must be installed (and, depe
 .. code-block:: bash
 
     sudo apt install \
+      git \
       libftdi1-2 \
       libftdi1-dev \
       libhidapi-hidraw0 \
@@ -92,7 +93,7 @@ If you don't want this option, use:
 
     -DENABLE_LIBGPIOD=OFF
 
-Additionnaly you have to install ``libgpiod``
+Additionaly you have to install ``libgpiod``
 
 To build the app:
 
@@ -137,7 +138,7 @@ After that you need to unplug and replug your device.
    ``usermod`` is used to add ``$USER`` as a member of ``plugdev`` group.
    However this update is not taken into account immediately: it's required to
    logout from current session and login again.
-   Check, by using ``id $USER``, if ``plugdev`` is mentionned after ``groups=``.
+   Check, by using ``id $USER``, if ``plugdev`` is mentioned after ``groups=``.
    An alternate (and temporary) solution is to use ``sudo - $USER`` to have
    your user seen as a member of ``plugdev`` group (works only for the current terminal).
 
@@ -150,7 +151,7 @@ openFPGALoader is available as a `Homebrew <https://brew.sh>`__ formula:
 
     brew install openfpgaloader
 
-Alternatively, if you want to build it from hand:
+Alternatively, if you want to build it by hand:
 
 .. code-block:: bash
 

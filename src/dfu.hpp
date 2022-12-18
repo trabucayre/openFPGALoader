@@ -235,7 +235,7 @@ class DFU {
 		int dev_idx;                         /**< device index in dfu_dev */
 		uint16_t _vid;                       /**< device Vendor ID */
 		uint16_t _pid;                       /**< device Product ID */
-		int16_t _altsetting;                 /**< device altesetting */
+		int16_t _altsetting;                 /**< device altsetting */
 		struct libusb_context *usb_ctx;      /**< usb context */
 		libusb_device_handle * dev_handle;   /**< current device handle */
 		int curr_intf;                       /**< device interface to use */
