@@ -19,7 +19,7 @@
 class Jlink: public JtagInterface {
 	public:
 		/*!
-		 * \brief contructor: open device 
+		 * \brief constructor: open device 
 		 * \param[in] clkHz: output clock frequency
 		 * \param[in] verbose: verbose level -1 quiet, 0 normal,
 		 * 								1 verbose, 2 debug
@@ -28,7 +28,7 @@ class Jlink: public JtagInterface {
 
 		~Jlink();
 
-		// jtagInterface requirement
+		// jtag Interface requirement
 		/*!
 		 * \brief configure probe clk frequency
 		 * \param[in] clkHZ: frequency in Hertz
@@ -58,7 +58,7 @@ class Jlink: public JtagInterface {
 
 		/*!
 		 * \brief access ll_write outer this class / directly receives
-		 *        fully filled tms, tdi buffers, and optionnally tdo
+		 *        fully filled tms, tdi buffers, and optionally tdo
 		 * \param[in] tms: tms buffer
 		 * \param[in] tdi: tdi buffer
 		 * \param[out] tdo: tdo buffer
@@ -295,7 +295,7 @@ class Jlink: public JtagInterface {
 		// buffers for xfer, tdi and tdo
 		// each jlink's buffer have 2K Byte
 		// enough to send full jtag write
-		// buffers must be independant
+		// buffers must be independent
 		uint8_t _xfer_buf[(2048*2) + 4]; /*!> internal buffer */
 		uint8_t _tms[2048]; /*!< TMS buffer */
 		uint8_t _tdi[2048]; /*!< TDI buffer */

@@ -29,7 +29,7 @@ class SPIInterface {
 	bool bulk_erase_flash();
 	/*!
 	 * \brief write len byte into flash starting at offset,
-	 *        optionnally verify after write and unprotect
+	 *        optionally verify after write and unprotect
 	 *        blocks if required and allowed
 	 * \param[in] offset: offset into flash
 	 * \param[in] data: data to write

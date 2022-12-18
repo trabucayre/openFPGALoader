@@ -26,7 +26,7 @@ class RawParser: public ConfigBitstreamParser {
 		RawParser(const std::string &filename, bool reverseOrder);
 		/*!
 		 * \brief read full content of the file, fill the buffer
-		 * \return EXIT_SUCCESS is file is fully read, EXIT_FAILURE otherwhise
+		 * \return EXIT_SUCCESS is file is fully read, EXIT_FAILURE otherwise
 		 */
 		int parse() override;
 

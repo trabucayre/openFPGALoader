@@ -24,7 +24,7 @@ using namespace std;
  *        01 -> end of file
  *        02 -> extended addr
  *        03 -> start segment addr record
- *        04 -> extented linear addr record
+ *        04 -> extended linear addr record
  *        05 -> start linear addr record
  */
 

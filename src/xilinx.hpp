@@ -52,7 +52,7 @@ class Xilinx: public Device, SPIInterface {
 		void reset() override;
 
 		/* -------------- */
-		/* xc3s managment */
+		/* xc3s management */
 		/* -------------- */
 
 		/*!
@@ -119,7 +119,7 @@ class Xilinx: public Device, SPIInterface {
 		 */
 		void xc2c_flow_reinit();
 		/*!
-		 * \brief erase full internal flash (optionnally verify)
+		 * \brief erase full internal flash (optionally verify)
 		 * \return false if erase fails, true otherwise
 		 */
 		bool xc2c_flow_erase();
@@ -175,7 +175,7 @@ class Xilinx: public Device, SPIInterface {
 		/*!
 		 * \brief xilinx ZynqMP Ultrascale+ specific initialization
 		 * \param[in] family name
-		 * \return true if device has been correctly initilized
+		 * \return true if device has been correctly initialized
 		 */
 		bool zynqmp_init(const std::string &family);
 

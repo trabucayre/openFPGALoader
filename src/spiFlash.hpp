@@ -29,7 +29,7 @@ class SPIFlash {
 		int disable_protection();
 		/*!
 		 * \brief enable protection for selected blocks
-		 * \param[in] protect_code: bp + tb combinaison
+		 * \param[in] protect_code: bp + tb combination
 		 * \return -1 if write enable or enabling failed
 		 */
 		int enable_protection(uint8_t protect_code = 0x1c);
@@ -84,7 +84,7 @@ class SPIFlash {
 		 * \brief check if area base_addr to base_addr + len match
 		 *        data content
 		 * \param[in] base_addr: base address to read
-		 * \param[in] data: theorical area content
+		 * \param[in] data: theoretical area content
 		 * \param[in] len: length (in Byte) to area and data
 		 * \param[in] rd_burst: size of packet to read
 		 * \return false if read fails or content didn't match, true otherwise

@@ -248,7 +248,7 @@ void displayFeabits(uint16_t _featbits)
 	printf("\tMy_ASSP                                  : %s\n",
 	    (((_featbits>>4)&0x01)?"enable":"disable"));
 	printf("\tPassword (Flash Protect Key) Protect All : %s\n",
-	    (((_featbits>>3)&0x01)?"Enaabled" : "Disabled"));
+	    (((_featbits>>3)&0x01)?"Enabled" : "Disabled"));
 	printf("\tPassword (Flash Protect Key) Protect     : %s\n",
 	    (((_featbits>>2)&0x01)?"Enabled" : "Disabled"));
 }
@@ -983,10 +983,10 @@ void Lattice::displayReadReg(uint32_t dev)
 				printf("SDM EOF\n");
 				break;
 			case 8:
-				printf("Authentification ERR\n");
+				printf("Authentication ERR\n");
 				break;
 			case 9:
-				printf("Authentification Setup ERR\n");
+				printf("Authentication Setup ERR\n");
 				break;
 			case 10:
 				printf("Bitstream Engine Timeout ERR\n");
@@ -1003,7 +1003,7 @@ void Lattice::displayReadReg(uint32_t dev)
 		if ((dev >> 46) & 0x01) printf("\tINIT Bus ID Error\n");
 		if ((dev >> 47) & 0x01) printf("\tI3C Parity Error1\n");
 		err = (dev >> 48) & 0x03;
-		printf("\tAuthentification mode:\n");
+		printf("\tAuthentication mode:\n");
 		printf("\t\t");
 		switch (err) {
 			case 3:
@@ -1017,8 +1017,8 @@ void Lattice::displayReadReg(uint32_t dev)
 				printf("HMAC\n");
 				break;
 		}
-		if ((dev >> 50) & 0x01) printf("\tAuthentification Done\n");
-		if ((dev >> 51) & 0x01) printf("\tDry Run Authentification Done\n");
+		if ((dev >> 50) & 0x01) printf("\tAuthentication Done\n");
+		if ((dev >> 51) & 0x01) printf("\tDry Run Authentication Done\n");
 #endif
 }
 
