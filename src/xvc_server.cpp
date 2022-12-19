@@ -324,7 +324,7 @@ int XVC_server::handle_data(int fd)
 			return 1;
 		}
 
-		/* 3. receiv 2 x nr_bytes (TMS + TDI) */
+		/* 3. receive 2 x nr_bytes (TMS + TDI) */
 		memset(_tmstdi, 0, _buffer_size);
 		if (sread(fd, _tmstdi, nr_bytes * 2) != 1) {
 			printError("reading data failed");

@@ -6,7 +6,7 @@ First steps with openFPGALoader
 Install
 =======
 
-Packages are available for Linux distributionsm, Windows (MSYS2) and macOS:
+Packages are available for Linux distributions, Windows (MSYS2) and macOS:
 
 * *Arch Linux*: ``sudo pacman -S openfpgaloader``
 

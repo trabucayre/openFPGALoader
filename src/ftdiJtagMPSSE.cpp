@@ -217,7 +217,7 @@ int FtdiJtagMPSSE::writeTDI(uint8_t *tdi, uint8_t *tdo, uint32_t len, bool last)
 	 */
 	int tx_buff_size = mpsse_get_buffer_size();
 	int real_len = (last) ? len - 1 : len;  // if its a buffer in a big send send len
-						// else supress last bit -> with TMS
+						// else suppress last bit -> with TMS
 	int nb_byte = real_len >> 3;    // number of byte to send
 	int nb_bit = (real_len & 0x07); // residual bits
 	int xfer = tx_buff_size - 3;

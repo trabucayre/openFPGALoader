@@ -284,7 +284,7 @@ int SPIFlash::erase_and_prog(int base_addr, uint8_t *data, int len)
 	bool must_relock = false;  // used to relock after write;
 
 	/* microchip SST26VF032B have global lock set
-	 * at powerup. global unlock must be send inconditionally
+	 * at powerup. global unlock must be send unconditionally
 	 * with or without block protection
 	 */
 	if (_jedec_id == 0xbf2642bf) {  // microchip SST26VF032B
@@ -457,7 +457,7 @@ void SPIFlash::read_id()
 				_flash_model->nr_sector, _flash_model->nr_sector * 0x80000 / 1048576);
 		printInfo(content);
 	} else {
-		/* read extented */
+		/* read extended */
 		if ((_jedec_id & 0xff) != 0) {
 			has_edid = true;
 			len += (_jedec_id & 0x0ff);

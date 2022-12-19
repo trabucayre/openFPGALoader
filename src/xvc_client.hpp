@@ -16,7 +16,7 @@
 class XVC_client: public JtagInterface {
 	public:
 		/*!
-		 * \brief contructor: open device 
+		 * \brief constructor: open device 
 		 * \param[in] ip_addr: server IP addr
 		 * \param[in] clkHz: output clock frequency
 		 * \param[in] verbose: verbose level -1 quiet, 0 normal,

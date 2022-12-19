@@ -30,7 +30,7 @@ SVF and RBF files are supported.
     quartus_cpf  --option=bitstream_compression=off -c project_name.sof project_name.rbf
 
 .. WARNING::
-  As mentionned in ``cyclone`` handbooks, real-time decompression is not supported by FPGA in JTAG mode.
+  As mentioned in ``cyclone`` handbooks, real-time decompression is not supported by FPGA in JTAG mode.
   Keep in mind to disable this option.
 
 file load:

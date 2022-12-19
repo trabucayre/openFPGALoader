@@ -68,7 +68,7 @@ enum {
 };
 
 /*!
- * \brief a board has a target cable and optionnally a pin configuration
+ * \brief a board has a target cable and optionally a pin configuration
  * (bitbang mode)
  */
 typedef struct {

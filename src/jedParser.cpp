@@ -42,7 +42,7 @@ JedParser::JedParser(string filename, bool verbose):
 }
 
 /*!
- * \brief read a line with '\r''\n' or '\n' terminaison
+ * \brief read a line with '\r''\n' or '\n' termination
  * check if last char is '\r'
  * \return the line without [\r]\n
  */

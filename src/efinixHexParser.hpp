@@ -25,7 +25,7 @@ class EfinixHexParser: public ConfigBitstreamParser {
 		EfinixHexParser(const std::string &filename);
 		/*!
 		 * \brief read full content of the file, fill the buffer
-		 * \return EXIT_SUCCESS is file is fully read, EXIT_FAILURE otherwhise
+		 * \return EXIT_SUCCESS is file is fully read, EXIT_FAILURE otherwise
 		 */
 		int parse() override;
 };

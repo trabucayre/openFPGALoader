@@ -109,7 +109,7 @@ uint32_t POFParser::parseSection(uint16_t flag, uint32_t pos, uint32_t size)
 	/* 0x03: bitstream name ? */
 	/* 0x3b: ? */
 	/* 0x12: ? */
-	/* 0x13: containts usercode / checksum */
+	/* 0x13: contains usercode / checksum */
 	/* 0x24: ? */
 	/* 0x11: ? */
 	/* 0x18: ? */

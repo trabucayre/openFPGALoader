@@ -43,7 +43,7 @@ Automatic file type detection bypass
 ====================================
 
 Default behavior is to use file extension to determine file parser.
-To avoid this mecanism ``--file-type type`` must be used.
+To avoid this mechanism ``--file-type type`` must be used.
 
 FT231/FT232 bitbang mode and pins configuration
 ===============================================

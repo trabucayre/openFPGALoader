@@ -133,7 +133,7 @@ int EPCQ::erase_sector(char start_sector, char nb_sectors)
 }
 #endif
 
-/* write must be do by 256bytes. Before writting next 256bytes we must
+/* write must be do by 256bytes. Before writing next 256bytes we must
  * wait for WIP goes low
  */
 
@@ -185,7 +185,7 @@ void EPCQ::program(unsigned int start_offset, string filename, bool reverse)
 
 		nb_read = fread(rd_buffer, 1, 256, fd);
 		if (nb_read == 0) {
-			printf("problem dans le read du fichier source\n");
+			printf("problem reading the source file\n");
 			break;
 		}
 		buffer[1] = (offset >> 16) & 0xff;
@@ -262,14 +262,14 @@ void EPCQ::read_id()
 	_spi->spi_put(0x9F, NULL, rx_buf, 3);
 	_device_id = rx_buf[2];
 	if (_verbose)
-		printf("device id 0x%x attendu 0x15\n", _device_id);
+		printf("device id 0x%x expected 0x15\n", _device_id);
 	/* read EPCQ silicon id */
 	//tx_buf[0] = 0xAB;
 	/* 3 dummy_byte + 1 byte*/
 	_spi->spi_put(0xAB, NULL, rx_buf, 4);
 	_silicon_id = rx_buf[3];
 	if (_verbose)
-		printf("silicon id 0x%x attendu 0x14\n", _silicon_id);
+		printf("silicon id 0x%x expected 0x14\n", _silicon_id);
 }
 
 EPCQ::EPCQ(SPIInterface *spi, int8_t verbose):SPIFlash(spi, verbose)

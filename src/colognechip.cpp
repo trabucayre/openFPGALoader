@@ -82,7 +82,7 @@ void CologneChip::reset()
 }
 
 /**
- * Obtain CFG_DONE and CFG_FAILED signals. Configuration is successfull iff
+ * Obtain CFG_DONE and CFG_FAILED signals. Configuration is successful if
  * CFG_DONE=true and CFG_FAILED=false.
  */
 bool CologneChip::cfgDone()
@@ -99,7 +99,7 @@ bool CologneChip::cfgDone()
 }
 
 /**
- * Prints information if configuration was successfull.
+ * Prints information if configuration was successful.
  */
 void CologneChip::waitCfgDone()
 {

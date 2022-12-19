@@ -285,7 +285,7 @@ int Jtag::flushTMS(bool flush_buffer)
 
 void Jtag::go_test_logic_reset()
 {
-	/* idenpendly to current state 5 clk with TMS high is enough */
+	/* independently to current state 5 clk with TMS high is enough */
 	for (int i = 0; i < 6; i++)
 		setTMS(0x01);
 	flushTMS(false);
