@@ -188,6 +188,13 @@
   Memory: OK
   Flash: OK
 
+- ID: c10lp-refkit
+  Description: Trenz c10lp-refkit
+  URL: https://shop.trenz-electronic.de/en/TEI0009-02-055-8CA-Cyclone-10-LP-RefKit-10CL055-Development-Board-32-MByte-SDRAM-16-MByte-Flash
+  FPGA: Cyclone 10 LP 10CL055YU484C8G
+  Memory: OK
+  Flash: OK
+
 - ID: de0
   Description: Terasic DE0
   URL: https://www.terasic.com.tw/cgi-bin/page/archive.pl?No=364
