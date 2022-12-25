@@ -9,6 +9,7 @@ Intel/Altera
 .. NOTE::
 
   * CYC1000
+  * C10LP-RefKit
   * DE0
   * de0nano
 
@@ -41,7 +42,7 @@ file load:
     # or
     openFPGALoader -b boardname project_name.rbf
 
-with ``boardname`` = ``de0``, ``cyc1000``, ``de0nano``, ``de0nanoSoc`` or ``qmtechCycloneV``.
+with ``boardname`` = ``de0``, ``cyc1000``, ``c10lp-refkit``, ``de0nano``, ``de0nanoSoc`` or ``qmtechCycloneV``.
 
 SPI flash
 ---------
@@ -52,12 +53,17 @@ RPD and RBF are supported.
 
 .. code-block:: bash
 
+    # CYC1000
     quartus_cpf -o auto_create_rpd=on -c -d EPCQ16A -s 10CL025YU256C8G project_name.svf project_name.jic
+    # C10LP-RefKit
+    quartus_cpf -o auto_create_rpd=on -c -d EPCQ16A -s 10CL055YU484C8G project_name.svf project_name.jic
 
 file load:
 
 .. code-block:: bash
 
-    openFPGALoader -b cyc1000 -r project_name_auto.rpd
+    openFPGALoader -b boardname -r project_name_auto.rpd
     # or
-    openFPGALoader -b cyc1000 -r project_name.rbf
+    openFPGALoader -b boardname -r project_name.rbf
+
+with ``boardname`` = ``cyc1000``, ``c10lp-refkit``.
