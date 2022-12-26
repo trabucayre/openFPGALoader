@@ -126,6 +126,7 @@ if tool in ["ise", "vivado"]:
 else:
     full_part = {
         "10cl025256": "10CL025YU256C8G",
+        "10cl055484": "10CL055YU484C8G",
         "ep4ce11523": "EP4CE115F23C7",
         "ep4ce2217" : "EP4CE22F17C6",
         "ep4ce1523" : "EP4CE15F23C8",
