@@ -10,7 +10,7 @@ XILINX_PARTS := xc3s500evq100 xc6slx9tqg144 xc6slx16ftg256 xc6slx16csg324 xc6slx
 	xc7k420tffg901
 XILINX_BIT_FILES := $(addsuffix .bit.gz,$(addprefix spiOverJtag_, $(XILINX_PARTS)))
 
-ALTERA_PARTS := 10cl025256 ep4ce2217 ep4ce1523 ep4ce11523 5ce223 5ce423 5ce523 5ce927
+ALTERA_PARTS := 10cl025256 10cl055484 ep4ce2217 ep4ce1523 ep4ce11523 5ce223 5ce423 5ce523 5ce927
 ALTERA_BIT_FILES := $(addsuffix .rbf.gz, $(addprefix spiOverJtag_, $(ALTERA_PARTS)))
 
 BIT_FILES := $(ALTERA_BIT_FILES) $(XILINX_BIT_FILES)
