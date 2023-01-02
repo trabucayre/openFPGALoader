@@ -244,13 +244,15 @@ int UsbBlaster::toggleClk(uint8_t tms, uint8_t tdi, uint32_t clk_len)
 	 * xfer > 1Byte and tms is low
 	 */
 	if (tms == 0 && xfer_len >= 8) {
+		if (_nb_bit == 64)
+			flush();
 		_in_buf[_nb_bit++] = DEFAULT | DO_WRITE | DO_BITBB;
 		flush();
 		/* fill a byte with all 1 or all 0 */
 		uint8_t content = (tdi)?0xff:0;
 
 		while (xfer_len >= 8) {
-			uint16_t tx_len = (xfer_len >> 3);
+			uint32_t tx_len = (xfer_len >> 3);
 			if (tx_len > 63)
 				tx_len = 63;
 			/* if not enough space flush */
@@ -258,7 +260,7 @@ int UsbBlaster::toggleClk(uint8_t tms, uint8_t tdi, uint32_t clk_len)
 				if (flush() < 0)
 					return -EXIT_FAILURE;
 			_in_buf[_nb_bit++] = mask | static_cast<uint8_t>(tx_len);
-			for (int i = 0; i < tx_len; i++)
+			for (uint32_t i = 0; i < tx_len; i++)
 				_in_buf[_nb_bit++] = content;
 			xfer_len -= (tx_len << 3);
 		}
@@ -276,6 +278,8 @@ int UsbBlaster::toggleClk(uint8_t tms, uint8_t tdi, uint32_t clk_len)
 	}
 
 	/* flush */
+	if (_nb_bit == 64)
+		flush();
 	_in_buf[_nb_bit++] = mask;
 	flush();
 
