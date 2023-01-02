@@ -415,7 +415,11 @@ int main(int argc, char **argv)
 	/*      XVC server     */
 	/* ------------------- */
 	if (args.xvc) {
-		return run_xvc_server(args, cable, &pins_config);
+		try {
+			return run_xvc_server(args, cable, &pins_config);
+		} catch (std::exception &e) {
+			return EXIT_FAILURE;
+		}
 	}
 #endif
 
