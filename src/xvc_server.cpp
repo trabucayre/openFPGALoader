@@ -6,6 +6,7 @@
 #include "xvc_server.hpp"
 
 #include <arpa/inet.h>
+#include <errno.h>
 #include <netinet/tcp.h>
 #include <unistd.h>
 
@@ -43,12 +44,12 @@ XVC_server::XVC_server(int port, const cable_t & cable,
 		if (pin_conf == NULL)
 			throw std::exception();
 		_jtag =
-		    new FtdiJtagBitBang(cable.config, pin_conf, dev, serial,
+			new FtdiJtagBitBang(cable.config, pin_conf, dev, serial,
 					clkHZ, _verbose);
 		break;
 	case MODE_CH552_JTAG:
 		_jtag =
-		    new CH552_jtag(cable.config, dev, serial, clkHZ, _verbose);
+			new CH552_jtag(cable.config, dev, serial, clkHZ, _verbose);
 		break;
 	case MODE_DIRTYJTAG:
 		_jtag = new DirtyJtag(clkHZ, _verbose);
@@ -58,12 +59,12 @@ XVC_server::XVC_server(int port, const cable_t & cable,
 		break;
 	case MODE_USBBLASTER:
 		_jtag = new UsbBlaster(cable.config.vid, cable.config.pid,
-				       firmware_path, _verbose);
+					   firmware_path, _verbose);
 		break;
 #ifdef ENABLE_CMSISDAP
 	case MODE_CMSISDAP:
 		_jtag =
-		    new CmsisDAP(cable.config.vid, cable.config.pid, _verbose);
+			new CmsisDAP(cable.config.vid, cable.config.pid, _verbose);
 		break;
 #endif
 #endif
@@ -139,67 +140,69 @@ bool XVC_server::close_connection()
 
 void XVC_server::thread_listen()
 {
-    fd_set conn;
-    int maxfd = 0;
+	fd_set conn;
+	int maxfd = 0;
 
-    FD_ZERO(&conn);
-    FD_SET(_sock, &conn);
+	FD_ZERO(&conn);
+	FD_SET(_sock, &conn);
 
-    maxfd = _sock;
+	maxfd = _sock;
 
-    while (!_must_stop) {
-        fd_set read = conn, except = conn;
-        int fd;
+	while (!_must_stop) {
+		fd_set read = conn, except = conn;
+		int fd;
 
 		struct timeval tv;
 		tv.tv_sec = 1;
 		tv.tv_usec = 0;
-        if (select(maxfd + 1, &read, 0, &except, &tv) < 0) {
-            printError("select");
-            break;
-        }
+		if (select(maxfd + 1, &read, 0, &except, &tv) < 0) {
+			printError("select");
+			break;
+		}
 
-        for (fd = 0; fd <= maxfd; ++fd) {
-            if (FD_ISSET(fd, &read)) {
-                if (fd == _sock) {
+		for (fd = 0; fd <= maxfd; ++fd) {
+			if (FD_ISSET(fd, &read)) {
+				if (fd == _sock) {
 					int newfd;
-    				socklen_t nsize = sizeof(_sock_addr);
+					socklen_t nsize = sizeof(_sock_addr);
 
-                    newfd = accept(_sock, (struct sockaddr*) &_sock_addr,
+					newfd = accept(_sock, (struct sockaddr*) &_sock_addr,
 						&nsize);
 
-                    printf("connection accepted - fd %d\n", newfd);
-                    if (newfd < 0) {
+					printf("connection accepted - fd %d\n", newfd);
+					if (newfd < 0) {
 						throw std::runtime_error("accept");
-                    } else {
-                        printInfo("setting TCP_NODELAY to 1\n");
-                        int flag = 1;
-                        int optResult = setsockopt(newfd, IPPROTO_TCP,
+					} else {
+						printInfo("setting TCP_NODELAY to 1\n");
+						int flag = 1;
+						int optResult = setsockopt(newfd, IPPROTO_TCP,
 								TCP_NODELAY, (char *)&flag, sizeof(int));
-                        if (optResult < 0)
-                            throw std::runtime_error("TCP_NODELAY error");
-                        if (newfd > maxfd) {
-                            maxfd = newfd;
-                        }
-                        FD_SET(newfd, &conn);
-                    }
-                } else {
+						if (optResult < 0)
+							throw std::runtime_error("TCP_NODELAY error");
+						if (newfd > maxfd) {
+							maxfd = newfd;
+						}
+						FD_SET(newfd, &conn);
+					}
+				} else {
 					int ret = handle_data(fd);
-					printInfo("connection closed - fd " + std::to_string(fd));
-                    close(fd);
-                    FD_CLR(fd, &conn);
-					if (ret == 1)
-						throw std::runtime_error("communication failure");
+					if (ret != 0) {
+						printInfo("connection closed - fd " + std::to_string(fd));
+						close(fd);
+						FD_CLR(fd, &conn);
+						if (ret == 3)
+							throw std::runtime_error("communication failure");
+					}
 				}
-            } else if (FD_ISSET(fd, &except)) {
-                printWarn("connection aborted - fd " + std::to_string(fd));
-                close(fd);
-                FD_CLR(fd, &conn);
-                if (fd == _sock)
-                    break;
-            }
-        }
-    }
+			} else if (FD_ISSET(fd, &except)) {
+				printWarn("connection aborted - fd " + std::to_string(fd));
+				close(fd);
+				FD_CLR(fd, &conn);
+				if (fd == _sock)
+					break;
+			}
+		}
+	}
 	_is_stopped = true;
 }
 
@@ -220,37 +223,46 @@ bool XVC_server::listen_loop()
 
 int XVC_server::sread(int fd, void *target, int len)
 {
-    unsigned char *t = (unsigned char *)target;
-    while (len) {
-        int r = read(fd, t, len);
-        if (r <= 0)
-            return r;
-        t += r;
-        len -= r;
-    }
-    return 1;
-}
+	unsigned char *t = (unsigned char *)target;
+	while (len) {
+		int r = read(fd, t, len);
+		if (r == 0) // connection closed
+			return 2;
+		else if (r < 0) {
+			char err[256];
+			snprintf(err, 256, "Read error (%d) %d %s\n", r,
+				errno, strerror(errno));
+			printError(err);
+			return 3;
+		}
 
+		t += r;
+		len -= r;
+	}
+	return 1;
+}
 
 int XVC_server::handle_data(int fd)
 {
 	char xvcInfo[32];
+	int ret;
 
 	do {
 		char cmd[16];
 		memset(cmd, 0, 16);
 
-		if (sread(fd, cmd, 2) != 1)
-			return 1;
+		if ((ret = sread(fd, cmd, 2)) != 1) {
+			return ret;
+		}
 
 		/* getinfo */
 		if (memcmp(cmd, "ge", 2) == 0) {
-			if (sread(fd, cmd, 6) != 1)
-				return 1;
+			if ((ret = sread(fd, cmd, 6)) != 1)
+				return ret;
 			snprintf(xvcInfo, sizeof(xvcInfo),
 				"xvcServer_v1.0:%u\n", _buffer_size);
 			if (send(fd, xvcInfo, strlen(xvcInfo), 0) !=
-			    (ssize_t) strlen(xvcInfo)) {
+				(ssize_t) strlen(xvcInfo)) {
 				perror("write");
 				return 1;
 			}
@@ -262,8 +274,8 @@ int XVC_server::handle_data(int fd)
 			break;
 		/* settck */
 		} else if (memcmp(cmd, "se", 2) == 0) {
-			if (sread(fd, cmd, 9) != 1)
-				return 1;
+			if ((ret = sread(fd, cmd, 9)) != 1)
+				return ret;
 			memcpy(_result, cmd + 5, 4);
 			if (write(fd, _result, 4) != 4) {
 				printError("write");
@@ -281,24 +293,24 @@ int XVC_server::handle_data(int fd)
 				printInfo(std::to_string((int)time(NULL)) +
 						" : Received command: 'settck'");
 				printf("\t Replied with '%.*s'\n\n", 4,
-				       cmd + 5);
+					   cmd + 5);
 			}
 			break;
 		} else if (memcmp(cmd, "de", 2) == 0) {	 // DEBUG CODE
-			if (sread(fd, cmd, 3) != 1)
-				return 1;
+			if ((ret = sread(fd, cmd, 3)) != 1)
+				return ret;
 			printf("%u : Received command: 'debug'\n",
-			       (int)time(NULL));
+				   (int)time(NULL));
 			break;
 		} else if (memcmp(cmd, "of", 2) == 0) {	 // DEBUG CODE
-			if (sread(fd, cmd, 1) != 1)
-				return 1;
+			if ((ret = sread(fd, cmd, 1)) != 1)
+				return ret;
 			printf("%u : Received command: 'off'\n",
-			       (int)time(NULL));
+				   (int)time(NULL));
 			break;
 		} else if (memcmp(cmd, "sh", 2) == 0) {
-			if (sread(fd, cmd, 4) != 1)
-				return 1;
+			if ((ret = sread(fd, cmd, 4)) != 1)
+				return ret;
 			if (_verbose) {
 				printInfo(std::to_string((int)time(NULL)) +
 						" : Received command: 'shift'");
@@ -311,9 +323,9 @@ int XVC_server::handle_data(int fd)
 		/* Handling for -> "shift:<num bits><tms vector><tdi vector>" */
 		uint32_t len, nr_bytes;
 		/* 1. len */
-		if (sread(fd, &len, 4) != 1) {
+		if ((ret = sread(fd, &len, 4)) != 1) {
 			printError("reading length failed");
-			return 1;
+			return ret;
 		}
 
 		/* 2. convert len (in bits) to nr_bytes (in bytes) */
@@ -326,9 +338,9 @@ int XVC_server::handle_data(int fd)
 
 		/* 3. receive 2 x nr_bytes (TMS + TDI) */
 		memset(_tmstdi, 0, _buffer_size);
-		if (sread(fd, _tmstdi, nr_bytes * 2) != 1) {
+		if ((ret = sread(fd, _tmstdi, nr_bytes * 2)) != 1) {
 			printError("reading data failed");
-			return 1;
+			return ret;
 		}
 		memset(_result, 0, _buffer_size/2);
 

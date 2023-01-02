@@ -50,7 +50,8 @@ class XVC_server {
 		void thread_listen();
 		/*!
 		 * \brief parser and dispatcher for XVC transactions
-		 * \return 1 when transactions fails, 0 otherwise
+		 * \return 2 when connection is closed, 1 when transactions fails,
+		 *         0 otherwise
 		 */
 		int handle_data(int fd);
 		/*!
@@ -58,7 +59,7 @@ class XVC_server {
 		 * \param fd: socket descriptor
 		 * \param target: buffer
 		 * \param len: number of bytes to read
-		 * \return <= 0 when failure, 1 otherwise
+		 * \return 3 when failure, 2 when connection closed, 1 otherwise
 		 */
 		int sread(int fd, void *target, int len);
 	    int _verbose;          /*!< verbose level */
