@@ -41,6 +41,13 @@
   Memory: OK
   Flash: OK
 
+- ID: analogMax
+  Description: Trenz TEI0010 - AnalogMax
+  URL: https://wiki.trenz-electronic.de/display/PD/TEI0010+-+AnalogMax
+  FPGA: Max 10 10M08SAU169C8G
+  Memory: SVF
+  Flash: SVF
+
 - ID: arty_a7_35t
   Description: Digilent Arty A7
   URL: https://reference.digilentinc.com/reference/programmable-logic/arty-a7/start
