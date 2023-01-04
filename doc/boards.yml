@@ -234,6 +234,12 @@
   FPGA: Cyclone V SoC 5CSEMA5F31C6
   Memory: OK
 
+- ID: deca
+  Description: Arrow/Terasic DECA
+  URL: https://www.terasic.com.tw/cgi-bin/page/archive.pl?Language=English&CategoryNo=&No=944&PartNo=1
+  FPGA: MAX 10 10M50DAF484C6GES
+  Memory: OK
+
 - ID: ecp5_evn
   Description: Lattice ECP5 5G Evaluation Board
   URL: https://www.latticesemi.com/en/Products/DevelopmentBoardsAndKits/ECP5EvaluationBoard
