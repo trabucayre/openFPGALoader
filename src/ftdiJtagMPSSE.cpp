@@ -271,7 +271,8 @@ int FtdiJtagMPSSE::writeTDI(uint8_t *tdi, uint8_t *tdo, uint32_t len, bool last)
 	}
 
 	unsigned char last_bit = (tdi) ? *tx_ptr : 0;
-	bool double_write = true;
+	// never double write when nb_bit == 0
+	bool double_write = (nb_bit != 0) ? true : false;
 
 	if (nb_bit != 0) {
 		display("%s read/write %d bit\n", __func__, nb_bit);
@@ -333,7 +334,7 @@ int FtdiJtagMPSSE::writeTDI(uint8_t *tdi, uint8_t *tdo, uint32_t len, bool last)
 				index++;
 			}
 			/* in this case for 1 one it's always bit 7 */
-			*rx_ptr |= ((c[index] & 0x80) << (7 - nb_bit));
+			*rx_ptr |= (((c[index]) & 0x80) >> (7 - nb_bit));
 		} else if (_ch552WA) {
 			mpsse_write();
 			ftdi_read_data(_ftdi, c, 1);

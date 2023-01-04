@@ -211,6 +211,8 @@ int UsbBlaster::writeTDI(uint8_t *tx, uint8_t *rx, uint32_t len, bool end)
 		int num_read = _nb_bit;
 		if (writeBit((rx)? rx_ptr:NULL, num_read/2) < 0)
 			return -EXIT_FAILURE;
+		if (rx) // realign bits
+			*rx_ptr >>= (8 - nb_bit);
 	}
 
 	/* set TMS high */
@@ -225,7 +227,7 @@ int UsbBlaster::writeTDI(uint8_t *tx, uint8_t *rx, uint32_t len, bool end)
 		if (writeBit((rx)? &tmp:NULL, 1) < 0)
 			return -EXIT_FAILURE;
 		if (rx)
-			*rx_ptr = (tmp & 0x80) | ((*rx_ptr) >> 1);
+			*rx_ptr |= (tmp & 0x80) >> (7 - nb_bit);
 		_in_buf[_nb_bit++] = mask;
 		if (writeBit(NULL, 0) < 0)
 			return -EXIT_FAILURE;
