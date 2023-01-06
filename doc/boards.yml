@@ -504,6 +504,13 @@
   Memory: OK
   Flash: OK
 
+- ID: stlv7325
+  Description: Sitlinv STLV7325 Board
+  URL: https://www.aliexpress.com/item/1005001275162791.html
+  FPGA: Kintex xc7k325tffg676
+  Memory: OK
+  Flash: OK
+
 - ID: tangnano
   Description: Sipeed Tang Nano
   URL: https://tangnano.sipeed.com/en/
