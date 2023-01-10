@@ -222,6 +222,12 @@
   FPGA: Cyclone V SoC 5CSEMA4U23C6
   Memory: OK
 
+- ID: de10lite
+  Description: Terasic de10lite
+  URL: https://www.terasic.com.tw/cgi-bin/page/archive.pl?Language=English&CategoryNo=218&No=1021&PartNo=1
+  FPGA: MAX 10 10M50DAF484C7G
+  Memory: OK
+
 - ID: de10nano
   Description: Terasic de10Nano
   URL: https://www.terasic.com.tw/cgi-bin/page/archive.pl?Language=English&CategoryNo=205&No=1046
