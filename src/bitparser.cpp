@@ -109,10 +109,21 @@ int BitParser::parse()
 	/* process all field */
 	int pos = parseHeader();
 
-	/* rest of the file is data to send */
-	_bit_data.resize(_raw_data.size() - pos);
-	std::move(_raw_data.begin() + pos, _raw_data.end(), _bit_data.begin());
-	_bit_length = _bit_data.size();
+	/* _bit_length is length of data to send */
+	int rest_of_file_length = _raw_data.size() - pos;
+	if (_bit_length < rest_of_file_length) {
+		printWarn("File is longer than bitstream length declared in the header: " +
+				std::to_string(rest_of_file_length) + " vs " + std::to_string(_bit_length)
+		);
+	} else if (_bit_length > rest_of_file_length) {
+		printError("File is shorter than bitstream length declared in the header: " +
+				std::to_string(rest_of_file_length) + " vs " + std::to_string(_bit_length)
+		);
+		return 1;
+	}
+
+	_bit_data.resize(_bit_length);
+	std::move(_raw_data.begin() + pos, _raw_data.begin() + pos + _bit_length, _bit_data.begin());
 
 	if (_reverseOrder) {
 		for (int i = 0; i < _bit_length; i++) {
