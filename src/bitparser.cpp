@@ -110,7 +110,7 @@ int BitParser::parse()
 	int pos = parseHeader();
 
 	/* _bit_length is length of data to send */
-	int rest_of_file_length = _raw_data.size() - pos;
+	int rest_of_file_length = _file_size - pos;
 	if (_bit_length < rest_of_file_length) {
 		printWarn("File is longer than bitstream length declared in the header: " +
 				std::to_string(rest_of_file_length) + " vs " + std::to_string(_bit_length)
