@@ -151,6 +151,19 @@ static std::map <uint32_t, flash_t> flash_list = {
 		.bp_len = 4,
 		.bp_offset = {(1 << 2), (1 << 3), (1 << 4), (1 << 6)}}
 	},
+	{0x0020bb21, {
+		.manufacturer = "micron",
+		.model = "MT25QU01",
+		.nr_sector = 2048,
+		.sector_erase = true,
+		.subsector_erase = true,
+		.has_extended = true,
+		.tb_otp = false,
+		.tb_offset = (1 << 5),
+		.tb_register = STATR,
+		.bp_len = 4,
+		.bp_offset = {(1 << 2), (1 << 3), (1 << 4), (1 << 6)}}
+	},
 	{0xbf258d, {
 		.manufacturer = "microchip",
 		.model = "SST25VF040B",
