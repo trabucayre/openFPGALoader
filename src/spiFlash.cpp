@@ -24,11 +24,19 @@
 #	define FLASH_RDSR_WEL	(0x02)
 /* flash program */
 #define FLASH_PP       0x02
+/* flash program with 4-byte address */
+#define FLASH_4PP      0x12
+/* read memory */
+#define FLASH_READ     0x03
+/* read memory with 4-byte address */
+#define FLASH_4READ    0x13
 /* write [en|dis]able : 0B addr + 0 dummy */
 #define FLASH_WRDIS    0x04
 #define FLASH_WREN     0x06
 /* sector (4Kb) erase */
 #define FLASH_SE       0x20
+/* sector (4k) erase with 4-byte address*/
+#define FLASH_4SE      0x21
 /* read configuration register */
 #define FLASH_RDCR     0x35
 /* write function register (at least ISSI) */
@@ -39,6 +47,8 @@
 #define FLASH_ROTP     0x4B
 /* block (32Kb) erase */
 #define FLASH_BE32     0x52
+/* block (32Kb) erase with 4-byte address */
+#define FLASH_4BE32    0x5C
 #define FLASH_POWER_UP 0xAB
 #define FLASH_POWER_DOWN 0xB9
 /* read/write non volatile register: 0B addr + 0 dummy */
@@ -49,8 +59,10 @@
 #define FLASH_WRVCR    0x81
 /* bulk erase */
 #define FLASH_CE       0xC7
-/* block (64kb) erase */
+/* block (64Kb) erase */
 #define FLASH_BE64     0xD8
+/* block (64Kb) erase with 4-byte address */
+#define FLASH_4BE64    0xDC
 /* read/write lock register : 3B addr + 0 dummy */
 #define FLASH_WRLR     0xE5
 #define FLASH_RDLR     0xE8
@@ -107,35 +119,77 @@ int SPIFlash::bulk_erase()
 /* sector -> subsector for micron */
 int SPIFlash::sector_erase(int addr)
 {
-	uint8_t tx[4];
-	tx[0] = (uint8_t)(FLASH_SE           );
-	tx[1] = (uint8_t)(0xff & (addr >> 16));
-	tx[2] = (uint8_t)(0xff & (addr >>  8));
-	tx[3] = (uint8_t)(0xff & (addr      ));
-	_spi->spi_put(tx, NULL, 4);
+	uint8_t tx[5];
+	uint32_t len;
+
+	if (addr <= 0xffffff) {
+		tx[0] = static_cast<uint8_t>(FLASH_SE           );
+		tx[1] = static_cast<uint8_t>(0xff & (addr >> 16));
+		tx[2] = static_cast<uint8_t>(0xff & (addr >>  8));
+		tx[3] = static_cast<uint8_t>(0xff & (addr      ));
+		len = 4;
+	} else {
+		tx[0] = static_cast<uint8_t>(FLASH_4SE          );
+		tx[1] = static_cast<uint8_t>(0xff & (addr >> 24));
+		tx[2] = static_cast<uint8_t>(0xff & (addr >> 16));
+		tx[3] = static_cast<uint8_t>(0xff & (addr >>  8));
+		tx[4] = static_cast<uint8_t>(0xff & (addr      ));
+		len = 5;
+	}
+
+	_spi->spi_put(tx, NULL, len);
+
 	return 0;
 }
 
 int SPIFlash::block32_erase(int addr)
 {
-	uint8_t tx[4] = {
-		static_cast<uint8_t>(FLASH_BE32         ),
-		static_cast<uint8_t>(0xff & (addr >> 16)),
-		static_cast<uint8_t>(0xff & (addr >>  8)),
-		static_cast<uint8_t>(0xff & (addr      ))};
-	_spi->spi_put(tx, NULL, 4);
+	uint8_t tx[5];
+	uint32_t len;
+
+	if (addr <= 0xffffff) {
+		tx[0] = static_cast<uint8_t>(FLASH_BE32         );
+		tx[1] = static_cast<uint8_t>(0xff & (addr >> 16));
+		tx[2] = static_cast<uint8_t>(0xff & (addr >>  8));
+		tx[3] = static_cast<uint8_t>(0xff & (addr      ));
+		len = 4;
+	} else {
+		tx[0] = static_cast<uint8_t>(FLASH_4BE32        );
+		tx[1] = static_cast<uint8_t>(0xff & (addr >> 24));
+		tx[2] = static_cast<uint8_t>(0xff & (addr >> 16));
+		tx[3] = static_cast<uint8_t>(0xff & (addr >>  8));
+		tx[4] = static_cast<uint8_t>(0xff & (addr      ));
+		len = 5;
+	}
+
+	_spi->spi_put(tx, NULL, len);
+
 	return 0;
 }
 
 /* block64 -> sector for micron */
 int SPIFlash::block64_erase(int addr)
 {
-	uint8_t tx[4] = {
-		static_cast<uint8_t>(FLASH_BE64         ),
-		static_cast<uint8_t>(0xff & (addr >> 16)),
-		static_cast<uint8_t>(0xff & (addr >>  8)),
-		static_cast<uint8_t>(0xff & (addr      ))};
-	_spi->spi_put(tx, NULL, 4);
+	uint8_t tx[5];
+	uint32_t len;
+
+	if (addr <= 0xffffff) {
+		tx[0] = static_cast<uint8_t>(FLASH_BE64         );
+		tx[1] = static_cast<uint8_t>(0xff & (addr >> 16));
+		tx[2] = static_cast<uint8_t>(0xff & (addr >>  8));
+		tx[3] = static_cast<uint8_t>(0xff & (addr      ));
+		len = 4;
+	} else {
+		tx[0] = static_cast<uint8_t>(FLASH_4BE64        );
+		tx[1] = static_cast<uint8_t>(0xff & (addr >> 24));
+		tx[2] = static_cast<uint8_t>(0xff & (addr >> 16));
+		tx[3] = static_cast<uint8_t>(0xff & (addr >>  8));
+		tx[4] = static_cast<uint8_t>(0xff & (addr      ));
+		len = 5;
+	}
+
+	_spi->spi_put(tx, NULL, len);
+
 	return 0;
 }
 
@@ -195,31 +249,59 @@ int SPIFlash::sectors_erase(int base_addr, int size)
 
 int SPIFlash::write_page(int addr, uint8_t *data, int len)
 {
-	uint8_t tx[len+3];
-	tx[0] = (uint8_t)(0xff & (addr >> 16));
-	tx[1] = (uint8_t)(0xff & (addr >>  8));
-	tx[2] = (uint8_t)(0xff & (addr      ));
+	int addr_len = (addr <= 0xffffff) ? 3 : 4;
 
-	memcpy(tx+3, data, len);
+	uint8_t tx[len+addr_len];
+
+	uint8_t write_cmd;
+
+	if (addr_len == 3) {
+		write_cmd = FLASH_PP;
+		tx[0] = (uint8_t)(0xff & (addr >> 16));
+		tx[1] = (uint8_t)(0xff & (addr >>  8));
+		tx[2] = (uint8_t)(0xff & (addr      ));
+	} else {
+		write_cmd = FLASH_4PP;
+		tx[0] = (uint8_t)(0xff & (addr >> 24));
+		tx[1] = (uint8_t)(0xff & (addr >> 16));
+		tx[2] = (uint8_t)(0xff & (addr >>  8));
+		tx[3] = (uint8_t)(0xff & (addr      ));
+	}
+
+	memcpy(tx+addr_len, data, len);
 
 	if (write_enable() == -1)
 		return -1;
 
-	_spi->spi_put(FLASH_PP, tx, NULL, len+3);
+	_spi->spi_put(write_cmd, tx, NULL, len+addr_len);
 	return _spi->spi_wait(FLASH_RDSR, FLASH_RDSR_WIP, 0x00, 1000);
 }
 
 int SPIFlash::read(int base_addr, uint8_t *data, int len)
 {
-	uint8_t tx[len+3];
-	uint8_t rx[len+3];
-	tx[0] = (uint8_t)(0xff & (base_addr >> 16));
-	tx[1] = (uint8_t)(0xff & (base_addr >>  8));
-	tx[2] = (uint8_t)(0xff & (base_addr      ));
+	int addr_len = (base_addr <= 0xffffff) ? 3 : 4;
 
-	int ret = _spi->spi_put(0x03, tx, rx, len+3);
+	uint8_t tx[len+addr_len];
+	uint8_t rx[len+addr_len];
+
+	uint8_t read_cmd;
+
+	if (addr_len == 3) {
+		tx[0] = (uint8_t)(0xff & (base_addr >> 16));
+		tx[1] = (uint8_t)(0xff & (base_addr >>  8));
+		tx[2] = (uint8_t)(0xff & (base_addr      ));
+		read_cmd = FLASH_READ;
+	} else {
+		tx[0] = (uint8_t)(0xff & (base_addr >> 24));
+		tx[1] = (uint8_t)(0xff & (base_addr >> 16));
+		tx[2] = (uint8_t)(0xff & (base_addr >>  8));
+		tx[3] = (uint8_t)(0xff & (base_addr      ));
+		read_cmd = FLASH_4READ;
+	}
+
+	int ret = _spi->spi_put(read_cmd, tx, rx, len+addr_len);
 	if (ret == 0)
-		memcpy(data, rx+3, len);
+		memcpy(data, rx+addr_len, len);
 	else
 		printf("error\n");
 	return ret;
