@@ -49,68 +49,73 @@ openFPGALoader -c cmsisdap fpga_bitstream.bit
 ## Usage
 
 ```
-Usage: ./openFPGALoader [OPTION...] BIT_FILE
+Usage: openFPGALoader [OPTION...] BIT_FILE
 openFPGALoader -- a program to flash FPGA
 
-      --altsetting arg      DFU interface altsetting (only for DFU mode)
-      --bitstream arg       bitstream
-  -b, --board arg           board name, may be used instead of cable
-  -B, --bridge arg          disable spiOverJtag model detection by providing
-                            bitstream(intel/xilinx)
-  -c, --cable arg           jtag interface
-      --invert-read-edge    JTAG mode / FTDI: read on negative edge instead
-                            of positive
-      --vid arg             probe Vendor ID
-      --pid arg             probe Product ID
-      --cable-index arg     probe index (FTDI and cmsisDAP)
-      --busdev-num arg      select a probe by it bus and device number
-                            (bus_num:device_addr)
-      --ftdi-serial arg     FTDI chip serial number
-      --ftdi-channel arg    FTDI chip channel number (channels 0-3 map to
-                            A-D)
-  -d, --device arg          device to use (/dev/ttyUSBx)
-      --detect              detect FPGA
-      --dfu                 DFU mode
-      --dump-flash          Dump flash mode
-      --external-flash      select ext flash for device with internal and
-                            external storage
-      --file-size arg       provides size in Byte to dump, must be used with
-                            dump-flash
-      --file-type arg       provides file type instead of let's deduced by
-                            using extension
-      --flash-sector arg    flash sector (Lattice parts only)
-      --fpga-part arg       fpga model flavor + package
-      --freq arg            jtag frequency (Hz)
-  -f, --write-flash         write bitstream in flash (default: false)
-      --index-chain arg     device index in JTAG-chain
-      --ip arg              IP address (only for XVC client)
-      --list-boards         list all supported boards
-      --list-cables         list all supported cables
-      --list-fpga           list all supported FPGA
-  -m, --write-sram          write bitstream in SRAM (default: true)
-  -o, --offset arg          start offset in EEPROM
-      --pins arg            pin config TDI:TDO:TCK:TMS
-      --probe-firmware arg  firmware for JTAG probe (usbBlasterII)
-      --protect-flash arg   protect SPI flash area
-      --quiet               Produce quiet output (no progress bar)
-  -r, --reset               reset FPGA after operations
-      --scan-usb            scan USB to display connected probes
-      --skip-load-bridge    skip writing bridge to SRAM when in write-flash
-                            mode
-      --skip-reset          skip resetting the device when in write-flash
-                            mode
-      --spi                 SPI mode (only for FTDI in serial mode)
-      --unprotect-flash     Unprotect flash blocks
-  -v, --verbose             Produce verbose output
-      --verbose-level arg   verbose level -1: quiet, 0: normal, 1:verbose,
-                            2:debug
-  -h, --help                Give this help list
-      --verify              Verify write operation (SPI Flash only)
-      --xvc                 Xilinx Virtual Cable Functions
-      --port arg            Xilinx Virtual Cable Port (default 3721)
-      --mcufw arg           Microcontroller firmware
-      --conmcu              Connect JTAG to MCU
-  -V, --Version             Print program version
+      --altsetting arg          DFU interface altsetting (only for DFU mode)
+      --bitstream arg           bitstream
+      --secondary-bitstream arg
+                                secondary bitstream (some Xilinx UltraScale
+                                boards)
+  -b, --board arg               board name, may be used instead of cable
+  -B, --bridge arg              disable spiOverJtag model detection by
+                                providing bitstream(intel/xilinx)
+  -c, --cable arg               jtag interface
+      --invert-read-edge        JTAG mode / FTDI: read on negative edge
+                                instead of positive
+      --vid arg                 probe Vendor ID
+      --pid arg                 probe Product ID
+      --cable-index arg         probe index (FTDI and cmsisDAP)
+      --busdev-num arg          select a probe by it bus and device number
+                                (bus_num:device_addr)
+      --ftdi-serial arg         FTDI chip serial number
+      --ftdi-channel arg        FTDI chip channel number (channels 0-3 map to
+                                A-D)
+      --detect                  detect FPGA
+      --dfu                     DFU mode
+      --dump-flash              Dump flash mode
+      --bulk-erase              Bulk erase flash
+      --target-flash arg        for boards with multiple flash chips (some
+                                Xilinx UltraScale boards), select the target
+                                flash: primary (default), secondary or both
+      --external-flash          select ext flash for device with internal and
+                                external storage
+      --file-size arg           provides size in Byte to dump, must be used
+                                with dump-flash
+      --file-type arg           provides file type instead of let's deduced
+                                by using extension
+      --flash-sector arg        flash sector (Lattice parts only)
+      --fpga-part arg           fpga model flavor + package
+      --freq arg                jtag frequency (Hz)
+  -f, --write-flash             write bitstream in flash (default: false)
+      --index-chain arg         device index in JTAG-chain
+      --ip arg                  IP address (only for XVC client)
+      --list-boards             list all supported boards
+      --list-cables             list all supported cables
+      --list-fpga               list all supported FPGA
+  -m, --write-sram              write bitstream in SRAM (default: true)
+  -o, --offset arg              start offset in EEPROM
+      --pins arg                pin config TDI:TDO:TCK:TMS
+      --probe-firmware arg      firmware for JTAG probe (usbBlasterII)
+      --protect-flash arg       protect SPI flash area
+      --quiet                   Produce quiet output (no progress bar)
+  -r, --reset                   reset FPGA after operations
+      --scan-usb                scan USB to display connected probes
+      --skip-load-bridge        skip writing bridge to SRAM when in
+                                write-flash mode
+      --skip-reset              skip resetting the device when in write-flash
+                                mode
+      --spi                     SPI mode (only for FTDI in serial mode)
+      --unprotect-flash         Unprotect flash blocks
+  -v, --verbose                 Produce verbose output
+      --verbose-level arg       verbose level -1: quiet, 0: normal,
+                                1:verbose, 2:debug
+  -h, --help                    Give this help list
+      --verify                  Verify write operation (SPI Flash only)
+      --port arg                Xilinx Virtual Cable Port (default 3721)
+      --mcufw arg               Microcontroller firmware
+      --conmcu                  Connect JTAG to MCU
+  -V, --Version                 Print program version
 
 Mandatory or optional arguments to long options are also mandatory or optional
 for any corresponding short options.

@@ -20,6 +20,7 @@
 #include "rawParser.hpp"
 
 #include "display.hpp"
+#include "spiInterface.hpp"
 #include "xilinx.hpp"
 #include "xilinxMapParser.hpp"
 #include "part.hpp"
@@ -98,15 +99,41 @@ static uint8_t *get_ircode(
 	return inst_map.at(inst).data();
 }
 
+static void open_bitfile(
+	const std::string &filename, const std::string &extension,
+	ConfigBitstreamParser **parser, bool reverse, bool verbose)
+{
+	printInfo("Open file ", false);
+	if (extension == "bit") {
+		*parser = new BitParser(filename, reverse, verbose);
+	} else if (extension == "mcs") {
+		*parser = new McsParser(filename, reverse, verbose);
+	} else {
+		*parser = new RawParser(filename, reverse);
+	}
+
+	printSuccess("DONE");
+
+	printInfo("Parse file ", false);
+	if ((*parser)->parse() == EXIT_FAILURE) {
+		throw std::runtime_error("Failed to parse bitstream");
+	}
+
+	printSuccess("DONE");
+}
+
 Xilinx::Xilinx(Jtag *jtag, const std::string &filename,
+	const std::string &secondary_filename,
 	const std::string &file_type,
 	Device::prog_type_t prg_type,
 	const std::string &device_package, const std::string &spiOverJtagPath,
+	const std::string &target_flash,
 	bool verify, int8_t verbose):
 	Device(jtag, filename, file_type, verify, verbose),
 	SPIInterface(filename, verbose, 256, verify),
 	_device_package(device_package), _spiOverJtagPath(spiOverJtagPath),
-	_irlen(6)
+	_irlen(6), _filename(filename), _secondary_filename(secondary_filename),
+	_target_flash(target_flash)
 {
 	if (prg_type == Device::RD_FLASH) {
 		_mode = Device::READ_MODE;
@@ -125,7 +152,13 @@ Xilinx::Xilinx(Jtag *jtag, const std::string &filename,
 		}
 	}
 
-	_user_instruction = "USER1";
+	select_flash_chip(PRIMARY_FLASH);
+
+	if (target_flash == "both" || target_flash == "secondary") {
+		_secondary_file_extension = secondary_filename.substr(
+			secondary_filename.find_last_of(".") + 1);
+		_mode = Device::SPI_MODE;
+	}
 
 	uint32_t idcode = _jtag->get_target_device_id();
 	std::string family = fpga_list[idcode].family;
@@ -299,7 +332,8 @@ int Xilinx::idCode()
 
 void Xilinx::program(unsigned int offset, bool unprotect_flash)
 {
-	ConfigBitstreamParser *bit;
+	ConfigBitstreamParser *bit = nullptr;
+	ConfigBitstreamParser *secondary_bit = nullptr;
 	bool reverse = false;
 
 	/* nothing to do */
@@ -334,32 +368,27 @@ void Xilinx::program(unsigned int offset, bool unprotect_flash)
 	if (_mode == Device::MEM_MODE || _fpga_family == XCF_FAMILY)
 		reverse = true;
 
-	printInfo("Open file ", false);
 	try {
-		if (_file_extension == "bit")
-			bit = new BitParser(_filename, reverse, _verbose);
-		else if (_file_extension == "mcs")
-			bit = new McsParser(_filename, reverse, _verbose);
-		else
-			bit = new RawParser(_filename, reverse);
+		if (_target_flash == "both" || _target_flash == "primary") {
+			open_bitfile(_filename, _file_extension, &bit, reverse, _verbose);
+		}
+		if (_target_flash == "both" || _target_flash == "secondary") {
+			open_bitfile(_secondary_filename, _secondary_file_extension,
+				&secondary_bit, reverse, _verbose);
+		}
 	} catch (std::exception &e) {
 		printError("FAIL");
-		return;
-	}
-
-	printSuccess("DONE");
-
-	printInfo("Parse file ", false);
-	if (bit->parse() == EXIT_FAILURE) {
-		printError("FAIL");
 		delete bit;
+		delete secondary_bit;
 		return;
-	} else {
-		printSuccess("DONE");
 	}
 
-	if (_verbose)
-		bit->displayHeader();
+	if (_verbose) {
+		if (bit)
+			bit->displayHeader();
+		if (secondary_bit)
+			secondary_bit->displayHeader();
+	}
 
 	if (_fpga_family == XCF_FAMILY) {
 		xcf_program(bit);
@@ -368,7 +397,17 @@ void Xilinx::program(unsigned int offset, bool unprotect_flash)
 	}
 
 	if (_mode == Device::SPI_MODE) {
+		if (_target_flash == "both" || _target_flash == "primary") {
+			select_flash_chip(PRIMARY_FLASH);
 		program_spi(bit, offset, unprotect_flash);
+		}
+		if (_target_flash == "both" || _target_flash == "secondary") {
+			select_flash_chip(SECONDARY_FLASH);
+			program_spi(secondary_bit, offset, unprotect_flash);
+		}
+
+		reset();
+
 	} else {
 		if (_fpga_family == SPARTAN3_FAMILY)
 			xc3s_flow_program(bit);
@@ -570,8 +609,65 @@ bool Xilinx::dumpFlash(uint32_t base_addr, uint32_t len)
 		return true;
 	}
 
-	/* dump SPI Flash */
-	return SPIInterface::dump(base_addr, len);
+	if (_target_flash == "both" || _target_flash == "primary") {
+		select_flash_chip(PRIMARY_FLASH);
+		SPIInterface::set_filename(_filename);
+		if (!SPIInterface::dump(base_addr, len))
+			return false;
+	}
+	if (_target_flash == "both" || _target_flash == "secondary") {
+		select_flash_chip(SECONDARY_FLASH);
+		SPIInterface::set_filename(_secondary_filename);
+		if (!SPIInterface::dump(base_addr, len))
+			return false;
+	}
+
+	return true;
+}
+
+bool Xilinx::protect_flash(uint32_t len)
+{
+	if (_target_flash == "both" || _target_flash == "primary") {
+		select_flash_chip(PRIMARY_FLASH);
+		if (!SPIInterface::protect_flash(len))
+			return false;
+	}
+	if (_target_flash == "both" || _target_flash == "secondary") {
+		select_flash_chip(SECONDARY_FLASH);
+		if (!SPIInterface::protect_flash(len))
+			return false;
+	}
+	return true;
+}
+
+bool Xilinx::unprotect_flash()
+{
+	if (_target_flash == "both" || _target_flash == "primary") {
+		select_flash_chip(PRIMARY_FLASH);
+		if (!SPIInterface::unprotect_flash())
+			return false;
+	}
+	if (_target_flash == "both" || _target_flash == "secondary") {
+		select_flash_chip(SECONDARY_FLASH);
+		if (!SPIInterface::unprotect_flash())
+			return false;
+	}
+	return true;
+}
+
+bool Xilinx::bulk_erase_flash()
+{
+	if (_target_flash == "both" || _target_flash == "primary") {
+		select_flash_chip(PRIMARY_FLASH);
+		if (!SPIInterface::bulk_erase_flash())
+			return false;
+	}
+	if (_target_flash == "both" || _target_flash == "secondary") {
+		select_flash_chip(SECONDARY_FLASH);
+		if (!SPIInterface::bulk_erase_flash())
+			return false;
+	}
+	return true;
 }
 
 /* flow program for xc3s (legacy mode)          */
@@ -1458,5 +1554,17 @@ int Xilinx::spi_wait(uint8_t cmd, uint8_t mask, uint8_t cond,
 		return -ETIME;
 	} else {
 		return 0;
+	}
+}
+
+void Xilinx::select_flash_chip(xilinx_flash_chip_t flash_chip) {
+	switch (flash_chip) {
+	case SECONDARY_FLASH:
+		_user_instruction = "USER2";
+		break;
+	case PRIMARY_FLASH:
+	default:
+		_user_instruction = "USER1";
+		break;
 	}
 }
