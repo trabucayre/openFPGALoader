@@ -28,6 +28,76 @@
 #include "pathHelper.hpp"
 #endif
 
+/* Used for xc3s */
+#define USER1       0x02
+#define CFG_IN      0x05
+#define USERCODE    0x08
+#define IDCODE      0x09
+#define ISC_ENABLE  0x10
+#define JPROGRAM    0x0B
+#define JSTART      0x0C
+#define JSHUTDOWN   0x0D
+#define ISC_PROGRAM 0x11
+#define ISC_DISABLE 0x16
+#define BYPASS      0xff
+
+/* xc95 instructions set */
+#define XC95_IDCODE          0xfe
+#define XC95_ISC_ERASE       0xed
+#define XC95_ISC_ENABLE      0xe9
+#define XC95_ISC_DISABLE     0xf0
+#define XC95_XSC_BLANK_CHECK 0xe5
+#define XC95_ISC_PROGRAM     0xea
+#define XC95_ISC_READ        0xee
+
+/* Boundary-scan instruction set based on the FPGA model */
+static std::map<std::string, std::map<std::string, std::vector<uint8_t>>>
+	ircode_mapping {
+		{
+			/* 7-series default */
+			"default",
+			{
+				{ "USER1",       {0x02} },
+				{ "CFG_IN",      {0x05}},
+				{ "USERCODE",    {0x08} },
+				{ "IDCODE",      {0x09} },
+				{ "ISC_ENABLE",  {0x10} },
+				{ "JPROGRAM",    {0x0B} },
+				{ "JSTART",      {0x0C} },
+				{ "JSHUTDOWN",   {0x0D} },
+				{ "ISC_PROGRAM", {0x11} },
+				{ "ISC_DISABLE", {0x16} },
+				{ "BYPASS",      {0xff} },
+			}
+		},
+		{
+			/* Xilinx Virtex UltraScale+ */
+			/* <vivado_dir>/data/parts/xilinx/virtexuplus/public/bsdl/xcvu9p_flga2104.bsd */
+			"xcvu9p",
+			{
+				{ "USER1",       {0b00100100, 0b00101001, 0b00} },
+				{ "USER2",       {0b00100100, 0b00111001, 0b00} },
+				{ "CFG_IN",      {0b00100100, 0b01011001, 0b00} }, // CFG_IN_SLR1
+				{ "USERCODE",    {0b00100100, 0b10001001, 0b00} },
+				{ "IDCODE",      {0b01001001, 0b10010010, 0b00} },
+				{ "ISC_ENABLE",  {0b00010000, 0b00000100, 0b01} },
+				{ "JPROGRAM",    {0b11001011, 0b10110010, 0b00} },
+				{ "JSTART",      {0b00001100, 0b11000011, 0b00} },
+				{ "JSHUTDOWN",   {0b01001101, 0b11010011, 0b00} },
+				{ "ISC_PROGRAM", {0b01010001, 0b00010100, 0b01} },
+				{ "ISC_DISABLE", {0b10010110, 0b01100101, 0b01} },
+				{ "BYPASS",      {0b11111111, 0b11111111, 0b11} },
+			}
+		}
+};
+
+/* Helper to get instruction code as a uint8_t pointer * */
+static uint8_t *get_ircode(
+	std::map<std::string, std::vector<uint8_t>> &inst_map, std::string inst)
+{
+	return inst_map.at(inst).data();
+}
+
 Xilinx::Xilinx(Jtag *jtag, const std::string &filename,
 	const std::string &file_type,
 	Device::prog_type_t prg_type,
@@ -55,9 +125,14 @@ Xilinx::Xilinx(Jtag *jtag, const std::string &filename,
 		}
 	}
 
+	_user_instruction = "USER1";
+
 	uint32_t idcode = _jtag->get_target_device_id();
 	std::string family = fpga_list[idcode].family;
+	std::string model = fpga_list[idcode].model;
 	_irlen = fpga_list[idcode].irlength;
+	_ircode_map = ircode_mapping.at("default");
+
 	if (family.substr(0, 5) == "artix") {
 		_fpga_family = ARTIX_FAMILY;
 	} else if (family == "spartan7") {
@@ -78,6 +153,7 @@ Xilinx::Xilinx(Jtag *jtag, const std::string &filename,
 		_fpga_family = KINTEXUS_FAMILY;
 	} else if (family == "virtexusp") {
 		_fpga_family = VIRTEXUSP_FAMILY;
+		_ircode_map = ircode_mapping.at(model);
 	} else if (family.substr(0, 8) == "spartan3") {
 		_fpga_family = SPARTAN3_FAMILY;
 		if (_mode != Device::MEM_MODE) {
@@ -176,38 +252,17 @@ bool Xilinx::zynqmp_init(const std::string &family)
 	return true;
 }
 
-#define USER1	0x02
-#define CFG_IN   0x05
-#define USERCODE   0x08
-#define IDCODE     0x09
-#define ISC_ENABLE 0x10
-#define JPROGRAM 0x0B
-#define JSTART   0x0C
-#define JSHUTDOWN 0x0D
-#define ISC_PROGRAM 0x11
-#define ISC_DISABLE 0x16
-#define BYPASS   0xff
-
-/* xc95 instructions set */
-#define XC95_IDCODE          0xfe
-#define XC95_ISC_ERASE       0xed
-#define XC95_ISC_ENABLE      0xe9
-#define XC95_ISC_DISABLE     0xf0
-#define XC95_XSC_BLANK_CHECK 0xe5
-#define XC95_ISC_PROGRAM     0xea
-#define XC95_ISC_READ        0xee
-
 void Xilinx::reset()
 {
-	_jtag->shiftIR(JSHUTDOWN, 6);
-	_jtag->shiftIR(JPROGRAM, 6);
+	_jtag->shiftIR(get_ircode(_ircode_map, "JSHUTDOWN"), NULL, _irlen);
+	_jtag->shiftIR(get_ircode(_ircode_map, "JPROGRAM"), NULL, _irlen);
 	_jtag->set_state(Jtag::RUN_TEST_IDLE);
 	_jtag->toggleClk(10000*12);
 
 	_jtag->set_state(Jtag::RUN_TEST_IDLE);
 	_jtag->toggleClk(2000);
 
-	_jtag->shiftIR(BYPASS, 6);
+	_jtag->shiftIR(get_ircode(_ircode_map, "BYPASS"), NULL, _irlen);
 	_jtag->set_state(Jtag::RUN_TEST_IDLE);
 	_jtag->toggleClk(2000);
 }
@@ -218,7 +273,8 @@ int Xilinx::idCode()
 	unsigned char tx_data[4]= {0x00, 0x00, 0x00, 0x00};
 	unsigned char rx_data[4];
 	_jtag->go_test_logic_reset();
-	_jtag->shiftIR(IDCODE, 6);
+
+	_jtag->shiftIR(get_ircode(_ircode_map, "IDCODE"), NULL, _irlen);
 	_jtag->shiftDR(tx_data, rx_data, 32);
 	id = ((rx_data[0] & 0x000000ff) |
 		((rx_data[1] << 8) & 0x0000ff00) |
@@ -372,7 +428,9 @@ void Xilinx::program_spi(ConfigBitstreamParser * bit, unsigned int offset,
 void Xilinx::program_mem(ConfigBitstreamParser *bitfile)
 {
 	std::cout << "load program" << std::endl;
-	unsigned char tx_buf, rx_buf;
+	unsigned char *tx_buf;
+	unsigned char rx_buf[(_irlen >> 3) + 1];
+
 	/*            comment                                TDI   TMS TCK
 	 * 1: On power-up, place a logic 1 on the TMS,
 	 *    and clock the TCK five times. This ensures      X     1   5
@@ -392,12 +450,12 @@ void Xilinx::program_mem(ConfigBitstreamParser *bitfile)
 	 *    TCK five times. This ensures starting in        X     1   5
 	 *    the TLR (Test-Logic-Reset) state.
 	 */
-	_jtag->shiftIR(JPROGRAM, 6);
+	_jtag->shiftIR(get_ircode(_ircode_map, "JPROGRAM"), NULL, _irlen);
 	/* test */
-	tx_buf = BYPASS;
+	tx_buf = get_ircode(_ircode_map, "BYPASS");
 	do {
-		_jtag->shiftIR(&tx_buf, &rx_buf, 6);
-	} while (!(rx_buf &0x01));
+		_jtag->shiftIR(tx_buf, rx_buf, _irlen);
+	} while (!(rx_buf[0] &0x01));
 	/*
 	 * 8: Move into the RTI state.                        X     0   10,000(1)
 	 */
@@ -410,7 +468,7 @@ void Xilinx::program_mem(ConfigBitstreamParser *bitfile)
 	 *     exiting SHIFT-IR, as defined in the            0     1   1
 	 *     IEEE standard.
 	 */
-	_jtag->shiftIR(CFG_IN, 6);
+	_jtag->shiftIR(get_ircode(_ircode_map, "CFG_IN"), NULL, _irlen);
 	/*
 	 * 11: Enter the SELECT-DR state.                     X     1   2
 	 */
@@ -462,7 +520,7 @@ void Xilinx::program_mem(ConfigBitstreamParser *bitfile)
 	 * 20: Load the last bit of the JSTART instruction.   0     1   1
 	 * 21: Move to the UPDATE-IR state.                   X     1   1
 	 */
-	_jtag->shiftIR(JSTART, 6, Jtag::UPDATE_IR);
+	_jtag->shiftIR(get_ircode(_ircode_map, "JSTART"), NULL, _irlen, Jtag::UPDATE_IR);
 	/*
 	 * 22: Move to the RTI state and clock the
 	 *     startup sequence by applying a minimum         X     0   2000
@@ -1329,7 +1387,7 @@ int Xilinx::spi_put(uint8_t cmd,
 			jtx[i+1] = McsParser::reverseByte(tx[i]);
 	}
 	/* addr BSCAN user1 */
-	_jtag->shiftIR(USER1, 6);
+	_jtag->shiftIR(get_ircode(_ircode_map, _user_instruction), NULL, _irlen);
 	/* send first already stored cmd,
 	 * in the same time store each byte
 	 * to next
@@ -1353,7 +1411,7 @@ int Xilinx::spi_put(uint8_t *tx, uint8_t *rx, uint32_t len)
 			jtx[i] = McsParser::reverseByte(tx[i]);
 	}
 	/* addr BSCAN user1 */
-	_jtag->shiftIR(USER1, 6);
+	_jtag->shiftIR(get_ircode(_ircode_map, _user_instruction), NULL, _irlen);
 	/* send first already stored cmd,
 	 * in the same time store each byte
 	 * to next
@@ -1376,7 +1434,7 @@ int Xilinx::spi_wait(uint8_t cmd, uint8_t mask, uint8_t cond,
 	uint8_t tx = McsParser::reverseByte(cmd);
 	uint32_t count = 0;
 
-	_jtag->shiftIR(USER1, 6, Jtag::UPDATE_IR);
+	_jtag->shiftIR(get_ircode(_ircode_map, _user_instruction), NULL, _irlen, Jtag::UPDATE_IR);
 	_jtag->shiftDR(&tx, NULL, 8, Jtag::SHIFT_DR);
 
 	do {

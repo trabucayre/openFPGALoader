@@ -193,6 +193,8 @@ class Xilinx: public Device, SPIInterface {
 		uint16_t _cpld_addr_size; /**< number of addr bits */
 		char _cpld_base_name[7]; /**< cpld name (without package size) */
 		int _irlen; /**< IR bit length */
+		std::map<std::string, std::vector<uint8_t>> _ircode_map; /**< bscan instructions based on model */
+		std::string _user_instruction; /* which USER bscan instruction to interface with SPI */
 };
 
 #endif
