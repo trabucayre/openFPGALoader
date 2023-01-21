@@ -55,6 +55,9 @@ elif subpart == "xc3s":
     family = "Spartan3E"
     tool = "ise"
     speed = -4
+elif subpart == "xcvu":
+    family = "Virtex UltraScale"
+    tool = "vivado"
 else:
     print("Error: unknown device")
     os.sys.exit()
@@ -85,7 +88,8 @@ if tool in ["ise", "vivado"]:
         "xc7k420tffg901"   : "xc7k_ffg901",
         "xc7s25csga225"    : "xc7s_csga225",
         "xc7s25csga324"    : "xc7s_csga324",
-        "xc7s50csga324"    : "xc7s_csga324"
+        "xc7s50csga324"    : "xc7s_csga324",
+        "xcvu9p-flga2104" : "xcvu9p_flga2104",
         }[part]
     if tool == "ise":
         cst_type = "UCF"
@@ -118,7 +122,10 @@ if tool in ["ise", "vivado"]:
                 }
     else:
         cst_type = "xdc"
-        tool_options = {'part': part+ '-1'}
+        if family == "Virtex UltraScale":
+            tool_options = {'part': part + '-1-e'}
+        else:
+            tool_options = {'part': part + '-1'}
     cst_file = currDir + "constr_" + pkg_name + "." + cst_type.lower()
     files.append({'name': currDir + 'xilinx_spiOverJtag.v',
                   'file_type': 'verilogSource'})
