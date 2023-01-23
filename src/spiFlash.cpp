@@ -3,6 +3,7 @@
  * Copyright (C) 2019 Gwenhael Goavec-Merou <gwenhael.goavec-merou@trabucayre.com>
  */
 
+#include <stdint.h>
 #include <stdio.h>
 #include <string.h>
 #include <stdlib.h>
@@ -120,22 +121,16 @@ int SPIFlash::bulk_erase()
 int SPIFlash::sector_erase(int addr)
 {
 	uint8_t tx[5];
-	uint32_t len;
+	uint32_t len = 0;
 
-	if (addr <= 0xffffff) {
-		tx[0] = static_cast<uint8_t>(FLASH_SE           );
-		tx[1] = static_cast<uint8_t>(0xff & (addr >> 16));
-		tx[2] = static_cast<uint8_t>(0xff & (addr >>  8));
-		tx[3] = static_cast<uint8_t>(0xff & (addr      ));
-		len = 4;
-	} else {
-		tx[0] = static_cast<uint8_t>(FLASH_4SE          );
-		tx[1] = static_cast<uint8_t>(0xff & (addr >> 24));
-		tx[2] = static_cast<uint8_t>(0xff & (addr >> 16));
-		tx[3] = static_cast<uint8_t>(0xff & (addr >>  8));
-		tx[4] = static_cast<uint8_t>(0xff & (addr      ));
-		len = 5;
-	}
+	uint8_t cmd = (addr <= 0xffffff) ? FLASH_SE : FLASH_4SE;
+
+	tx[len++] = cmd;
+	if (cmd == FLASH_4SE)
+		tx[len++] = static_cast<uint8_t>(0xff & (addr >> 24));
+	tx[len++] = static_cast<uint8_t>(0xff & (addr >> 16));
+	tx[len++] = static_cast<uint8_t>(0xff & (addr >>  8));
+	tx[len++] = static_cast<uint8_t>(0xff & (addr      ));
 
 	_spi->spi_put(tx, NULL, len);
 
@@ -145,22 +140,16 @@ int SPIFlash::sector_erase(int addr)
 int SPIFlash::block32_erase(int addr)
 {
 	uint8_t tx[5];
-	uint32_t len;
+	uint32_t len = 0;
 
-	if (addr <= 0xffffff) {
-		tx[0] = static_cast<uint8_t>(FLASH_BE32         );
-		tx[1] = static_cast<uint8_t>(0xff & (addr >> 16));
-		tx[2] = static_cast<uint8_t>(0xff & (addr >>  8));
-		tx[3] = static_cast<uint8_t>(0xff & (addr      ));
-		len = 4;
-	} else {
-		tx[0] = static_cast<uint8_t>(FLASH_4BE32        );
-		tx[1] = static_cast<uint8_t>(0xff & (addr >> 24));
-		tx[2] = static_cast<uint8_t>(0xff & (addr >> 16));
-		tx[3] = static_cast<uint8_t>(0xff & (addr >>  8));
-		tx[4] = static_cast<uint8_t>(0xff & (addr      ));
-		len = 5;
-	}
+	uint8_t cmd = (addr <= 0xffffff) ? FLASH_BE32 : FLASH_4BE32;
+
+	tx[len++] = cmd;
+	if (cmd == FLASH_4BE32)
+		tx[len++] = static_cast<uint8_t>(0xff & (addr >> 24));
+	tx[len++] = static_cast<uint8_t>(0xff & (addr >> 16));
+	tx[len++] = static_cast<uint8_t>(0xff & (addr >>  8));
+	tx[len++] = static_cast<uint8_t>(0xff & (addr      ));
 
 	_spi->spi_put(tx, NULL, len);
 
@@ -171,22 +160,16 @@ int SPIFlash::block32_erase(int addr)
 int SPIFlash::block64_erase(int addr)
 {
 	uint8_t tx[5];
-	uint32_t len;
+	uint32_t len = 0;
 
-	if (addr <= 0xffffff) {
-		tx[0] = static_cast<uint8_t>(FLASH_BE64         );
-		tx[1] = static_cast<uint8_t>(0xff & (addr >> 16));
-		tx[2] = static_cast<uint8_t>(0xff & (addr >>  8));
-		tx[3] = static_cast<uint8_t>(0xff & (addr      ));
-		len = 4;
-	} else {
-		tx[0] = static_cast<uint8_t>(FLASH_4BE64        );
-		tx[1] = static_cast<uint8_t>(0xff & (addr >> 24));
-		tx[2] = static_cast<uint8_t>(0xff & (addr >> 16));
-		tx[3] = static_cast<uint8_t>(0xff & (addr >>  8));
-		tx[4] = static_cast<uint8_t>(0xff & (addr      ));
-		len = 5;
-	}
+	uint8_t cmd = (addr <= 0xffffff) ? FLASH_BE64 : FLASH_4BE64;
+
+	tx[len++] = cmd;
+	if (cmd == FLASH_4BE64)
+		tx[len++] = static_cast<uint8_t>(0xff & (addr >> 24));
+	tx[len++] = static_cast<uint8_t>(0xff & (addr >> 16));
+	tx[len++] = static_cast<uint8_t>(0xff & (addr >>  8));
+	tx[len++] = static_cast<uint8_t>(0xff & (addr      ));
 
 	_spi->spi_put(tx, NULL, len);
 
@@ -249,24 +232,25 @@ int SPIFlash::sectors_erase(int base_addr, int size)
 
 int SPIFlash::write_page(int addr, uint8_t *data, int len)
 {
-	int addr_len = (addr <= 0xffffff) ? 3 : 4;
+	uint32_t addr_len;
+	uint8_t write_cmd;
+	uint32_t i = 0;
+
+	if (addr <= 0xffffff) {
+		addr_len = 3;
+		write_cmd = FLASH_PP;
+	} else {
+		addr_len = 4;
+		write_cmd = FLASH_4PP;
+	}
 
 	uint8_t tx[len+addr_len];
 
-	uint8_t write_cmd;
-
-	if (addr_len == 3) {
-		write_cmd = FLASH_PP;
-		tx[0] = (uint8_t)(0xff & (addr >> 16));
-		tx[1] = (uint8_t)(0xff & (addr >>  8));
-		tx[2] = (uint8_t)(0xff & (addr      ));
-	} else {
-		write_cmd = FLASH_4PP;
-		tx[0] = (uint8_t)(0xff & (addr >> 24));
-		tx[1] = (uint8_t)(0xff & (addr >> 16));
-		tx[2] = (uint8_t)(0xff & (addr >>  8));
-		tx[3] = (uint8_t)(0xff & (addr      ));
-	}
+	if (write_cmd == FLASH_4PP)
+		tx[i++] = (uint8_t)(0xff & (addr >> 24));
+	tx[i++] = (uint8_t)(0xff & (addr >> 16));
+	tx[i++] = (uint8_t)(0xff & (addr >>  8));
+	tx[i++] = (uint8_t)(0xff & (addr      ));
 
 	memcpy(tx+addr_len, data, len);
 
@@ -279,25 +263,26 @@ int SPIFlash::write_page(int addr, uint8_t *data, int len)
 
 int SPIFlash::read(int base_addr, uint8_t *data, int len)
 {
-	int addr_len = (base_addr <= 0xffffff) ? 3 : 4;
+	uint32_t addr_len;
+	uint8_t read_cmd;
+	uint32_t i = 0;
+
+	if (base_addr <= 0xffffff) {
+		addr_len = 3;
+		read_cmd = FLASH_READ;
+	} else {
+		addr_len = 4;
+		read_cmd = FLASH_4READ;
+	}
 
 	uint8_t tx[len+addr_len];
 	uint8_t rx[len+addr_len];
 
-	uint8_t read_cmd;
-
-	if (addr_len == 3) {
-		tx[0] = (uint8_t)(0xff & (base_addr >> 16));
-		tx[1] = (uint8_t)(0xff & (base_addr >>  8));
-		tx[2] = (uint8_t)(0xff & (base_addr      ));
-		read_cmd = FLASH_READ;
-	} else {
-		tx[0] = (uint8_t)(0xff & (base_addr >> 24));
-		tx[1] = (uint8_t)(0xff & (base_addr >> 16));
-		tx[2] = (uint8_t)(0xff & (base_addr >>  8));
-		tx[3] = (uint8_t)(0xff & (base_addr      ));
-		read_cmd = FLASH_4READ;
-	}
+	if (read_cmd == FLASH_4READ)
+		tx[i++] = (uint8_t)(0xff & (base_addr >> 24));
+	tx[i++] = (uint8_t)(0xff & (base_addr >> 16));
+	tx[i++] = (uint8_t)(0xff & (base_addr >>  8));
+	tx[i++] = (uint8_t)(0xff & (base_addr      ));
 
 	int ret = _spi->spi_put(read_cmd, tx, rx, len+addr_len);
 	if (ret == 0)
