@@ -1,5 +1,6 @@
 module spiOverJtag
 (
+`ifndef virtexultrascale
 	output csn,
 
 `ifdef spartan6
@@ -12,6 +13,13 @@ module spiOverJtag
 	input  sdo_dq1,
 	output wpn_dq2,
 	output hldn_dq3
+`else // virtexultrascale
+	output sdi_sec_dq0,
+	input sdo_sec_dq1,
+	output wpn_sec_dq2,
+	output hldn_sec_dq3,
+	output csn_sec
+`endif // virtexultrascale
 );
 
 	wire capture, drck, sel, update;
@@ -43,6 +51,7 @@ module spiOverJtag
 		end
 	end
 
+`ifndef virtexultrascale
 `ifdef spartan6
 	assign sck = drck;
 `else
@@ -69,6 +78,40 @@ module spiOverJtag
 		.USRDONETS(1'b1)  // 1-bit input: User DONE 3-state enable output
 	);
 `endif
+`endif
+`else // virtexultrascale
+	wire [3:0] di;
+	assign sdo_dq1 = di[1];
+	wire [3:0] do = {hldn_dq3, wpn_dq2, 1'b0, sdi_dq0};
+	wire [3:0] dts = 4'b0010;
+	// secondary BSCANE3 signals
+	wire drck_sec, tdo_sec;
+	reg fsm_csn_sec;
+
+	wire sck = (sel_sec) ? drck_sec : drck;
+
+	STARTUPE3 #(
+		.PROG_USR("FALSE"),  // Activate program event security feature. Requires encrypted bitstreams.
+		.SIM_CCLK_FREQ(0.0)  // Set the Configuration Clock Frequency (ns) for simulation.
+	) startupe3_inst (
+		.CFGCLK   (),     // 1-bit output: Configuration main clock output.
+		.CFGMCLK  (),     // 1-bit output: Configuration internal oscillator clock output.
+		.DI       (di),   // 4-bit output: Allow receiving on the D input pin.
+		.EOS      (),     // 1-bit output: Active-High output signal indicating the End Of Startup.
+		.PREQ     (),     // 1-bit output: PROGRAM request to fabric output.
+		.DO       (do),   // 4-bit input: Allows control of the D pin output.
+		.DTS      (dts),  // 4-bit input: Allows tristate of the D pin.
+		.FCSBO    (csn),  // 1-bit input: Controls the FCS_B pin for flash access.
+		.FCSBTS   (1'b0), // 1-bit input: Tristate the FCS_B pin.
+		.GSR      (1'b0), // 1-bit input: Global Set/Reset input (GSR cannot be used for the port).
+		.GTS      (1'b0), // 1-bit input: Global 3-state input (GTS cannot be used for the port name).
+		.KEYCLEARB(1'b0), // 1-bit input: Clear AES Decrypter Key input from Battery-Backed RAM (BBRAM).
+		.PACK     (1'b0), // 1-bit input: PROGRAM acknowledge input.
+		.USRCCLKO (sck),  // 1-bit input: User CCLK input.
+		.USRCCLKTS(1'b0), // 1-bit input: User CCLK 3-state enable input.
+		.USRDONEO (1'b1), // 1-bit input: User DONE pin output control.
+		.USRDONETS(1'b1)  // 1-bit input: User DONE 3-state enable output.
+	);
 `endif
 
 `ifdef spartan3e
@@ -114,6 +157,54 @@ module spiOverJtag
 		                   //               Fabric connection to TAP.
 		.UPDATE  (update), // 1-bit output: UPDATE output from TAP controller
 		.TDO     (tdo)     // 1-bit input: Test Data Output (TDO) input
+		                   //              for USER function.
+	);
+`endif
+
+`ifdef virtexultrascale
+	assign wpn_sec_dq2  = 1'b1;
+	assign hldn_sec_dq3 = 1'b1;
+	assign sdi_sec_dq0 = tdi;
+	assign tdo_sec = (sel_sec) ? sdo_sec_dq1 : tdi;
+	assign  csn_sec = fsm_csn_sec;
+
+	wire tmp_cap_sec_s = capture && sel_sec;
+	wire tmp_up_sec_s = update && sel_sec;
+
+	always @(posedge drck_sec, posedge runtest) begin
+		if (runtest) begin
+			fsm_csn_sec <= 1'b1;
+		end else begin
+			if (tmp_cap_sec_s) begin
+				fsm_csn_sec <= 1'b0;
+			end else if (tmp_up_sec_s) begin
+				fsm_csn_sec <= 1'b1;
+			end else begin
+				fsm_csn_sec <= fsm_csn_sec;
+			end
+		end
+	end
+
+	BSCANE2 #(
+		.JTAG_CHAIN(2)  // Value for USER command.
+	) bscane2_sec_inst (
+		.CAPTURE(), // 1-bit output: CAPTURE output from TAP controller.
+		.DRCK	(drck_sec),    // 1-bit output: Gated TCK output. When SEL
+						   //               is asserted, DRCK toggles when
+						   //               CAPTURE or SHIFT are asserted.
+		.RESET  (),        // 1-bit output: Reset output for TAP controller.
+		.RUNTEST(), // 1-bit output: Output asserted when TAP
+						   //               controller is in Run Test/Idle state.
+		.SEL	 (sel_sec),    // 1-bit output: USER instruction active output.
+		.SHIFT   (),       // 1-bit output: SHIFT output from TAP controller.
+		.TCK     (),       // 1-bit output: Test Clock output.
+		                   //               Fabric connection to TAP Clock pin.
+		.TDI     (),    // 1-bit output: Test Data Input (TDI) output
+		                   //               from TAP controller.
+		.TMS     (),       // 1-bit output: Test Mode Select output.
+		                   //               Fabric connection to TAP.
+		.UPDATE  (), // 1-bit output: UPDATE output from TAP controller
+		.TDO     (tdo_sec)     // 1-bit input: Test Data Output (TDO) input
 		                   //              for USER function.
 	);
 `endif

@@ -7,7 +7,8 @@ XILINX_PARTS := xc3s500evq100 xc6slx9tqg144 xc6slx16ftg256 xc6slx16csg324 xc6slx
 	xc7s25csga225 xc7s25csga324 xc7s50csga324 \
 	xc7k160tffg676 \
 	xc7k325tffg676 xc7k325tffg900 \
-	xc7k420tffg901
+	xc7k420tffg901 \
+	xcvu9p-flga2104
 XILINX_BIT_FILES := $(addsuffix .bit.gz,$(addprefix spiOverJtag_, $(XILINX_PARTS)))
 
 ALTERA_PARTS := 10cl025256 10cl055484 ep4ce2217 ep4ce1523 ep4ce11523 5ce223 5ce423 5ce523 5ce927
