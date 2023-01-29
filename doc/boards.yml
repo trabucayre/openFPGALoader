@@ -202,6 +202,13 @@
   Memory: OK
   Flash: OK
 
+- ID: c5g
+  Description: Terasic C5G (Cyclone V GX Starter Kit)
+  URL: https://www.terasic.com.tw/cgi-bin/page/archive.pl?No=830
+  FPGA: Cyclone V GX 5CGXFC5C6F27C7N
+  Memory: OK
+  Flash: NT
+
 - ID: de0
   Description: Terasic DE0
   URL: https://www.terasic.com.tw/cgi-bin/page/archive.pl?No=364
