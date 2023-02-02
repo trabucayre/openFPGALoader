@@ -19,7 +19,7 @@ Alternatively, you could build from source. First: install required libraries:
 
 .. code-block:: bash
 
-   sudo pacman -S git cmake make gcc pkgconf libftdi libusb zlib hidapi
+   sudo pacman -S git cmake make gcc pkgconf libftdi libusb zlib hidapi gzip
 
 Build step is similar as Debian
 
@@ -42,6 +42,7 @@ This application uses ``libftdi1``, so this library must be installed (and, depe
 
     sudo apt install \
       git \
+      gzip \
       libftdi1-2 \
       libftdi1-dev \
       libhidapi-hidraw0 \
@@ -156,7 +157,7 @@ Alternatively, if you want to build it by hand:
 .. code-block:: bash
 
     brew install --only-dependencies openfpgaloader
-    brew install cmake pkg-config zlib
+    brew install cmake pkg-config zlib gzip
     git clone https://github.com/trabucayre/openFPGALoader
     cd openFPGALoader
     mkdir build

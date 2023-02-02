@@ -284,12 +284,43 @@ math(EXPR FTDI_VAL "${LIBFTDI_VERSION_MAJOR} * 100 + ${LIBFTDI_VERSION_MINOR}")
 add_definitions(-DFTDI_VERSION=${FTDI_VAL})
 
 install(TARGETS openFPGALoader DESTINATION bin)
-file(GLOB BITS_FILES spiOverJtag/spiOverJtag_*.bit)
-file(GLOB RBF_FILES spiOverJtag/spiOverJtag_*.rbf)
+
 file(GLOB GZ_FILES spiOverJtag/spiOverJtag_*.*.gz)
+
+# Compress rbf and bit files present into repository
+# TODO: test compat with Windows and MacOS
+list(INSERT CMAKE_MODULE_PATH 0 ${PROJECT_SOURCE_DIR}/cmake/Modules)
+include(FindGZIP)
+
+if (${CMAKE_SYSTEM_NAME} MATCHES "Linux" AND GZIP_PRG)
+	set(SPIOVERJTAG_DIR "${CMAKE_CURRENT_SOURCE_DIR}/spiOverJtag")
+	file(GLOB BITS_FILES RELATIVE ${SPIOVERJTAG_DIR} spiOverJtag/spiOverJtag_*.bit)
+	file(GLOB RBF_FILES RELATIVE ${SPIOVERJTAG_DIR} spiOverJtag/spiOverJtag_*.rbf)
+
+	STRING(REGEX REPLACE ".bit" ".bit.gz" BIT_GZ_FILES "${BITS_FILES}")
+	STRING(REGEX REPLACE ".rbf" ".rbf.gz" RBF_GZ_FILES "${RBF_FILES}")
+
+	FOREACH(bit ${BITS_FILES} ${RBF_FILES})
+		ADD_CUSTOM_COMMAND(OUTPUT ${bit}.gz
+			COMMAND ${GZIP_PRG} -9 -c ${bit} > ${CMAKE_CURRENT_BINARY_DIR}/${bit}.gz
+			DEPENDS ${SPIOVERJTAG_DIR}/${bit}
+			WORKING_DIRECTORY ${SPIOVERJTAG_DIR}
+			COMMENT "Building ${bit}.gz")
+		list(APPEND GZ_FILES ${CMAKE_CURRENT_BINARY_DIR}/${bit}.gz)
+	ENDFOREACH(bit)
+
+	ADD_CUSTOM_TARGET(bit ALL DEPENDS ${BIT_GZ_FILES} ${RBF_GZ_FILES})
+else()
+	file(GLOB BITS_FILES spiOverJtag/spiOverJtag_*.bit)
+	file(GLOB RBF_FILES spiOverJtag/spiOverJtag_*.rbf)
+	install(FILES
+		${BITS_FILES}
+		${RBF_FILES}
+		DESTINATION ${CMAKE_INSTALL_DATAROOTDIR}/openFPGALoader
+	)
+endif()
+
 install(FILES 
-	${BITS_FILES}
-	${RBF_FILES}
 	${GZ_FILES}
 	DESTINATION ${CMAKE_INSTALL_DATAROOTDIR}/openFPGALoader
 )

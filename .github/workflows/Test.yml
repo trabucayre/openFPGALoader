@@ -52,6 +52,7 @@ jobs:
         sudo apt update -qq
         sudo apt install -y \
           cmake \
+          gzip \
           libftdi1-2 \
           libftdi1-dev \
           libhidapi-hidraw0 \
