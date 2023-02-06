@@ -184,8 +184,8 @@ class Xilinx: public Device, SPIInterface {
 		bool load_bridge();
 
 		enum xilinx_flash_chip_t {
-			PRIMARY_FLASH,
-			SECONDARY_FLASH
+			PRIMARY_FLASH = 0x1,
+			SECONDARY_FLASH = 0x2
 		};
 
 		/*!
@@ -208,7 +208,7 @@ class Xilinx: public Device, SPIInterface {
 		std::string _filename; /* path to the primary flash file */
 		std::string _secondary_filename; /* path to the secondary flash file (SPIx8) */
 		std::string _secondary_file_extension; /* file type for the secondary flash file */
-		std::string _target_flash; /* in boards with two flash chips, select the target (1, 2 or both) */
+		int _flash_chips; /* bitfield to select the target in boards with two flash chips */
 		std::string _user_instruction; /* which USER bscan instruction to interface with SPI */
 };
 

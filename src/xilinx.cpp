@@ -132,8 +132,7 @@ Xilinx::Xilinx(Jtag *jtag, const std::string &filename,
 	Device(jtag, filename, file_type, verify, verbose),
 	SPIInterface(filename, verbose, 256, verify),
 	_device_package(device_package), _spiOverJtagPath(spiOverJtagPath),
-	_irlen(6), _filename(filename), _secondary_filename(secondary_filename),
-	_target_flash(target_flash)
+	_irlen(6), _filename(filename), _secondary_filename(secondary_filename)
 {
 	if (prg_type == Device::RD_FLASH) {
 		_mode = Device::READ_MODE;
@@ -154,7 +153,17 @@ Xilinx::Xilinx(Jtag *jtag, const std::string &filename,
 
 	select_flash_chip(PRIMARY_FLASH);
 
-	if (target_flash == "both" || target_flash == "secondary") {
+	if (target_flash == "primary") {
+		_flash_chips = PRIMARY_FLASH;
+	} else if (target_flash == "secondary") {
+		_flash_chips = SECONDARY_FLASH;
+	} else if (target_flash == "both") {
+		_flash_chips = (PRIMARY_FLASH | SECONDARY_FLASH);
+	} else {
+		throw std::runtime_error("Error: unknown flash target: " + target_flash);
+	}
+
+	if (_flash_chips & SECONDARY_FLASH) {
 		_secondary_file_extension = secondary_filename.substr(
 			secondary_filename.find_last_of(".") + 1);
 		_mode = Device::SPI_MODE;
@@ -369,10 +378,10 @@ void Xilinx::program(unsigned int offset, bool unprotect_flash)
 		reverse = true;
 
 	try {
-		if (_target_flash == "both" || _target_flash == "primary") {
+		if (_flash_chips & PRIMARY_FLASH) {
 			open_bitfile(_filename, _file_extension, &bit, reverse, _verbose);
 		}
-		if (_target_flash == "both" || _target_flash == "secondary") {
+		if (_flash_chips & SECONDARY_FLASH) {
 			open_bitfile(_secondary_filename, _secondary_file_extension,
 				&secondary_bit, reverse, _verbose);
 		}
@@ -397,11 +406,11 @@ void Xilinx::program(unsigned int offset, bool unprotect_flash)
 	}
 
 	if (_mode == Device::SPI_MODE) {
-		if (_target_flash == "both" || _target_flash == "primary") {
+		if (_flash_chips & PRIMARY_FLASH) {
 			select_flash_chip(PRIMARY_FLASH);
-		program_spi(bit, offset, unprotect_flash);
+			program_spi(bit, offset, unprotect_flash);
 		}
-		if (_target_flash == "both" || _target_flash == "secondary") {
+		if (_flash_chips & SECONDARY_FLASH) {
 			select_flash_chip(SECONDARY_FLASH);
 			program_spi(secondary_bit, offset, unprotect_flash);
 		}
@@ -609,13 +618,13 @@ bool Xilinx::dumpFlash(uint32_t base_addr, uint32_t len)
 		return true;
 	}
 
-	if (_target_flash == "both" || _target_flash == "primary") {
+	if (_flash_chips & PRIMARY_FLASH) {
 		select_flash_chip(PRIMARY_FLASH);
 		SPIInterface::set_filename(_filename);
 		if (!SPIInterface::dump(base_addr, len))
 			return false;
 	}
-	if (_target_flash == "both" || _target_flash == "secondary") {
+	if (_flash_chips & SECONDARY_FLASH) {
 		select_flash_chip(SECONDARY_FLASH);
 		SPIInterface::set_filename(_secondary_filename);
 		if (!SPIInterface::dump(base_addr, len))
@@ -627,12 +636,12 @@ bool Xilinx::dumpFlash(uint32_t base_addr, uint32_t len)
 
 bool Xilinx::protect_flash(uint32_t len)
 {
-	if (_target_flash == "both" || _target_flash == "primary") {
+	if (_flash_chips & PRIMARY_FLASH) {
 		select_flash_chip(PRIMARY_FLASH);
 		if (!SPIInterface::protect_flash(len))
 			return false;
 	}
-	if (_target_flash == "both" || _target_flash == "secondary") {
+	if (_flash_chips & SECONDARY_FLASH) {
 		select_flash_chip(SECONDARY_FLASH);
 		if (!SPIInterface::protect_flash(len))
 			return false;
@@ -642,12 +651,12 @@ bool Xilinx::protect_flash(uint32_t len)
 
 bool Xilinx::unprotect_flash()
 {
-	if (_target_flash == "both" || _target_flash == "primary") {
+	if (_flash_chips & PRIMARY_FLASH) {
 		select_flash_chip(PRIMARY_FLASH);
 		if (!SPIInterface::unprotect_flash())
 			return false;
 	}
-	if (_target_flash == "both" || _target_flash == "secondary") {
+	if (_flash_chips & SECONDARY_FLASH) {
 		select_flash_chip(SECONDARY_FLASH);
 		if (!SPIInterface::unprotect_flash())
 			return false;
@@ -657,12 +666,12 @@ bool Xilinx::unprotect_flash()
 
 bool Xilinx::bulk_erase_flash()
 {
-	if (_target_flash == "both" || _target_flash == "primary") {
+	if (_flash_chips & PRIMARY_FLASH) {
 		select_flash_chip(PRIMARY_FLASH);
 		if (!SPIInterface::bulk_erase_flash())
 			return false;
 	}
-	if (_target_flash == "both" || _target_flash == "secondary") {
+	if (_flash_chips & SECONDARY_FLASH) {
 		select_flash_chip(SECONDARY_FLASH);
 		if (!SPIInterface::bulk_erase_flash())
 			return false;
