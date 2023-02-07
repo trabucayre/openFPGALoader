@@ -27,6 +27,8 @@ class SPIInterface {
 	bool protect_flash(uint32_t len);
 	bool unprotect_flash();
 	bool bulk_erase_flash();
+	void set_filename(const std::string &filename) {_spif_filename = filename;}
+
 	/*!
 	 * \brief write len byte into flash starting at offset,
 	 *        optionally verify after write and unprotect

@@ -47,6 +47,7 @@ struct arguments {
 	bool reset, detect, verify, scan_usb;
 	unsigned int offset;
 	string bit_file;
+	string secondary_bit_file;
 	string device;
 	string cable;
 	string ftdi_serial;
@@ -68,6 +69,7 @@ struct arguments {
 	string probe_firmware;
 	int index_chain;
 	unsigned int file_size;
+	string target_flash;
 	bool external_flash;
 	int16_t altsetting;
 	uint16_t vid;
@@ -105,12 +107,12 @@ int main(int argc, char **argv)
 	jtag_pins_conf_t pins_config = {0, 0, 0, 0};
 
 	/* command line args. */
-	struct arguments args = {0, false, false, false, false, 0, "", "", "-", "", -1,
+	struct arguments args = {0, false, false, false, false, 0, "", "", "", "-", "", -1,
 			0, false, "-", false, false, false, false, Device::PRG_NONE, false,
 			/* spi dfu    file_type fpga_part bridge_path probe_firmware */
 			false, false, "",       "",       "",         "",
-			/* index_chain file_size external_flash altsetting */
-			-1,            0,           false,         -1,
+			/* index_chain file_size target_flash external_flash altsetting */
+			-1,            0,        "primary",   false,         -1,
 			/* vid, pid, index bus_addr, device_addr */
 			    0,   0,   -1,     0,         0,
 			"127.0.0.1", 0, false, false, "", false, false,
@@ -536,9 +538,9 @@ int main(int argc, char **argv)
 	Device *fpga;
 	try {
 		if (fab == "xilinx") {
-			fpga = new Xilinx(jtag, args.bit_file, args.file_type,
-				args.prg_type, args.fpga_part, args.bridge_path, args.verify,
-				args.verbose);
+			fpga = new Xilinx(jtag, args.bit_file, args.secondary_bit_file,
+				args.file_type, args.prg_type, args.fpga_part, args.bridge_path,
+				args.target_flash, args.verify, args.verbose);
 		} else if (fab == "altera") {
 			fpga = new Altera(jtag, args.bit_file, args.file_type,
 				args.prg_type, args.fpga_part, args.bridge_path, args.verify,
@@ -569,7 +571,9 @@ int main(int argc, char **argv)
 		return EXIT_FAILURE;
 	}
 
-	if ((!args.bit_file.empty() || !args.file_type.empty())
+	if ((!args.bit_file.empty() ||
+		 !args.secondary_bit_file.empty() ||
+		 !args.file_type.empty())
 			&& args.prg_type != Device::RD_FLASH) {
 		try {
 			fpga->program(args.offset, args.unprotect_flash);
@@ -691,6 +695,9 @@ int parse_opt(int argc, char **argv, struct arguments *args,
 				cxxopts::value<int16_t>(args->altsetting))
 			("bitstream", "bitstream",
 				cxxopts::value<std::string>(args->bit_file))
+			("secondary-bitstream", "secondary bitstream (some Xilinx"
+				" UltraScale boards)",
+				cxxopts::value<std::string>(args->secondary_bit_file))
 			("b,board",     "board name, may be used instead of cable",
 				cxxopts::value<string>(args->board))
 			("B,bridge",    "disable spiOverJtag model detection by providing "
@@ -722,8 +729,12 @@ int parse_opt(int argc, char **argv, struct arguments *args,
 			("dump-flash",  "Dump flash mode")
 			("bulk-erase",   "Bulk erase flash",
 				cxxopts::value<bool>(args->bulk_erase_flash))
+			("target-flash",
+				"for boards with multiple flash chips (some Xilinx UltraScale"
+				" boards), select the target flash: primary (default), secondary or both",
+				cxxopts::value<string>(args->target_flash))
 			("external-flash",
-			 	"select ext flash for device with internal and external storage",
+				"select ext flash for device with internal and external storage",
 				cxxopts::value<bool>(args->external_flash))
 			("file-size",
 				"provides size in Byte to dump, must be used with dump-flash",
@@ -918,11 +929,25 @@ int parse_opt(int argc, char **argv, struct arguments *args,
 			args->pin_config = true;
 		}
 
+		if (args->target_flash == "both" || args->target_flash == "secondary") {
+			if ((args->prg_type == Device::WR_FLASH || args->prg_type == Device::RD_FLASH) &&
+				 args->secondary_bit_file.empty() &&
+				 !args->protect_flash &&
+				 !args->unprotect_flash &&
+				 !args->bulk_erase_flash
+				) {
+				printError("Error: secondary bitfile not specified");
+				cout << options.help() << endl;
+				throw std::exception();
+			}
+		}
+
 		if (args->list_cables || args->list_boards || args->list_fpga ||
 			args->scan_usb)
 			args->is_list_command = true;
 
 		if (args->bit_file.empty() &&
+			args->secondary_bit_file.empty() &&
 			args->file_type.empty() &&
 			!args->is_list_command &&
 			!args->detect &&

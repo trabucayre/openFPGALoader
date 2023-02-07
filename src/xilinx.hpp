@@ -12,14 +12,17 @@
 #include "device.hpp"
 #include "jtag.hpp"
 #include "spiInterface.hpp"
+#include "jedParser.hpp"
 
 class Xilinx: public Device, SPIInterface {
 	public:
 		Xilinx(Jtag *jtag, const std::string &filename,
+				const std::string &secondary_filename,
 				const std::string &file_type,
 				Device::prog_type_t prg_type,
 				const std::string &device_package,
 				const std::string &spiOverJtagPath,
+				const std::string &target_flash,
 				bool verify, int8_t verbose);
 		~Xilinx();
 
@@ -32,21 +35,15 @@ class Xilinx: public Device, SPIInterface {
 		/*!
 		 * \brief protect SPI flash blocks
 		 */
-		bool protect_flash(uint32_t len) override {
-			return SPIInterface::protect_flash(len);
-		}
+		bool protect_flash(uint32_t len) override;
 		/*!
 		 * \brief unprotect SPI flash blocks
 		 */
-		bool unprotect_flash() override {
-			return SPIInterface::unprotect_flash();
-		}
+		bool unprotect_flash() override;
 		/*!
 		 * \brief erase SPI flash blocks
 		 */
-		bool bulk_erase_flash() override {
-			return SPIInterface::bulk_erase_flash();
-		}
+		bool bulk_erase_flash() override;
 
 		int idCode() override;
 		void reset() override;
@@ -185,6 +182,20 @@ class Xilinx: public Device, SPIInterface {
 		 * 	\return false if missing device mode, true otherwise
 		 */
 		bool load_bridge();
+
+		enum xilinx_flash_chip_t {
+			PRIMARY_FLASH = 0x1,
+			SECONDARY_FLASH = 0x2
+		};
+
+		/*!
+		 * \brief Starting from UltraScale, Xilinx devices can support dual
+		 *        QSPI flash configuration, with two different flash chips
+		 *        on the board. Target the selected one via the bridge by
+		 *        chaging the USER instruction to use.
+		 */
+		void select_flash_chip(xilinx_flash_chip_t flash_chip);
+
 		std::string _device_package;
 		std::string _spiOverJtagPath; /**< spiOverJtag explicit path */
 		int _xc95_line_len; /**< xc95 only: number of col by flash line */
@@ -194,6 +205,10 @@ class Xilinx: public Device, SPIInterface {
 		char _cpld_base_name[7]; /**< cpld name (without package size) */
 		int _irlen; /**< IR bit length */
 		std::map<std::string, std::vector<uint8_t>> _ircode_map; /**< bscan instructions based on model */
+		std::string _filename; /* path to the primary flash file */
+		std::string _secondary_filename; /* path to the secondary flash file (SPIx8) */
+		std::string _secondary_file_extension; /* file type for the secondary flash file */
+		int _flash_chips; /* bitfield to select the target in boards with two flash chips */
 		std::string _user_instruction; /* which USER bscan instruction to interface with SPI */
 };
 
