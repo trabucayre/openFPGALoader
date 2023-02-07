@@ -122,8 +122,8 @@ jobs:
       fail-fast: false
       matrix:
         os:
-        - 18
         - 20
+        - 22
     name: '🚦🐧 Ubuntu ${{ matrix.os }} | test'
     runs-on: ubuntu-${{ matrix.os }}.04
     steps:
