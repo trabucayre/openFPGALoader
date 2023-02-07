@@ -387,8 +387,10 @@ void Xilinx::program(unsigned int offset, bool unprotect_flash)
 		}
 	} catch (std::exception &e) {
 		printError("FAIL");
-		delete bit;
-		delete secondary_bit;
+		if (bit)
+			delete bit;
+		if (secondary_bit)
+			delete secondary_bit;
 		return;
 	}
 
