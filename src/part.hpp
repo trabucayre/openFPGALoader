@@ -120,6 +120,7 @@ static std::map <uint32_t, fpga_model> fpga_list = {
 	{0x010F0043, {"lattice", "CertusNX", "LFD2NX-17", 8}},
 	{0x010F1043, {"lattice", "CertusNX", "LFD2NX-40", 8}},
 
+	{0x012b8043, {"lattice", "MachXO2",   "LCMXO2-256HC", 8}},
 	{0x012b9043, {"lattice", "MachXO2",   "LCMXO2-640HC", 8}},
 	{0x012ba043, {"lattice", "MachXO2",   "LCMXO2-1200HC", 8}},
 	{0x012bd043, {"lattice", "MachXO2",   "LCMXO2-7000HC", 8}},

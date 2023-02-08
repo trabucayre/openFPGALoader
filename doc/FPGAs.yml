@@ -254,8 +254,10 @@ Xilinx:
     Memory: NA
     Flash: OK
 
-  - Description: XC2C (coolrunner II)
-    Model: xc2c32a
+  - Description: XC2C/XA2C (coolrunner II)
+    Model:
+      - xc2c32a
+      - xa2c64a
     URL: https://www.xilinx.com/support/documentation/data_sheets/ds090.pdf
     Memory: TBD
     Flash: OK
