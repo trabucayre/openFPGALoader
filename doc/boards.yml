@@ -683,3 +683,17 @@
   FPGA: Virtex UltraScale+ xcvu9pl2flga2104e
   Memory: OK
   Flash: NA
+
+- ID: LD-SCHOKO
+  Description: Lone Dynamics Corporation - Machdyne Schoko computer
+  URL: https://machdyne.com/product/schoko-computer/
+  FPGA: ECP5 LFE5U-45F-6CABGA256
+  Memory: OK
+  Flash: OK
+
+- ID: LD-KONFEKT
+  Description: Lone Dynamics Corporation - Machdyne Konfekt computer
+  URL: https://machdyne.com/product/konfekt-computer/
+  FPGA: ECP5 LFE5U-12F-6BG256C
+  Memory: OK
+  Flash: OK
