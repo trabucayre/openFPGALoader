@@ -172,7 +172,6 @@ static std::map <std::string, target_board_t> board_list = {
 	JTAG_BOARD("nexysVideo",      "xc7a200tsbg484", "digilent_b", 0, 0, CABLE_DEFAULT),
 	DFU_BOARD("orangeCrab",       "", "dfu", 0x1209, 0x5af0, 0),
 	DFU_BOARD("orbtrace_dfu",     "", "dfu", 0x1209, 0x3442, 1),
-	JTAG_BOARD("papilio_one",     "xc3s500evq100", "papilio", 0, 0, CABLE_DEFAULT),
 	JTAG_BOARD("pipistrello",     "xc6slx45csg324", "ft2232", 0, 0, CABLE_DEFAULT),
 	JTAG_BOARD("pynq_z2",         "xc7z020clg400",  "ft2232", 0, 0, CABLE_DEFAULT),
 	JTAG_BOARD("qmtechCycloneIV", "ep4ce1523", "",  0, 0, CABLE_DEFAULT),
@@ -200,9 +199,6 @@ static std::map <std::string, target_board_t> board_list = {
 	JTAG_BITBANG_BOARD("ulx3s",   "", "ft231X",  0, 0,
 			FT232RL_DCD, FT232RL_DSR, FT232RL_RI, FT232RL_CTS, CABLE_DEFAULT),
 	DFU_BOARD("ulx3s_dfu",        "", "dfu", 0x1d50, 0x614b, 0),
-	JTAG_BOARD("usrpx300",        "xc7k325tffg900", "digilent", 0, 0, CABLE_MHZ(15)),
-	JTAG_BOARD("usrpx310",        "xc7k410tffg900", "digilent", 0, 0, CABLE_MHZ(15)),
-	JTAG_BOARD("vcu118",          "xcvu9pl2flga2104e", "jtag-smt2-nc", 0, 0, CABLE_DEFAULT),
 	JTAG_BOARD("xyloni_jtag",     "", "efinix_jtag_ft4232"       , 0, 0, CABLE_DEFAULT),
 	SPI_BOARD("xyloni_spi",       "efinix", "efinix_spi_ft4232",
 			DBUS4, DBUS5, DBUS7, DBUS3, DBUS0, DBUS1, DBUS2, DBUS6, 0, CABLE_DEFAULT),
@@ -213,7 +209,11 @@ static std::map <std::string, target_board_t> board_list = {
 	JTAG_BOARD("zcu106",          "xczu7evffvc1156", "jtag-smt2-nc", 0, 0, CABLE_DEFAULT),
 	JTAG_BOARD("zedboard",        "xc7z020clg484", "digilent_hs2", 0, 0, CABLE_DEFAULT),
 	JTAG_BOARD("zybo_z7_10",      "xc7z010clg400",  "digilent", 0, 0, CABLE_DEFAULT),
-	JTAG_BOARD("zybo_z7_20",      "xc7z020clg400",  "digilent", 0, 0, CABLE_DEFAULT)
+	JTAG_BOARD("zybo_z7_20",      "xc7z020clg400",  "digilent", 0, 0, CABLE_DEFAULT),
+	JTAG_BOARD("papilio_one",     "xc3s500evq100", "papilio", 0, 0, CABLE_DEFAULT),
+	JTAG_BOARD("usrpx300",        "xc7k325tffg900", "digilent", 0, 0, CABLE_MHZ(15)),
+	JTAG_BOARD("usrpx310",        "xc7k410tffg900", "digilent", 0, 0, CABLE_MHZ(15)),
+	JTAG_BOARD("vcu118",          "xcvu9pl2flga2104e", "jtag-smt2-nc", 0, 0, CABLE_DEFAULT)
 };
 
 #endif
