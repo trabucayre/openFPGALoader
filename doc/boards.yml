@@ -360,6 +360,20 @@
   Flash: NT
   Constraints: KC705
 
+- ID: LD-KONFEKT
+  Description: Lone Dynamics Corporation - Machdyne Konfekt computer
+  URL: https://machdyne.com/product/konfekt-computer/
+  FPGA: ECP5 LFE5U-12F-6BG256C
+  Memory: OK
+  Flash: OK
+
+- ID: LD-SCHOKO
+  Description: Lone Dynamics Corporation - Machdyne Schoko computer
+  URL: https://machdyne.com/product/schoko-computer/
+  FPGA: ECP5 LFE5U-45F-6CABGA256
+  Memory: OK
+  Flash: OK
+
 - ID: licheeTang
   Description: Sipeed Lichee Tang
   URL: https://tang.sipeed.com/en/hardware-overview/lichee-tang/
@@ -558,6 +572,20 @@
   Memory: OK
   Flash: IF
 
+- ID: trion_t120_bga576_spi
+  Description: Efinix Trion T120 BGA576 Dev Kit
+  URL: https://www.efinixinc.com/products-devkits-triont120bga576.html
+  FPGA: Trion T120BGA576
+  Memory: NA
+  Flash: AS
+
+- ID: trion_ti60_f225_spi
+  Description: Efinix Titanium F225 Dev Kit
+  URL: https://www.efinixinc.com/products-devkits-titaniumti60f225.html
+  FPGA: Titanium Ti60F225
+  Memory: NA
+  Flash: AS
+
 - ID: ulx3s
   Description: Radiona ULX3S
   URL: https://radiona.org/ulx3s/
@@ -588,20 +616,6 @@
   Description: Efinix Xyloni
   URL: https://www.efinixinc.com/products-devkits-xyloni.html
   FPGA: Trion T8F81
-  Memory: NA
-  Flash: AS
-
-- ID: trion_t120_bga576_spi
-  Description: Efinix Trion T120 BGA576 Dev Kit
-  URL: https://www.efinixinc.com/products-devkits-triont120bga576.html
-  FPGA: Trion T120BGA576
-  Memory: NA
-  Flash: AS
-
-- ID: trion_ti60_f225_spi
-  Description: Efinix Titanium F225 Dev Kit
-  URL: https://www.efinixinc.com/products-devkits-titaniumti60f225.html
-  FPGA: Titanium Ti60F225
   Memory: NA
   Flash: AS
 
@@ -683,17 +697,3 @@
   FPGA: Virtex UltraScale+ xcvu9pl2flga2104e
   Memory: OK
   Flash: NA
-
-- ID: LD-SCHOKO
-  Description: Lone Dynamics Corporation - Machdyne Schoko computer
-  URL: https://machdyne.com/product/schoko-computer/
-  FPGA: ECP5 LFE5U-45F-6CABGA256
-  Memory: OK
-  Flash: OK
-
-- ID: LD-KONFEKT
-  Description: Lone Dynamics Corporation - Machdyne Konfekt computer
-  URL: https://machdyne.com/product/konfekt-computer/
-  FPGA: ECP5 LFE5U-12F-6BG256C
-  Memory: OK
-  Flash: OK
