@@ -256,7 +256,7 @@ libgpiod:
 
   - Name: Bitbang GPIO
     Description: Bitbang GPIO pins on Linux host.
-    URL: https://github.com/brgl/libgpiod
+    URL: https://git.kernel.org/pub/scm/libs/libgpiod/libgpiod.git/
 
 jetson-nano-gpio:
 
