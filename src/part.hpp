@@ -67,6 +67,8 @@ static std::map <uint32_t, fpga_model> fpga_list = {
 
 	{0x04b31093, {"xilinx", "virtexusp", "xcvu9p", 18}},
 
+	{0x8424a093, {"xilinx", "virtex6", "xc6vlx130t", 10}},
+
 	/* When powering a zynq ultrascale+ MPSoC, PL Tap and ARM dap
 	 * are disabled and only PS tap with a specific IDCODE is seen.
 	 * 0x03 must be written into JTAG_CTRL followed by RTI and
