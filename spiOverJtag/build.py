@@ -121,7 +121,6 @@ if tool in ["ise", "vivado"]:
                             "xc6slx100fgg484":  "fgg384",
                             "xc6slx150tfgg484": "fgg484",
                             "xc6vlx130tff784":  "ff784",
-                            "xc7k325tffg676":   "xc7k325t",
                             "xc7k325tffg676":   "ffg676",
                             "xc7k325tffg900":   "ffg900",
                             "xc7k420tffg901":   "ffg901",
