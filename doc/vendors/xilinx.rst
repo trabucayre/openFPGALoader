@@ -96,3 +96,22 @@ File load:
   officially supported.
   device/package format is something like xc7a35tcsg324 (arty model).
   See :ghsrc:`src/board.hpp <src/board.hpp>`, or :ghsrc:`spiOverJtag <spiOverJtag>` directory for examples.
+
+Some boards with UltraScale FPGAs, like the VCU118, support the SPIx8 (Dual Quad SPI) configuration.
+In this case, the ``spix8`` option ``write_cfgmem`` on the above example can be used to generate two ``.mcs`` files,
+to fit bigger designs or for faster programming. Only ``.mcs`` files can be used to program the FPGA in this case.
+
+In this case, to load the two ``.mcs`` files:
+
+.. code-block:: bash
+
+    openFPGALoader --board vcu118 -f --target-flash both --bitstream *.runs/impl_1/*_primary.mcs --secondary-bitstream *.runs/impl_1/*_secondary.mcs
+
+On these boards, each SPI flash can be programmed independently with the ``--target-flash`` option.
+The default target is the ``primary`` flash.
+
+For example, to program only the secondary flash with arbitrary data not related to FPGA configuration:
+
+.. code-block:: bash
+
+    openFPGALoader --board vcu118 -f --target-flash secondary --bitstream arbitrary_data
