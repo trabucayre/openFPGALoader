@@ -2,10 +2,10 @@ module spiOverJtag
 (
 `ifndef virtexultrascale
 	output csn,
-`ifdef spartan3e
+`ifdef spartan6
 	output sck,
 `endif
-`ifdef virtex6
+`ifdef spartan3e
 	output sck,
 `endif
 	output sdi_dq0,
