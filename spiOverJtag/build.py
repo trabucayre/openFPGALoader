@@ -55,6 +55,10 @@ elif subpart == "xc3s":
     family = "Spartan3E"
     tool = "ise"
     speed = -4
+elif subpart == "xc6v":
+    family = "Virtex6"
+    tool = "ise"
+    speed = -1
 elif subpart == "xcvu":
     family = "Virtex UltraScale"
     tool = "vivado"
@@ -71,6 +75,7 @@ if tool in ["ise", "vivado"]:
         "xc6slx45csg324"   : "xc6s_csg324",
         "xc6slx100fgg484"  : "xc6s_fgg484",
         "xc6slx150tfgg484" : "xc6s_fgg484",
+        "xc6vlx130tff784"  : "xc6v_ff784",
         "xc7a35tcpg236"    : "xc7a_cpg236",
         "xc7a35tcsg324"    : "xc7a_csg324",
         "xc7a35tftg256"    : "xc7a_ftg256",
@@ -102,6 +107,7 @@ if tool in ["ise", "vivado"]:
                             "xc6slx45csg324":   "xc6slx45",
                             "xc6slx100fgg484":  "xc6slx100",
                             "xc6slx150tfgg484": "xc6slx150t",
+                            "xc6vlx130tff784"  : "xc6vlx130t",
                             "xc7k325tffg676":   "xc7k325t",
                             "xc7k325tffg900":   "xc7k325t",
                             "xc7k420tffg901":   "xc7k420t",
@@ -114,6 +120,8 @@ if tool in ["ise", "vivado"]:
                             "xc6slx45csg324":   "csg324",
                             "xc6slx100fgg484":  "fgg384",
                             "xc6slx150tfgg484": "fgg484",
+                            "xc6vlx130tff784":  "ff784",
+                            "xc7k325tffg676":   "xc7k325t",
                             "xc7k325tffg676":   "ffg676",
                             "xc7k325tffg900":   "ffg900",
                             "xc7k420tffg901":   "ffg901",

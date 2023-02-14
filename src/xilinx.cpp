@@ -54,6 +54,21 @@
 /* Boundary-scan instruction set based on the FPGA model */
 static std::map<std::string, std::map<std::string, std::vector<uint8_t>>>
 	ircode_mapping {
+		{	"virtex6",
+			{
+				{ "USER1",       {0b11000010, 0b11} },
+				{ "CFG_IN",      {0b11000101, 0b11} },
+				{ "USERCODE",    {0b11001000, 0b11} },
+				{ "IDCODE",      {0b11001001, 0b11} },
+				{ "ISC_ENABLE",  {0b11010000, 0b11} },
+				{ "JPROGRAM",    {0b11001011, 0b11} },
+				{ "JSTART",      {0b11001100, 0b11} },
+				{ "JSHUTDOWN",   {0b11001101, 0b11} },
+				{ "ISC_PROGRAM", {0b11010001, 0b11} },
+				{ "ISC_DISABLE", {0b11010111, 0b11} },
+				{ "BYPASS",      {0b11111111, 0b11} },
+			}
+		},
 		{
 			/* 7-series default */
 			"default",
@@ -208,6 +223,9 @@ Xilinx::Xilinx(Jtag *jtag, const std::string &filename,
 		}
 	} else if (family == "spartan6") {
 		_fpga_family = SPARTAN6_FAMILY;
+	} else if (family == "virtex6") {
+		_fpga_family = VIRTEX6_FAMILY;
+		_ircode_map = ircode_mapping.at("virtex6");
 	} else if (family == "xc2c") {
 		xc2c_init(idcode);
 	} else if (family == "xc9500xl") {

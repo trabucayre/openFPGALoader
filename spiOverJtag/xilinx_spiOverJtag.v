@@ -9,6 +9,9 @@ module spiOverJtag
 `ifdef spartan3e
 	output sck,
 `endif
+`ifdef virtex6
+	output sck,
+`endif
 	output sdi_dq0,
 	input  sdo_dq1,
 	output wpn_dq2,
@@ -51,7 +54,10 @@ module spiOverJtag
 		end
 	end
 
+// STARTUP primitives
+
 `ifndef virtexultrascale
+`ifndef virtex6
 `ifdef spartan6
 	assign sck = drck;
 `else
@@ -78,6 +84,29 @@ module spiOverJtag
 		.USRDONETS(1'b1)  // 1-bit input: User DONE 3-state enable output
 	);
 `endif
+`endif
+`else // virtex6
+	wire di;
+	wire sck = drck;
+	STARTUP_VIRTEX6 #(
+		.PROG_USR("FALSE")
+	) startup_virtex6_inst (
+		.EOS(),
+		.CLK(1'b0),       // unused
+		.GSR(1'b0),       // unused
+		.GTS(1'b0),       // unused
+		.USRCCLKO (sck),  // user FPGA -> CCLK pin
+		.USRCCLKTS(1'b0), // drive CCLK not in high-Z
+		.USRDONEO (1'b1), // why both USRDONE are high?
+		.USRDONETS(1'b1), // ??
+		.TCKSPI(),        // echo of CCLK from TCK pin
+		.DINSPI(di),      // data from SPI flash
+		.CFGMCLK(),       // unused
+		.CFGCLK(),        // unused
+		.PREQ(),          // unused
+		.PACK(1'b0),      // tied low for 'safe' operations
+		.KEYCLEARB(1'b0)  // not used
+	);
 `endif
 `else // virtexultrascale
 	wire [3:0] di;
@@ -114,6 +143,8 @@ module spiOverJtag
 	);
 `endif
 
+// BSCAN primitives
+
 `ifdef spartan3e
 	BSCAN_SPARTAN3 bscane2_inst (
 		.CAPTURE(capture), // 1-bit output: CAPTURE output from TAP controller.
@@ -133,10 +164,14 @@ module spiOverJtag
 		.TDO2   ()         // 1-bit input: USER2 function
 	);
 `else
+`ifdef virtex6
+	BSCAN_VIRTEX6 #(
+`else
 `ifdef spartan6
 	BSCAN_SPARTAN6 #(
 `else
 	BSCANE2 #(
+`endif
 `endif
 		.JTAG_CHAIN(1)  // Value for USER command.
 	) bscane2_inst (
