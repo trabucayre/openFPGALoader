@@ -2,10 +2,6 @@ module spiOverJtag
 (
 `ifndef virtexultrascale
 	output csn,
-
-`ifdef spartan6
-	output sck,
-`endif
 `ifdef spartan3e
 	output sck,
 `endif
@@ -91,21 +87,21 @@ module spiOverJtag
 	STARTUP_VIRTEX6 #(
 		.PROG_USR("FALSE")
 	) startup_virtex6_inst (
-		.EOS(),
+		.CFGCLK(),        // unused
+		.CFGMCLK(),       // unused
 		.CLK(1'b0),       // unused
+		.DINSPI(di),      // data from SPI flash
+		.EOS(),
 		.GSR(1'b0),       // unused
 		.GTS(1'b0),       // unused
+		.KEYCLEARB(1'b0),  // not used
+		.PACK(1'b0),      // tied low for 'safe' operations
+		.PREQ(),          // unused
+		.TCKSPI(),        // echo of CCLK from TCK pin
 		.USRCCLKO (sck),  // user FPGA -> CCLK pin
 		.USRCCLKTS(1'b0), // drive CCLK not in high-Z
 		.USRDONEO (1'b1), // why both USRDONE are high?
-		.USRDONETS(1'b1), // ??
-		.TCKSPI(),        // echo of CCLK from TCK pin
-		.DINSPI(di),      // data from SPI flash
-		.CFGMCLK(),       // unused
-		.CFGCLK(),        // unused
-		.PREQ(),          // unused
-		.PACK(1'b0),      // tied low for 'safe' operations
-		.KEYCLEARB(1'b0)  // not used
+		.USRDONETS(1'b1)  // ??
 	);
 `endif
 `else // virtexultrascale
