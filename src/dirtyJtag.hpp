@@ -46,7 +46,7 @@ class DirtyJtag : public JtagInterface {
 	uint8_t _verbose;
 
 	int sendBitBang(uint8_t mask, uint8_t val, uint8_t *read, bool last);
-	void getVersion();
+	bool getVersion();
 
     libusb_device_handle *dev_handle;
 	libusb_context *usb_ctx;
