@@ -81,7 +81,7 @@ bool libusb_ll::scan()
 			// FIXME: DFU device can't be detected here
 			for (auto b = cable_list.begin(); b != cable_list.end(); b++) {
 				cable_t *c = &(*b).second;
-				if (c->vid == desc.idVendor && c->vid == desc.idProduct) {
+				if (c->vid == desc.idVendor && c->pid == desc.idProduct) {
 					snprintf(probe_type, 256, "%s", (*b).first.c_str());
 					found = true;
 				}
