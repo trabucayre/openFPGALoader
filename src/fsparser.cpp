@@ -70,8 +70,8 @@ int FsParser::parseHeader()
 				snprintf(&_hdr["idcode"][0], 9, "%08x", _idcode);
 				break;
 			case 0x0A: /* user code or checksum ? */
-				_hdr["CheckSum"] = string(4, ' ');
-				snprintf(&_hdr["CheckSum"][0], 5, "%04x", (uint16_t)(0xffff & val));
+				_hdr["CheckSum"] = string(8, ' ');
+				snprintf(&_hdr["CheckSum"][0], 9, "%08x", (uint32_t)(0xffffffff & val));
 				break;
 			case 0x0B: /* only present when bit_security is set */
 				_hdr["SecurityBit"] = "ON";
