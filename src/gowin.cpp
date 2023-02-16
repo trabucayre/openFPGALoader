@@ -194,8 +194,6 @@ void Gowin::reset()
 
 void Gowin::programFlash()
 {
-	int status;
-
 	uint8_t *data = _fs->getData();
 	int length = _fs->getLength();
 	
@@ -240,16 +238,7 @@ void Gowin::programFlash()
 	usleep(2*150*1000);
 
 	/* check if file checksum == checksum in FPGA */
-	if (!skip_checksum) {
-		status = readUserCode();
-		int checksum = static_cast<FsParser *>(_fs)->checksum();
-		if (checksum != status) {
-			printError("CRC check : FAIL");
-			printf("%04x %04x\n", checksum, status);
-		} else {
-			printSuccess("CRC check: Success");
-		}
-	}
+	checkCRC();
 
 	if (_verbose)
 		displayReadReg(readStatusReg());
@@ -258,7 +247,6 @@ void Gowin::programFlash()
 void Gowin::program(unsigned int offset, bool unprotect_flash)
 {
 	uint8_t *data;
-	uint32_t status;
 	int length;
 
 	if (_mode == NONE_MODE || !_fs)
@@ -329,19 +317,55 @@ void Gowin::program(unsigned int offset, bool unprotect_flash)
 	if (!DisableCfg())
 		return;
 
-	/* check if file checksum == checksum in FPGA */
-	if (!skip_checksum) {
-		status = readUserCode();
-		uint32_t checksum = static_cast<FsParser *>(_fs)->checksum();
-		if (checksum != status) {
-			printError("SRAM Flash: FAIL");
-			printf("%04x %04x\n", checksum, status);
-		} else {
-			printSuccess("SRAM Flash: Success");
-		}
-	}
+	/* ocheck if file checksum == checksum in FPGA */
+	checkCRC();
 	if (_verbose)
 		displayReadReg(readStatusReg());
+}
+
+void Gowin::checkCRC()
+{
+	if (!skip_checksum)
+		return;
+
+	bool is_match = true;
+	char mess[256];
+	uint32_t status = readUserCode();
+	uint16_t checksum = static_cast<FsParser *>(_fs)->checksum();
+	string hdr = "";
+	try {
+		hdr = _fs->getHeaderVal("checkSum");
+	} catch (std::exception &e) {
+		if (_verbose)
+			printError(e.what());
+	}
+	if (static_cast<uint16_t>(0xffff & status) != checksum) {
+		/* no match:
+		 * user code register contains checksum or
+		 * user_code when:
+		 * set_option -user_code
+		 * is used: try to compare with this value
+		 */
+		if (hdr.empty()) {
+			is_match = false;
+			snprintf(mess, 256, "Read: 0x%08x checksum: 0x%04x\n",
+				status, checksum);
+		} else {
+			uint32_t user_code = strtol(hdr.c_str(), NULL, 16);
+			if (status != user_code) {
+				is_match = false;
+				snprintf(mess, 256,
+					"Read 0x%08x (checksum: 0x%08x, user_code: 0x%08x)\n",
+					status, checksum, user_code);
+			}
+		}
+	}
+	if (is_match) {
+		printSuccess("CRC check: Success");
+	} else {
+		printError("CRC check : FAIL");
+		printError(mess);
+	}
 }
 
 bool Gowin::EnableCfg()

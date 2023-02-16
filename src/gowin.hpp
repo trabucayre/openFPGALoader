@@ -55,10 +55,15 @@ class Gowin: public Device, SPIInterface {
 		void displayReadReg(uint32_t dev);
 		uint32_t readStatusReg();
 		uint32_t readUserCode();
+		/*!
+		 * \brief compare usercode register with fs checksum and/or
+		 *        .fs usercode field
+		 */
+		void checkCRC();
 		ConfigBitstreamParser *_fs;
 		bool is_gw1n1;
 		bool is_gw2a;
-		bool skip_checksum;
+		bool skip_checksum;   /**< bypass checksum verification (GW2A) */
 		bool _external_flash; /**< select between int or ext flash */
 		uint8_t _spi_sck;     /**< clk signal offset in bscan SPI */
 		uint8_t _spi_cs;      /**< cs signal offset in bscan SPI */
