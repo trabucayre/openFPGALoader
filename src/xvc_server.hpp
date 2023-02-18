@@ -43,6 +43,19 @@ class XVC_server {
 		 */
 		bool listen_loop();
 
+		/*!
+		 * \brief update jtag virtual state by following the tms sequence
+		 * \param tms_seq: tms sequence lsb first
+		 * \param len: number of tms bit to apply
+		 * \return jtag state after applying sequence
+		 */
+		Jtag::tapState_t set_state(const uint8_t *tms_seq, uint32_t len);
+		/*!
+		 * \brief return actual jtag state
+		 * \return jtag state
+		 */
+		Jtag::tapState_t get_state() { return _state;}
+
 	private:
 		/*!
 		 * \brief thread dedicated for wait for incoming connection
@@ -62,6 +75,7 @@ class XVC_server {
 		 * \return 3 when failure, 2 when connection closed, 1 otherwise
 		 */
 		int sread(int fd, void *target, int len);
+
 	    int _verbose;          /*!< verbose level */
 		JtagInterface *_jtag;  /*!< jtag interface */
 		int _port;             /*!< network port */
@@ -73,6 +87,7 @@ class XVC_server {
 		uint32_t _buffer_size; /*!< buffer max capacity TDI+TMS */
 		uint8_t *_tmstdi;      /*!< TDI/TMS from client */
 		uint8_t *_result;      /*!< buffer for server -> client */
+		Jtag::tapState_t _state; /*!< actual jtag state */
 };
 
 #endif  // SRC_XVC_SERVER_HPP_

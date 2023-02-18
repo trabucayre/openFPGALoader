@@ -26,7 +26,7 @@ XVC_server::XVC_server(int port, const cable_t & cable,
 	const string & firmware_path):_verbose(verbose > 1),
 			_jtag(NULL), _port(port), _sock(-1),
 			_is_stopped(false), _must_stop(false),
-			_buffer_size(2048)
+			_buffer_size(2048), _state(Jtag::RUN_TEST_IDLE)
 {
 	(void)pin_conf;
 	(void)ip_adr;
@@ -226,9 +226,9 @@ int XVC_server::sread(int fd, void *target, int len)
 	unsigned char *t = (unsigned char *)target;
 	while (len) {
 		int r = read(fd, t, len);
-		if (r == 0) // connection closed
+		if (r == 0){  // connection closed
 			return 2;
-		else if (r < 0) {
+		} else if (r < 0) {
 			char err[256];
 			snprintf(err, 256, "Read error (%d) %d %s\n", r,
 				errno, strerror(errno));
@@ -337,12 +337,11 @@ int XVC_server::handle_data(int fd)
 		}
 
 		/* 3. receive 2 x nr_bytes (TMS + TDI) */
-		memset(_tmstdi, 0, _buffer_size);
 		if ((ret = sread(fd, _tmstdi, nr_bytes * 2)) != 1) {
 			printError("reading data failed");
 			return ret;
 		}
-		memset(_result, 0, _buffer_size/2);
+		memset(_result, 0, nr_bytes);
 
 		if (_verbose) {
 			printInfo("\tNumber of Bits  : " + std::to_string(len));
@@ -350,8 +349,17 @@ int XVC_server::handle_data(int fd)
 			printInfo("\n");
 		}
 
-		if (_jtag)
+		// Due to a weird bug(??) xilinx impacts goes through another
+		// "capture_ir"/"capture_dr" cycle after reading IR/DR which
+		// unfortunately sets IR to the read-out IR value.
+		// Just ignore these transactions.
+		// ref: https://github.com/tmbinc/xvcd/blob/ftdi/src/xvcd.c#L265
+		if (!((_state == Jtag::EXIT1_IR && len == 5 && _tmstdi[0] == 0x17) ||
+				(_state == Jtag::EXIT1_DR && len == 4 && _tmstdi[0] == 0x6b))) {
+			// update state using tms sequence
+			set_state(_tmstdi, len);
 			_jtag->writeTMSTDI(_tmstdi, _tmstdi + nr_bytes, _result, len);
+		}
 
 		/* send received TDO sequence */
 		if (send(fd, _result, nr_bytes, 0) != nr_bytes) {
@@ -360,4 +368,70 @@ int XVC_server::handle_data(int fd)
 		}
 	} while (1);
 	return 0;
+}
+
+/* loops over tms_seq, extracts bit by bit values and update
+ * jtag "virtual" state accordingly.
+ */
+Jtag::tapState_t XVC_server::set_state(const uint8_t *tms_seq, uint32_t len)
+{
+	for (uint32_t i = 0; i < len; i++) {
+		uint8_t tms = !!(tms_seq[i >> 3] & (1 << (i & 0x07)));
+		switch (_state) {
+			case Jtag::TEST_LOGIC_RESET:
+				_state = (tms) ? Jtag::TEST_LOGIC_RESET : Jtag::RUN_TEST_IDLE;
+				break;
+			case Jtag::RUN_TEST_IDLE:
+				_state = (tms) ? Jtag::SELECT_DR_SCAN : Jtag::RUN_TEST_IDLE;
+				break;
+			case Jtag::SELECT_DR_SCAN:
+				_state = (tms) ? Jtag::SELECT_IR_SCAN: Jtag::CAPTURE_DR;
+				break;
+			case Jtag::CAPTURE_DR:
+				_state = (tms) ? Jtag::EXIT1_DR : Jtag::SHIFT_DR;
+				break;
+			case Jtag::SHIFT_DR:
+				_state = (tms) ? Jtag::EXIT1_DR : Jtag::CAPTURE_DR;
+				break;
+			case Jtag::EXIT1_DR:
+				_state = (tms) ? Jtag::UPDATE_DR : Jtag::PAUSE_DR;
+				break;
+			case Jtag::PAUSE_DR:
+				_state = (tms) ? Jtag::EXIT2_DR : Jtag::PAUSE_DR;
+				break;
+			case Jtag::EXIT2_DR:
+				_state = (tms) ? Jtag::UPDATE_DR : Jtag::SHIFT_DR;
+				break;
+			case Jtag::UPDATE_DR:
+				_state = (tms) ? Jtag::SELECT_DR_SCAN : Jtag::RUN_TEST_IDLE;
+				break;
+
+			case Jtag::SELECT_IR_SCAN:
+				_state = (tms) ? Jtag::TEST_LOGIC_RESET : Jtag::CAPTURE_IR;
+				break;
+			case Jtag::CAPTURE_IR:
+				_state = (tms) ? Jtag::EXIT1_IR : Jtag::SHIFT_IR;
+				break;
+			case Jtag::SHIFT_IR:
+				_state = (tms) ? Jtag::EXIT1_IR : Jtag::CAPTURE_IR;
+				break;
+			case Jtag::EXIT1_IR:
+				_state = (tms) ? Jtag::UPDATE_IR : Jtag::PAUSE_IR;
+				break;
+			case Jtag::PAUSE_IR:
+				_state = (tms) ? Jtag::EXIT2_IR : Jtag::PAUSE_IR;
+				break;
+			case Jtag::EXIT2_IR:
+				_state = (tms) ? Jtag::UPDATE_IR : Jtag::SHIFT_IR;
+				break;
+			case Jtag::UPDATE_IR:
+				_state = (tms) ? Jtag::SELECT_DR_SCAN : Jtag::RUN_TEST_IDLE;
+				break;
+			default:
+				/* pass */
+				break;
+		}
+	}
+
+	return _state;
 }
