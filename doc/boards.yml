@@ -704,3 +704,10 @@
   FPGA: Virtex UltraScale+ xcvu9p-flga2104
   Memory: OK
   Flash: OK
+
+- ID: vcu128
+  Description: Xilinx VCU128
+  URL: https://www.xilinx.com/products/boards-and-kits/vcu128.html
+  FPGA: Virtex UltraScale+ xcvu37p-fsvh2892
+  Memory: OK
+  Flash: NA

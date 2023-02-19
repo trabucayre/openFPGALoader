@@ -74,7 +74,7 @@ static std::map<std::string, std::map<std::string, std::vector<uint8_t>>>
 		{
 			/* Xilinx Virtex UltraScale+ */
 			/* <vivado_dir>/data/parts/xilinx/virtexuplus/public/bsdl/xcvu9p_flga2104.bsd */
-			"xcvu9p",
+			"virtexusp",
 			{
 				{ "USER1",       {0b00100100, 0b00101001, 0b00} },
 				{ "USER2",       {0b00100100, 0b00111001, 0b00} },
@@ -195,7 +195,7 @@ Xilinx::Xilinx(Jtag *jtag, const std::string &filename,
 		_fpga_family = KINTEXUS_FAMILY;
 	} else if (family == "virtexusp") {
 		_fpga_family = VIRTEXUSP_FAMILY;
-		_ircode_map = ircode_mapping.at(model);
+		_ircode_map = ircode_mapping.at("virtexusp");
 	} else if (family.substr(0, 8) == "spartan3") {
 		_fpga_family = SPARTAN3_FAMILY;
 		if (_mode != Device::MEM_MODE) {
