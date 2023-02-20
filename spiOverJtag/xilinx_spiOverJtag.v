@@ -13,13 +13,15 @@ module spiOverJtag
 	input  sdo_dq1,
 	output wpn_dq2,
 	output hldn_dq3
-`else // virtexultrascale
+`endif // virtexultrascale
+
+`ifdef secondaryflash
 	output sdi_sec_dq0,
 	input sdo_sec_dq1,
 	output wpn_sec_dq2,
 	output hldn_sec_dq3,
 	output csn_sec
-`endif // virtexultrascale
+`endif // secondaryflash
 );
 
 	wire capture, drck, sel, update;
@@ -51,42 +53,20 @@ module spiOverJtag
 		end
 	end
 
-`ifndef virtexultrascale
 `ifdef spartan6
 	assign sck = drck;
-`else
+`else // !spartan6
 `ifdef spartan3e
 	assign sck = drck;
 	assign runtest = tmp_up_s;
-`else
-	STARTUPE2 #(
-		.PROG_USR("FALSE"),  // Activate program event security feature. Requires encrypted bitstreams.
-		.SIM_CCLK_FREQ(0.0)  // Set the Configuration Clock Frequency(ns) for simulation.
-	) startupe2_inst (
-		.CFGCLK   (),     // 1-bit output: Configuration main clock output
-		.CFGMCLK  (),     // 1-bit output: Configuration internal oscillator clock output
-		.EOS      (),     // 1-bit output: Active high output signal indicating the End Of Startup.
-		.PREQ     (),     // 1-bit output: PROGRAM request to fabric output
-		.CLK      (1'b0), // 1-bit input: User start-up clock input
-		.GSR      (1'b0), // 1-bit input: Global Set/Reset input (GSR cannot be used for the port name)
-		.GTS      (1'b0), // 1-bit input: Global 3-state input (GTS cannot be used for the port name)
-		.KEYCLEARB(1'b0), // 1-bit input: Clear AES Decrypter Key input from Battery-Backed RAM (BBRAM)
-		.PACK     (1'b1), // 1-bit input: PROGRAM acknowledge input
-		.USRCCLKO (drck), // 1-bit input: User CCLK input
-		.USRCCLKTS(1'b0), // 1-bit input: User CCLK 3-state enable input
-		.USRDONEO (1'b1), // 1-bit input: User DONE pin output control
-		.USRDONETS(1'b1)  // 1-bit input: User DONE 3-state enable output
-	);
-`endif
-`endif
-`else // virtexultrascale
+`else // !spartan6 && !spartan3e
+`ifdef virtexultrascale
 	wire [3:0] di;
 	assign sdo_dq1 = di[1];
 	wire [3:0] do = {hldn_dq3, wpn_dq2, 1'b0, sdi_dq0};
 	wire [3:0] dts = 4'b0010;
 	// secondary BSCANE3 signals
-	wire drck_sec, tdo_sec;
-	reg fsm_csn_sec;
+	wire sel_sec, drck_sec;
 
 	wire sck = (sel_sec) ? drck_sec : drck;
 
@@ -112,6 +92,27 @@ module spiOverJtag
 		.USRDONEO (1'b1), // 1-bit input: User DONE pin output control.
 		.USRDONETS(1'b1)  // 1-bit input: User DONE 3-state enable output.
 	);
+`else // !spartan6 && !spartan3e && !virtexultrascale
+	STARTUPE2 #(
+		.PROG_USR("FALSE"),  // Activate program event security feature. Requires encrypted bitstreams.
+		.SIM_CCLK_FREQ(0.0)  // Set the Configuration Clock Frequency(ns) for simulation.
+	) startupe2_inst (
+		.CFGCLK   (),     // 1-bit output: Configuration main clock output
+		.CFGMCLK  (),     // 1-bit output: Configuration internal oscillator clock output
+		.EOS      (),     // 1-bit output: Active high output signal indicating the End Of Startup.
+		.PREQ     (),     // 1-bit output: PROGRAM request to fabric output
+		.CLK      (1'b0), // 1-bit input: User start-up clock input
+		.GSR      (1'b0), // 1-bit input: Global Set/Reset input (GSR cannot be used for the port name)
+		.GTS      (1'b0), // 1-bit input: Global 3-state input (GTS cannot be used for the port name)
+		.KEYCLEARB(1'b0), // 1-bit input: Clear AES Decrypter Key input from Battery-Backed RAM (BBRAM)
+		.PACK     (1'b1), // 1-bit input: PROGRAM acknowledge input
+		.USRCCLKO (drck), // 1-bit input: User CCLK input
+		.USRCCLKTS(1'b0), // 1-bit input: User CCLK 3-state enable input
+		.USRDONEO (1'b1), // 1-bit input: User DONE pin output control
+		.USRDONETS(1'b1)  // 1-bit input: User DONE 3-state enable output
+	);
+`endif
+`endif
 `endif
 
 `ifdef spartan3e
@@ -161,7 +162,10 @@ module spiOverJtag
 	);
 `endif
 
-`ifdef virtexultrascale
+`ifdef secondaryflash
+	reg fsm_csn_sec;
+	wire tdo_sec;
+
 	assign wpn_sec_dq2  = 1'b1;
 	assign hldn_sec_dq3 = 1'b1;
 	assign sdi_sec_dq0 = tdi;
@@ -207,6 +211,9 @@ module spiOverJtag
 		.TDO     (tdo_sec)     // 1-bit input: Test Data Output (TDO) input
 		                   //              for USER function.
 	);
-`endif
+`else // secondaryflash
+	assign sel_sec = 1'b0;
+	assign drck_sec = 1'b0;
+`endif // secondaryflash
 
 endmodule
