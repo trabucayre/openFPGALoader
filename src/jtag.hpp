@@ -61,6 +61,12 @@ class Jtag {
 	 */
 	bool insert_first(uint32_t device_id, uint16_t irlength);
 
+	/*!
+	 * \brief return a pointer to the transport subclass
+	 * \return a pointer instance of JtagInterface
+	 */
+	JtagInterface *get_ll_class() {return _jtag;}
+
 	int shiftIR(unsigned char *tdi, unsigned char *tdo, int irlen,
 		int end_state = RUN_TEST_IDLE);
 	int shiftIR(unsigned char tdi, int irlen,
