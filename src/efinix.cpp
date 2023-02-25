@@ -42,7 +42,7 @@ Efinix::Efinix(Jtag* jtag, const std::string &filename,
 	_spi(NULL), _rst_pin(0), _done_pin(0), _cs_pin(0),
 	_oe_pin(0)
 {
-	_ftdi_jtag = reinterpret_cast<FtdiJtagMPSSE *>(jtag);
+	_ftdi_jtag = reinterpret_cast<FtdiJtagMPSSE *>(jtag->get_ll_class());
 
 	/* WA: before using JTAG, device must restart with cs low
 	 *     but cs and rst for xyloni are connected to interfaceA (ie SPI)
