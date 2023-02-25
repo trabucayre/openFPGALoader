@@ -23,6 +23,8 @@ class FTDIpp_MPSSE {
 
 		int vid() {return _vid;}
 		int pid() {return _pid;}
+		uint8_t bus_addr()    {return _bus;}
+		uint8_t device_addr() {return _addr;}
 
 		/* access gpio */
 		/* read gpio */
