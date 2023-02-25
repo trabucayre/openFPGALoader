@@ -67,6 +67,8 @@ Efinix::Efinix(Jtag* jtag, const std::string &filename,
 
 	/* 3: SPI cable */
 	cable_t spi_cable = (cable_list[spi_board->cable_name]);
+	spi_cable.bus_addr    = _ftdi_jtag->bus_addr();
+	spi_cable.device_addr = _ftdi_jtag->device_addr();
 
 	/* 4: get pinout (cs, oe, rst) */
 	_cs_pin = spi_board->spi_pins_config.cs_pin;
