@@ -56,23 +56,23 @@ struct cable_t {
 	communication_type type; /*! see enum communication_type */
 	int vid;                 /*! Vendor ID */
 	int pid;                 /*! Product ID */
-	int bus_addr;            /*! bus number (must be set to -1: user defined */
-	int device_addr;         /*! device number (must be set -1: user defined */
+	uint8_t bus_addr;        /*! bus number (must be set to 0: user defined */
+	uint8_t device_addr;     /*! device number (must be set 0: user defined */
 	mpsse_bit_config config; /*! FTDI specific configurations */
 };
 
 /* FTDI serial (MPSSE) configuration */
 #define FTDI_SER(_vid, _pid, _intf, _blv, _bld, _bhv, _bhd) \
-	{MODE_FTDI_SERIAL, _vid, _pid, -1, -1, {_intf, _blv, _bld, _bhv, _bhd, 0}}
+	{MODE_FTDI_SERIAL, _vid, _pid, 0, 0, {_intf, _blv, _bld, _bhv, _bhd, 0}}
 /* FTDI bitbang configuration */
 #define FTDI_BB(_vid, _pid, _intf, _blv, _bld, _bhv, _bhd) \
-	{MODE_FTDI_BITBANG, _vid, _pid, -1, -1, {_intf, _blv, _bld, _bhv, _bhd, 0}}
+	{MODE_FTDI_BITBANG, _vid, _pid, 0, 0, {_intf, _blv, _bld, _bhv, _bhd, 0}}
 /* CMSIS DAP configuration */
 #define CMSIS_CL(_vid, _pid) \
-	{MODE_CMSISDAP, _vid, _pid, -1, -1, {}}
+	{MODE_CMSISDAP, _vid, _pid, 0, 0, {}}
 /* Others cable configuration */
 #define CABLE_DEF(_type, _vid, _pid) \
-	{_type, _vid, _pid, -1, -1, {}}
+	{_type, _vid, _pid, 0, 0, {}}
 
 static std::map <std::string, cable_t> cable_list = {
 	// last 4 bytes are ADBUS7-0 value, ADBUS7-0 direction, ACBUS7-0 value, ACBUS7-0 direction

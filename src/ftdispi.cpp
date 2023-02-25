@@ -64,7 +64,7 @@ void FtdiSpi::setMode(uint8_t mode)
 }
 
 static cable_t cable = {
-	MODE_FTDI_SERIAL, 0x403, 0x6010, -1, -1, {INTERFACE_B, 0x08, 0x0B, 0x08, 0x0B, 0}
+	MODE_FTDI_SERIAL, 0x403, 0x6010, 0, 0, {INTERFACE_B, 0x08, 0x0B, 0x08, 0x0B, 0}
 };
 
 FtdiSpi::FtdiSpi(int vid, int pid, unsigned char interface, uint32_t clkHZ,

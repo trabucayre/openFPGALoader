@@ -75,8 +75,8 @@ struct arguments {
 	uint16_t vid;
 	uint16_t pid;
 	int16_t cable_index;
-	int8_t bus_addr;
-	int8_t device_addr;
+	uint8_t bus_addr;
+	uint8_t device_addr;
 	string ip_adr;
 	uint32_t protect_flash;
 	bool unprotect_flash;
