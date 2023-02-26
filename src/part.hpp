@@ -111,9 +111,9 @@ static std::map <uint32_t, fpga_model> fpga_list = {
 	{0x00210a79, {"efinix", "Trion",    "T8QFP144/T13/T20", 4}},
 	{0x00220a79, {"efinix", "Trion",    "T55/T85/T120",     4}},
 	{0x00240a79, {"efinix", "Trion",    "T20BGA324/T35",    4}},
-	{0x00660a79, {"efinix", "Titanium", "Ti60",             4}},
-	{0x00360a79, {"efinix", "Titanium", "Ti60ES",           4}},
-	{0x00661a79, {"efinix", "Titanium", "Ti35",             4}},
+	{0x00660a79, {"efinix", "Titanium", "Ti60",             5}},
+	{0x00360a79, {"efinix", "Titanium", "Ti60ES",           5}},
+	{0x00661a79, {"efinix", "Titanium", "Ti35",             5}},
 
 	{0x010F0043, {"lattice", "CrosslinkNX", "LIFCL-17", 8}},
 	{0x010F1043, {"lattice", "CrosslinkNX", "LIFCL-40", 8}},
