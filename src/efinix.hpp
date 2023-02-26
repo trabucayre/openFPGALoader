@@ -39,6 +39,12 @@ class Efinix: public Device {
 		void reset() override;
 
 	private:
+		/* list of efinix family devices */
+		enum efinix_family_t {
+			TITANIUM_FAMILY = 0,
+			TRION_FAMILY,
+			UNKNOWN_FAMILY  = 999
+		};
 		void programSPI(unsigned int offset, uint8_t *data, int length,
 				bool unprotect_flash);
 		void programJTAG(uint8_t *data, int length);
@@ -48,6 +54,8 @@ class Efinix: public Device {
 		uint16_t _done_pin;
 		uint16_t _cs_pin;
 		uint16_t _oe_pin;
+		efinix_family_t _fpga_family;
+		int _irlen;
 };
 
 #endif  // SRC_EFINIX_HPP_

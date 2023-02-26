@@ -9,6 +9,7 @@
 #include <unistd.h>
 
 #include <iostream>
+#include <stdexcept>
 #include <string>
 
 #include "display.hpp"
@@ -17,6 +18,7 @@
 #include "device.hpp"
 #include "ftdiJtagMPSSE.hpp"
 #include "jtag.hpp"
+#include "part.hpp"
 #include "progressBar.hpp"
 #include "rawParser.hpp"
 #include "spiFlash.hpp"
@@ -27,7 +29,8 @@ Efinix::Efinix(FtdiSpi* spi, const std::string &filename,
 			uint16_t oe_pin,
 			bool verify, int8_t verbose):
 	Device(NULL, filename, file_type, verify, verbose), _ftdi_jtag(NULL),
-		_rst_pin(rst_pin), _done_pin(done_pin), _cs_pin(0), _oe_pin(oe_pin)
+		_rst_pin(rst_pin), _done_pin(done_pin), _cs_pin(0), _oe_pin(oe_pin),
+		_fpga_family(UNKNOWN_FAMILY), _irlen(0)
 {
 	_spi = spi;
 	_spi->gpio_set_input(_done_pin);
@@ -40,9 +43,27 @@ Efinix::Efinix(Jtag* jtag, const std::string &filename,
 			bool verify, int8_t verbose):
 	Device(jtag, filename, file_type, verify, verbose),
 	_spi(NULL), _rst_pin(0), _done_pin(0), _cs_pin(0),
-	_oe_pin(0)
+	_oe_pin(0), _fpga_family(UNKNOWN_FAMILY), _irlen(0)
 {
 	_ftdi_jtag = reinterpret_cast<FtdiJtagMPSSE *>(jtag->get_ll_class());
+
+	/* detect FPGA type (Trion or Titanium) */
+
+	uint32_t idcode = _jtag->get_target_device_id();
+	std::string family = fpga_list[idcode].family;
+	if (family == "Titanium") {
+		if (_file_extension == "hex") {
+			throw std::runtime_error("Error: loading hex file is not allowed "
+							   "for Titanium devices");
+		}
+		_fpga_family = TITANIUM_FAMILY;
+	} else if (family == "Trion") {
+		_fpga_family = TRION_FAMILY;
+	} else {
+		throw std::runtime_error("Error: unknown family " + family);
+	}
+	/* get irlen value from model */
+	_irlen = fpga_list[idcode].irlength;
 
 	/* WA: before using JTAG, device must restart with cs low
 	 *     but cs and rst for xyloni are connected to interfaceA (ie SPI)
@@ -112,7 +133,7 @@ void Efinix::program(unsigned int offset, bool unprotect_flash)
 
 	ConfigBitstreamParser *bit;
 	try {
-		if (_file_extension == "hex") {
+		if (_file_extension == "hex" || _file_extension == "bit") {
 			bit = new EfinixHexParser(_filename);
 		} else {
 			if (offset == 0 && _spi) {
@@ -222,12 +243,14 @@ void Efinix::programSPI(unsigned int offset, uint8_t *data, int length,
 #define IDCODE         0x03
 #define PROGRAM        0x04
 #define ENTERUSER      0x07
-#define IRLENGTH       4
 
 void Efinix::programJTAG(uint8_t *data, int length)
 {
 	int xfer_len = 512, tx_end;
 	uint8_t tx[512];
+
+	if (_fpga_family == TITANIUM_FAMILY)
+		_jtag->set_state(Jtag::RUN_TEST_IDLE);
 
 	if(_spi) {
 		/* trion has to be reseted with cs low */
@@ -239,6 +262,8 @@ void Efinix::programJTAG(uint8_t *data, int length)
 		usleep(50000);
 	}
 
+	if (_fpga_family == TITANIUM_FAMILY)
+		_jtag->set_state(Jtag::TEST_LOGIC_RESET);
 	/* force run_test_idle state */
 	_jtag->set_state(Jtag::RUN_TEST_IDLE);
 	usleep(100000);
@@ -246,8 +271,8 @@ void Efinix::programJTAG(uint8_t *data, int length)
 	/* send PROGRAM state and stay in SHIFT_DR until
 	 * full configuration data has been sent
 	 */
-	_jtag->shiftIR(PROGRAM, IRLENGTH, Jtag::EXIT1_IR);
-	_jtag->shiftIR(PROGRAM, IRLENGTH, Jtag::EXIT1_IR);  // T20 fix
+	_jtag->shiftIR(PROGRAM, _irlen, Jtag::EXIT1_IR);
+	_jtag->shiftIR(PROGRAM, _irlen, Jtag::EXIT1_IR);  // T20 fix
 
 	ProgressBar progress("Load SRAM", length, 50, _quiet);
 
@@ -269,9 +294,9 @@ void Efinix::programJTAG(uint8_t *data, int length)
 
 	usleep(10000);
 
-	_jtag->shiftIR(ENTERUSER, IRLENGTH, Jtag::EXIT1_IR);
+	_jtag->shiftIR(ENTERUSER, _irlen, Jtag::EXIT1_IR);
 
 	memset(tx, 0, 512);
 	_jtag->shiftDR(tx, NULL, 100);
-	_jtag->shiftIR(IDCODE, IRLENGTH);
+	_jtag->shiftIR(IDCODE, _irlen);
 }
