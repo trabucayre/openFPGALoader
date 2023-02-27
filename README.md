@@ -94,7 +94,8 @@ openFPGALoader -- a program to flash FPGA
       --list-cables             list all supported cables
       --list-fpga               list all supported FPGA
   -m, --write-sram              write bitstream in SRAM (default: true)
-  -o, --offset arg              start offset in EEPROM
+  -o, --offset arg              Start address (in bytes) for read/write into
+                                non volatile memory (default: 0)
       --pins arg                pin config TDI:TDO:TCK:TMS
       --probe-firmware arg      firmware for JTAG probe (usbBlasterII)
       --protect-flash arg       protect SPI flash area

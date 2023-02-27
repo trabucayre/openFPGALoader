@@ -761,7 +761,7 @@ int parse_opt(int argc, char **argv, struct arguments *args,
 				cxxopts::value<bool>(args->list_fpga))
 			("m,write-sram",
 				"write bitstream in SRAM (default: true)")
-			("o,offset",  "start offset in EEPROM",
+			("o,offset", "Start address (in bytes) for read/write into non volatile memory (default: 0)",
 				cxxopts::value<unsigned int>(args->offset))
 			("pins", "pin config TDI:TDO:TCK:TMS",
 				cxxopts::value<vector<string>>(pins))
