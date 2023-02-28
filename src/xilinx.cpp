@@ -196,6 +196,8 @@ Xilinx::Xilinx(Jtag *jtag, const std::string &filename,
 		_fpga_family = KINTEX_FAMILY;
 	} else if (family == "kintexus") {
 		_fpga_family = KINTEXUS_FAMILY;
+	} else if (family == "artixusp") {
+		_fpga_family = ARTIXUSP_FAMILY;
 	} else if (family == "virtexusp") {
 		_fpga_family = VIRTEXUSP_FAMILY;
 		_ircode_map = ircode_mapping.at("virtexusp");
