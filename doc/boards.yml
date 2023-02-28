@@ -432,6 +432,13 @@
   Memory: OK
   Flash: OK
 
+- ID: xem8320
+  Description: Opal Kelly XEM8320
+  URL: https://opalkelly.com/products/xem8320/
+  FPGA: Artix UltraScale+ xcau25p-2ffvb676e
+  Memory: OK
+  Flash: TBD
+
 - ID: orbtrace_dfu
   Description: ORBTrace mini (dfu mode)
   URL: https://store.zyp.no/product/orbtrace-mini
