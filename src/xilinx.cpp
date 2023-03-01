@@ -59,7 +59,8 @@ static std::map<std::string, std::map<std::string, std::vector<uint8_t>>>
 			"default",
 			{
 				{ "USER1",       {0x02} },
-				{ "CFG_IN",      {0x05}},
+				{ "USER2",       {0x03} },
+				{ "CFG_IN",      {0x05} },
 				{ "USERCODE",    {0x08} },
 				{ "IDCODE",      {0x09} },
 				{ "ISC_ENABLE",  {0x10} },
@@ -196,6 +197,8 @@ Xilinx::Xilinx(Jtag *jtag, const std::string &filename,
 		_fpga_family = KINTEX_FAMILY;
 	} else if (family == "kintexus") {
 		_fpga_family = KINTEXUS_FAMILY;
+	} else if (family == "kintexusp") {
+		_fpga_family = KINTEXUSP_FAMILY;
 	} else if (family == "virtexusp") {
 		_fpga_family = VIRTEXUSP_FAMILY;
 		_ircode_map = ircode_mapping.at("virtexusp");
