@@ -97,7 +97,7 @@ File load:
   device/package format is something like xc7a35tcsg324 (arty model).
   See :ghsrc:`src/board.hpp <src/board.hpp>`, or :ghsrc:`spiOverJtag <spiOverJtag>` directory for examples.
 
-Some boards with UltraScale FPGAs, like the VCU118, support the SPIx8 (Dual Quad SPI) configuration.
+Some boards with UltraScale FPGAs, like the VCU118 and KCU16, support the SPIx8 (Dual Quad SPI) configuration.
 In this case, the ``spix8`` option ``write_cfgmem`` on the above example can be used to generate two ``.mcs`` files,
 to fit bigger designs or for faster programming. Only ``.mcs`` files can be used to program the FPGA in this case.
 

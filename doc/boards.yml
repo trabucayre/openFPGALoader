@@ -711,3 +711,10 @@
   FPGA: Virtex UltraScale+ xcvu37p-fsvh2892
   Memory: OK
   Flash: OK
+
+- ID: kcu116
+  Description: Xilinx KCU116
+  URL: https://www.xilinx.com/products/boards-and-kits/kcu116.html
+  FPGA: Kintex UltraScale+ xcku5p-ffvb676
+  Memory: OK
+  Flash: OK
