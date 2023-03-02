@@ -29,6 +29,9 @@
 #endif
 #include "dirtyJtag.hpp"
 #include "part.hpp"
+#ifdef ENABLE_REMOTEBITBANG
+#include "remoteBitbang_client.hpp"
+#endif
 #include "usbBlaster.hpp"
 #ifdef ENABLE_XVC
 #include "xvc_client.hpp"
@@ -140,6 +143,11 @@ void Jtag::init_internal(const cable_t &cable, const string &dev, const string &
 #ifdef ENABLE_JETSONNANOGPIO
 	case MODE_JETSONNANO_BITBANG:
 		_jtag = new JetsonNanoJtagBitbang(pin_conf, dev, clkHZ, _verbose);
+		break;
+#endif
+#ifdef ENABLE_REMOTEBITBANG
+	case MODE_REMOTEBITBANG:
+		_jtag = new RemoteBitbang_client(ip_adr, port, _verbose);
 		break;
 #endif
 	default:
