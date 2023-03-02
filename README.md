@@ -89,7 +89,7 @@ openFPGALoader -- a program to flash FPGA
       --freq arg                jtag frequency (Hz)
   -f, --write-flash             write bitstream in flash (default: false)
       --index-chain arg         device index in JTAG-chain
-      --ip arg                  IP address (only for XVC client)
+      --ip arg                  IP address (XVC and remote bitbang client)
       --list-boards             list all supported boards
       --list-cables             list all supported cables
       --list-fpga               list all supported FPGA
@@ -113,7 +113,8 @@ openFPGALoader -- a program to flash FPGA
                                 1:verbose, 2:debug
   -h, --help                    Give this help list
       --verify                  Verify write operation (SPI Flash only)
-      --port arg                Xilinx Virtual Cable Port (default 3721)
+      --port arg                Xilinx Virtual Cable and remote bitbang Port
+                                (default 3721)
       --mcufw arg               Microcontroller firmware
       --conmcu                  Connect JTAG to MCU
   -V, --Version                 Print program version

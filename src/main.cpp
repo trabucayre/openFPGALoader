@@ -751,7 +751,7 @@ int parse_opt(int argc, char **argv, struct arguments *args,
 				"write bitstream in flash (default: false)")
 			("index-chain",  "device index in JTAG-chain",
 				cxxopts::value<int>(args->index_chain))
-			("ip", "IP address (only for XVC client)",
+			("ip", "IP address (XVC and remote bitbang client)",
 				cxxopts::value<string>(args->ip_adr))
 			("list-boards", "list all supported boards",
 				cxxopts::value<bool>(args->list_boards))
@@ -793,7 +793,7 @@ int parse_opt(int argc, char **argv, struct arguments *args,
 			("xvc",   "Xilinx Virtual Cable Functions",
 				cxxopts::value<bool>(args->xvc))
 #endif
-			("port", "Xilinx Virtual Cable Port (default 3721)",
+			("port", "Xilinx Virtual Cable and remote bitbang Port (default 3721)",
 				cxxopts::value<int>(args->port))
 			("mcufw", "Microcontroller firmware",
 				cxxopts::value<std::string>(args->mcufw))
