@@ -23,7 +23,8 @@ class Xilinx: public Device, SPIInterface {
 				const std::string &device_package,
 				const std::string &spiOverJtagPath,
 				const std::string &target_flash,
-				bool verify, int8_t verbose);
+				bool verify, int8_t verbose,
+				bool skip_load_bridge, bool skip_reset);
 		~Xilinx();
 
 		void program(unsigned int offset, bool unprotect_flash) override;
@@ -143,11 +144,11 @@ class Xilinx: public Device, SPIInterface {
 		/*!
 		 * \brief prepare SPI flash access (need to have bridge in RAM)
 		 */
-		virtual bool prepare_flash_access() override {return load_bridge();}
+		virtual bool prepare_flash_access() override;
 		/*!
 		 * \brief end of SPI flash access
 		 */
-		virtual bool post_flash_access() override {reset(); return true;}
+		virtual bool post_flash_access() override;
 
 	private:
 		/* list of xilinx family devices */

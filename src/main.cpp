@@ -540,7 +540,7 @@ int main(int argc, char **argv)
 		if (fab == "xilinx") {
 			fpga = new Xilinx(jtag, args.bit_file, args.secondary_bit_file,
 				args.file_type, args.prg_type, args.fpga_part, args.bridge_path,
-				args.target_flash, args.verify, args.verbose);
+				args.target_flash, args.verify, args.verbose, args.skip_load_bridge, args.skip_reset);
 		} else if (fab == "altera") {
 			fpga = new Altera(jtag, args.bit_file, args.file_type,
 				args.prg_type, args.fpga_part, args.bridge_path, args.verify,
