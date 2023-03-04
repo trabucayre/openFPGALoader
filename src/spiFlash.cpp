@@ -399,6 +399,14 @@ int SPIFlash::erase_and_prog(int base_addr, uint8_t *data, int len)
 				_unprotect = true;
 				must_relock = true;
 			}
+			/* ST M25P16 has not TB bit:
+			 * block protection is always in top mode:
+			 * if write is not at offset 0 -> force unlock
+			 */
+			if ((_jedec_id >> 8) == 0x202015 && tb == 1 && base_addr != 0) {
+				_unprotect = true;
+				must_relock = true;
+			}
 		}
 	} else {  // unknown chip: basic test
 		printWarn("flash chip unknown: use basic protection detection");
