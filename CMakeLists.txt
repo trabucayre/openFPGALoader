@@ -21,6 +21,7 @@ else()
 endif()
 option(USE_PKGCONFIG "Use pkgconfig to find libraries" ON)
 option(LINK_CMAKE_THREADS "Use CMake find_package to link the threading library" OFF)
+set(BLASTERII_PATH "" CACHE STRING "usbBlasterII firmware directory")
 set(ISE_PATH "/opt/Xilinx/14.7" CACHE STRING "ise root directory (default: /opt/Xilinx/14.7)")
 
 ## specify the C++ standard
@@ -41,6 +42,7 @@ include(GNUInstallDirs)
 add_definitions(-DDATA_DIR=\"${CMAKE_INSTALL_FULL_DATAROOTDIR}\")
 
 add_definitions(-DISE_DIR=\"${ISE_PATH}\")
+add_definitions(-DBLASTERII_DIR=\"${BLASTERII_PATH}\")
 
 if (USE_PKGCONFIG)
 	find_package(PkgConfig REQUIRED)
