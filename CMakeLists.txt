@@ -4,6 +4,7 @@ cmake_minimum_required(VERSION 3.0)
 project(openFPGALoader VERSION "0.10.0" LANGUAGES CXX)
 add_definitions(-DVERSION=\"v${PROJECT_VERSION}\")
 
+option(ENABLE_OPTIM "Enable build with -O3 optimization level" ON)
 option(BUILD_STATIC "Whether or not to build with static libraries" OFF)
 if (${CMAKE_SYSTEM_NAME} MATCHES "Windows")
 	set(ENABLE_UDEV OFF)
@@ -26,6 +27,9 @@ set(ISE_PATH "/opt/Xilinx/14.7" CACHE STRING "ise root directory (default: /opt/
 set(CMAKE_CXX_STANDARD 11)
 set(CMAKE_CXX_STANDARD_REQUIRED True)
 set(CMAKE_CXX_FLAGS_DEBUG "-g -Wall -Wextra ${CMAKE_CXX_FLAGS_DEBUG}")
+if (ENABLE_OPTIM)
+	set(CMAKE_CXX_FLAGS "-O3 ${CMAKE_CXX_FLAGS}")
+endif()
 
 if (BUILD_STATIC)
 	set(CMAKE_EXE_LINKER_FLAGS "-static-libstdc++ -static ${CMAKE_EXE_LINKER_FLAGS}")
