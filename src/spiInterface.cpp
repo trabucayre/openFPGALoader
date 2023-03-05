@@ -140,6 +140,25 @@ bool SPIInterface::write(uint32_t offset, uint8_t *data, uint32_t len,
 	return ret && ret2;
 }
 
+bool SPIInterface::read(uint8_t *data, uint32_t base_addr, uint32_t len)
+{
+	bool ret = true;
+	/* enable SPI flash access */
+	if (!prepare_flash_access())
+		return false;
+
+	try {
+		SPIFlash flash(this, false, _spif_verbose);
+		ret = flash.read(base_addr, data, len);
+	} catch (std::exception &e) {
+		printError(e.what());
+		ret = false;
+	}
+
+	/* reload bitstream */
+	return post_flash_access() && ret == 0;
+}
+
 bool SPIInterface::dump(uint32_t base_addr, uint32_t len)
 {
 	bool ret = true;
