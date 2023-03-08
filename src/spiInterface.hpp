@@ -7,6 +7,7 @@
 #define SRC_SPIINTERFACE_HPP_
 
 #include <iostream>
+#include <string>
 #include <vector>
 
 /*!
@@ -44,6 +45,17 @@ class SPIInterface {
 	 */
 	bool write(uint32_t offset, uint8_t *data, uint32_t len,
 		bool unprotect_flash);
+
+	/*!
+	 * \brief read flash offset byte starting at base_addr and
+	 *        store into data buffer
+	 * \param[in] data: buffer where to store
+	 * \param[in] base_addr: offset into flash
+	 * \param[in] len: byte len to read
+	 * \return false when something fails
+	 */
+	bool read(uint8_t *data, uint32_t base_addr, uint32_t len);
+
 	/*!
 	 * \brief read flash offset byte starting at base_addr and
 	 *        store into filename
@@ -103,8 +115,8 @@ class SPIInterface {
 	bool _spif_verify;
 	bool _skip_load_bridge;
 	bool _skip_reset; /*!< don't reset the device after write */
+
  private:
 	std::string _spif_filename;
-
 };
 #endif  // SRC_SPIINTERFACE_HPP_

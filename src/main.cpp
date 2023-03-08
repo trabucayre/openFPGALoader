@@ -540,7 +540,7 @@ int main(int argc, char **argv)
 		if (fab == "xilinx") {
 			fpga = new Xilinx(jtag, args.bit_file, args.secondary_bit_file,
 				args.file_type, args.prg_type, args.fpga_part, args.bridge_path,
-				args.target_flash, args.verify, args.verbose);
+				args.target_flash, args.verify, args.verbose, args.skip_load_bridge, args.skip_reset);
 		} else if (fab == "altera") {
 			fpga = new Altera(jtag, args.bit_file, args.file_type,
 				args.prg_type, args.fpga_part, args.bridge_path, args.verify,
@@ -751,7 +751,7 @@ int parse_opt(int argc, char **argv, struct arguments *args,
 				"write bitstream in flash (default: false)")
 			("index-chain",  "device index in JTAG-chain",
 				cxxopts::value<int>(args->index_chain))
-			("ip", "IP address (only for XVC client)",
+			("ip", "IP address (XVC and remote bitbang client)",
 				cxxopts::value<string>(args->ip_adr))
 			("list-boards", "list all supported boards",
 				cxxopts::value<bool>(args->list_boards))
@@ -761,7 +761,7 @@ int parse_opt(int argc, char **argv, struct arguments *args,
 				cxxopts::value<bool>(args->list_fpga))
 			("m,write-sram",
 				"write bitstream in SRAM (default: true)")
-			("o,offset",  "start offset in EEPROM",
+			("o,offset", "Start address (in bytes) for read/write into non volatile memory (default: 0)",
 				cxxopts::value<unsigned int>(args->offset))
 			("pins", "pin config TDI:TDO:TCK:TMS",
 				cxxopts::value<vector<string>>(pins))
@@ -793,7 +793,7 @@ int parse_opt(int argc, char **argv, struct arguments *args,
 			("xvc",   "Xilinx Virtual Cable Functions",
 				cxxopts::value<bool>(args->xvc))
 #endif
-			("port", "Xilinx Virtual Cable Port (default 3721)",
+			("port", "Xilinx Virtual Cable and remote bitbang Port (default 3721)",
 				cxxopts::value<int>(args->port))
 			("mcufw", "Microcontroller firmware",
 				cxxopts::value<std::string>(args->mcufw))

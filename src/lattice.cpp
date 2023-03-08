@@ -527,6 +527,10 @@ bool Lattice::program_intFlash(ConfigBitstreamParser *_cbp)
 
 bool Lattice::prepare_flash_access()
 {
+	if (_skip_load_bridge) {
+		printInfo("Skip switching to SPI access");
+		return true;
+	}
 	/* clear SRAM before SPI access */
 	if (!clearSRAM())
 		return false;
@@ -542,14 +546,45 @@ bool Lattice::prepare_flash_access()
 
 bool Lattice::post_flash_access()
 {
+	bool ret = true, flash_blank = false;
+	if (_skip_reset) {
+		printInfo("Skip resetting device");
+		return true;
+	}
 	/* ISC REFRESH 0x79 */
-	printInfo("Refresh: ", false);
 	if (loadConfiguration() == false) {
+		/* when flash is blank status displays failure:
+		 * try to check flash first sector
+		 */
+		_skip_reset = true;  // avoid infinite loop
+		/* read flash 0 -> 255 */
+		uint8_t buffer[256];
+		ret = SPIInterface::read(buffer, 0, 256);
+		loadConfiguration(); // reset again
+
+		/* read ok? check if everything == 0xff */
+		if (ret) {
+			for (int i = 0; i < 256; i++) {
+				/* not blank: fail */
+				if (buffer[i] != 0xFF) {
+					ret = false;
+					break;
+				}
+			}
+			/* to add a note */
+			flash_blank = true;
+		}
+	}
+
+	printInfo("Refresh: ", false);
+	if (!ret) {
 		printError("FAIL");
 		displayReadReg(readStatusReg());
 		return false;
 	} else {
 		printSuccess("DONE");
+		if (flash_blank)
+			printWarn("Flash is blank");
 	}
 
 	/* bypass */

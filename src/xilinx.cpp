@@ -129,9 +129,11 @@ Xilinx::Xilinx(Jtag *jtag, const std::string &filename,
 	Device::prog_type_t prg_type,
 	const std::string &device_package, const std::string &spiOverJtagPath,
 	const std::string &target_flash,
-	bool verify, int8_t verbose):
+	bool verify, int8_t verbose,
+	bool skip_load_bridge, bool skip_reset):
 	Device(jtag, filename, file_type, verify, verbose),
-	SPIInterface(filename, verbose, 256, verify),
+	SPIInterface(filename, verbose, 256, verify, skip_load_bridge,
+				 skip_reset),
 	_device_package(device_package), _spiOverJtagPath(spiOverJtagPath),
 	_irlen(6), _filename(filename), _secondary_filename(secondary_filename)
 {
@@ -199,6 +201,8 @@ Xilinx::Xilinx(Jtag *jtag, const std::string &filename,
 		_fpga_family = KINTEXUS_FAMILY;
 	} else if (family == "kintexusp") {
 		_fpga_family = KINTEXUSP_FAMILY;
+	} else if (family == "artixusp") {
+		_fpga_family = ARTIXUSP_FAMILY;
 	} else if (family == "virtexusp") {
 		_fpga_family = VIRTEXUSP_FAMILY;
 		_ircode_map = ircode_mapping.at("virtexusp");
@@ -433,6 +437,24 @@ void Xilinx::program(unsigned int offset, bool unprotect_flash)
 	}
 
 	delete bit;
+}
+
+bool Xilinx::post_flash_access()
+{
+	if (_skip_reset)
+		printInfo("Skip resetting device");
+	else
+		reset();
+	return true;
+}
+
+bool Xilinx::prepare_flash_access()
+{
+	if (_skip_load_bridge) {
+		printInfo("Skip loading bridge for spiOverjtag");
+		return true;
+	}
+	return load_bridge();
 }
 
 bool Xilinx::load_bridge()

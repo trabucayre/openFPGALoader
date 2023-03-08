@@ -432,14 +432,20 @@ int UsbBlasterI::write(uint8_t *wr_buf, int wr_len,
 
 UsbBlasterII::UsbBlasterII(const string &firmware_path)
 {
+	std::string fpath;
 	uint8_t buf[5];
-	if (firmware_path.empty()) {
+	if (firmware_path.empty() && BLASTERII_DIR == "") {
 		printError("missing FX2 firmware");
 		printError("use --probe-firmware with something");
-		printError("like /opt/altera/quartus/linux64/blaster_6810.hex");
+		printError("like /opt/intelFPGA/VERSION/quartus/linux64/blaster_6810.hex");
+		printError("Or use -DBLASTERII_PATH=/opt/intelFPGA/VERSION/quartus/linux64");
 		throw std::runtime_error("usbBlasterII: missing firmware");
 	}
-	fx2 = new FX2_ll(0x09fb, 0x6810, 0x09fb, 0x6010, firmware_path);
+	if (firmware_path.empty())
+		fpath = BLASTERII_DIR "/blaster_6810.hex";
+	else
+		fpath = firmware_path;
+	fx2 = new FX2_ll(0x09fb, 0x6810, 0x09fb, 0x6010, fpath);
 	if (!fx2->read_ctrl(0x94, 0, buf, 5)) {
 		throw std::runtime_error("Unable to read firmware version.");
 	}

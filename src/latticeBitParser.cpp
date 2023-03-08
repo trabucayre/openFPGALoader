@@ -155,6 +155,7 @@ int LatticeBitParser::parse()
 #define LSC_PROG_CNTRL0    0x22
 #define LSC_RESET_CRC      0x3B
 #define LSC_INIT_ADDRESS   0x46
+#define LSC_SPI_MODE       0x79
 #define LSC_PROG_INCR_CMP  0xB8
 #define LSC_PROG_INCR_RTI  0x82
 #define VERIFY_ID          0xE2
@@ -200,6 +201,10 @@ bool LatticeBitParser::parseCfgData()
 		case LSC_PROG_INCR_RTI:
 			printError("Bitstream is not compressed- not writing.");
 			return false;
+		case LSC_SPI_MODE:  // optional: 0x79 + mode (fast-read:0x49,
+							// dual-spi:0x51, qspi:0x59) + 2 x 0x00
+			pos += 3;
+			break;
 		default:
 			char mess[256];
 			snprintf(mess, 256, "Unknown command type %02x.\n", cmd);

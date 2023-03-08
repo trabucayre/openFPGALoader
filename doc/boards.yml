@@ -293,6 +293,13 @@
   Memory: OK
   Flash: IF
 
+- ID: hseda-xc6slx16
+  Description: XILINX SPARTAN6 XC6SLX16 Microblaze SDRAM USB2.0 FPGA
+  URL: http://hseda.com/product/xilinx/XC6SLX16/XC6SLX16.htm
+  FPGA: Spartan6 xc6slx16-ftg256
+  Memory: OK
+  Flash: OK
+
 - ID: ice40_generic
   Description: iCEBreaker
   URL: https://1bitsquared.com/collections/fpga/products/icebreaker
@@ -431,6 +438,13 @@
   FPGA: Artix xc7a200tsbg484
   Memory: OK
   Flash: OK
+
+- ID: xem8320
+  Description: Opal Kelly XEM8320
+  URL: https://opalkelly.com/products/xem8320/
+  FPGA: Artix UltraScale+ xcau25p-2ffvb676e
+  Memory: OK
+  Flash: TBD
 
 - ID: orbtrace_dfu
   Description: ORBTrace mini (dfu mode)

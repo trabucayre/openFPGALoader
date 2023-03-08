@@ -218,6 +218,13 @@ steppenprobe:
     URL: https://github.com/diegoherranz/steppenprobe
 
 
+remote-bitgang:
+
+  - Name: OpenOCD remote bitbang
+    Description: The remote_bitbang JTAG driver is used to drive JTAG from a remote (TCP) process
+    URL: https://github.com/openocd-org/openocd/blob/master/doc/manual/jtag/drivers/remote_bitbang.txt
+
+
 tigard:
 
   - Name: tigard

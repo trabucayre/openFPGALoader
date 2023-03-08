@@ -201,6 +201,13 @@ Xilinx:
     Memory: OK
     Flash: OK
 
+  - Description: Artix UltraScale+
+    Model:
+      - xcau25p
+    URL: https://www.xilinx.com/products/silicon-devices/fpga/artix-ultrascale-plus.html
+    Memory: OK
+    Flash: TBD
+
   - Description: Kintex UltraScale
     Model:
       - xcku035

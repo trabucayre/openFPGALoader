@@ -99,6 +99,20 @@ static std::map <uint32_t, flash_t> flash_list = {
 		.bp_len = 4,
 		.bp_offset = {(1 << 2), (1 << 3), (1 << 4), (1 << 5)}}
 	},
+	/* https://datasheet.octopart.com/M25P16-VME6G-STMicroelectronics-datasheet-7623188.pdf */
+	{0x00202015, {
+		.manufacturer = "ST",
+		.model = "M25P16",
+		.nr_sector = 32,
+		.sector_erase = true,
+		.subsector_erase = false,
+		.has_extended = false,
+		.tb_otp = true,
+		.tb_offset = 0, // unused
+		.tb_register = STATR,
+		.bp_len = 3,
+		.bp_offset = {(1 << 2), (1 << 3), (1 << 4), 0}}
+	},
 	{0x0020ba16, {
 		.manufacturer = "micron",
 		.model = "N25Q32",
@@ -253,6 +267,20 @@ static std::map <uint32_t, flash_t> flash_list = {
 		.tb_offset = (1 << 1),
 		.tb_register = FUNCR,
 		.bp_len = 4,
+		.bp_offset = {(1 << 2), (1 << 3), (1 << 4), (1 << 5)}}
+	},
+	{0xc22018, {
+	/* https://www.macronix.com/Lists/Datasheet/Attachments/8934/MX25L12833F,%203V,%20128Mb,%20v1.0.pdf */
+		.manufacturer = "Macronix",
+		.model = "MX25L12833",
+		.nr_sector = 256,
+		.sector_erase = true,
+		.subsector_erase = true,
+		.has_extended = false,
+		.tb_otp = true,
+		.tb_offset = (1 << 3),
+		.tb_register = CONFR,
+		.bp_len = 5,
 		.bp_offset = {(1 << 2), (1 << 3), (1 << 4), (1 << 5)}}
 	},
 	{0xef4015, {

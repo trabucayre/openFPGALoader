@@ -150,6 +150,7 @@ static std::map <std::string, target_board_t> board_list = {
 	SPI_BOARD("gatemate_evb_spi",   "colognechip", "gatemate_evb_spi",
 			DBUS4, DBUS5, CBUS0, DBUS3, DBUS0, DBUS1, DBUS2, 0, 0, CABLE_DEFAULT),
 	JTAG_BOARD("genesys2",        "xc7k325tffg900", "digilent_b", 0, 0, CABLE_DEFAULT),
+	JTAG_BOARD("hseda-xc6slx16",  "xc6slx16ftg256", "",           0, 0, CABLE_DEFAULT),
 	/* most ice40 boards uses the same pinout */
 	SPI_BOARD("ice40_generic",    "lattice", "ft2232",
 			DBUS7, DBUS6, 0,
@@ -205,6 +206,7 @@ static std::map <std::string, target_board_t> board_list = {
 	JTAG_BOARD("usrpx310",        "xc7k410tffg900", "digilent", 0, 0, CABLE_MHZ(15)),
 	JTAG_BOARD("vcu118",          "xcvu9p-flga2104", "jtag-smt2-nc", 0, 0, CABLE_DEFAULT),
 	JTAG_BOARD("vcu128",          "xcvu37p-fsvh2892", "ft4232", 0, 0, CABLE_DEFAULT),
+	JTAG_BOARD("xem8320",         "xcau25p-2ffvb676", ""       , 0, 0, CABLE_DEFAULT),
 	JTAG_BOARD("xyloni_jtag",     "", "efinix_jtag_ft4232"       , 0, 0, CABLE_DEFAULT),
 	SPI_BOARD("xyloni_spi",       "efinix", "efinix_spi_ft4232",
 			DBUS4, DBUS5, DBUS7, DBUS3, DBUS0, DBUS1, DBUS2, DBUS6, 0, CABLE_DEFAULT),
