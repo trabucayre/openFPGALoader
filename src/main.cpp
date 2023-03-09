@@ -161,10 +161,8 @@ int main(int argc, char **argv)
 		}
 		/* search for cable */
 		auto t = cable_list.find(board->cable_name);
-		if (t == cable_list.end()) {
-			cout << "Board " << args.board << " has not default cable" << endl;
-		} else {
-			if (args.cable[0] == '-') {  // no use selection
+		if (t != cable_list.end()) {
+			if (args.cable[0] == '-') {  // no user selection
 				args.cable = (*t).first;  // use board default cable
 			} else {
 				cout << "Board default cable overridden with " << args.cable << endl;
@@ -187,8 +185,7 @@ int main(int argc, char **argv)
 	}
 
 	if (args.cable[0] == '-') { /* if no board and no cable */
-		if (args.verbose > 0)
-			cout << "No cable or board specified: using direct ft2232 interface" << endl;
+		printWarn("No cable or board specified: using direct ft2232 interface");
 		args.cable = "ft2232";
 	}
 
