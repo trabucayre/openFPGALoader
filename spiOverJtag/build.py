@@ -55,8 +55,8 @@ elif subpart == "xc3s":
     family = "Spartan3E"
     tool = "ise"
     speed = -4
-elif subpart == "xcvu":
-    family = "Virtex UltraScale"
+elif subpart in ["xcvu", "xcku"]:
+    family = "Xilinx UltraScale"
     tool = "vivado"
 else:
     print("Error: unknown device")
@@ -92,6 +92,7 @@ if tool in ["ise", "vivado"]:
         "xc7s50csga324"    : "xc7s_csga324",
         "xcvu9p-flga2104" : "xcvu9p_flga2104",
         "xcvu37p-fsvh2892" : "xcvu37p_fsvh2892",
+        "xcku5p-ffvb676" : "xcku5p_ffvb676",
         }[part]
     if tool == "ise":
         cst_type = "UCF"
@@ -126,9 +127,9 @@ if tool in ["ise", "vivado"]:
                 }
     else:
         cst_type = "xdc"
-        if family == "Virtex UltraScale":
-            tool_options = {'part': part + '-1-e'}
-            if part == "xcvu9p-flga2104":
+        if family == "Xilinx UltraScale":
+            if part in ["xcvu9p-flga2104", "xcku5p-ffvb676"]:
+                tool_options = {'part': part + '-1-e'}
                 parameters["secondaryflash"]= {
                     'datatype': 'int',
                     'paramtype': 'vlogdefine',

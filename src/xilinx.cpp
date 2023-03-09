@@ -59,7 +59,8 @@ static std::map<std::string, std::map<std::string, std::vector<uint8_t>>>
 			"default",
 			{
 				{ "USER1",       {0x02} },
-				{ "CFG_IN",      {0x05}},
+				{ "USER2",       {0x03} },
+				{ "CFG_IN",      {0x05} },
 				{ "USERCODE",    {0x08} },
 				{ "IDCODE",      {0x09} },
 				{ "ISC_ENABLE",  {0x10} },
@@ -169,7 +170,7 @@ Xilinx::Xilinx(Jtag *jtag, const std::string &filename,
 		_secondary_file_extension = secondary_filename.substr(
 			secondary_filename.find_last_of(".") + 1);
 		_mode = Device::SPI_MODE;
-		if (_device_package != "xcvu9p-flga2104") {
+		if (!(_device_package == "xcvu9p-flga2104" || _device_package == "xcku5p-ffvb676")) {
 			throw std::runtime_error("Error: secondary flash unavailable");
 		}
 	}
@@ -198,6 +199,8 @@ Xilinx::Xilinx(Jtag *jtag, const std::string &filename,
 		_fpga_family = KINTEX_FAMILY;
 	} else if (family == "kintexus") {
 		_fpga_family = KINTEXUS_FAMILY;
+	} else if (family == "kintexusp") {
+		_fpga_family = KINTEXUSP_FAMILY;
 	} else if (family == "artixusp") {
 		_fpga_family = ARTIXUSP_FAMILY;
 	} else if (family == "virtexusp") {

@@ -161,6 +161,7 @@ class Xilinx: public Device, SPIInterface {
 			ARTIX_FAMILY,
 			KINTEX_FAMILY,
 			KINTEXUS_FAMILY,
+			KINTEXUSP_FAMILY,
 			ZYNQ_FAMILY,
 			ZYNQMP_FAMILY,
 			XCF_FAMILY,

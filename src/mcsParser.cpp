@@ -43,6 +43,7 @@ int McsParser::parse()
 {
 	string str;
 	istringstream lineStream(_raw_data);
+	_bit_data.resize(_file_size);
 
 	while (std::getline(lineStream, str, '\n')) {
 		char *ptr;
