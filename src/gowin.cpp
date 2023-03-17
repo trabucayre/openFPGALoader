@@ -325,7 +325,7 @@ void Gowin::program(unsigned int offset, bool unprotect_flash)
 
 void Gowin::checkCRC()
 {
-	if (!skip_checksum)
+	if (skip_checksum)
 		return;
 
 	bool is_match = true;
