@@ -740,7 +740,7 @@
   URL: https://shop.trenz-electronic.de/en/TEC0117-01-FPGA-Module-with-GOWIN-LittleBee-and-8-MByte-internal-SDRAM
   FPGA: XC7A200TFBG484
   Memory: OK
-  Flash: IF
+  Flash: OK
 
 - ID: tec0117
   Description: Trenz Gowin LittleBee (TEC0117)
@@ -755,6 +755,13 @@
   FPGA: Trion T20BGA256
   Memory: OK
   Flash: NT
+
+- ID: tec0330
+  Description: PCIe FMC Carrier with Xilinx Virtex-7 FPGA (TEC0330)
+  URL: https://shop.trenz-electronic.de//TEC0330-05-PCIe-FMC-Carrier-with-Xilinx-Virtex-7-FPGA-8-Lane-PCIe-GEN2-SODIMM-SDRAM
+  FPGA: XC7VX330T-2FFG1157C
+  Memory: OK
+  Flash: OK
 
 - ID: trion_t120_bga576
   Description: Efinix Trion T120 BGA576 Dev Kit (SPI mode)
