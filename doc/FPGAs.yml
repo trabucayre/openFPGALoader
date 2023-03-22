@@ -218,6 +218,23 @@ Xilinx:
     Memory: OK
     Flash: OK
 
+  - Description: Virtex 7
+    Model:
+      - xc7v585t
+      - xc7v2000t
+      - xc7vx330t
+      - xc7vx415t
+      - xc7vx485t
+      - xc7vx550t
+      - xc7vx690t
+      - xc7vx980t
+      - xc7vx1140t
+      - xc7vh580t
+      - xc7vh870t
+    URL: https://www.xilinx.com/products/silicon-devices/fpga/virtex-7.html#productTable
+    Memory: OK
+    Flash: OK
+
   - Description: Artix UltraScale+
     Model:
       - xcau25p
