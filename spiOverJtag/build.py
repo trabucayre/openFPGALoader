@@ -35,6 +35,9 @@ elif subpart[0:2] == '5c':
 elif subpart == "xc7a":
     family = "Artix"
     tool = "vivado"
+elif subpart == "xc7v":
+    family = "Virtex 7"
+    tool = "vivado"
 elif subpart == "xc7k":
     device_size = int(part.split('k')[1].split('t')[0])
     if device_size <= 160:
@@ -100,6 +103,7 @@ if tool in ["ise", "vivado"]:
         "xc7k325tffg676"   : "xc7k_ffg676",
         "xc7k325tffg900"   : "xc7k_ffg900",
         "xc7k420tffg901"   : "xc7k_ffg901",
+        "xc7vx330tffg1157" : "xc7v_ffg1157",
         "xc7s25csga225"    : "xc7s_csga225",
         "xc7s25csga324"    : "xc7s_csga324",
         "xc7s50csga324"    : "xc7s_csga324",
