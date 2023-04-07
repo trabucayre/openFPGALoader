@@ -182,6 +182,7 @@ Xilinx:
 
   - Description: Artix 7
     Model:
+      - xc7a25t
       - xc7a35ti
       - xc7a50t
       - xc7a75t
