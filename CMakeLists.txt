@@ -53,6 +53,9 @@ if (USE_PKGCONFIG)
 	if (NOT HIDAPI_FOUND)
 		pkg_check_modules(HIDAPI hidapi-libusb)
 	endif()
+	if (NOT HIDAPI_FOUND)
+		pkg_check_modules(HIDAPI hidapi)
+	endif()
 	# zlib support (gzip)
 	pkg_check_modules(ZLIB zlib)
 	if (NOT ZLIB_FOUND)
@@ -188,6 +191,14 @@ link_directories(
 	${LIBFTDI_LIBRARY_DIRS}
 )
 
+if (ENABLE_LIBGPIOD)
+	link_directories(${LIBGPIOD_LIBRARY_DIRS})
+endif()
+
+if (ENABLE_CMSISDAP AND HIDAPI_FOUND)
+	link_directories(${HIDAPI_LIBRARY_DIRS})
+endif()
+
 add_executable(openFPGALoader
 	${OPENFPGALOADER_SOURCE}
 	${OPENFPGALOADER_HEADERS}
@@ -206,8 +217,8 @@ target_link_libraries(openFPGALoader
 if (${CMAKE_SYSTEM_NAME} MATCHES "Windows")
 	# winsock provides ntohs
 	target_link_libraries(openFPGALoader ws2_32)
-	
-	target_sources(openFPGALoader PRIVATE src/pathHelper.cpp)	
+
+	target_sources(openFPGALoader PRIVATE src/pathHelper.cpp)
 	list(APPEND OPENFPGALOADER_HEADERS src/pathHelper.hpp)
 endif()
 
@@ -222,7 +233,6 @@ if (ENABLE_UDEV)
 endif()
 
 if (ENABLE_LIBGPIOD)
-	link_directories(${LIBGPIOD_LIBRARY_DIRS})
 	include_directories(${LIBGPIOD_INCLUDE_DIRS})
 	target_link_libraries(openFPGALoader ${LIBGPIOD_LIBRARIES})
 	add_definitions(-DENABLE_LIBGPIOD=1)
@@ -337,7 +347,7 @@ else()
 	)
 endif()
 
-install(FILES 
+install(FILES
 	${GZ_FILES}
 	DESTINATION ${CMAKE_INSTALL_DATAROOTDIR}/openFPGALoader
 )
