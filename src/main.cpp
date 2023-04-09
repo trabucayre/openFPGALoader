@@ -26,6 +26,9 @@
 #include "ftdispi.hpp"
 #include "gowin.hpp"
 #include "ice40.hpp"
+#if ENABLE_ICEVWIRELESS
+#include "iceVWireless.hpp"
+#endif
 #include "lattice.hpp"
 #include "libusb_ll.hpp"
 #include "jtag.hpp"
@@ -63,6 +66,7 @@ struct arguments {
 	bool is_list_command;
 	bool spi;
 	bool dfu;
+	bool iceVWireless;
 	string file_type;
 	string fpga_part;
 	string bridge_path;
@@ -109,8 +113,8 @@ int main(int argc, char **argv)
 	/* command line args. */
 	struct arguments args = {0, false, false, false, false, 0, "", "", "", "-", "", -1,
 			0, false, "-", false, false, false, false, Device::PRG_NONE, false,
-			/* spi dfu    file_type fpga_part bridge_path probe_firmware */
-			false, false, "",       "",       "",         "",
+			/* spi dfu    iceVWireless file_type fpga_part bridge_path probe_firmware */
+			false, false, false,       "",       "",       "",         "",
 			/* index_chain file_size target_flash external_flash altsetting */
 			-1,            0,        "primary",   false,         -1,
 			/* vid, pid, index bus_addr, device_addr */
@@ -138,6 +142,25 @@ int main(int argc, char **argv)
 		cout << "write to ram" << endl;
 	if (args.prg_type == Device::WR_FLASH)
 		cout << "write to flash" << endl;
+
+#ifdef ENABLE_ICEVWIRELESS
+	/* ------------------- */
+	/*  iCE V Wireless     */
+	/* ------------------- */
+	if (args.iceVWireless) {
+		/* if no instruction from user -> select load */
+		if (args.prg_type == Device::PRG_NONE)
+			args.prg_type = Device::WR_SRAM;
+		try {
+			IceV_Wireless ice(args.device, args.bit_file, args.prg_type);
+			ice.program();
+		} catch (std::exception &e) {
+			printError("IceV Wirelesss failed:\n\t" + string(e.what()));
+			return EXIT_FAILURE;
+		}
+	    return EXIT_SUCCESS;
+	}
+#endif
 
 	if (args.board[0] != '-') {
 		if (board_list.find(args.board) != board_list.end()) {
@@ -746,6 +769,10 @@ int parse_opt(int argc, char **argv, struct arguments *args,
 			("freq",        "jtag frequency (Hz)", cxxopts::value<string>(freqo))
 			("f,write-flash",
 				"write bitstream in flash (default: false)")
+#if ENABLE_ICEVWIRELESS
+			("iceV_wireless", "iceV wireless protocol",
+				cxxopts::value<bool>(args->iceVWireless))
+#endif
 			("index-chain",  "device index in JTAG-chain",
 				cxxopts::value<int>(args->index_chain))
 			("ip", "IP address (XVC and remote bitbang client)",
