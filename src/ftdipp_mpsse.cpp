@@ -31,6 +31,7 @@ FTDIpp_MPSSE::FTDIpp_MPSSE(const cable_t &cable, const string &dev,
 				_verbose(verbose > 2), _cable(cable.config), _vid(0),
 				_pid(0), _index(0),
 				_bus(cable.bus_addr), _addr(cable.device_addr),
+				_bitmode(BITMODE_RESET),
 				_interface(cable.config.interface),
 				_clkHZ(clkHZ), _buffer_size(2*32768), _num(0)
 {
@@ -96,6 +97,13 @@ FTDIpp_MPSSE::~FTDIpp_MPSSE()
 {
 	char err[256];
 	int ret;
+
+	if (_bitmode == BITMODE_MPSSE) {
+		if (_cable.status_pin != -1) {
+			gpio_set(1 << _cable.status_pin);
+		}
+	}
+
 	if ((ret = ftdi_set_bitmode(_ftdi, 0, BITMODE_RESET)) < 0) {
 		snprintf(err, sizeof(err), "unable to config pins : %d %s",
 			ret, ftdi_get_error_string(_ftdi));
@@ -278,6 +286,16 @@ int FTDIpp_MPSSE::init(unsigned char latency, unsigned char bitmask_mode,
 		if (setClkFreq(_clkHZ) < 0)
 			return -1;
 
+		if (_cable.status_pin != -1) {
+			if (_cable.status_pin <= 7) {
+				_cable.bit_low_dir |= 1 << _cable.status_pin;
+				_cable.bit_low_val &= ~(1 << _cable.status_pin);
+			} else {
+				_cable.bit_high_dir |= 1 << (_cable.status_pin - 8);
+				_cable.bit_high_val &= ~(1 << (_cable.status_pin - 8));
+			}
+		}
+
 		int to_wr = 3;
 
 		buf_cmd[1] = _cable.bit_low_val;  // 0xe8;
@@ -311,6 +329,7 @@ int FTDIpp_MPSSE::init(unsigned char latency, unsigned char bitmask_mode,
 		return -1;
 	}
 
+	_bitmode = mode;
 	return 0;
 }
 
