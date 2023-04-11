@@ -38,6 +38,7 @@ typedef struct {
 	int bit_high_val; /*! xCBUS 0-7 default value */
 	int bit_high_dir; /*! xCBUS 0-7 default direction (0: in, 1: out) */
 	int index;
+	int status_pin;
 } mpsse_bit_config;
 
 /*!
@@ -64,10 +65,10 @@ struct cable_t {
 
 /* FTDI serial (MPSSE) configuration */
 #define FTDI_SER(_vid, _pid, _intf, _blv, _bld, _bhv, _bhd) \
-	{MODE_FTDI_SERIAL, _vid, _pid, 0, 0, {_intf, _blv, _bld, _bhv, _bhd, 0}}
+	{MODE_FTDI_SERIAL, _vid, _pid, 0, 0, {_intf, _blv, _bld, _bhv, _bhd, 0, -1}}
 /* FTDI bitbang configuration */
 #define FTDI_BB(_vid, _pid, _intf, _blv, _bld, _bhv, _bhd) \
-	{MODE_FTDI_BITBANG, _vid, _pid, 0, 0, {_intf, _blv, _bld, _bhv, _bhd, 0}}
+	{MODE_FTDI_BITBANG, _vid, _pid, 0, 0, {_intf, _blv, _bld, _bhv, _bhd, 0, -1}}
 /* CMSIS DAP configuration */
 #define CMSIS_CL(_vid, _pid) \
 	{MODE_CMSISDAP, _vid, _pid, 0, 0, {}}

@@ -52,6 +52,7 @@ struct arguments {
 	string cable;
 	string ftdi_serial;
 	int ftdi_channel;
+	int status_pin;
 	uint32_t freq;
 	bool invert_read_edge;
 	string board;
@@ -108,7 +109,7 @@ int main(int argc, char **argv)
 
 	/* command line args. */
 	struct arguments args = {0, false, false, false, false, 0, "", "", "", "-", "", -1,
-			0, false, "-", false, false, false, false, Device::PRG_NONE, false,
+			-1, 0, false, "-", false, false, false, false, Device::PRG_NONE, false,
 			/* spi dfu    file_type fpga_part bridge_path probe_firmware */
 			false, false, "",       "",       "",         "",
 			/* index_chain file_size target_flash external_flash altsetting */
@@ -220,6 +221,13 @@ int main(int argc, char **argv)
 		}
 	}
 
+	if (args.status_pin != -1) {
+		if (cable.type != MODE_FTDI_SERIAL){
+			printError("Error: FTDI status pin is for FTDI MPSSE cables.");
+			return EXIT_FAILURE;
+		}
+	}
+
 	if (args.vid != 0) {
 		printInfo("Cable VID overridden");
 		cable.vid = args.vid;
@@ -232,8 +240,9 @@ int main(int argc, char **argv)
 	cable.bus_addr = args.bus_addr;
 	cable.device_addr = args.device_addr;
 
-	// always set this
+	// always set these
 	cable.config.index = args.cable_index;
+	cable.config.status_pin = args.status_pin;
 
 	/* FLASH direct access */
 	if (args.spi || (board && board->mode == COMM_SPI)) {
@@ -701,6 +710,9 @@ int parse_opt(int argc, char **argv, struct arguments *args,
 				"bitstream(intel/xilinx)",
 				cxxopts::value<string>(args->bridge_path))
 			("c,cable", "jtag interface", cxxopts::value<string>(args->cable))
+			("status-pin",
+				"JTAG mode / FTDI: GPIO pin number to use as a status indicator (active low)",
+				cxxopts::value<int>(args->status_pin))
 			("invert-read-edge",
 				"JTAG mode / FTDI: read on negative edge instead of positive",
 				cxxopts::value<bool>(args->invert_read_edge))
@@ -855,6 +867,13 @@ int parse_opt(int argc, char **argv, struct arguments *args,
 				throw std::exception();
 			}
 			args->freq = static_cast<uint32_t>(freq);
+		}
+
+		if (result.count("status-pin")) {
+			if (args->status_pin < 4 || args->status_pin > 15) {
+				printError("Error: valid status pin numbers are 4-15.");
+				throw std::exception();
+			}
 		}
 
 		if (result.count("ftdi-channel")) {
