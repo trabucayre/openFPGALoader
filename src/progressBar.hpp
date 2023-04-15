@@ -10,7 +10,7 @@
 
 class ProgressBar {
 	public:
-		ProgressBar(std::string mess, int maxValue, int progressLen,
+		ProgressBar(const std::string &mess, int maxValue, int progressLen,
 				bool quiet = false);
 		void display(int value, char force = 0);
 		void done();

@@ -215,6 +215,9 @@ int JetsonNanoJtagBitbang::writeTMS(uint8_t *tms_buf, uint32_t len,
 {
 	int tms;
 
+	if (len == 0) // nothing -> stop
+		return len;
+
 	for (uint32_t i = 0; i < len; i++) {
 		tms = ((tms_buf[i >> 3] & (1 << (i & 7))) ? 1 : 0);
 

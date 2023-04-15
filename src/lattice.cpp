@@ -883,7 +883,7 @@ bool Lattice::wr_rd(uint8_t cmd,
 	uint8_t xfer_rx[kXferLen];
 	memset(xfer_tx, 0, kXferLen);
 	int i;
-	if (tx) {
+	if (tx != NULL && tx_len > 0) {
 		for (i = 0; i < tx_len; i++)
 			xfer_tx[i] = tx[i];
 	}

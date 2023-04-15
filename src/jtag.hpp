@@ -16,7 +16,8 @@
 
 class Jtag {
  public:
-	Jtag(const cable_t &cable, const jtag_pins_conf_t *pin_conf, std::string dev,
+	Jtag(const cable_t &cable, const jtag_pins_conf_t *pin_conf,
+		const std::string &dev,
 		const std::string &serial, uint32_t clkHZ, int8_t verbose,
 		const std::string &ip_adr, int port,
 		const bool invert_read_edge = false,

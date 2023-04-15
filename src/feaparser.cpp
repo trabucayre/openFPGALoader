@@ -65,7 +65,7 @@
 
 using namespace std;
 
-FeaParser::FeaParser(string filename, bool verbose):
+FeaParser::FeaParser(const string &filename, bool verbose):
 	ConfigBitstreamParser(filename, ConfigBitstreamParser::BIN_MODE, verbose),
 	_feabits(0), _has_feabits(false)
 {

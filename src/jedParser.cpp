@@ -31,7 +31,7 @@
 
 using namespace std;
 
-JedParser::JedParser(string filename, bool verbose):
+JedParser::JedParser(const string &filename, bool verbose):
 	ConfigBitstreamParser(filename, ConfigBitstreamParser::BIN_MODE, verbose),
 	_fuse_count(0), _pin_count(0), _max_vect_test(0),
 	_featuresRow(0), _feabits(0), _has_feabits(false), _checksum(0),
@@ -168,7 +168,7 @@ void JedParser::displayHeader()
 	printf("Fuse Count : %d\n", _fuse_count);
 
 	for (size_t i = 0; i < _data_list.size(); i++) {
-		printf("area[%zd] %4d %4d ", i, _data_list[i].offset, _data_list[i].len);
+		printf("area[%zu] %4d %4d ", i, _data_list[i].offset, _data_list[i].len);
 		printf("%zu ", _data_list[i].data.size());
 		for (size_t ii = 0; ii < _data_list[i].data.size(); ii++)
 			for (size_t iii = 0; iii < _data_list[i].data[ii].size(); iii++)

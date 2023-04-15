@@ -9,9 +9,9 @@
 #include <iostream>
 #include <string>
 
-void printError(std::string err, bool eol = true);
-void printWarn(std::string warn, bool eol = true);
-void printInfo(std::string info, bool eol = true);
-void printSuccess(std::string success, bool eol = true);
+void printError(const std::string &err, bool eol = true);
+void printWarn(const std::string &warn, bool eol = true);
+void printInfo(const std::string &info, bool eol = true);
+void printSuccess(const std::string &success, bool eol = true);
 
 #endif  // DISPLAY_HPP_

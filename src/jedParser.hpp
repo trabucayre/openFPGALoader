@@ -25,7 +25,7 @@ class JedParser: public ConfigBitstreamParser {
 		};
 
 	public:
-		JedParser(std::string filename, bool verbose = false);
+		JedParser(const std::string &filename, bool verbose = false);
 		int parse() override;
 		void displayHeader() override;
 

@@ -70,7 +70,8 @@ using namespace std;
  *           - envoyer le dernier avec 0x4B ou 0x6B
  */
 
-Jtag::Jtag(const cable_t &cable, const jtag_pins_conf_t *pin_conf, string dev,
+Jtag::Jtag(const cable_t &cable, const jtag_pins_conf_t *pin_conf,
+			const string &dev,
 			const string &serial, uint32_t clkHZ, int8_t verbose,
 			const string &ip_adr, int port,
 			const bool invert_read_edge, const string &firmware_path):

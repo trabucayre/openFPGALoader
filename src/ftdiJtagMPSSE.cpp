@@ -31,7 +31,7 @@ using namespace std;
 #endif
 
 FtdiJtagMPSSE::FtdiJtagMPSSE(const cable_t &cable,
-			string dev, const string &serial, uint32_t clkHZ,
+			const string &dev, const string &serial, uint32_t clkHZ,
 			bool invert_read_edge, int8_t verbose):
 			FTDIpp_MPSSE(cable, dev, serial, clkHZ, verbose), _ch552WA(false),
 			_write_mode(MPSSE_WRITE_NEG),  // always write on neg edge

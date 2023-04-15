@@ -38,7 +38,7 @@ int BitParser::parseHeader()
 	int pos_data = 0;
 	int ret = 1;
 	short length;
-	string tmp(64, ' ');
+	string tmp;
 	int pos, prev_pos;
 
 	/* Field 1 : misc header */

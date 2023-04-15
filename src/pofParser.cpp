@@ -139,7 +139,7 @@ uint32_t POFParser::parseSection(uint16_t flag, uint32_t pos, uint32_t size)
 					_bit_data.begin());
 			_bit_length = size * 8;
 			if (_verbose)
-				printf("size %u %lu\n", size, _bit_data.size());
+				printf("size %u %zu\n", size, _bit_data.size());
 			break;
 		case 0x1a:  // flash sections
 					// 12Bytes ?

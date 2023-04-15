@@ -135,7 +135,7 @@ Xilinx::Xilinx(Jtag *jtag, const std::string &filename,
 	SPIInterface(filename, verbose, 256, verify, skip_load_bridge,
 				 skip_reset),
 	_device_package(device_package), _spiOverJtagPath(spiOverJtagPath),
-	_irlen(6), _filename(filename), _secondary_filename(secondary_filename)
+	_irlen(6), _secondary_filename(secondary_filename)
 {
 	if (prg_type == Device::RD_FLASH) {
 		_mode = Device::READ_MODE;

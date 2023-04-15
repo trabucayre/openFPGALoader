@@ -208,7 +208,6 @@ class Xilinx: public Device, SPIInterface {
 		char _cpld_base_name[7]; /**< cpld name (without package size) */
 		int _irlen; /**< IR bit length */
 		std::map<std::string, std::vector<uint8_t>> _ircode_map; /**< bscan instructions based on model */
-		std::string _filename; /* path to the primary flash file */
 		std::string _secondary_filename; /* path to the secondary flash file (SPIx8) */
 		std::string _secondary_file_extension; /* file type for the secondary flash file */
 		int _flash_chips; /* bitfield to select the target in boards with two flash chips */

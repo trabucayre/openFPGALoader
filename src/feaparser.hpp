@@ -17,7 +17,7 @@
 
 class FeaParser: public ConfigBitstreamParser {
 	public:
-		FeaParser(std::string filename, bool verbose = false);
+		FeaParser(const std::string &filename, bool verbose = false);
 		int parse() override;
 		void displayHeader() override;
 

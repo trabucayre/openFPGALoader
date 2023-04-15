@@ -23,7 +23,7 @@
 
 class FtdiJtagMPSSE : public JtagInterface, public FTDIpp_MPSSE {
  public:
-	FtdiJtagMPSSE(const cable_t &cable, std::string dev,
+	FtdiJtagMPSSE(const cable_t &cable, const std::string &dev,
 		const std::string &serial, uint32_t clkHZ, bool invert_read_edge,
 		int8_t verbose = 0);
 	virtual ~FtdiJtagMPSSE();

@@ -10,12 +10,13 @@
 #include "progressBar.hpp"
 #include "display.hpp"
 
-ProgressBar::ProgressBar(std::string mess, int maxValue, int progressLen,
-		bool quiet): _mess(mess), _maxValue(maxValue),
-		_progressLen(progressLen), _quiet(quiet), _first(true)
+ProgressBar::ProgressBar(const std::string &mess, int maxValue,
+		int progressLen, bool quiet): _mess(mess), _maxValue(maxValue),
+		_progressLen(progressLen), last_time(std::chrono::system_clock::now()),
+		_quiet(quiet), _first(true)
 {
-	last_time = std::chrono::system_clock::now();
 }
+
 void ProgressBar::display(int value, char force)
 {
 	if (_quiet) {
