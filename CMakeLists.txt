@@ -27,7 +27,7 @@ set(ISE_PATH "/opt/Xilinx/14.7" CACHE STRING "ise root directory (default: /opt/
 ## specify the C++ standard
 set(CMAKE_CXX_STANDARD 11)
 set(CMAKE_CXX_STANDARD_REQUIRED True)
-set(CMAKE_CXX_FLAGS_DEBUG "-g -Wall -Wextra ${CMAKE_CXX_FLAGS_DEBUG}")
+set(CMAKE_CXX_FLAGS_DEBUG "-g -O0 -Wall -Wextra ${CMAKE_CXX_FLAGS_DEBUG}")
 if (ENABLE_OPTIM)
 	set(CMAKE_CXX_FLAGS "-O3 ${CMAKE_CXX_FLAGS}")
 endif()
@@ -95,6 +95,7 @@ set(OPENFPGALOADER_SOURCE
 	src/dfu.cpp
 	src/dfuFileParser.cpp
 	src/dirtyJtag.cpp
+	src/ch347jtag.cpp
 	src/efinix.cpp
 	src/efinixHexParser.cpp
 	src/fx2_ll.cpp
@@ -144,6 +145,7 @@ set(OPENFPGALOADER_HEADERS
 	src/dfu.hpp
 	src/dfuFileParser.hpp
 	src/dirtyJtag.hpp
+	src/ch347jtag.hpp
 	src/efinix.hpp
 	src/efinixHexParser.hpp
 	src/fx2_ll.hpp
