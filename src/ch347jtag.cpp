@@ -251,7 +251,7 @@ int CH347Jtag::writeTDI(uint8_t *tx, uint8_t *rx, uint32_t len, bool end)
                 usleep(20000);
             int ret = libusb_bulk_transfer(dev_handle, CH347JTAG_WRITE_EP, obuf, wlen, &actual_length, CH347JTAG_TIMEOUT);
             if (ret < 0) {
-                cerr << "writeTDI: usb bulk write failed: " << libusb_strerror(-ret) << endl;
+                cerr << "writeTDI: usb bulk write failed: " << libusb_strerror(ret) << endl;
                 return -EXIT_FAILURE;
             }
             ptr = obuf;
