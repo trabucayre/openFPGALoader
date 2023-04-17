@@ -39,7 +39,7 @@ using namespace std;
 // buffer capacity
 #define BUF_SIZE 2048
 
-Jlink::Jlink(uint32_t clkHz, int8_t verbose):_base_freq(0), _min_div(0),
+Jlink::Jlink(uint32_t clkHz, int8_t verbose, int vid = VID, int pid = PID):_base_freq(0), _min_div(0),
 	jlink_write_ep(-1), jlink_read_ep(-1), jlink_interface(-1),
 	_verbose(verbose > 0), _debug(verbose > 1), _quiet(verbose < 0),
 	_num_bits(0), _last_tms(0), _last_tdi(0),
@@ -50,7 +50,7 @@ Jlink::Jlink(uint32_t clkHz, int8_t verbose):_base_freq(0), _min_div(0),
 		throw std::runtime_error("libusb init failed\n");
 
 	// search for all compatible devices
-	if (!jlink_scan_usb())
+	if (!jlink_scan_usb(vid,pid))
 		throw std::runtime_error("can't find compatible device");
 
 	// get device capacity
@@ -659,7 +659,7 @@ bool Jlink::jlink_search_interface(libusb_device *dev,
 	return true;
 }
 
-bool Jlink::jlink_scan_usb()
+bool Jlink::jlink_scan_usb(int vid, int pid)
 {
 	libusb_device **dev_list;
 	libusb_device *usb_dev;
@@ -677,7 +677,7 @@ bool Jlink::jlink_scan_usb()
 			return EXIT_FAILURE;
 		}
 
-		if (desc.idProduct != PID || desc.idVendor != VID)
+		if (desc.idProduct != pid || desc.idVendor != vid)
 			continue;
 
 		if (_verbose)
