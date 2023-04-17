@@ -66,6 +66,7 @@ if tool in ["ise", "vivado"]:
     pkg_name = {
         "xc3s500evq100"    : "xc3s_vq100",
         "xc6slx9tqg144"    : "xc6s_tqg144",
+        "xc6slx9csg324"    : "xc6s_csg324",
         "xc6slx16ftg256"   : "xc6s_ftg256",
         "xc6slx16csg324"   : "xc6s_csg324",
         "xc6slx45csg324"   : "xc6s_csg324",
@@ -102,6 +103,7 @@ if tool in ["ise", "vivado"]:
                         'device': {
                             "xc3s500evq100":    "xc3s500e",
                             "xc6slx9tqg144":    "xc6slx9",
+                            "xc6slx9csg324":    "xc6slx9",
                             "xc6slx16ftg256":   "xc6slx16",
                             "xc6slx16csg324":   "xc6slx16",
                             "xc6slx45csg324":   "xc6slx45",
@@ -115,6 +117,7 @@ if tool in ["ise", "vivado"]:
                         'package': {
                             "xc3s500evq100":    "vq100",
                             "xc6slx9tqg144":    "tqg144",
+                            "xc6slx9csg324":    "csg324",
                             "xc6slx16ftg256":   "ftg256",
                             "xc6slx16csg324":   "csg324",
                             "xc6slx45csg324":   "csg324",
