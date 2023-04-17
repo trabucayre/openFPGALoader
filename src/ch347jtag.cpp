@@ -57,15 +57,16 @@ int CH347Jtag::setClk(uint32_t clk) {
     *ptr++ = 0;
     *ptr++ = 0;
     int actual = 0;
+    int wlen = ptr - obuf;
     if (_verbose == 2) {
-        fprintf(stderr, "obuf[%ld] = {", ptr - obuf);
+        fprintf(stderr, "obuf[%d] = {", wlen);
         for (int i = 0; i < ptr - obuf; ++i) {
             fprintf(stderr, "%02x, ", obuf[i]);
         }
         fprintf(stderr, "}\n\n");
     }
-    int rv = libusb_bulk_transfer(dev_handle, CH347JTAG_WRITE_EP, obuf, ptr - obuf, &actual, 300);
-    if (rv || actual != ptr - obuf)
+    int rv = libusb_bulk_transfer(dev_handle, CH347JTAG_WRITE_EP, obuf, wlen, &actual, 300);
+    if (rv || actual != wlen)
         return -1;
     rv = libusb_bulk_transfer(dev_handle, CH347JTAG_READ_EP, ibuf, 4, &actual, 300);
     if (_verbose == 2) {
