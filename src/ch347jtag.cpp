@@ -45,7 +45,7 @@ enum CH347JtagSig {
     SIG_TDI =   0b10000,
 };
 
-int CH347Jtag::setClk(uint clk) {
+int CH347Jtag::setClk(uint32_t clk) {
     uint8_t *ptr = obuf;
     *ptr++ = CMD_CLK;
     *ptr++ = 6;

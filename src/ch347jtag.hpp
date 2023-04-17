@@ -43,7 +43,7 @@ class CH347Jtag : public JtagInterface {
  private:
     uint8_t _verbose;
 
-    int setClk(uint clk);
+    int setClk(uint32_t clk);
 
     libusb_device_handle *dev_handle;
     libusb_context *usb_ctx;
