@@ -9,6 +9,7 @@
 
 #include <string>
 
+#include "common.hpp"
 #include "jtag.hpp"
 #include "device.hpp"
 #include "epcq.hpp"
@@ -181,12 +182,11 @@ bool Altera::load_bridge()
 			return false;
 		}
 
-		// DATA_DIR is defined at compile time.
-		bitname = DATA_DIR "/openFPGALoader/spiOverJtag_";
+		bitname = get_shell_env_var("OPENFPGALOADER_SOJ_DIR", DATA_DIR "/openFPGALoader");
 #ifdef HAS_ZLIB
-		bitname += _device_package + ".rbf.gz";
+		bitname += "/spiOverJtag_" + _device_package + ".rbf.gz";
 #else
-		bitname += _device_package + ".rbf";
+		bitname += "/spiOverJtag_" + _device_package + ".rbf";
 #endif
 	}
 

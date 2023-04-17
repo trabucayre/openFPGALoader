@@ -13,6 +13,7 @@
 
 #include "jtag.hpp"
 #include "bitparser.hpp"
+#include "common.hpp"
 #include "configBitstreamParser.hpp"
 #include "jedParser.hpp"
 #include "mcsParser.hpp"
@@ -468,9 +469,8 @@ bool Xilinx::load_bridge()
 			return false;
 		}
 
-		// DATA_DIR is defined at compile time.
-		bitname = DATA_DIR "/openFPGALoader/spiOverJtag_";
-		bitname += _device_package + ".bit.gz";
+		bitname = get_shell_env_var("OPENFPGALOADER_SOJ_DIR", DATA_DIR "/openFPGALoader");
+		bitname += "/spiOverJtag_" + _device_package + ".bit.gz";
 	}
 
 #if defined (_WIN64) || defined (_WIN32)

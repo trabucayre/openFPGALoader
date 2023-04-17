@@ -82,3 +82,20 @@ Writing to an arbitrary address in flash memory
 
 With FPGA using an external SPI flash (*xilinx*, *lattice ECP5/nexus/ice40*, *anlogic*, *efinix*) option ``-o`` allows
 one to write raw binary file to an arbitrary adress in FLASH.
+
+Using an alternative directory for *spiOverJtag*
+================================================
+
+By setting ``OPENFPGALOADER_SOJ_DIR`` it's possible to override default
+*spiOverJtag* bitstreams directory:
+
+.. code-block:: bash
+
+    export OPENFPGALOADER_SOJ_DIR=/somewhere
+    openFPGALoader xxxx
+
+or
+
+.. code-block:: bash
+
+    OPENFPGALOADER_SOJ_DIR=/somewhere openFPGALoader xxxx

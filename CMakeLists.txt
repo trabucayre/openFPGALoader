@@ -92,6 +92,7 @@ set(OPENFPGALOADER_SOURCE
 	src/anlogicBitParser.cpp
 	src/anlogicCable.cpp
 	src/ch552_jtag.cpp
+	src/common.cpp
 	src/dfu.cpp
 	src/dfuFileParser.cpp
 	src/dirtyJtag.cpp
@@ -140,6 +141,7 @@ set(OPENFPGALOADER_HEADERS
 	src/anlogicBitParser.hpp
 	src/anlogicCable.hpp
 	src/ch552_jtag.hpp
+	src/common.hpp
 	src/cxxopts.hpp
 	src/dfu.hpp
 	src/dfuFileParser.hpp

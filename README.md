@@ -124,3 +124,21 @@ for any corresponding short options.
 
 Report bugs to <gwenhael.goavec-merou@trabucayre.com>.
 ```
+
+By default **spiOverJtag** are search into `${CMAKE_INSTALL_FULL_DATAROOTDIR}`
+(*/usr/local/share/* by default). It's possible to change this behaviour by
+using an environment variable:
+
+```bash
+export OPENFPGALOADER_SOJ_DIR=/somewhere
+openFPGALoader xxxx
+```
+
+or
+
+```
+OPENFPGALOADER_SOJ_DIR=/somewhere openFPGALoader xxxx
+```
+
+`OPENFPGALOADER_SOJ_DIR` must point to directory containing **spiOverJtag**
+bitstreams.
