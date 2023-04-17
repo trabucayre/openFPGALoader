@@ -24,7 +24,7 @@ class Jlink: public JtagInterface {
 		 * \param[in] verbose: verbose level -1 quiet, 0 normal,
 		 * 								1 verbose, 2 debug
 		 */
-		Jlink(uint32_t clkHz, int8_t verbose);
+		Jlink(uint32_t clkHz, int8_t verbose, int vid, int pid);
 
 		~Jlink();
 
@@ -270,7 +270,7 @@ class Jlink: public JtagInterface {
 		 * \brief iterate on all USB peripheral to find one JLink
 		 * \return false when failure, unable to open or no device found
 		 */
-		bool jlink_scan_usb();
+		bool jlink_scan_usb(int vid, int pid);
 
 		typedef struct {
 			libusb_device *usb_dev;

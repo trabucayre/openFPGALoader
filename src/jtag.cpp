@@ -115,7 +115,7 @@ void Jtag::init_internal(const cable_t &cable, const string &dev, const string &
 		_jtag = new DirtyJtag(clkHZ, _verbose);
 		break;
 	case MODE_JLINK:
-		_jtag = new Jlink(clkHZ, _verbose);
+		_jtag = new Jlink(clkHZ, _verbose, cable.vid, cable.pid);
 		break;
 	case MODE_USBBLASTER:
 		_jtag = new UsbBlaster(cable, firmware_path, _verbose);
