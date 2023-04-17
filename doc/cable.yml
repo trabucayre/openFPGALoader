@@ -270,3 +270,9 @@ jetson-nano-gpio:
   - Name: Bitbang GPIO
     Description: Bitbang GPIO pins on Jetson Nano Linux host. Use /dev/mem to have a faster clock.
     URL: https://github.com/jwatte/jetson-gpio-example
+    
+ch347:
+
+  - Name: CH347
+    Description: CH347 is a USB HS bus converter with UART, I2C, SPI and JTAG interfaces
+    URL: https://github.com/wuxx/USB-HS-Bridge
