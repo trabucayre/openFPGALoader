@@ -11,6 +11,8 @@
 
 #include <string>
 
+#include "gpiod.h"
+
 #include "board.hpp"
 #include "jtagInterface.hpp"
 
@@ -40,23 +42,54 @@ class LibgpiodJtagBitbang : public JtagInterface {
 	int flush() override { return 0; }
 
  private:
+#ifndef GPIOD_APIV2
 	gpiod_line *get_line(unsigned int offset, int val, int dir);
+#endif
 	int update_pins(int tck, int tms, int tdi);
 	int read_tdo();
 
 	bool _verbose;
 
+#ifdef GPIOD_APIV2
+	unsigned int _tck_pin;
+	unsigned int _tms_pin;
+	unsigned int _tdo_pin;
+	unsigned int _tdi_pin;
+#else
 	int _tck_pin;
 	int _tms_pin;
 	int _tdo_pin;
 	int _tdi_pin;
+#endif
 
 	gpiod_chip *_chip;
 
+#ifdef GPIOD_APIV2
+	gpiod_request_config *_tck_req_cfg;
+	gpiod_request_config *_tms_req_cfg;
+	gpiod_request_config *_tdo_req_cfg;
+	gpiod_request_config *_tdi_req_cfg;
+
+	gpiod_line_config *_tck_line_cfg;
+	gpiod_line_config *_tms_line_cfg;
+	gpiod_line_config *_tdo_line_cfg;
+	gpiod_line_config *_tdi_line_cfg;
+
+	gpiod_line_settings *_tck_settings;
+	gpiod_line_settings *_tms_settings;
+	gpiod_line_settings *_tdo_settings;
+	gpiod_line_settings *_tdi_settings;
+
+	gpiod_line_request *_tdo_request;
+	gpiod_line_request *_tdi_request;
+	gpiod_line_request *_tck_request;
+	gpiod_line_request *_tms_request;
+#else
 	gpiod_line *_tck_line;
 	gpiod_line *_tms_line;
 	gpiod_line *_tdo_line;
 	gpiod_line *_tdi_line;
+#endif
 
 	int _curr_tms;
 	int _curr_tdi;

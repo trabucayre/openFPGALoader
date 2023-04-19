@@ -6,6 +6,7 @@
 #ifndef _JTAGINTERFACE_H_
 #define _JTAGINTERFACE_H_
 
+#include <cstdint>
 #include <iostream>
 #include <vector>
 
