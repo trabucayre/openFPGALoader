@@ -6,8 +6,10 @@
 #ifndef SRC_EPCQ_HPP_
 #define SRC_EPCQ_HPP_
 
+#include <cstdint>
 #include <iostream>
 #include <vector>
+
 #include "spiInterface.hpp"
 #include "spiFlash.hpp"
 

@@ -8,6 +8,7 @@
 
 #include <map>
 #include <string>
+#include <cstdint>
 
 /*!
  * \brief define type of communication

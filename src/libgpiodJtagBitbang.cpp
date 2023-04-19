@@ -57,7 +57,11 @@ LibgpiodJtagBitbang::LibgpiodJtagBitbang(
 	}
 
 	/* Validate pins */
-	int pins[] = {_tck_pin, _tms_pin, _tdi_pin, _tdo_pin};
+#ifdef GPIOD_APIV2
+	const unsigned int pins[] = {_tck_pin, _tms_pin, _tdi_pin, _tdo_pin};
+#else
+	const int pins[] = {_tck_pin, _tms_pin, _tdi_pin, _tdo_pin};
+#endif
 	for (uint32_t i = 0; i < sizeof(pins) / sizeof(pins[0]); i++) {
 		if (pins[i] < 0 || pins[i] >= 1000) {
 			display("Pin %d is outside of valid range\n", pins[i]);
@@ -78,10 +82,68 @@ LibgpiodJtagBitbang::LibgpiodJtagBitbang(
 		throw std::runtime_error("Unable to open gpio chip\n");
 	}
 
+#ifdef GPIOD_APIV2
+	_tdo_req_cfg = gpiod_request_config_new();
+	_tdi_req_cfg = gpiod_request_config_new();
+	_tck_req_cfg = gpiod_request_config_new();
+	_tms_req_cfg = gpiod_request_config_new();
+
+	gpiod_request_config_set_consumer(_tdo_req_cfg, "_tdo");
+	gpiod_request_config_set_consumer(_tdi_req_cfg, "_tdi");
+	gpiod_request_config_set_consumer(_tck_req_cfg, "_tck");
+	gpiod_request_config_set_consumer(_tms_req_cfg, "_tms");
+
+	_tdo_settings = gpiod_line_settings_new();
+	_tdi_settings = gpiod_line_settings_new();
+	_tck_settings = gpiod_line_settings_new();
+	_tms_settings = gpiod_line_settings_new();
+
+	gpiod_line_settings_set_direction(
+		_tdo_settings, GPIOD_LINE_DIRECTION_INPUT);
+	gpiod_line_settings_set_direction(
+		_tdi_settings, GPIOD_LINE_DIRECTION_OUTPUT);
+	gpiod_line_settings_set_direction(
+		_tck_settings, GPIOD_LINE_DIRECTION_OUTPUT);
+	gpiod_line_settings_set_direction(
+		_tms_settings, GPIOD_LINE_DIRECTION_OUTPUT);
+
+	gpiod_line_settings_set_bias(
+		_tdo_settings, GPIOD_LINE_BIAS_DISABLED);
+	gpiod_line_settings_set_bias(
+		_tdi_settings, GPIOD_LINE_BIAS_DISABLED);
+	gpiod_line_settings_set_bias(
+		_tck_settings, GPIOD_LINE_BIAS_DISABLED);
+	gpiod_line_settings_set_bias(
+		_tms_settings, GPIOD_LINE_BIAS_DISABLED);
+
+	_tdo_line_cfg = gpiod_line_config_new();
+	_tdi_line_cfg = gpiod_line_config_new();
+	_tck_line_cfg = gpiod_line_config_new();
+	_tms_line_cfg = gpiod_line_config_new();
+
+	gpiod_line_config_add_line_settings(
+		_tdo_line_cfg, &_tdo_pin, 1, _tdo_settings);
+	gpiod_line_config_add_line_settings(
+		_tdi_line_cfg, &_tdi_pin, 1, _tdi_settings);
+	gpiod_line_config_add_line_settings(
+		_tck_line_cfg, &_tck_pin, 1, _tck_settings);
+	gpiod_line_config_add_line_settings(
+		_tms_line_cfg, &_tms_pin, 1, _tms_settings);
+
+	_tdo_request = gpiod_chip_request_lines(
+		_chip, _tdo_req_cfg, _tdo_line_cfg);
+	_tdi_request = gpiod_chip_request_lines(
+		_chip, _tdi_req_cfg, _tdi_line_cfg);
+	_tck_request = gpiod_chip_request_lines(
+		_chip, _tck_req_cfg, _tck_line_cfg);
+	_tms_request = gpiod_chip_request_lines(
+		_chip, _tms_req_cfg, _tms_line_cfg);
+#else
 	_tdo_line = get_line(_tdo_pin, 0, GPIOD_LINE_REQUEST_DIRECTION_INPUT);
 	_tdi_line = get_line(_tdi_pin, 0, GPIOD_LINE_REQUEST_DIRECTION_OUTPUT);
 	_tck_line = get_line(_tck_pin, 0, GPIOD_LINE_REQUEST_DIRECTION_OUTPUT);
 	_tms_line = get_line(_tms_pin, 1, GPIOD_LINE_REQUEST_DIRECTION_OUTPUT);
+#endif
 
 	_curr_tdi = 0;
 	_curr_tck = 0;
@@ -94,6 +156,35 @@ LibgpiodJtagBitbang::LibgpiodJtagBitbang(
 
 LibgpiodJtagBitbang::~LibgpiodJtagBitbang()
 {
+#ifdef GPIOD_APIV2
+	if (_tms_request)
+		gpiod_line_request_release(_tms_request);
+	if (_tms_line_cfg)
+		gpiod_line_config_free(_tms_line_cfg);
+	if (_tms_settings)
+		gpiod_line_settings_free(_tms_settings);
+
+	if (_tck_request)
+		gpiod_line_request_release(_tck_request);
+	if (_tck_line_cfg)
+		gpiod_line_config_free(_tck_line_cfg);
+	if (_tck_settings)
+		gpiod_line_settings_free(_tck_settings);
+
+	if (_tdi_request)
+		gpiod_line_request_release(_tdi_request);
+	if (_tdi_line_cfg)
+		gpiod_line_config_free(_tdi_line_cfg);
+	if (_tdi_settings)
+		gpiod_line_settings_free(_tdi_settings);
+
+	if (_tdo_request)
+		gpiod_line_request_release(_tdo_request);
+	if (_tdo_line_cfg)
+		gpiod_line_config_free(_tdo_line_cfg);
+	if (_tdo_settings)
+		gpiod_line_settings_free(_tdo_settings);
+#else
 	if (_tms_line)
 		gpiod_line_release(_tms_line);
 
@@ -105,11 +196,13 @@ LibgpiodJtagBitbang::~LibgpiodJtagBitbang()
 
 	if (_tdo_line)
 		gpiod_line_release(_tdo_line);
+#endif
 
 	if (_chip)
 		gpiod_chip_close(_chip);
 }
 
+#ifndef GPIOD_APIV2
 gpiod_line *LibgpiodJtagBitbang::get_line(unsigned int offset, int val, int dir)
 {
 	gpiod_line *line = gpiod_chip_get_line(_chip, offset);
@@ -132,21 +225,40 @@ gpiod_line *LibgpiodJtagBitbang::get_line(unsigned int offset, int val, int dir)
 
 	return line;
 }
+#endif
 
 int LibgpiodJtagBitbang::update_pins(int tck, int tms, int tdi)
 {
 	if (tdi != _curr_tdi) {
+#ifdef GPIOD_APIV2
+		if (gpiod_line_request_set_value(_tdi_request, _tdi_pin,
+			(tdi == 0) ? GPIOD_LINE_VALUE_INACTIVE :
+				GPIOD_LINE_VALUE_ACTIVE) < 0)
+#else
 		if (gpiod_line_set_value(_tdi_line, tdi) < 0)
+#endif
 			display("Unable to set gpio pin tdi\n");
 	}
 
 	if (tms != _curr_tms) {
+#ifdef GPIOD_APIV2
+		if (gpiod_line_request_set_value(_tms_request, _tms_pin,
+			(tms == 0) ? GPIOD_LINE_VALUE_INACTIVE :
+				GPIOD_LINE_VALUE_ACTIVE) < 0)
+#else
 		if (gpiod_line_set_value(_tms_line, tms) < 0)
+#endif
 			display("Unable to set gpio pin tms\n");
 	}
 
 	if (tck != _curr_tck) {
+#ifdef GPIOD_APIV2
+		if (gpiod_line_request_set_value(_tck_request, _tck_pin,
+			(tck == 0) ? GPIOD_LINE_VALUE_INACTIVE :
+				GPIOD_LINE_VALUE_ACTIVE) < 0)
+#else
 		if (gpiod_line_set_value(_tck_line, tck) < 0)
+#endif
 			display("Unable to set gpio pin tck\n");
 	}
 
@@ -159,7 +271,18 @@ int LibgpiodJtagBitbang::update_pins(int tck, int tms, int tdi)
 
 int LibgpiodJtagBitbang::read_tdo()
 {
+#ifdef GPIOD_APIV2
+	gpiod_line_value req = gpiod_line_request_get_value(
+		_tdo_request, _tdo_pin);
+        if (req == GPIOD_LINE_VALUE_ERROR)
+        {
+		display("Error reading TDO line\n");
+		throw std::runtime_error("Error reading TDO line\n");
+	}
+	return (req == GPIOD_LINE_VALUE_ACTIVE) ? 1 : 0;
+#else
 	return gpiod_line_get_value(_tdo_line);
+#endif
 }
 
 int LibgpiodJtagBitbang::setClkFreq(__attribute__((unused)) uint32_t clkHZ)

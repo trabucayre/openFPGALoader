@@ -6,6 +6,7 @@
 #ifndef SRC_SPIINTERFACE_HPP_
 #define SRC_SPIINTERFACE_HPP_
 
+#include <cstdint>
 #include <iostream>
 #include <string>
 #include <vector>
