@@ -556,7 +556,8 @@ int main(int argc, char **argv)
 				args.prg_type, args.verify, args.verbose);
 		} else if (fab == "efinix") {
 			fpga = new Efinix(jtag, args.bit_file, args.file_type,
-				/*DBUS4 | DBUS7, DBUS5*/args.board, args.verify, args.verbose);
+				args.prg_type, args.board, args.fpga_part, args.bridge_path,
+				args.verify, args.verbose);
 		} else if (fab == "Gowin") {
 			fpga = new Gowin(jtag, args.bit_file, args.file_type, args.mcufw,
 				args.prg_type, args.external_flash, args.verify, args.verbose);
