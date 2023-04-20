@@ -193,7 +193,7 @@ static std::map <std::string, target_board_t> board_list = {
 	JTAG_BOARD("tec0117",         "", "ft2232",     0, 0, CABLE_DEFAULT),
 	SPI_BOARD("titanium_ti60_f225","efinix", "efinix_spi_ft4232",
 			DBUS4, DBUS5, DBUS7, DBUS3, DBUS0, DBUS1, DBUS2, DBUS6, 0, CABLE_DEFAULT),
-	JTAG_BOARD("titanium_ti60_f225_jtag", "","efinix_jtag_ft4232",  0, 0, CABLE_DEFAULT),
+	JTAG_BOARD("titanium_ti60_f225_jtag", "ti60f225","efinix_jtag_ft4232",  0, 0, CABLE_DEFAULT),
 	SPI_BOARD("trion_t120_bga576","efinix", "efinix_spi_ft2232",
 			DBUS4, DBUS5, DBUS7, DBUS3, DBUS0, DBUS1, DBUS2, DBUS6, 0, CABLE_DEFAULT),
 	JTAG_BOARD("trion_t120_bga576_jtag", "",        "ft2232_b",     0, 0, CABLE_DEFAULT),

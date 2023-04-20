@@ -58,9 +58,12 @@ Efinix::Efinix(Jtag* jtag, const std::string &filename,
 	const uint32_t idcode = _jtag->get_target_device_id();
 	const std::string family = fpga_list[idcode].family;
 	if (family == "Titanium") {
-		if (_file_extension == "hex") {
-			throw std::runtime_error("Error: loading hex file is not allowed "
-							   "for Titanium devices");
+		if (_file_extension == "hex" && prg_type == Device::WR_SRAM) {
+			throw std::runtime_error("Error: loading (RAM) hex file is not "
+							   "allowed for Titanium devices");
+		} else if (_file_extension == "bit" && prg_type == Device::WR_FLASH) {
+			throw std::runtime_error("Error: writing bit (FLASH) file is not "
+							   "allowed for Titanium devices");
 		}
 		_fpga_family = TITANIUM_FAMILY;
 	} else if (family == "Trion") {
