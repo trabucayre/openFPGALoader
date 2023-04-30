@@ -491,8 +491,8 @@ bool Lattice::program_intFlash(ConfigBitstreamParser *_cbp)
 	if ((eraseMode & FLASH_ERASE_UFM) != 0) {
 		/* LSC_WRITE_ADDRESS */
 		uint8_t tx[4] = {
-			ufm_start & 0xff,
-			(ufm_start >> 8) & 0xff,
+			static_cast<uint8_t>(ufm_start & 0xff),
+			static_cast<uint8_t>((ufm_start >> 8) & 0xff),
 			0,
 			0x40
 		};
