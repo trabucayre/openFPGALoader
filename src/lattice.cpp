@@ -431,8 +431,8 @@ bool Lattice::program_intFlash(ConfigBitstreamParser *_cbp)
 				if (_verbose)
 					printf("UFM init detected in JEDEC file");
 
-				if(ufm_start == 0 || ufm_start > 2045) {
-					printError("UFM section detected in JEDEC file, but"
+				if(ufm_start > 2045) {
+					printError("UFM section detected in JEDEC file, but "
 					 	"calculated flash start address was out of bounds");
 					return false;
 				}
@@ -1325,7 +1325,7 @@ uint16_t Lattice::getUFMStartPageFromJEDEC(JedParser *_jed, int id)
 	// 256- We should bail if we get here! No UFM!
 	else
 	{
-		return 0;
+		return 0xffff;
 	}
 }
 
