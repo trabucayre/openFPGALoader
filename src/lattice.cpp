@@ -1297,34 +1297,19 @@ uint16_t Lattice::getUFMStartPageFromJEDEC(JedParser *_jed, int id)
 	addres.
 	TODO: In any case, JEDEC files don't carry part information. Verify against
 	IDCODE read previously? */
-	// 7000
-	if(raw_page_offset > 9211)
-	{
-		return raw_page_offset - 9211 - 1;
-	}
-	// 4000, 2000U
-	else if(raw_page_offset > 5758)
-	{
-		return raw_page_offset - 5758 - 1;
-	}
-	// 2000, 1200U
-	else if(raw_page_offset > 3198)
-	{
-		return raw_page_offset - 3198 - 1;
-	}
-	// 1200, 640U
-	else if(raw_page_offset > 2175)
-	{
-		return raw_page_offset - 2175 - 1;
-	}
-	// 640
-	else if(raw_page_offset > 1151)
-	{
-		return raw_page_offset - 1151 - 1;
-	}
-	// 256- We should bail if we get here! No UFM!
-	else
-	{
+	
+	if(raw_page_offset > 9211) {
+		return raw_page_offset - 9211 - 1; // 7000
+	} else if(raw_page_offset > 5758) {
+		return raw_page_offset - 5758 - 1; // 4000, 2000U
+	} else if(raw_page_offset > 3198) {
+		return raw_page_offset - 3198 - 1; // 2000, 1200U
+	} else if(raw_page_offset > 2175) {
+		return raw_page_offset - 2175 - 1; // 1200, 640U
+	} else if(raw_page_offset > 1151) {
+		return raw_page_offset - 1151 - 1; // 640
+	} else {
+		// 256- We should bail if we get here! No UFM!
 		return 0xffff;
 	}
 }
