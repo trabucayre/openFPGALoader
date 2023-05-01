@@ -749,6 +749,13 @@ bool Lattice::program_flash(unsigned int offset, bool unprotect_flash)
 		else
 			retval = program_intFlash(
 					reinterpret_cast<ConfigBitstreamParser*>(&_jed));
+		/* for machXO2 and unlike TN02155 & TN1204 ISC_DISABLE is required
+		 * and REFRESH no
+		 * TODO: same for machXO3x ?
+		 */
+		if (_fpga_family == MACHXO2_FAMILY)
+			return retval;
+
 		return post_flash_access() && retval;
 	} else if (_file_extension == "fea") {
 		/* clear current SRAM content */
