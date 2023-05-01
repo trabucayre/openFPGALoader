@@ -429,7 +429,7 @@ bool Lattice::program_intFlash(ConfigBitstreamParser *_cbp)
 				ufm_start = getUFMStartPageFromJEDEC(_jed, i);
 
 				if (_verbose)
-					printf("UFM init detected in JEDEC file");
+					printInfo("UFM init detected in JEDEC file");
 
 				if(ufm_start > 2045) {
 					printError("UFM section detected in JEDEC file, but "
