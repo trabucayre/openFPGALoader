@@ -1294,9 +1294,13 @@ uint16_t Lattice::getUFMStartPageFromJEDEC(JedParser *_jed, int id)
 	/* In general, Lattice tools try to fill UFM from the highest
 	page to lowest. JEDEC files will give a starting bit offset. */
 	uint32_t bit_offset = _jed->offset_for_section(id);
-	/* Convert to starting page, which seems to be one more than the number
-	of Configuration Flash pages, based on looking at Diamond-generated
-	JEDECs. */
+	/* Convert to starting page, relative to Configuration Flash's page 0.
+	For 7000 parts only, first UFM page starts 16 bytes (1 page) after
+        the last Configuration Flash page, based on looking at
+        Diamond-generated JEDECs.
+
+        For all other parts, the first UFM page immediately follows the last
+        Configuration Flash page. */
 	uint16_t raw_page_offset = bit_offset / 128;
 
 	/* Raw page offsets won't overlap- see Lattice TN-02155, page 49. So we
@@ -1308,13 +1312,13 @@ uint16_t Lattice::getUFMStartPageFromJEDEC(JedParser *_jed, int id)
 	if(raw_page_offset > 9211) {
 		return raw_page_offset - 9211 - 1; // 7000
 	} else if(raw_page_offset > 5758) {
-		return raw_page_offset - 5758 - 1; // 4000, 2000U
+		return raw_page_offset - 5758; // 4000, 2000U
 	} else if(raw_page_offset > 3198) {
-		return raw_page_offset - 3198 - 1; // 2000, 1200U
+		return raw_page_offset - 3198; // 2000, 1200U
 	} else if(raw_page_offset > 2175) {
-		return raw_page_offset - 2175 - 1; // 1200, 640U
+		return raw_page_offset - 2175; // 1200, 640U
 	} else if(raw_page_offset > 1151) {
-		return raw_page_offset - 1151 - 1; // 640
+		return raw_page_offset - 1151; // 640
 	} else {
 		// 256- We should bail if we get here! No UFM!
 		return 0xffff;
