@@ -32,7 +32,7 @@ using namespace std;
 #define ISC_DISABLE					0x26		/* ISC_DISABLE */
 #define READ_DEVICE_ID_CODE			0xE0		/* IDCODE_PUB */
 #define FLASH_ERASE					0x0E		/* ISC_ERASE */
-/* Flash areas as defined for Lattice MachXO3L/LF */
+/* Flash areas as defined for Lattice MachXO2,3L/LF */
 #  define FLASH_ERASE_UFM			(1<<3)
 #  define FLASH_ERASE_CFG   		(1<<2)
 #  define FLASH_ERASE_FEATURE		(1<<1)
@@ -399,6 +399,7 @@ bool Lattice::program_mem()
 bool Lattice::program_intFlash(ConfigBitstreamParser *_cbp)
 {
 	uint64_t featuresRow;
+	uint16_t ufm_start = 0;
 	uint16_t feabits;
 	uint8_t eraseMode = 0;
 	vector<string> ufm_data, cfg_data, ebr_data;
@@ -425,6 +426,16 @@ bool Lattice::program_intFlash(ConfigBitstreamParser *_cbp)
 			if (note == "TAG DATA") {
 				eraseMode |= FLASH_ERASE_UFM;
 				ufm_data = _jed->data_for_section(i);
+				ufm_start = getUFMStartPageFromJEDEC(_jed, i);
+
+				if (_verbose)
+					printInfo("UFM init detected in JEDEC file");
+
+				if(ufm_start > 2045) {
+					printError("UFM section detected in JEDEC file, but "
+					 	"calculated flash start address was out of bounds");
+					return false;
+				}
 			} else if (note == "END CONFIG DATA") {
 				continue;
 			} else if (note == "EBR_INIT DATA") {
@@ -444,7 +455,7 @@ bool Lattice::program_intFlash(ConfigBitstreamParser *_cbp)
 		feabits = 0x460;
 	}
 
-	eraseMode = FLASH_ERASE_CFG;
+	eraseMode |= FLASH_ERASE_CFG;
 	if (featuresRow != readFeaturesRow() || feabits != readFeabits())
 		eraseMode |= FLASH_ERASE_FEATURE;
 
@@ -474,6 +485,24 @@ bool Lattice::program_intFlash(ConfigBitstreamParser *_cbp)
 	/* verify write */
 	if (_verify) {
 		if (Verify(cfg_data) == false)
+			return false;
+	}
+
+	if ((eraseMode & FLASH_ERASE_UFM) != 0) {
+		/* LSC_WRITE_ADDRESS */
+		uint8_t tx[4] = {
+			static_cast<uint8_t>(ufm_start & 0xff),
+			static_cast<uint8_t>((ufm_start >> 8) & 0xff),
+			0,
+			0x40
+		};
+
+		wr_rd(LSC_WRITE_ADDRESS, tx, 4, NULL, 0);
+		_jtag->set_state(Jtag::RUN_TEST_IDLE);
+		_jtag->toggleClk(1000);
+
+		/* Same command to program CFG flash works for UFM. */
+		if (false == flashProg(0, "UFM", ufm_data))
 			return false;
 	}
 
@@ -720,6 +749,13 @@ bool Lattice::program_flash(unsigned int offset, bool unprotect_flash)
 		else
 			retval = program_intFlash(
 					reinterpret_cast<ConfigBitstreamParser*>(&_jed));
+		/* for machXO2 and unlike TN02155 & TN1204 ISC_DISABLE is required
+		 * and REFRESH no
+		 * TODO: same for machXO3x ?
+		 */
+		if (_fpga_family == MACHXO2_FAMILY)
+			return retval;
+
 		return post_flash_access() && retval;
 	} else if (_file_extension == "fea") {
 		/* clear current SRAM content */
@@ -831,7 +867,7 @@ bool Lattice::checkID()
 {
 	printf("\n");
 	printf("check ID\n");
-	uint8_t tx[4];
+	uint8_t tx[4] = { 0 };
 	wr_rd(0xE2, tx, 4, NULL, 0);
 	_jtag->set_state(Jtag::RUN_TEST_IDLE);
 	_jtag->toggleClk(1000);
@@ -1251,6 +1287,42 @@ bool Lattice::loadConfiguration()
 	if (!checkStatus(REG_STATUS_DONE, REG_STATUS_DONE))
 		return false;
 	return true;
+}
+
+uint16_t Lattice::getUFMStartPageFromJEDEC(JedParser *_jed, int id)
+{
+	/* In general, Lattice tools try to fill UFM from the highest
+	page to lowest. JEDEC files will give a starting bit offset. */
+	uint32_t bit_offset = _jed->offset_for_section(id);
+	/* Convert to starting page, relative to Configuration Flash's page 0.
+	For 7000 parts only, first UFM page starts 16 bytes (1 page) after
+        the last Configuration Flash page, based on looking at
+        Diamond-generated JEDECs.
+
+        For all other parts, the first UFM page immediately follows the last
+        Configuration Flash page. */
+	uint16_t raw_page_offset = bit_offset / 128;
+
+	/* Raw page offsets won't overlap- see Lattice TN-02155, page 49. So we
+	can uniquely determine which part type we're targeting from the UFM start
+	addres.
+	TODO: In any case, JEDEC files don't carry part information. Verify against
+	IDCODE read previously? */
+	
+	if(raw_page_offset > 9211) {
+		return raw_page_offset - 9211 - 1; // 7000
+	} else if(raw_page_offset > 5758) {
+		return raw_page_offset - 5758; // 4000, 2000U
+	} else if(raw_page_offset > 3198) {
+		return raw_page_offset - 3198; // 2000, 1200U
+	} else if(raw_page_offset > 2175) {
+		return raw_page_offset - 2175; // 1200, 640U
+	} else if(raw_page_offset > 1151) {
+		return raw_page_offset - 1151; // 640
+	} else {
+		// 256- We should bail if we get here! No UFM!
+		return 0xffff;
+	}
 }
 
 /* ------------------ */

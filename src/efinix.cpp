@@ -12,15 +12,19 @@
 #include <stdexcept>
 #include <string>
 
+#include "common.hpp"
+#include "device.hpp"
 #include "display.hpp"
 #include "efinixHexParser.hpp"
-#include "ftdispi.hpp"
-#include "device.hpp"
 #include "ftdiJtagMPSSE.hpp"
+#include "ftdispi.hpp"
 #include "jtag.hpp"
 #include "part.hpp"
 #include "progressBar.hpp"
 #include "rawParser.hpp"
+#if defined (_WIN64) || defined (_WIN32)
+#include "pathHelper.hpp"
+#endif
 #include "spiFlash.hpp"
 
 Efinix::Efinix(FtdiSpi* spi, const std::string &filename,
@@ -30,31 +34,36 @@ Efinix::Efinix(FtdiSpi* spi, const std::string &filename,
 			bool verify, int8_t verbose):
 	Device(NULL, filename, file_type, verify, verbose), _ftdi_jtag(NULL),
 		_rst_pin(rst_pin), _done_pin(done_pin), _cs_pin(0), _oe_pin(oe_pin),
-		_fpga_family(UNKNOWN_FAMILY), _irlen(0)
+		_fpga_family(UNKNOWN_FAMILY), _irlen(0), _device_package(""),
+		_spiOverJtagPath("")
 {
 	_spi = spi;
-	_spi->gpio_set_input(_done_pin);
-	_spi->gpio_set_output(_rst_pin | _oe_pin);
+	init_common(Device::WR_FLASH);
 }
 
 Efinix::Efinix(Jtag* jtag, const std::string &filename,
-			const std::string &file_type,
-			const std::string &board_name,
-			bool verify, int8_t verbose):
+			const std::string &file_type, Device::prog_type_t prg_type,
+			const std::string &board_name, const std::string &device_package,
+			const std::string &spiOverJtagPath, bool verify, int8_t verbose):
 	Device(jtag, filename, file_type, verify, verbose),
+	SPIInterface(filename, verbose, 256, false, false, false),
 	_spi(NULL), _rst_pin(0), _done_pin(0), _cs_pin(0),
-	_oe_pin(0), _fpga_family(UNKNOWN_FAMILY), _irlen(0)
+	_oe_pin(0), _fpga_family(UNKNOWN_FAMILY), _irlen(0),
+	_device_package(device_package), _spiOverJtagPath(spiOverJtagPath)
 {
 	_ftdi_jtag = reinterpret_cast<FtdiJtagMPSSE *>(jtag->get_ll_class());
 
 	/* detect FPGA type (Trion or Titanium) */
 
-	uint32_t idcode = _jtag->get_target_device_id();
-	std::string family = fpga_list[idcode].family;
+	const uint32_t idcode = _jtag->get_target_device_id();
+	const std::string family = fpga_list[idcode].family;
 	if (family == "Titanium") {
-		if (_file_extension == "hex") {
-			throw std::runtime_error("Error: loading hex file is not allowed "
-							   "for Titanium devices");
+		if (_file_extension == "hex" && prg_type == Device::WR_SRAM) {
+			throw std::runtime_error("Error: loading (RAM) hex file is not "
+							   "allowed for Titanium devices");
+		} else if (_file_extension == "bit" && prg_type == Device::WR_FLASH) {
+			throw std::runtime_error("Error: writing bit (FLASH) file is not "
+							   "allowed for Titanium devices");
 		}
 		_fpga_family = TITANIUM_FAMILY;
 	} else if (family == "Trion") {
@@ -84,7 +93,7 @@ Efinix::Efinix(Jtag* jtag, const std::string &filename,
 	}
 
 	/* 2: retrieve spi board */
-	target_board_t *spi_board = &(board_list[spi_board_name]);
+	const target_board_t *spi_board = &(board_list[spi_board_name]);
 
 	/* 3: SPI cable */
 	cable_t spi_cable = (cable_list[spi_board->cable_name]);
@@ -95,31 +104,56 @@ Efinix::Efinix(Jtag* jtag, const std::string &filename,
 	_cs_pin = spi_board->spi_pins_config.cs_pin;
 	_rst_pin = spi_board->reset_pin;
 	_oe_pin = spi_board->oe_pin;
+	_done_pin = spi_board->done_pin;
 
 	/* 5: open SPI interface */
 	_spi = new FtdiSpi(spi_cable, spi_board->spi_pins_config,
 			jtag->getClkFreq(), verbose > 0);
 
 	/* 6: configure pins direction and default state */
-	_spi->gpio_set_output(_oe_pin | _rst_pin | _cs_pin);
+	init_common(prg_type);
+}
+
+void Efinix::init_common(const Device::prog_type_t &prg_type)
+{
+	_spi->gpio_set_input(_done_pin);
+	_spi->gpio_set_output(_rst_pin | _oe_pin);
+
+	switch (prg_type) {
+		case Device::WR_FLASH:
+			_mode = (_jtag) ? Device::FLASH_MODE : Device::SPI_MODE;
+			break;
+		case Device::WR_SRAM:
+			if (!_jtag) {
+				throw std::runtime_error("Efinix: SRAM load requires jtag");
+			}
+			_mode = MEM_MODE;
+			break;
+		default:
+			_mode = NONE_MODE;
+	}
 }
 
 Efinix::~Efinix()
-{}
+{
+	if (_jtag && _spi)
+		delete _spi;
+}
 
 void Efinix::reset()
 {
-	if (_ftdi_jtag)  // not supported
+	if (!_spi)  // not supported
 		return;
 	uint32_t timeout = 1000;
 	_spi->gpio_clear(_rst_pin | _oe_pin);
 	usleep(1000);
 	_spi->gpio_set(_rst_pin | _oe_pin);
+
 	printInfo("Reset ", false);
 	do {
 		timeout--;
 		usleep(12000);
-	} while (((_spi->gpio_get(true) & _done_pin) == 0) || timeout > 0);
+	} while (((_spi->gpio_get(true) & _done_pin) == 0) && timeout > 0);
 	if (timeout == 0)
 		printError("FAIL");
 	else
@@ -129,6 +163,8 @@ void Efinix::reset()
 void Efinix::program(unsigned int offset, bool unprotect_flash)
 {
 	if (_file_extension.empty())
+		return;
+	if (_mode == Device::NONE_MODE)
 		return;
 
 	ConfigBitstreamParser *bit;
@@ -156,16 +192,28 @@ void Efinix::program(unsigned int offset, bool unprotect_flash)
 		return;
 	}
 
-	unsigned char *data = bit->getData();
-	int length = bit->getLength() / 8;
+	const uint8_t *data = bit->getData();
+	const int length = bit->getLength() / 8;
 
 	if (_verbose)
 		bit->displayHeader();
 
-	if (_ftdi_jtag)
-		programJTAG(data, length);
-	else
-		programSPI(offset, data, length, unprotect_flash);
+	switch (_mode) {
+		case MEM_MODE:
+			programJTAG(data, length);
+			break;
+		case FLASH_MODE:
+			if (_jtag)
+				SPIInterface::write(offset, const_cast<uint8_t *>(data),
+					length, unprotect_flash);
+			else
+				programSPI(offset, data, length, unprotect_flash);
+			break;
+		default:
+			return;
+	}
+
+	delete bit;
 }
 
 bool Efinix::dumpFlash(uint32_t base_addr, uint32_t len)
@@ -203,11 +251,9 @@ bool Efinix::dumpFlash(uint32_t base_addr, uint32_t len)
 	return false;
 }
 
-void Efinix::programSPI(unsigned int offset, uint8_t *data, int length,
-		bool unprotect_flash)
+void Efinix::programSPI(unsigned int offset, const uint8_t *data,
+		const int length, const bool unprotect_flash)
 {
-	uint32_t timeout = 1000;
-
 	_spi->gpio_clear(_rst_pin | _oe_pin);
 
 	SPIFlash flash(reinterpret_cast<SPIInterface *>(_spi), unprotect_flash,
@@ -217,24 +263,13 @@ void Efinix::programSPI(unsigned int offset, uint8_t *data, int length,
 
 	printf("%02x\n", flash.read_status_reg());
 	flash.read_id();
-	flash.erase_and_prog(offset, data, length);
+	flash.erase_and_prog(offset, const_cast<uint8_t *>(data), length);
 
 	/* verify write if required */
 	if (_verify)
 		flash.verify(offset, data, length);
 
-	_spi->gpio_set(_rst_pin | _oe_pin);
-	usleep(12000);
-
-	printInfo("Wait for CDONE ", false);
-	do {
-		timeout--;
-		usleep(12000);
-	} while (((_spi->gpio_get(true) & _done_pin) == 0) && timeout > 0);
-	if (timeout == 0)
-		printError("FAIL");
-	else
-		printSuccess("DONE");
+	reset();
 }
 
 #define SAMPLE_PRELOAD 0x02
@@ -243,8 +278,9 @@ void Efinix::programSPI(unsigned int offset, uint8_t *data, int length,
 #define IDCODE         0x03
 #define PROGRAM        0x04
 #define ENTERUSER      0x07
+#define USER1          0x08
 
-void Efinix::programJTAG(uint8_t *data, int length)
+void Efinix::programJTAG(const uint8_t *data, const int length)
 {
 	int xfer_len = 512, tx_end;
 	uint8_t tx[512];
@@ -299,4 +335,155 @@ void Efinix::programJTAG(uint8_t *data, int length)
 	memset(tx, 0, 512);
 	_jtag->shiftDR(tx, NULL, 100);
 	_jtag->shiftIR(IDCODE, _irlen);
+	uint8_t idc[4];
+	_jtag->shiftDR(NULL, idc, 4);
+	printf("%02x%02x%02x%02x\n",
+			idc[0], idc[1], idc[2], idc[3]);
+}
+
+bool Efinix::post_flash_access()
+{
+	if (_skip_reset)
+		printInfo("Skip resetting device");
+	else
+		reset();
+	return true;
+}
+
+bool Efinix::prepare_flash_access()
+{
+	if (_skip_load_bridge) {
+		printInfo("Skip loading bridge for spiOverjtag");
+		return true;
+	}
+
+	std::string bitname;
+	if (!_spiOverJtagPath.empty()) {
+		bitname = _spiOverJtagPath;
+	} else {
+		if (_device_package.empty()) {
+			printError("Can't program SPI flash: missing device-package information");
+			return false;
+		}
+
+		bitname = get_shell_env_var("OPENFPGALOADER_SOJ_DIR",
+			DATA_DIR "/openFPGALoader");
+		bitname += "/spiOverJtag_efinix_" + _device_package + ".bit.gz";
+	}
+
+#if defined (_WIN64) || defined (_WIN32)
+	/* Convert relative path embedded at compile time to an absolute path */
+	bitname = PathHelper::absolutePath(bitname);
+#endif
+
+	std::cout << "use: " << bitname << std::endl;
+
+	/* first: load spi over jtag */
+	try {
+		EfinixHexParser bridge(bitname);
+		bridge.parse();
+		const uint8_t *data = bridge.getData();
+		const int length = bridge.getLength() / 8;
+		programJTAG(data, length);
+	} catch (std::exception &e) {
+		printError(e.what());
+		return false;
+	}
+
+	return true;
+}
+
+/*               */
+/* SPI interface */
+/*               */
+
+/*
+ * jtag : jtag interface
+ * cmd  : opcode for SPI flash
+ * tx   : buffer to send
+ * rx   : buffer to fill
+ * len  : number of byte to send/receive (cmd not comprise)
+ *        so to send only a cmd set len to 0 (or omit this param)
+ */
+int Efinix::spi_put(uint8_t cmd,
+			uint8_t *tx, uint8_t *rx, uint32_t len)
+{
+	int kXferLen = len + 1 + ((rx == NULL) ? 0 : 1);
+	uint8_t jtx[kXferLen];
+	jtx[0] = EfinixHexParser::reverseByte(cmd);
+	uint8_t jrx[kXferLen];
+	if (tx != NULL) {
+		for (uint32_t i=0; i < len; i++)
+			jtx[i+1] = EfinixHexParser::reverseByte(tx[i]);
+	}
+	/* addr BSCAN user1 */
+	_jtag->shiftIR(USER1, _irlen);
+	/* send first already stored cmd,
+	 * in the same time store each byte
+	 * to next
+	 */
+	_jtag->shiftDR(jtx, (rx == NULL)? NULL: jrx, 8*kXferLen);
+
+	if (rx != NULL) {
+		for (uint32_t i=0; i < len; i++)
+			rx[i] = EfinixHexParser::reverseByte(jrx[i+1] >> 1) | (jrx[i+2] & 0x01);
+	}
+	return 0;
+}
+
+int Efinix::spi_put(uint8_t *tx, uint8_t *rx, uint32_t len)
+{
+	int kXferLen = len + ((rx == NULL) ? 0 : 1);
+	uint8_t jtx[kXferLen];
+	uint8_t jrx[kXferLen];
+	if (tx != NULL) {
+		for (uint32_t i=0; i < len; i++)
+			jtx[i] = EfinixHexParser::reverseByte(tx[i]);
+	}
+	/* addr BSCAN user1 */
+	_jtag->shiftIR(USER1, _irlen);
+	/* send first already stored cmd,
+	 * in the same time store each byte
+	 * to next
+	 */
+	_jtag->shiftDR(jtx, (rx == NULL)? NULL: jrx, 8*kXferLen);
+
+	if (rx != NULL) {
+		for (uint32_t i=0; i < len; i++)
+			rx[i] = EfinixHexParser::reverseByte(jrx[i] >> 1) | (jrx[i+1] & 0x01);
+	}
+	return 0;
+}
+
+int Efinix::spi_wait(uint8_t cmd, uint8_t mask, uint8_t cond,
+			uint32_t timeout, bool verbose)
+{
+	uint8_t rx[2], dummy[2], tmp;
+	uint8_t tx = EfinixHexParser::reverseByte(cmd);
+	uint32_t count = 0;
+
+	_jtag->shiftIR(USER1, _irlen, Jtag::UPDATE_IR);
+	_jtag->shiftDR(&tx, NULL, 8, Jtag::SHIFT_DR);
+
+	do {
+		_jtag->shiftDR(dummy, rx, 8*2, Jtag::SHIFT_DR);
+		tmp = (EfinixHexParser::reverseByte(rx[0] >> 1)) | (0x01 & rx[1]);
+		count++;
+		if (count == timeout){
+			printf("timeout: %x %x %x\n", tmp, rx[0], rx[1]);
+			break;
+		}
+		if (verbose) {
+			printf("%x %x %x %u\n", tmp, mask, cond, count);
+		}
+	} while ((tmp & mask) != cond);
+	_jtag->shiftDR(dummy, rx, 8*2, Jtag::EXIT1_DR);
+	_jtag->go_test_logic_reset();
+
+	if (count == timeout) {
+		printf("%x\n", tmp);
+		std::cout << "wait: Error" << std::endl;
+		return -ETIME;
+	}
+	return 0;
 }

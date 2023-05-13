@@ -109,6 +109,7 @@ class Lattice: public Device, SPIInterface {
 		bool writeFeabits(uint16_t feabits, bool verify);
 		bool writeProgramDone();
 		bool loadConfiguration();
+		uint16_t getUFMStartPageFromJEDEC(JedParser *_jed, int id);
 
 		/* test */
 		bool checkID();
