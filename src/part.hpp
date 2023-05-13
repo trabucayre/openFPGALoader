@@ -181,6 +181,8 @@ static std::map <uint32_t, misc_device> misc_dev_list = {
 	{0x4ba00477, {"ARM cortex A9",         4}},
 	{0x5ba00477, {"ARM cortex A53",        4}},
 	{0xfffffffe, {"ZynqMP dummy device",   12}},
+	{0x1000563d, {"GD32VF103", 5}},
+	{0x790007a3, {"GD32VF103", 5}},
 };
 
 /* list of JTAG manufacturer ID */
@@ -194,6 +196,8 @@ static std::map <uint16_t, std::string> list_manufacturer = {
 	{0x53c, "efinix"},
 	{0x61a, "anlogic"},
 	{0x61b, "anlogic"},  // yes two manufacturer id for anlogic
+	{0x31e, "GigaDevice"},
+
 };
 
 #define IDCODE2MANUFACTURERID(_idcode) ((_idcode >>  1) & 0x7ff)
