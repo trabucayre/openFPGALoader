@@ -53,4 +53,7 @@ ATTRS{idVendor}=="1d50", ATTRS{idProduct}=="6146", MODE="664", GROUP="plugdev", 
 # orbtrace-mini dfu
 ATTRS{idVendor}=="1209", ATTRS{idProduct}=="3442", MODE="664", GROUP="plugdev", TAG+="uaccess"
 
+# QinHeng Electronics USB To UART+JTAG (ch347)
+ATTRS{idVendor}=="1a86", ATTRS{idProduct}=="55dd", MODE="664", GROUP="plugdev", TAG+="uaccess"
+
 LABEL="openfpgaloader_rules_end"

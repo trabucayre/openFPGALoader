@@ -8,6 +8,7 @@
 #include <iostream>
 #include <map>
 #include <sstream>
+#include <unistd.h>
 #include <vector>
 #include <string>
 
@@ -28,6 +29,7 @@
 #include "cmsisDAP.hpp"
 #endif
 #include "dirtyJtag.hpp"
+#include "ch347jtag.hpp"
 #include "part.hpp"
 #ifdef ENABLE_REMOTEBITBANG
 #include "remoteBitbang_client.hpp"
@@ -110,6 +112,9 @@ void Jtag::init_internal(const cable_t &cable, const string &dev, const string &
 		break;
 	case MODE_CH552_JTAG:
 		_jtag = new CH552_jtag(cable, dev, serial, clkHZ, _verbose);
+		break;
+	case MODE_CH347:
+		_jtag = new CH347Jtag(clkHZ, _verbose);
 		break;
 	case MODE_DIRTYJTAG:
 		_jtag = new DirtyJtag(clkHZ, _verbose);

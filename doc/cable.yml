@@ -26,7 +26,15 @@ bus_blaster_b:
     URL: http://dangerousprototypes.com/docs/Bus_Blaster
 
 
+ch347_jtag:
+
+  - Name: ch347 JTAG adapter
+    Description: QinHeng Electronics USB To UART+JTAG (mode 3)
+    URL: https://www.wch-ic.com/products/CH347.html
+
+
 ch552_jtag:
+
   - Name: ch552 JTAG adapter
     Description: Tang Nano USB-JTAG interface. FT2232C clone firmware for CH552 microcontroler
     URL: https://github.com/diodep/ch55x_jtag
@@ -276,3 +284,9 @@ jetson-nano-gpio:
   - Name: Bitbang GPIO
     Description: Bitbang GPIO pins on Jetson Nano Linux host. Use /dev/mem to have a faster clock.
     URL: https://github.com/jwatte/jetson-gpio-example
+
+ch347:
+
+  - Name: CH347
+    Description: CH347 is a USB HS bus converter with UART, I2C, SPI and JTAG interfaces
+    URL: https://github.com/wuxx/USB-HS-Bridge
