@@ -29,7 +29,7 @@ using namespace std;
 #define CH347JTAG_WRITE_EP    0x06
 #define CH347JTAG_READ_EP     0x86
 
-#define CH347JTAG_TIMEOUT     100
+#define CH347JTAG_TIMEOUT     2000
 
 enum CH347JtagCmd {
 	CMD_BYTES_WO = 0xd3,
@@ -64,13 +64,12 @@ int CH347Jtag::usb_xfer(unsigned wlen, unsigned rlen, unsigned *ract) {
 		return r;
 	if (rlen) {
 		rcomplete = 0;
-		libusb_fill_bulk_transfer(rtrans, dev_handle, CH347JTAG_READ_EP, ibuf, 512, sync_cb, &rcomplete, CH347JTAG_TIMEOUT);
+		libusb_fill_bulk_transfer(rtrans, dev_handle, CH347JTAG_READ_EP, ibuf, rlen, sync_cb, &rcomplete, CH347JTAG_TIMEOUT);
 		r = libusb_submit_transfer(rtrans);
 		if (r < 0)
 			return r;
 	} else
 		rcomplete = 1;
-
 	while (!wcomplete) {
 		r = libusb_handle_events_completed(usb_ctx, &wcomplete);
 		if (r < 0) {
@@ -85,6 +84,8 @@ int CH347Jtag::usb_xfer(unsigned wlen, unsigned rlen, unsigned *ract) {
 			wcomplete = 1;
 		}
 	}
+	int rdone = 0;
+wait_rcompletion:
 	while (!rcomplete) {
 		r = libusb_handle_events_completed(usb_ctx, &rcomplete);
 		if (r < 0) {
@@ -97,18 +98,30 @@ int CH347Jtag::usb_xfer(unsigned wlen, unsigned rlen, unsigned *ract) {
 			rcomplete = 1;
 		}
 	}
+	if (wtrans->status != LIBUSB_TRANSFER_COMPLETED) {
+		return LIBUSB_ERROR_IO;
+	}
 	if (rlen) {
-		if (ract) *ract = rtrans->actual_length;
+		rdone += rtrans->actual_length;
+		if (rtrans->status != LIBUSB_TRANSFER_COMPLETED) {
+			return LIBUSB_ERROR_IO;
+		}
+		if (rlen > rdone) {
+			rcomplete = 0;
+			libusb_fill_bulk_transfer(rtrans, dev_handle, CH347JTAG_READ_EP, &ibuf[rdone], rlen - rdone, sync_cb, &rcomplete, CH347JTAG_TIMEOUT);
+			r = libusb_submit_transfer(rtrans);
+			if (r < 0)
+				return r;
+			goto wait_rcompletion;
+		}
+		if (ract) *ract = rdone;
 		if (_verbose) {
-			fprintf(stderr, "ibuf[%d] = {", rtrans->actual_length);
-			for (int i = 0; i < rtrans->actual_length; ++i) {
+			fprintf(stderr, "ibuf[%d] = {", rdone);
+			for (int i = 0; i < rdone; ++i) {
 				fprintf(stderr, "%02x ", ibuf[i]);
 			}
 			fprintf(stderr, "}\n\n");
 		}
-	}
-	if ((rlen && rtrans->status != LIBUSB_TRANSFER_COMPLETED) || wtrans->status != LIBUSB_TRANSFER_COMPLETED) {
-		return LIBUSB_ERROR_IO;
 	}
 	return 0;
 }
@@ -120,8 +133,7 @@ int CH347Jtag::setClk() {
 	obuf[1] = 6;
 	obuf[4] = clk;
 	unsigned actual = 0;
-	unsigned wlen = 9;
-	int rv = usb_xfer(wlen, 4, &actual);
+	int rv = usb_xfer(9, 4, &actual);
 	if (rv || actual != 4)
 		return -1;
 	if (ibuf[0] != 0xd0 || ibuf[3] != 0) {
@@ -300,7 +312,11 @@ int CH347Jtag::writeTDI(uint8_t *tx, uint8_t *rx, uint32_t len, bool end)
 		obuf[1] = chunk;
 		obuf[2] = chunk >> 8;
 		unsigned actual_length = 0;
-		int ret = usb_xfer(chunk + 3, (rx) ? sizeof(ibuf) : 0, &actual_length);
+		int ret = usb_xfer(chunk + 3, (rx) ? chunk + 3 : 0, &actual_length);
+		if (ret < 0) {
+			cerr << "writeTDI: usb bulk read failed: " << libusb_strerror(ret) << endl;
+			return -EXIT_FAILURE;
+		}
 		if (!rx)
 			continue;
 		unsigned size = ibuf[1] + ibuf[2] * 0x100;
@@ -333,7 +349,7 @@ int CH347Jtag::writeTDI(uint8_t *tx, uint8_t *rx, uint32_t len, bool end)
 	obuf[0] = cmd;
 	obuf[1] = wlen - 3;
 	obuf[2] = (wlen - 3) >> 8;
-	int ret = usb_xfer(wlen, (rx)?512:0, &actual_length);
+	int ret = usb_xfer(wlen, (rx) ? (bits + 3) : 0, &actual_length);
 
 	if (ret < 0) {
 		cerr << "writeTDI: usb bulk read failed: " << libusb_strerror(ret) << endl;
