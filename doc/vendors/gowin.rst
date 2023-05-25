@@ -31,8 +31,11 @@ where ``BOARD_NAME`` is:
 
 * ``tec0117``
 * ``tangnano``
+* ``tangnano1k``
 * ``tangnano4k``
 * ``tangnano9k``
+* ``tangnano20k``
+* ``tangprimer20k``
 * ``runber``
 
 Flash

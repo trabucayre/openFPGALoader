@@ -579,12 +579,19 @@
   Memory: OK
   Flash: IF/EF
 
-- ID: tangprimer20k
-  Description: Sipeed Tang Primer 20k
-  URL: https://wiki.sipeed.com/hardware/en/tang/Tang-Nano-Doc/summary.html
+- ID: tangnano20k
+  Description: Sipeed Tang Nano 20k
+  URL: https://wiki.sipeed.com/nano20k
   FPGA: Gowin Arora GW2A(R)-18(C)
   Memory: OK
-  Flash: IF
+  Flash: EF
+
+- ID: tangprimer20k
+  Description: Sipeed Tang Primer 20k
+  URL: https://wiki.sipeed.com/en/primer20k
+  FPGA: Gowin Arora GW2A(R)-18(C)
+  Memory: OK
+  Flash: EF
 
 - ID: tec0117
   Description: Trenz Gowin LittleBee (TEC0117)
