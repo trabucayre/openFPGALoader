@@ -118,11 +118,16 @@ class Jlink: public JtagInterface {
 		};
 		
 		// JLink hardware type
-		const std::string jlink_hw_type[4] = {
+		const std::string jlink_hw_type[9] = {
 			"J-Link",
 			"J-Trace",
 			"Flasher",
-			"J-Link Pro"
+			"J-Link Pro",
+			"",
+			"",
+			"",
+			"",
+			"J-Trace Pro"
 		};
 		
 		// Jlink configuration structure

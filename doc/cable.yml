@@ -182,6 +182,12 @@ jlink:
     Description: SEGGER J-Link Debug Probes
     URL: https://www.segger.com/products/debug-probes/j-link
 
+  - Name: jlink_base
+    Description: SEGGER J-Link BASE Debug Probes
+
+  - Name: jtrace_pro
+    Description: SEGGER J-Trace PRO Debug Probes
+
 
 jtag-smt2-nc:
 
