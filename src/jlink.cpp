@@ -137,7 +137,10 @@ int Jlink::writeTDI(uint8_t *tx, uint8_t *rx, uint32_t len, bool end)
 			xfer_len = len - rest;  // reduce xfer len
 		uint16_t tt = (xfer_len + 7) >> 3;  // convert to Byte
 		memset(_tms, tms, tt);  // fill tms buffer
-		memcpy(_tdi, tx_ptr, tt);  // fill tdi buffer
+		if (tx)
+			memcpy(_tdi, tx_ptr, tt);  // fill tdi buffer
+		else
+			memset(_tdi, 0, tt);  // clear tdi buffer
 		_num_bits = xfer_len;  // set buffer size in bit
 		if (end && xfer_len + rest == len) {  // last sequence: set tms 1
 			_last_tms = 1;
