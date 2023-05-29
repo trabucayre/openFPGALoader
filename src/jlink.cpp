@@ -50,8 +50,11 @@ Jlink::Jlink(uint32_t clkHz, int8_t verbose, int vid = VID, int pid = PID):_base
 		throw std::runtime_error("libusb init failed\n");
 
 	// search for all compatible devices
-	if (!jlink_scan_usb(vid,pid))
+	if (!jlink_scan_usb(vid,pid)) {
+		if (_verbose)
+			printf("vid:pid %04x:%04x\n", vid, pid);
 		throw std::runtime_error("can't find compatible device");
+	}
 
 	// get device capacity
 	if (!get_caps())
@@ -680,8 +683,13 @@ bool Jlink::jlink_scan_usb(int vid, int pid)
 			return EXIT_FAILURE;
 		}
 
-		if (desc.idProduct != pid || desc.idVendor != vid)
+		if (desc.idVendor != vid)
 			continue;
+		if (desc.idProduct != pid) {
+			if (_verbose)
+				cerr << "skip pid" << hex << desc.idProduct << dec << endl;
+			continue;
+		}
 
 		if (_verbose)
 			printf("%04x:%04x (bus %d, device %2d)\n",
