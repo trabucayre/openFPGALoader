@@ -88,7 +88,7 @@ Efinix::Efinix(Jtag* jtag, const std::string &filename,
 	} else if (board_name == "titanium_ti60_f225_jtag") {
 		spi_board_name = "titanium_ti60_f225";
 	} else {
-		printInfo("Using efinix JTAG interface (no GPIO)");
+		init_common(prg_type);
 		return;
 	}
 
@@ -116,8 +116,10 @@ Efinix::Efinix(Jtag* jtag, const std::string &filename,
 
 void Efinix::init_common(const Device::prog_type_t &prg_type)
 {
-	_spi->gpio_set_input(_done_pin);
-	_spi->gpio_set_output(_rst_pin | _oe_pin);
+	if (_spi) {
+		_spi->gpio_set_input(_done_pin);
+		_spi->gpio_set_output(_rst_pin | _oe_pin);
+	}
 
 	switch (prg_type) {
 		case Device::WR_FLASH:
@@ -142,8 +144,10 @@ Efinix::~Efinix()
 
 void Efinix::reset()
 {
-	if (!_spi)  // not supported
+	if (!_spi) {
+		printError("jtag: reset not supported");
 		return;
+	}
 	uint32_t timeout = 1000;
 	_spi->gpio_clear(_rst_pin | _oe_pin);
 	usleep(1000);
@@ -218,6 +222,11 @@ void Efinix::program(unsigned int offset, bool unprotect_flash)
 
 bool Efinix::dumpFlash(uint32_t base_addr, uint32_t len)
 {
+	if (!_spi) {
+		printError("jtag: dumpFlash not supported");
+		return false;
+	}
+
 	uint32_t timeout = 1000;
 	_spi->gpio_clear(_rst_pin);
 

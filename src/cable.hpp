@@ -107,6 +107,8 @@ static std::map <std::string, cable_t> cable_list = {
 	{"ft4232",             FTDI_SER(0x0403, 0x6011, FTDI_INTF_A, 0x08, 0x0B, 0x08, 0x0B)},
 	{"ecpix5-debug",       FTDI_SER(0x0403, 0x6010, FTDI_INTF_A, 0xF8, 0xFB, 0xFF, 0xFF)},
 	{"jlink",              CABLE_DEF(MODE_JLINK, 0x1366, 0x0105                        )},
+	{"jlink_base",         CABLE_DEF(MODE_JLINK, 0x1366, 0x0101                        )},
+	{"jtrace_pro",         CABLE_DEF(MODE_JLINK, 0x1366, 0x1020                        )},
 	{"jtag-smt2-nc",       FTDI_SER(0x0403, 0x6014, FTDI_INTF_A, 0xe8, 0xeb, 0x00, 0x60)},
 	{"lpc-link2",          CMSIS_CL(0x1fc9, 0x0090                                     )},
 	{"orbtrace",           CMSIS_CL(0x1209, 0x3443                                     )},

@@ -25,3 +25,27 @@ or, for xyloni board
 
 Since openFPGALoader access the flash directly in SPI mode the ``-b fireant``, ``-b xyloni_spi`` is required (no
 autodetection possible).
+
+Trion and Titanium JTAG usage
+==========================================
+
+*openFPGALoader* supports loading to RAM and SPI Flash with JTAG
+
+Tested with J-Link BASE
+
+bin file load
+-------------
+
+.. code-block:: bash
+
+    openFPGALoader --cable jlink_base -m  /somewhere/project/outflow/*.bin
+
+hex file flash
+-------------
+
+Example for ti60f225.
+NOTE: JTAG chains with more than one device (eg --index-chain) are currently not supported for writing to SPI flash
+
+.. code-block:: bash
+
+    openFPGALoader --cable jlink_base --fpga-part ti60f225 -f  /somewhere/project/outflow/*.hex
