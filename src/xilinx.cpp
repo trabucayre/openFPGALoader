@@ -188,11 +188,21 @@ Xilinx::Xilinx(Jtag *jtag, const std::string &filename,
 		_fpga_family = SPARTAN7_FAMILY;
 	} else if (family == "zynq") {
 		_fpga_family = ZYNQ_FAMILY;
-		if (_mode != Device::MEM_MODE)
-			throw std::runtime_error("Error: can't flash Zynq7000");
+		if (_mode != Device::MEM_MODE) {
+			char mess[256];
+			snprintf(mess, 256, "Error: can't flash non-volatile memory for "
+				"Zynq7000 devices\n"
+				"\tSPI Flash access is only available from PS side\n");
+			throw std::runtime_error(mess);
+		}
 	} else if (family.substr(0, 6) == "zynqmp") {
-		if (_mode != Device::MEM_MODE)
-			throw std::runtime_error("Error: can't flash ZynqMP");
+		if (_mode != Device::MEM_MODE) {
+			char mess[256];
+			snprintf(mess, 256, "Error: can't flash non-volatile memory for "
+				"ZynqMP devices\n"
+				"\tSPI Flash access is only available from PSU side\n");
+			throw std::runtime_error(mess);
+		}
 		if (!zynqmp_init(family))
 			throw std::runtime_error("Error with ZynqMP init");
 		_fpga_family = ZYNQMP_FAMILY;
