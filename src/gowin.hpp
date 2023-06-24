@@ -18,7 +18,7 @@
 
 class Gowin: public Device, SPIInterface {
 	public:
-		Gowin(Jtag *jtag, std::string filename, const std::string &file_type,
+		Gowin(Jtag *jtag, std::string filename, const std::string &file_type, std::string mcufw,
 				Device::prog_type_t prg_type, bool external_flash,
 				bool verify, int8_t verbose);
 		~Gowin();
@@ -26,6 +26,7 @@ class Gowin: public Device, SPIInterface {
 		void reset() override;
 		void program(unsigned int offset, bool unprotect_flash) override;
 		void programFlash();
+		bool connectJtagToMCU() override;
 
 		/* spi interface */
 		virtual bool protect_flash(uint32_t len) override {
@@ -33,6 +34,8 @@ class Gowin: public Device, SPIInterface {
 			printError("protect flash not supported"); return false;}
 		virtual bool unprotect_flash() override {
 			printError("unprotect flash not supported"); return false;}
+		virtual bool bulk_erase_flash() override {
+			printError("bulk erase flash not supported"); return false;}
 		int spi_put(uint8_t cmd, uint8_t *tx, uint8_t *rx,
 			uint32_t len) override;
 		int spi_put(uint8_t *tx, uint8_t *rx, uint32_t len) override;
@@ -48,17 +51,25 @@ class Gowin: public Device, SPIInterface {
 		bool eraseSRAM();
 		bool eraseFLASH();
 		bool flashSRAM(uint8_t *data, int length);
-		bool flashFLASH(uint8_t *data, int length);
+		bool flashFLASH(uint32_t page, uint8_t *data, int length);
 		void displayReadReg(uint32_t dev);
 		uint32_t readStatusReg();
 		uint32_t readUserCode();
+		/*!
+		 * \brief compare usercode register with fs checksum and/or
+		 *        .fs usercode field
+		 */
+		void checkCRC();
 		ConfigBitstreamParser *_fs;
 		bool is_gw1n1;
+		bool is_gw2a;
+		bool skip_checksum;   /**< bypass checksum verification (GW2A) */
 		bool _external_flash; /**< select between int or ext flash */
 		uint8_t _spi_sck;     /**< clk signal offset in bscan SPI */
 		uint8_t _spi_cs;      /**< cs signal offset in bscan SPI */
 		uint8_t _spi_di;      /**< di signal (mosi) offset in bscan SPI */
 		uint8_t _spi_do;      /**< do signal (miso) offset in bscan SPI */
 		uint8_t _spi_msk;     /** default spi msk with only do out */
+		ConfigBitstreamParser *_mcufw;
 };
 #endif  // GOWIN_HPP_

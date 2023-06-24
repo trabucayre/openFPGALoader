@@ -32,7 +32,7 @@ using namespace std;
 #define ISC_DISABLE					0x26		/* ISC_DISABLE */
 #define READ_DEVICE_ID_CODE			0xE0		/* IDCODE_PUB */
 #define FLASH_ERASE					0x0E		/* ISC_ERASE */
-/* Flash areas as defined for Lattice MachXO3L/LF */
+/* Flash areas as defined for Lattice MachXO2,3L/LF */
 #  define FLASH_ERASE_UFM			(1<<3)
 #  define FLASH_ERASE_CFG   		(1<<2)
 #  define FLASH_ERASE_FEATURE		(1<<1)
@@ -145,7 +145,8 @@ Lattice::Lattice(Jtag *jtag, const string filename, const string &file_type,
 	if (prg_type == Device::RD_FLASH) {
 		_mode = READ_MODE;
 	} else if (!_file_extension.empty()) {
-		if (_file_extension == "jed" || _file_extension == "mcs" || _file_extension == "fea" || _file_extension == "pub") {
+		if (_file_extension == "jed" || _file_extension == "mcs" ||
+				_file_extension == "fea" || _file_extension == "pub") {
 			_mode = Device::FLASH_MODE;
 		} else if (_file_extension == "bit" || _file_extension == "bin") {
 			if (prg_type == Device::WR_FLASH)
@@ -193,7 +194,7 @@ Lattice::Lattice(Jtag *jtag, const string filename, const string &file_type,
 		} else if (flash_sector == "PKEY") {
 			_flash_sector = LATTICE_FLASH_PKEY;
 			printInfo("Flash Sector: PKEY", true);
-		} else {
+		} else if (_mode == Device::FLASH_MODE) {
 			printError("Unknown flash sector");
 			throw std::exception();
 		}
@@ -247,7 +248,7 @@ void displayFeabits(uint16_t _featbits)
 	printf("\tMy_ASSP                                  : %s\n",
 	    (((_featbits>>4)&0x01)?"enable":"disable"));
 	printf("\tPassword (Flash Protect Key) Protect All : %s\n",
-	    (((_featbits>>3)&0x01)?"Enaabled" : "Disabled"));
+	    (((_featbits>>3)&0x01)?"Enabled" : "Disabled"));
 	printf("\tPassword (Flash Protect Key) Protect     : %s\n",
 	    (((_featbits>>2)&0x01)?"Enabled" : "Disabled"));
 }
@@ -262,7 +263,7 @@ bool Lattice::checkStatus(uint32_t val, uint32_t mask)
 bool Lattice::program_mem()
 {
 	bool err;
-	LatticeBitParser _bit(_filename, _verbose);
+	LatticeBitParser _bit(_filename, false, _verbose);
 
 	printInfo("Open file: ", false);
 	printSuccess("DONE");
@@ -285,7 +286,7 @@ bool Lattice::program_mem()
 	uint32_t idcode = idCode();
 	if (idcode != bit_idcode) {
 		char mess[256];
-		sprintf(mess, "mismatch between target's idcode and bitstream idcode\n"
+		snprintf(mess, 256, "mismatch between target's idcode and bitstream idcode\n"
 			"\tbitstream has 0x%08X hardware requires 0x%08x", bit_idcode, idcode);
 		printError(mess);
 		return false;
@@ -395,9 +396,10 @@ bool Lattice::program_mem()
 	return true;
 }
 
-bool Lattice::program_intFlash(JedParser& _jed)
+bool Lattice::program_intFlash(ConfigBitstreamParser *_cbp)
 {
 	uint64_t featuresRow;
+	uint16_t ufm_start = 0;
 	uint16_t feabits;
 	uint8_t eraseMode = 0;
 	vector<string> ufm_data, cfg_data, ebr_data;
@@ -415,24 +417,45 @@ bool Lattice::program_intFlash(JedParser& _jed)
 		printSuccess("DONE");
 	}
 
-	for (size_t i = 0; i < _jed.nb_section(); i++) {
-		string note = _jed.noteForSection(i);
-		if (note == "TAG DATA") {
-			eraseMode |= FLASH_ERASE_UFM;
-			ufm_data = _jed.data_for_section(i);
-		} else if (note == "END CONFIG DATA") {
-			continue;
-		} else if (note == "EBR_INIT DATA") {
-			ebr_data = _jed.data_for_section(i);
-		} else {
-			cfg_data = _jed.data_for_section(i);
+	//  If file is a jed -> classic approach for
+	//  all machXO
+	if (_file_extension == "jed") {
+		JedParser *_jed = reinterpret_cast<JedParser *>(_cbp);
+		for (size_t i = 0; i < _jed->nb_section(); i++) {
+			string note = _jed->noteForSection(i);
+			if (note == "TAG DATA") {
+				eraseMode |= FLASH_ERASE_UFM;
+				ufm_data = _jed->data_for_section(i);
+				ufm_start = getUFMStartPageFromJEDEC(_jed, i);
+
+				if (_verbose)
+					printInfo("UFM init detected in JEDEC file");
+
+				if(ufm_start > 2045) {
+					printError("UFM section detected in JEDEC file, but "
+					 	"calculated flash start address was out of bounds");
+					return false;
+				}
+			} else if (note == "END CONFIG DATA") {
+				continue;
+			} else if (note == "EBR_INIT DATA") {
+				ebr_data = _jed->data_for_section(i);
+			} else {
+				cfg_data = _jed->data_for_section(i);
+			}
 		}
+
+		/* check if feature area must be updated */
+		featuresRow = _jed->featuresRow();
+		feabits = _jed->feabits();
+	} else {  // bit file: adapts
+		LatticeBitParser *_bit = reinterpret_cast<LatticeBitParser *>(_cbp);
+		cfg_data = _bit->getDataArray();
+		featuresRow = 0;
+		feabits = 0x460;
 	}
 
-	/* check if feature area must be updated */
-	featuresRow = _jed.featuresRow();
-	feabits = _jed.feabits();
-	eraseMode = FLASH_ERASE_CFG;
+	eraseMode |= FLASH_ERASE_CFG;
 	if (featuresRow != readFeaturesRow() || feabits != readFeabits())
 		eraseMode |= FLASH_ERASE_FEATURE;
 
@@ -465,6 +488,24 @@ bool Lattice::program_intFlash(JedParser& _jed)
 			return false;
 	}
 
+	if ((eraseMode & FLASH_ERASE_UFM) != 0) {
+		/* LSC_WRITE_ADDRESS */
+		uint8_t tx[4] = {
+			static_cast<uint8_t>(ufm_start & 0xff),
+			static_cast<uint8_t>((ufm_start >> 8) & 0xff),
+			0,
+			0x40
+		};
+
+		wr_rd(LSC_WRITE_ADDRESS, tx, 4, NULL, 0);
+		_jtag->set_state(Jtag::RUN_TEST_IDLE);
+		_jtag->toggleClk(1000);
+
+		/* Same command to program CFG flash works for UFM. */
+		if (false == flashProg(0, "UFM", ufm_data))
+			return false;
+	}
+
 	/* missing usercode update */
 
 	/* LSC_INIT_ADDRESS */
@@ -475,7 +516,7 @@ bool Lattice::program_intFlash(JedParser& _jed)
 	if ((eraseMode & FLASH_ERASE_FEATURE) != 0) {
 		/* write feature row */
 		printInfo("Program features Row: ", false);
-		if (writeFeaturesRow(_jed.featuresRow(), true) == false) {
+		if (writeFeaturesRow(featuresRow, true) == false) {
 			printError("FAIL");
 			return false;
 		} else {
@@ -483,7 +524,7 @@ bool Lattice::program_intFlash(JedParser& _jed)
 		}
 		/* write feabits */
 		printInfo("Program feabits: ", false);
-		if (writeFeabits(_jed.feabits(), true) == false) {
+		if (writeFeabits(feabits, true) == false) {
 			printError("FAIL");
 			return false;
 		} else {
@@ -515,6 +556,10 @@ bool Lattice::program_intFlash(JedParser& _jed)
 
 bool Lattice::prepare_flash_access()
 {
+	if (_skip_load_bridge) {
+		printInfo("Skip switching to SPI access");
+		return true;
+	}
 	/* clear SRAM before SPI access */
 	if (!clearSRAM())
 		return false;
@@ -530,14 +575,45 @@ bool Lattice::prepare_flash_access()
 
 bool Lattice::post_flash_access()
 {
+	bool ret = true, flash_blank = false;
+	if (_skip_reset) {
+		printInfo("Skip resetting device");
+		return true;
+	}
 	/* ISC REFRESH 0x79 */
-	printInfo("Refresh: ", false);
 	if (loadConfiguration() == false) {
+		/* when flash is blank status displays failure:
+		 * try to check flash first sector
+		 */
+		_skip_reset = true;  // avoid infinite loop
+		/* read flash 0 -> 255 */
+		uint8_t buffer[256];
+		ret = SPIInterface::read(buffer, 0, 256);
+		loadConfiguration(); // reset again
+
+		/* read ok? check if everything == 0xff */
+		if (ret) {
+			for (int i = 0; i < 256; i++) {
+				/* not blank: fail */
+				if (buffer[i] != 0xFF) {
+					ret = false;
+					break;
+				}
+			}
+			/* to add a note */
+			flash_blank = true;
+		}
+	}
+
+	printInfo("Refresh: ", false);
+	if (!ret) {
 		printError("FAIL");
 		displayReadReg(readStatusReg());
 		return false;
 	} else {
 		printSuccess("DONE");
+		if (flash_blank)
+			printWarn("Flash is blank");
 	}
 
 	/* bypass */
@@ -595,7 +671,7 @@ bool Lattice::program_extFlash(unsigned int offset, bool unprotect_flash)
 		if (_file_extension == "mcs")
 			_bit = new McsParser(_filename, true, _verbose);
 		else if (_file_extension == "bit")
-			_bit = new LatticeBitParser(_filename, _verbose);
+			_bit = new LatticeBitParser(_filename, false, _verbose);
 		else
 			_bit = new RawParser(_filename, false);
 		printSuccess("DONE");
@@ -623,7 +699,7 @@ bool Lattice::program_extFlash(unsigned int offset, bool unprotect_flash)
 		uint32_t idcode = idCode();
 		if (idcode != bit_idcode) {
 			char mess[256];
-			sprintf(mess, "mismatch between target's idcode and bitstream idcode\n"
+			snprintf(mess, 256, "mismatch between target's idcode and bitstream idcode\n"
 				"\tbitstream has 0x%08X hardware requires 0x%08x", bit_idcode, idcode);
 			printError(mess);
 			delete _bit;
@@ -671,7 +747,15 @@ bool Lattice::program_flash(unsigned int offset, bool unprotect_flash)
 		if (_fpga_family == MACHXO3D_FAMILY)
 			retval = program_intFlash_MachXO3D(_jed);
 		else
-			retval = program_intFlash(_jed);
+			retval = program_intFlash(
+					reinterpret_cast<ConfigBitstreamParser*>(&_jed));
+		/* for machXO2 and unlike TN02155 & TN1204 ISC_DISABLE is required
+		 * and REFRESH no
+		 * TODO: same for machXO3x ?
+		 */
+		if (_fpga_family == MACHXO2_FAMILY)
+			return retval;
+
 		return post_flash_access() && retval;
 	} else if (_file_extension == "fea") {
 		/* clear current SRAM content */
@@ -683,6 +767,20 @@ bool Lattice::program_flash(unsigned int offset, bool unprotect_flash)
 		clearSRAM();
 		retval = program_pubkey_MachXO3D();
 	} else {
+		//  machox2 + bit
+		if (_file_extension == "bit" && _fpga_family == MACHXO2_FAMILY) {
+			retval = true;
+			try {
+				LatticeBitParser _bit(_filename, true, _verbose);
+				_bit.parse();
+				retval = program_intFlash(
+						reinterpret_cast<ConfigBitstreamParser *>(&_bit));
+			} catch (std::exception &e) {
+				return false;
+			}
+			return post_flash_access() && retval;
+		}
+		/* !machXO and any file */
 		return program_extFlash(offset, unprotect_flash);
 	}
 
@@ -769,7 +867,7 @@ bool Lattice::checkID()
 {
 	printf("\n");
 	printf("check ID\n");
-	uint8_t tx[4];
+	uint8_t tx[4] = { 0 };
 	wr_rd(0xE2, tx, 4, NULL, 0);
 	_jtag->set_state(Jtag::RUN_TEST_IDLE);
 	_jtag->toggleClk(1000);
@@ -813,27 +911,27 @@ bool Lattice::wr_rd(uint8_t cmd,
 					uint8_t *rx, int rx_len,
 					bool verbose)
 {
-	int xfer_len = rx_len;
+	int kXferLen = rx_len;
 	if (tx_len > rx_len)
-		xfer_len = tx_len;
+		kXferLen = tx_len;
 
-	uint8_t xfer_tx[xfer_len];
-	uint8_t xfer_rx[xfer_len];
-	memset(xfer_tx, 0, xfer_len);
+	uint8_t xfer_tx[kXferLen];
+	uint8_t xfer_rx[kXferLen];
+	memset(xfer_tx, 0, kXferLen);
 	int i;
-	if (tx) {
+	if (tx != NULL && tx_len > 0) {
 		for (i = 0; i < tx_len; i++)
 			xfer_tx[i] = tx[i];
 	}
 
 	_jtag->shiftIR(&cmd, NULL, 8, Jtag::PAUSE_IR);
 	if (rx || tx) {
-		_jtag->shiftDR(xfer_tx, (rx) ? xfer_rx : NULL, 8 * xfer_len,
+		_jtag->shiftDR(xfer_tx, (rx) ? xfer_rx : NULL, 8 * kXferLen,
 			Jtag::PAUSE_DR);
 	}
 	if (rx) {
 		if (verbose) {
-			for (i=xfer_len-1; i >= 0; i--)
+			for (i=kXferLen-1; i >= 0; i--)
 				printf("%02x ", xfer_rx[i]);
 			printf("\n");
 		}
@@ -956,10 +1054,10 @@ void Lattice::displayReadReg(uint32_t dev)
 				printf("SDM EOF\n");
 				break;
 			case 8:
-				printf("Authentification ERR\n");
+				printf("Authentication ERR\n");
 				break;
 			case 9:
-				printf("Authentification Setup ERR\n");
+				printf("Authentication Setup ERR\n");
 				break;
 			case 10:
 				printf("Bitstream Engine Timeout ERR\n");
@@ -976,7 +1074,7 @@ void Lattice::displayReadReg(uint32_t dev)
 		if ((dev >> 46) & 0x01) printf("\tINIT Bus ID Error\n");
 		if ((dev >> 47) & 0x01) printf("\tI3C Parity Error1\n");
 		err = (dev >> 48) & 0x03;
-		printf("\tAuthentification mode:\n");
+		printf("\tAuthentication mode:\n");
 		printf("\t\t");
 		switch (err) {
 			case 3:
@@ -990,8 +1088,8 @@ void Lattice::displayReadReg(uint32_t dev)
 				printf("HMAC\n");
 				break;
 		}
-		if ((dev >> 50) & 0x01) printf("\tAuthentification Done\n");
-		if ((dev >> 51) & 0x01) printf("\tDry Run Authentification Done\n");
+		if ((dev >> 50) & 0x01) printf("\tAuthentication Done\n");
+		if ((dev >> 51) & 0x01) printf("\tDry Run Authentication Done\n");
 #endif
 }
 
@@ -1189,6 +1287,42 @@ bool Lattice::loadConfiguration()
 	if (!checkStatus(REG_STATUS_DONE, REG_STATUS_DONE))
 		return false;
 	return true;
+}
+
+uint16_t Lattice::getUFMStartPageFromJEDEC(JedParser *_jed, int id)
+{
+	/* In general, Lattice tools try to fill UFM from the highest
+	page to lowest. JEDEC files will give a starting bit offset. */
+	uint32_t bit_offset = _jed->offset_for_section(id);
+	/* Convert to starting page, relative to Configuration Flash's page 0.
+	For 7000 parts only, first UFM page starts 16 bytes (1 page) after
+        the last Configuration Flash page, based on looking at
+        Diamond-generated JEDECs.
+
+        For all other parts, the first UFM page immediately follows the last
+        Configuration Flash page. */
+	uint16_t raw_page_offset = bit_offset / 128;
+
+	/* Raw page offsets won't overlap- see Lattice TN-02155, page 49. So we
+	can uniquely determine which part type we're targeting from the UFM start
+	addres.
+	TODO: In any case, JEDEC files don't carry part information. Verify against
+	IDCODE read previously? */
+	
+	if(raw_page_offset > 9211) {
+		return raw_page_offset - 9211 - 1; // 7000
+	} else if(raw_page_offset > 5758) {
+		return raw_page_offset - 5758; // 4000, 2000U
+	} else if(raw_page_offset > 3198) {
+		return raw_page_offset - 3198; // 2000, 1200U
+	} else if(raw_page_offset > 2175) {
+		return raw_page_offset - 2175; // 1200, 640U
+	} else if(raw_page_offset > 1151) {
+		return raw_page_offset - 1151; // 640
+	} else {
+		// 256- We should bail if we get here! No UFM!
+		return 0xffff;
+	}
 }
 
 /* ------------------ */

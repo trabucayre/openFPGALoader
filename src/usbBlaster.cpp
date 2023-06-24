@@ -37,15 +37,14 @@ using namespace std;
 #define display(...) do {}while(0)
 #endif
 
-UsbBlaster::UsbBlaster(int vid, int pid, const std::string &firmware_path,
+UsbBlaster::UsbBlaster(const cable_t &cable, const std::string &firmware_path,
 		uint8_t verbose):
 			_verbose(verbose), _nb_bit(0),
 			_curr_tms(0), _buffer_size(64)
 {
-	(void) vid;
-	if (pid == 0x6001)
+	if (cable.pid == 0x6001)
 		ll_driver = new UsbBlasterI();
-	else if (pid == 0x6810)
+	else if (cable.pid == 0x6810)
 		ll_driver = new UsbBlasterII(firmware_path);
 	else
 		throw std::runtime_error("usb-blaster: unknown VID/PID");
@@ -60,7 +59,7 @@ UsbBlaster::UsbBlaster(int vid, int pid, const std::string &firmware_path,
 	memset(_in_buf, 0, _buffer_size);
 
 	/* Force flush internal FT245 internal buffer */
-	if (pid == 0x6001) {
+	if (cable.pid == 0x6001) {
 		uint8_t val = DEFAULT | DO_WRITE | DO_BITBB | _tms_pin;
 		uint8_t tmp_buf[4096];
 		for (_nb_bit = 0; _nb_bit < 4096; _nb_bit += 2) {
@@ -212,6 +211,8 @@ int UsbBlaster::writeTDI(uint8_t *tx, uint8_t *rx, uint32_t len, bool end)
 		int num_read = _nb_bit;
 		if (writeBit((rx)? rx_ptr:NULL, num_read/2) < 0)
 			return -EXIT_FAILURE;
+		if (rx) // realign bits
+			*rx_ptr >>= (8 - nb_bit);
 	}
 
 	/* set TMS high */
@@ -226,7 +227,7 @@ int UsbBlaster::writeTDI(uint8_t *tx, uint8_t *rx, uint32_t len, bool end)
 		if (writeBit((rx)? &tmp:NULL, 1) < 0)
 			return -EXIT_FAILURE;
 		if (rx)
-			*rx_ptr = (tmp & 0x80) | ((*rx_ptr) >> 1);
+			*rx_ptr |= (tmp & 0x80) >> (7 - nb_bit);
 		_in_buf[_nb_bit++] = mask;
 		if (writeBit(NULL, 0) < 0)
 			return -EXIT_FAILURE;
@@ -245,13 +246,15 @@ int UsbBlaster::toggleClk(uint8_t tms, uint8_t tdi, uint32_t clk_len)
 	 * xfer > 1Byte and tms is low
 	 */
 	if (tms == 0 && xfer_len >= 8) {
+		if (_nb_bit == 64)
+			flush();
 		_in_buf[_nb_bit++] = DEFAULT | DO_WRITE | DO_BITBB;
 		flush();
 		/* fill a byte with all 1 or all 0 */
 		uint8_t content = (tdi)?0xff:0;
 
 		while (xfer_len >= 8) {
-			uint16_t tx_len = (xfer_len >> 3);
+			uint32_t tx_len = (xfer_len >> 3);
 			if (tx_len > 63)
 				tx_len = 63;
 			/* if not enough space flush */
@@ -259,7 +262,7 @@ int UsbBlaster::toggleClk(uint8_t tms, uint8_t tdi, uint32_t clk_len)
 				if (flush() < 0)
 					return -EXIT_FAILURE;
 			_in_buf[_nb_bit++] = mask | static_cast<uint8_t>(tx_len);
-			for (int i = 0; i < tx_len; i++)
+			for (uint32_t i = 0; i < tx_len; i++)
 				_in_buf[_nb_bit++] = content;
 			xfer_len -= (tx_len << 3);
 		}
@@ -277,6 +280,8 @@ int UsbBlaster::toggleClk(uint8_t tms, uint8_t tdi, uint32_t clk_len)
 	}
 
 	/* flush */
+	if (_nb_bit == 64)
+		flush();
 	_in_buf[_nb_bit++] = mask;
 	flush();
 
@@ -427,14 +432,20 @@ int UsbBlasterI::write(uint8_t *wr_buf, int wr_len,
 
 UsbBlasterII::UsbBlasterII(const string &firmware_path)
 {
+	std::string fpath;
 	uint8_t buf[5];
-	if (firmware_path.empty()) {
+	if (firmware_path.empty() && BLASTERII_DIR == "") {
 		printError("missing FX2 firmware");
 		printError("use --probe-firmware with something");
-		printError("like /opt/altera/quartus/linux64/blaster_6810.hex");
+		printError("like /opt/intelFPGA/VERSION/quartus/linux64/blaster_6810.hex");
+		printError("Or use -DBLASTERII_PATH=/opt/intelFPGA/VERSION/quartus/linux64");
 		throw std::runtime_error("usbBlasterII: missing firmware");
 	}
-	fx2 = new FX2_ll(0x09fb, 0x6810, 0x09fb, 0x6010, firmware_path);
+	if (firmware_path.empty())
+		fpath = BLASTERII_DIR "/blaster_6810.hex";
+	else
+		fpath = firmware_path;
+	fx2 = new FX2_ll(0x09fb, 0x6810, 0x09fb, 0x6010, fpath);
 	if (!fx2->read_ctrl(0x94, 0, buf, 5)) {
 		throw std::runtime_error("Unable to read firmware version.");
 	}

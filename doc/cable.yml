@@ -126,6 +126,10 @@ ft2232:
     Description: USB-JTAG/UART debugger based on BL702 microcontroler.
     URL: https://github.com/sipeed/RV-Debugger-BL702
 
+  - Name: Sipeed RV-Debugger-BL702
+    Description: RV-Debugger-BL702 is an opensource project that implement a JTAG+UART debugger with BL702C-A0.
+    URL: https://github.com/sipeed/RV-Debugger-BL702
+
   - Name: honeycomb USB-JTAG interface.
     Description: FT2232C clone based on STM32F042 microcontroler
     URL: https://github.com/Disasm/f042-ftdi
@@ -172,6 +176,19 @@ ecpix5-debug:
     URL: https://shop.lambdaconcept.com/home/46-ecpix-5.html
 
 
+jlink:
+
+  - Name: jlink
+    Description: SEGGER J-Link Debug Probes
+    URL: https://www.segger.com/products/debug-probes/j-link
+
+  - Name: jlink_base
+    Description: SEGGER J-Link BASE Debug Probes
+
+  - Name: jtrace_pro
+    Description: SEGGER J-Trace PRO Debug Probes
+
+
 jtag-smt2-nc:
 
   - Name: jtag-smt2-nc
@@ -179,11 +196,39 @@ jtag-smt2-nc:
     URL: https://digilent.com/shop/jtag-smt2-nc-surface-mount-programming-module
 
 
+lpc-link2:
+
+  - Name: lpc-link2
+    Description: LPC-Link2 (OM13054) cmsisDAP firmware
+    URL: https://www.nxp.com/design/microcontrollers-developer-resources/lpc-link2:OM13054
+
+
 orbtrace:
 
   - Name: orbtrace interface
     Description: Open source FPGA-based debug and trace interface
     URL: https://github.com/orbcode/orbtrace
+
+
+papilio:
+
+  - Name: papilio
+    Description: Papilio FPGA Platform
+    URL: https://papilio.cc/
+
+
+steppenprobe:
+
+  - Name: steppenprobe
+    Description: Open Source Hardware JTAG/SWD/UART/SWO interface board based on FTDI FT2232H
+    URL: https://github.com/diegoherranz/steppenprobe
+
+
+remote-bitgang:
+
+  - Name: OpenOCD remote bitbang
+    Description: The remote_bitbang JTAG driver is used to drive JTAG from a remote (TCP) process
+    URL: https://github.com/openocd-org/openocd/blob/master/doc/manual/jtag/drivers/remote_bitbang.txt
 
 
 tigard:
@@ -204,3 +249,30 @@ usb-blasterII:
   - Name: intel USB Blaster II interface
     Description: JTAG programmer cable from intel/altera (EZ-USB FX2 + EPM570)
     URL: https://www.intel.com/content/dam/www/programmable/us/en/pdfs/literature/ug/ug_usb_blstr_ii_cable.pdf
+
+
+xvc-client:
+
+  - Name: Xilinx Virtual Cable
+    Description: Xilinx Virtual Cable (XVC) is a TCP/IP-based protocol that acts like a JTAG cable.
+    URL: https://github.com/Xilinx/XilinxVirtualCable
+
+
+xvc-server:
+
+  - Name: Xilinx Virtual Cable (server side)
+    Description: Xilinx Virtual Cable (XVC) is a TCP/IP-based protocol that acts like a JTAG cable.
+    URL: https://github.com/Xilinx/XilinxVirtualCable
+
+
+libgpiod:
+
+  - Name: Bitbang GPIO
+    Description: Bitbang GPIO pins on Linux host.
+    URL: https://git.kernel.org/pub/scm/libs/libgpiod/libgpiod.git/
+
+jetson-nano-gpio:
+
+  - Name: Bitbang GPIO
+    Description: Bitbang GPIO pins on Jetson Nano Linux host. Use /dev/mem to have a faster clock.
+    URL: https://github.com/jwatte/jetson-gpio-example

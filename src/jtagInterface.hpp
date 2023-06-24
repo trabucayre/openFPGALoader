@@ -6,6 +6,7 @@
 #ifndef _JTAGINTERFACE_H_
 #define _JTAGINTERFACE_H_
 
+#include <cstdint>
 #include <iostream>
 #include <vector>
 
@@ -41,7 +42,17 @@ class JtagInterface {
 	 * \return number of bit written and/or read
 	 */
 	virtual int writeTDI(uint8_t *tx, uint8_t *rx, uint32_t len, bool end) = 0;
-
+	/*!
+	 * \brief send TMD and TDI and receive tdo bits;
+	 * \param tms: array of TMS values (used to write)
+	 * \param tdi: array of TDI values (used to write)
+	 * \param tdo: array of TDO values (used when read)
+	 * \param len: number of bit to send/receive
+	 * \return true with full buffers are sent, false otherwise
+	 */
+	virtual bool writeTMSTDI(const uint8_t *tms, const uint8_t *tdi,
+			uint8_t *tdo, uint32_t len)
+	{ (void)tms; (void)tdi; (void)tdo; (void)len; return false;}
 	/*!
 	 * \brief toggle clk without touch of TDI/TMS
 	 * \param tms: state of tms signal

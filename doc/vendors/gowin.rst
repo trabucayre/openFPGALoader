@@ -31,7 +31,11 @@ where ``BOARD_NAME`` is:
 
 * ``tec0117``
 * ``tangnano``
+* ``tangnano1k``
 * ``tangnano4k``
+* ``tangnano9k``
+* ``tangnano20k``
+* ``tangprimer20k``
 * ``runber``
 
 Flash
@@ -53,3 +57,8 @@ where ``BOARD_NAME`` is:
 
 It's possible to flash external SPI Flash (connected to MSPI) in bscan mode by using ``--external-flash`` instead of
 ``-f``.
+
+.. NOTE::
+
+  Gowin's FPGA may fails to be detected if **JTAGSEL_N** (pin 08 for *GW1N-4K*) is used as a GPIO.
+  To recover you have to pull down this pin (before power up) to recover JTAG interface (*UG292 - JTAGSELL_N section*).

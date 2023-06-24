@@ -19,7 +19,7 @@
 
 class AnlogicCable : public JtagInterface {
  public:
-	AnlogicCable(uint32_t clkHZ, uint8_t verbose);
+	AnlogicCable(uint32_t clkHZ);
 	virtual ~AnlogicCable();
 
 	int setClkFreq(uint32_t clkHZ) override;
@@ -43,13 +43,9 @@ class AnlogicCable : public JtagInterface {
 	int flush() override;
 
  private:
-	uint8_t _verbose;
-
 	int write(uint8_t *in_buf, uint8_t *out_buf, int len, int rd_len);
 
     libusb_device_handle *dev_handle;
 	libusb_context *usb_ctx;
-	uint8_t _tdi;
-	uint8_t _tms;
 };
 #endif  // SRC_ANLOGICCABLE_HPP_

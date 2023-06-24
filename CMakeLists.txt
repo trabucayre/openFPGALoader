@@ -1,25 +1,36 @@
-
 cmake_minimum_required(VERSION 3.0)
 
 # set the project name
-project(openFPGALoader VERSION "0.7.0" LANGUAGES CXX)
+project(openFPGALoader VERSION "0.10.0" LANGUAGES CXX)
 add_definitions(-DVERSION=\"v${PROJECT_VERSION}\")
 
+option(ENABLE_OPTIM "Enable build with -O3 optimization level" ON)
 option(BUILD_STATIC "Whether or not to build with static libraries" OFF)
 if (${CMAKE_SYSTEM_NAME} MATCHES "Windows")
- set(ENABLE_UDEV OFF)
+	set(ENABLE_UDEV OFF)
 else()
- option(ENABLE_UDEV "use udev to search JTAG adapter from /dev/xx" ON)
+	option(ENABLE_UDEV "use udev to search JTAG adapter from /dev/xx" ON)
 endif()
 option(ENABLE_CMSISDAP "enable cmsis DAP interface (requires hidapi)" ON)
+if (${CMAKE_SYSTEM_NAME} MATCHES "Linux")
+	option(ENABLE_LIBGPIOD "enable libgpiod bitbang driver (requires libgpiod)" ON)
+	option(ENABLE_REMOTEBITBANG "enable remote bitbang driver" ON)
+else()
+	set(ENABLE_LIBGPIOD OFF)
+	set(ENABLE_REMOTEBITBANG OFF)
+endif()
 option(USE_PKGCONFIG "Use pkgconfig to find libraries" ON)
 option(LINK_CMAKE_THREADS "Use CMake find_package to link the threading library" OFF)
+set(BLASTERII_PATH "" CACHE STRING "usbBlasterII firmware directory")
 set(ISE_PATH "/opt/Xilinx/14.7" CACHE STRING "ise root directory (default: /opt/Xilinx/14.7)")
 
 ## specify the C++ standard
 set(CMAKE_CXX_STANDARD 11)
 set(CMAKE_CXX_STANDARD_REQUIRED True)
 set(CMAKE_CXX_FLAGS_DEBUG "-g -Wall -Wextra ${CMAKE_CXX_FLAGS_DEBUG}")
+if (ENABLE_OPTIM)
+	set(CMAKE_CXX_FLAGS "-O3 ${CMAKE_CXX_FLAGS}")
+endif()
 
 if (BUILD_STATIC)
 	set(CMAKE_EXE_LINKER_FLAGS "-static-libstdc++ -static ${CMAKE_EXE_LINKER_FLAGS}")
@@ -31,15 +42,19 @@ include(GNUInstallDirs)
 add_definitions(-DDATA_DIR=\"${CMAKE_INSTALL_FULL_DATAROOTDIR}\")
 
 add_definitions(-DISE_DIR=\"${ISE_PATH}\")
+add_definitions(-DBLASTERII_DIR=\"${BLASTERII_PATH}\")
 
-if(USE_PKGCONFIG)
+if (USE_PKGCONFIG)
 	find_package(PkgConfig REQUIRED)
 	pkg_check_modules(LIBFTDI REQUIRED libftdi1)
 	pkg_check_modules(LIBUSB REQUIRED libusb-1.0)
 	pkg_check_modules(HIDAPI hidapi-hidraw)
 	# if hidraw not found try with libusb
-	if(NOT HIDAPI_FOUND)
+	if (NOT HIDAPI_FOUND)
 		pkg_check_modules(HIDAPI hidapi-libusb)
+	endif()
+	if (NOT HIDAPI_FOUND)
+		pkg_check_modules(HIDAPI hidapi)
 	endif()
 	# zlib support (gzip)
 	pkg_check_modules(ZLIB zlib)
@@ -53,13 +68,21 @@ if(USE_PKGCONFIG)
 		endif()
 	endif(NOT ZLIB_FOUND)
 
-	if(ENABLE_UDEV)
+	if (ENABLE_UDEV)
 		pkg_check_modules(LIBUDEV libudev)
 		if (LIBUDEV_FOUND)
 			add_definitions(-DUSE_UDEV)
 		else()
 			message("libudev not found, disabling udev support and -D parameter")
 			set(ENABLE_UDEV OFF)
+		endif()
+	endif()
+
+	if (ENABLE_LIBGPIOD)
+		pkg_check_modules(LIBGPIOD libgpiod)
+		if (NOT LIBGPIOD_FOUND)
+			message("libgpiod not found, disabling gpiod support")
+			set(ENABLE_LIBGPIOD OFF)
 		endif()
 	endif()
 endif()
@@ -69,6 +92,7 @@ set(OPENFPGALOADER_SOURCE
 	src/anlogicBitParser.cpp
 	src/anlogicCable.cpp
 	src/ch552_jtag.cpp
+	src/common.cpp
 	src/dfu.cpp
 	src/dfuFileParser.cpp
 	src/dirtyJtag.cpp
@@ -77,9 +101,10 @@ set(OPENFPGALOADER_SOURCE
 	src/fx2_ll.cpp
 	src/ice40.cpp
 	src/ihexParser.cpp
+	src/pofParser.cpp
+	src/rawParser.cpp
 	src/spiFlash.cpp
 	src/spiInterface.cpp
-	src/rawParser.cpp
 	src/usbBlaster.cpp
 	src/epcq.cpp
 	src/svf_jtag.cpp
@@ -93,8 +118,10 @@ set(OPENFPGALOADER_SOURCE
 	src/ftdipp_mpsse.cpp
 	src/main.cpp
 	src/latticeBitParser.cpp
+	src/libusb_ll.cpp
 	src/gowin.cpp
 	src/device.cpp
+	src/jlink.cpp
 	src/lattice.cpp
 	src/progressBar.cpp
 	src/fsparser.cpp
@@ -114,6 +141,7 @@ set(OPENFPGALOADER_HEADERS
 	src/anlogicBitParser.hpp
 	src/anlogicCable.hpp
 	src/ch552_jtag.hpp
+	src/common.hpp
 	src/cxxopts.hpp
 	src/dfu.hpp
 	src/dfuFileParser.hpp
@@ -123,14 +151,17 @@ set(OPENFPGALOADER_HEADERS
 	src/fx2_ll.hpp
 	src/ice40.hpp
 	src/ihexParser.hpp
+	src/pofParser.hpp
 	src/progressBar.hpp
 	src/rawParser.hpp
 	src/usbBlaster.hpp
 	src/bitparser.hpp
 	src/ftdiJtagBitbang.hpp
 	src/ftdiJtagMPSSE.hpp
+	src/jlink.hpp
 	src/jtag.hpp
 	src/jtagInterface.hpp
+	src/libusb_ll.hpp
 	src/fsparser.hpp
 	src/part.hpp
 	src/board.hpp
@@ -157,6 +188,19 @@ set(OPENFPGALOADER_HEADERS
 	src/colognechipCfgParser.hpp
 )
 
+link_directories(
+	${LIBUSB_LIBRARY_DIRS}
+	${LIBFTDI_LIBRARY_DIRS}
+)
+
+if (ENABLE_LIBGPIOD)
+	link_directories(${LIBGPIOD_LIBRARY_DIRS})
+endif()
+
+if (ENABLE_CMSISDAP AND HIDAPI_FOUND)
+	link_directories(${HIDAPI_LIBRARY_DIRS})
+endif()
+
 add_executable(openFPGALoader
 	${OPENFPGALOADER_SOURCE}
 	${OPENFPGALOADER_HEADERS}
@@ -167,16 +211,6 @@ include_directories(
 	${LIBFTDI_INCLUDE_DIRS}
 )
 
-if (${CMAKE_SYSTEM_NAME} MATCHES "Darwin")
-	find_library(LIBFTDI1STATIC libftdi1.a REQUIRED)
-	find_library(LIBUSB1STATIC libusb-1.0.a REQUIRED)
-	target_link_libraries(openFPGALoader ${LIBFTDI1STATIC} ${LIBUSB1STATIC})
-	set(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} -framework CoreFoundation -framework IOKit -framework Security")
-	link_directories(/usr/local/lib)
-	target_include_directories(openFPGALoader PRIVATE /usr/local/include)
-	set(CMAKE_FIND_LIBRARY_SUFFIXES ".a")
-	set_target_properties(openFPGALoader PROPERTIES LINK_SEARCH_END_STATIC 1)
-else()
 target_link_libraries(openFPGALoader
 	${LIBUSB_LIBRARIES}
 	${LIBFTDI_LIBRARIES}
@@ -185,6 +219,9 @@ target_link_libraries(openFPGALoader
 if (${CMAKE_SYSTEM_NAME} MATCHES "Windows")
 	# winsock provides ntohs
 	target_link_libraries(openFPGALoader ws2_32)
+
+	target_sources(openFPGALoader PRIVATE src/pathHelper.cpp)
+	list(APPEND OPENFPGALOADER_HEADERS src/pathHelper.hpp)
 endif()
 
 # libusb_attach_kernel_driver is only available on Linux.
@@ -192,27 +229,71 @@ if (${CMAKE_SYSTEM_NAME} MATCHES "Linux")
 	add_definitions(-DATTACH_KERNEL)
 endif()
 
-if(ENABLE_UDEV)
-include_directories(${LIBUDEV_INCLUDE_DIRS})
-target_link_libraries(openFPGALoader ${LIBUDEV_LIBRARIES})
+if (ENABLE_UDEV)
+	include_directories(${LIBUDEV_INCLUDE_DIRS})
+	target_link_libraries(openFPGALoader ${LIBUDEV_LIBRARIES})
 endif()
+
+if (ENABLE_LIBGPIOD)
+	include_directories(${LIBGPIOD_INCLUDE_DIRS})
+	target_link_libraries(openFPGALoader ${LIBGPIOD_LIBRARIES})
+	add_definitions(-DENABLE_LIBGPIOD=1)
+	target_sources(openFPGALoader PRIVATE src/libgpiodJtagBitbang.cpp)
+	list (APPEND OPENFPGALOADER_HEADERS src/libgpiodJtagBitbang.hpp)
+	if (LIBGPIOD_VERSION VERSION_GREATER_EQUAL 2)
+		message("libgpiod v2 support enabled")
+		add_definitions(-DGPIOD_APIV2)
+	else()
+		message("libgpiod v1 support enabled")
+	endif()
+endif(ENABLE_LIBGPIOD)
+
+if (ENABLE_JETSONNANOGPIO)
+	add_definitions(-DENABLE_JETSONNANOGPIO=1)
+	target_sources(openFPGALoader PRIVATE src/jetsonNanoJtagBitbang.cpp)
+	list (APPEND OPENFPGALOADER_HEADERS src/jetsonNanoJtagBitbang.hpp)
+	message("Jetson Nano GPIO support enabled")
+endif(ENABLE_JETSONNANOGPIO)
+
+if (ENABLE_UDEV OR ENABLE_LIBGPIOD OR ENABLE_JETSONNANOGPIO)
+	add_definitions(-DUSE_DEVICE_ARG)
+endif(ENABLE_UDEV OR ENABLE_LIBGPIOD OR ENABLE_JETSONNANOGPIO)
 
 if (BUILD_STATIC)
 	set_target_properties(openFPGALoader PROPERTIES LINK_SEARCH_END_STATIC 1)
 endif()
 
 if (ENABLE_CMSISDAP)
-if (HIDAPI_FOUND)
-	include_directories(${HIDAPI_INCLUDE_DIRS})
-	target_link_libraries(openFPGALoader ${HIDAPI_LIBRARIES})
-	add_definitions(-DENABLE_CMSISDAP=1)
-	target_sources(openFPGALoader PRIVATE src/cmsisDAP.cpp)
-	list (APPEND OPENFPGALOADER_HEADERS src/cmsisDAP.hpp)
-	message("cmsis_dap support enabled")
-else()
-	message("hidapi-libusb not found: cmsis_dap support disabled")
-endif()
+	if (HIDAPI_FOUND)
+		include_directories(${HIDAPI_INCLUDE_DIRS})
+		target_link_libraries(openFPGALoader ${HIDAPI_LIBRARIES})
+		add_definitions(-DENABLE_CMSISDAP=1)
+		target_sources(openFPGALoader PRIVATE src/cmsisDAP.cpp)
+		list (APPEND OPENFPGALOADER_HEADERS src/cmsisDAP.hpp)
+		message("cmsis_dap support enabled")
+	else()
+		message("hidapi-libusb not found: cmsis_dap support disabled")
+	endif()
 endif(ENABLE_CMSISDAP)
+
+if (${CMAKE_SYSTEM_NAME} MATCHES "Linux")
+	add_definitions(-DENABLE_XVC=1)
+	target_sources(openFPGALoader PRIVATE src/xvc_client.cpp src/xvc_server.cpp)
+	list (APPEND OPENFPGALOADER_HEADERS src/xvc_client.hpp src/xvc_server.hpp)
+	set(CMAKE_EXE_LINKER_FLAGS "-pthread ${CMAKE_EXE_LINKER_FLAGS}")
+	message("Xilinx Virtual Server support enabled")
+else()
+		message("Xilinx Virtual Server support disabled")
+endif()
+
+if (ENABLE_REMOTEBITBANG)
+	add_definitions(-DENABLE_REMOTEBITBANG=1)
+	target_sources(openFPGALoader PRIVATE src/remoteBitbang_client.cpp)
+	list (APPEND OPENFPGALOADER_HEADERS src/remoteBitbang_client.hpp)
+	message("Remote bitbang client support enabled")
+else()
+	message("Remote bitbang client support disabled")
+endif()
 
 if (ZLIB_FOUND)
 	include_directories(${ZLIB_INCLUDE_DIRS})
@@ -220,7 +301,6 @@ if (ZLIB_FOUND)
 	add_definitions(-DHAS_ZLIB=1)
 else()
 	message("zlib library not found: can't flash intel/altera devices")
-endif()
 endif()
 
 if (LINK_CMAKE_THREADS)
@@ -238,13 +318,43 @@ math(EXPR FTDI_VAL "${LIBFTDI_VERSION_MAJOR} * 100 + ${LIBFTDI_VERSION_MINOR}")
 add_definitions(-DFTDI_VERSION=${FTDI_VAL})
 
 install(TARGETS openFPGALoader DESTINATION bin)
-file(GLOB BITS_FILES spiOverJtag/spiOverJtag_*.bit)
-file(GLOB RBF_FILES spiOverJtag/spiOverJtag_*.rbf)
+
 file(GLOB GZ_FILES spiOverJtag/spiOverJtag_*.*.gz)
-install(FILES 
-	test_sfl.svf
-	${BITS_FILES}
-	${RBF_FILES}
+
+# Compress rbf and bit files present into repository
+# TODO: test compat with Windows and MacOS
+list(INSERT CMAKE_MODULE_PATH 0 ${PROJECT_SOURCE_DIR}/cmake/Modules)
+include(FindGZIP)
+
+if (${CMAKE_SYSTEM_NAME} MATCHES "Linux" AND GZIP_PRG)
+	set(SPIOVERJTAG_DIR "${CMAKE_CURRENT_SOURCE_DIR}/spiOverJtag")
+	file(GLOB BITS_FILES RELATIVE ${SPIOVERJTAG_DIR} spiOverJtag/spiOverJtag_*.bit)
+	file(GLOB RBF_FILES RELATIVE ${SPIOVERJTAG_DIR} spiOverJtag/spiOverJtag_*.rbf)
+
+	STRING(REGEX REPLACE ".bit" ".bit.gz" BIT_GZ_FILES "${BITS_FILES}")
+	STRING(REGEX REPLACE ".rbf" ".rbf.gz" RBF_GZ_FILES "${RBF_FILES}")
+
+	FOREACH(bit ${BITS_FILES} ${RBF_FILES})
+		ADD_CUSTOM_COMMAND(OUTPUT ${bit}.gz
+			COMMAND ${GZIP_PRG} -9 -c ${bit} > ${CMAKE_CURRENT_BINARY_DIR}/${bit}.gz
+			DEPENDS ${SPIOVERJTAG_DIR}/${bit}
+			WORKING_DIRECTORY ${SPIOVERJTAG_DIR}
+			COMMENT "Building ${bit}.gz")
+		list(APPEND GZ_FILES ${CMAKE_CURRENT_BINARY_DIR}/${bit}.gz)
+	ENDFOREACH(bit)
+
+	ADD_CUSTOM_TARGET(bit ALL DEPENDS ${BIT_GZ_FILES} ${RBF_GZ_FILES})
+else()
+	file(GLOB BITS_FILES spiOverJtag/spiOverJtag_*.bit)
+	file(GLOB RBF_FILES spiOverJtag/spiOverJtag_*.rbf)
+	install(FILES
+		${BITS_FILES}
+		${RBF_FILES}
+		DESTINATION ${CMAKE_INSTALL_DATAROOTDIR}/openFPGALoader
+	)
+endif()
+
+install(FILES
 	${GZ_FILES}
 	DESTINATION ${CMAKE_INSTALL_DATAROOTDIR}/openFPGALoader
 )

@@ -29,11 +29,12 @@ using namespace std;
 #define display(...) do {}while(0)
 #endif
 
-CH552_jtag::CH552_jtag(const FTDIpp_MPSSE::mpsse_bit_config &cable,
-			string dev, const string &serial, uint32_t clkHZ, uint8_t verbose):
+CH552_jtag::CH552_jtag(const cable_t &cable,
+			const string &dev, const string &serial, uint32_t clkHZ,
+			uint8_t verbose):
 			FTDIpp_MPSSE(cable, dev, serial, clkHZ, verbose), _to_read(0)
 {
-	init_internal(cable);
+	init_internal(cable.config);
 }
 
 CH552_jtag::~CH552_jtag()
@@ -59,7 +60,7 @@ CH552_jtag::~CH552_jtag()
 			"Loopback failed, expect problems on later runs %d\n", read);
 }
 
-void CH552_jtag::init_internal(const FTDIpp_MPSSE::mpsse_bit_config &cable)
+void CH552_jtag::init_internal(const mpsse_bit_config &cable)
 {
 	display("iProduct : %s\n", _iproduct);
 
@@ -181,7 +182,7 @@ int CH552_jtag::writeTDI(uint8_t *tdi, uint8_t *tdo, uint32_t len, bool last)
 	 */
 	int tx_buff_size = mpsse_get_buffer_size();
 	int real_len = (last) ? len - 1 : len;  // if its a buffer in a big send send len
-						// else supress last bit -> with TMS
+						// else suppress last bit -> with TMS
 	int nb_byte = real_len >> 3;    // number of byte to send
 	int nb_bit = (real_len & 0x07); // residual bits
 	int xfer = tx_buff_size - 7; // 2 byte for opcode and size 2 time
@@ -286,7 +287,7 @@ int CH552_jtag::writeTDI(uint8_t *tdi, uint8_t *tdo, uint32_t len, bool last)
 
 	unsigned char last_bit = (tdi) ? *tx_ptr : 0;
 
-	/* next: serie of bit to send: inconditionnaly write AND read
+	/* next: serie of bit to send: unconditionally write AND read
 	 */
 	if (nb_bit != 0) {
 		display("%s read/write %d bit\n", __func__, nb_bit);

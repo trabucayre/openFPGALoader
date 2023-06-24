@@ -10,8 +10,10 @@
 #include <iostream>
 #include <map>
 #include <vector>
+#include <stdexcept>
 #include <string>
 
+#include "display.hpp"
 #include "ftdiJtagMPSSE.hpp"
 #include "ftdipp_mpsse.hpp"
 
@@ -28,15 +30,16 @@ using namespace std;
 #define display(...) do {}while(0)
 #endif
 
-FtdiJtagMPSSE::FtdiJtagMPSSE(const FTDIpp_MPSSE::mpsse_bit_config &cable,
-			string dev, const string &serial, uint32_t clkHZ,
+FtdiJtagMPSSE::FtdiJtagMPSSE(const cable_t &cable,
+			const string &dev, const string &serial, uint32_t clkHZ,
 			bool invert_read_edge, int8_t verbose):
 			FTDIpp_MPSSE(cable, dev, serial, clkHZ, verbose), _ch552WA(false),
 			_write_mode(MPSSE_WRITE_NEG),  // always write on neg edge
 			_read_mode(0),
-			_invert_read_edge(invert_read_edge) // false: pos, true: neg
+			_invert_read_edge(invert_read_edge), // false: pos, true: neg
+			_tdo_pos(0)
 {
-	init_internal(cable);
+	init_internal(cable.config);
 }
 
 FtdiJtagMPSSE::~FtdiJtagMPSSE()
@@ -62,7 +65,7 @@ FtdiJtagMPSSE::~FtdiJtagMPSSE()
 			"Loopback failed, expect problems on later runs %d\n", read);
 }
 
-void FtdiJtagMPSSE::init_internal(const FTDIpp_MPSSE::mpsse_bit_config &cable)
+void FtdiJtagMPSSE::init_internal(const mpsse_bit_config &cable)
 {
 	display("iProduct : %s\n", _iproduct);
 
@@ -75,8 +78,12 @@ void FtdiJtagMPSSE::init_internal(const FTDIpp_MPSSE::mpsse_bit_config &cable)
 	display("%x\n", cable.bit_high_val);
 	display("%x\n", cable.bit_high_dir);
 
-	init(5, 0xfb, BITMODE_MPSSE);
+	if (init(5, 0xfb, BITMODE_MPSSE) != 0)
+		throw std::runtime_error("low level FTDI init failed");
 	config_edge();
+
+	_curr_tms = (cable.bit_low_val >> 3) & 0x01;
+	_curr_tdi = (cable.bit_low_val >> 1) & 0x01;
 }
 
 int FtdiJtagMPSSE::setClkFreq(uint32_t clkHZ) {
@@ -210,7 +217,7 @@ int FtdiJtagMPSSE::writeTDI(uint8_t *tdi, uint8_t *tdo, uint32_t len, bool last)
 	 */
 	int tx_buff_size = mpsse_get_buffer_size();
 	int real_len = (last) ? len - 1 : len;  // if its a buffer in a big send send len
-						// else supress last bit -> with TMS
+						// else suppress last bit -> with TMS
 	int nb_byte = real_len >> 3;    // number of byte to send
 	int nb_bit = (real_len & 0x07); // residual bits
 	int xfer = tx_buff_size - 3;
@@ -264,7 +271,8 @@ int FtdiJtagMPSSE::writeTDI(uint8_t *tdi, uint8_t *tdo, uint32_t len, bool last)
 	}
 
 	unsigned char last_bit = (tdi) ? *tx_ptr : 0;
-	bool double_write = true;
+	// never double write when nb_bit == 0
+	bool double_write = (nb_bit != 0) ? true : false;
 
 	if (nb_bit != 0) {
 		display("%s read/write %d bit\n", __func__, nb_bit);
@@ -326,7 +334,7 @@ int FtdiJtagMPSSE::writeTDI(uint8_t *tdi, uint8_t *tdo, uint32_t len, bool last)
 				index++;
 			}
 			/* in this case for 1 one it's always bit 7 */
-			*rx_ptr |= ((c[index] & 0x80) << (7 - nb_bit));
+			*rx_ptr |= (((c[index]) & 0x80) >> (7 - nb_bit));
 		} else if (_ch552WA) {
 			mpsse_write();
 			ftdi_read_data(_ftdi, c, 1);
@@ -336,4 +344,221 @@ int FtdiJtagMPSSE::writeTDI(uint8_t *tdi, uint8_t *tdo, uint32_t len, bool last)
 	}
 
 	return 0;
+}
+
+int32_t FtdiJtagMPSSE::update_tms_buff(uint8_t *buffer, uint8_t bit,
+		uint32_t offset, uint8_t tdi, uint8_t *tdo, bool end)
+{
+	int32_t ret;
+	if (_verbose)
+		printf("%s %d %02x %d\n", __func__, offset, buffer[0], end);
+	if (!end) {
+		uint8_t bit_shift = (1 << (offset));
+		if (bit)
+			buffer[0] |= bit_shift;
+		else
+			buffer[0] &= ~bit_shift;
+		offset++;
+	}
+	if (offset == 6 || end) {
+		if (tdi)
+			buffer[0] |= (0x01 << 7);
+		else
+			buffer[0] &= ~(0x01 << 7);
+		uint8_t mp[3] = {
+			static_cast<unsigned char>(MPSSE_WRITE_TMS | MPSSE_LSB |
+										MPSSE_BITMODE | _write_mode |
+										MPSSE_DO_READ | _read_mode
+										),
+			static_cast<uint8_t>(offset - 1),
+			buffer[0]
+		};
+		// force a write
+		if (_verbose)
+			printf("\t%02x %02d %02x\n", mp[0], mp[1], mp[2]);
+		if ((ret = mpsse_store(mp, 3)) < 0)
+			return ret;
+		uint8_t tdo_tmp;
+		if ((ret = mpsse_read(&tdo_tmp, 1)) < 0)
+			return ret;
+		update_tdo_buff(&tdo_tmp, tdo, offset);
+		offset = 0;
+		buffer[0] = 0;
+	}
+	return offset;
+}
+
+uint32_t FtdiJtagMPSSE::update_tdo_buff(uint8_t *buffer, uint8_t *tdo, uint32_t len)
+{
+	if (_verbose) {
+		printError("update tdo " + std::to_string(_tdo_pos) + " " + std::to_string(len) + " ", false);
+		uint32_t tt = (len + 7) / 8;
+		for (uint32_t i = 0; i < tt; i++)
+			printf("%02x ", buffer[i]);
+	}
+	for (uint32_t i = 0; i < len; i++, _tdo_pos++) {
+		uint8_t bit = (buffer[i >> 3] >> (i & 0x07)) & 0x01;
+		uint8_t mask = 1 << (_tdo_pos & 0x07);
+		if (bit)
+			tdo[_tdo_pos >> 3] |= mask;
+		else
+			tdo[_tdo_pos >> 3] &= ~mask;
+	}
+	if (_verbose)
+		printf("\n");
+	return _tdo_pos;
+}
+
+bool FtdiJtagMPSSE::writeTMSTDI(const uint8_t *tms, const uint8_t *tdi,
+		uint8_t *tdo, uint32_t len)
+{
+	int32_t ret;
+	uint32_t max_len = 1024;
+	uint8_t mode = 0;         // current state: 0 none, 1 TDI, 2 TMS
+	uint8_t tdi_buf[max_len]; // buffer to store TDI sequence
+	uint8_t tms_tmp = 0;      // buffer to store TMS sequence (limited to 6bits per cmd)
+	uint8_t tdo_tmp[max_len]; // local TDO sequence
+	uint32_t buff_len = 0;    // current bits stored
+	memset(tdi_buf, 0, max_len);
+	memset(tdo_tmp, 0, max_len);
+	_tdo_pos = 0; // current bits read
+
+	if (_verbose)
+		printSuccess("begin: " + std::to_string(len));
+
+	for (uint32_t buf_pos = 0; buf_pos < len; buf_pos++) {
+		/* extract bit from TMS and TDI sequence */
+		uint8_t tms_bit = (tms[buf_pos >> 3] >> (buf_pos & 0x07) & 0x01);
+		uint8_t tdi_bit = (tdi[buf_pos >> 3] >> (buf_pos & 0x07) & 0x01);
+
+		if (_verbose) {
+			char mess[256];
+			snprintf(mess, 256, "tms %d -> %d tdi %d -> %d mode %d %d/%d (%d)",
+					_curr_tms, tms_bit, _curr_tdi, tdi_bit, mode, buf_pos, len, buff_len);
+			printInfo(mess);
+		}
+
+		/* possible case:
+		 * tdi & tms not changed    -> write tdi
+		 * tdi change but tms not   -> write tdi
+		 * tdi idem but tms changed -> write tms
+		 * tdi & tms changed        -> serie of write tms
+		 * but finally:
+		 * if tms is not changed -> write tdi
+		 * otherwise             -> write tms
+		 */
+		/* tms unchanged -> try to use TDI/TDO transaction */
+		if (tms_bit == _curr_tms) {
+			/* a tms transaction exist but not flushed or full
+			 * if tdi is not changed -> update tms sequence
+			 */
+			if (mode == 2 && buff_len != 0 && tdi_bit == _curr_tdi) {
+				ret = update_tms_buff(&tms_tmp, tms_bit, buff_len,
+						tdi_bit, tdo);
+				if (ret < 0)
+					return false;
+				else
+					buff_len = ret;
+			} else {
+				/* tdi sequence
+				 * first flush tms sequence if required */
+				if (mode != 1 && buff_len != 0) {
+					ret = update_tms_buff(&tms_tmp, 0, buff_len, _curr_tdi,
+						tdo, true);
+					if (ret < 0)
+						return false;
+					else
+						buff_len = ret;
+				}
+				/* update tdi buffer with one more bit */
+				uint8_t mask = (1 << (buff_len & 0x07));
+				if (tdi_bit)
+					tdi_buf[buff_len >> 3] |= mask;
+				else
+					tdi_buf[buff_len >> 3] &= ~mask;
+				buff_len++;
+				mode = 1;
+			}
+		/* TMS is changed -> TMS transaction */
+		} else {
+			/* flush */
+			/* previous write TDI -> flush */
+			if (mode == 1 && buff_len > 0) {
+				bool is_end = false;
+				/* tms 0 -> 1: it's handled by writeTDI:
+				 * append bit to avoid another transaction */
+				if (_curr_tms == 0 && tms_bit == 1) {
+					uint8_t mask = (1 << (buff_len & 0x07));
+					if (tdi_bit)
+						tdi_buf[buff_len >> 3] |= mask;
+					else
+						tdi_buf[buff_len >> 3] &= ~mask;
+					buff_len++;
+					is_end = true;
+				}
+				writeTDI(tdi_buf, tdo_tmp, buff_len, is_end);
+				update_tdo_buff(tdo_tmp, tdo, buff_len);
+				memset(tdi_buf, 0, max_len);
+				buff_len = 0;
+				if (is_end) {
+					_curr_tdi = tdi_bit;
+					mode = 1;
+					continue;
+				}
+			/* same state -> simply flush */
+			} else if (tdi_bit != _curr_tdi && mode == 2 && buff_len > 0) {
+				ret = update_tms_buff(&tms_tmp, 0, buff_len, _curr_tdi, tdo, true);
+				if (ret < 0)
+					return false;
+				else
+					buff_len = ret;
+				tms_tmp = 0;
+			}
+			/* update */
+			ret = update_tms_buff(&tms_tmp, tms_bit, buff_len, tdi_bit, tdo);
+			if (ret < 0)
+				return false;
+			else
+				buff_len = ret;
+			mode = 2;
+		}
+
+		/* buffer full? */
+		if (buff_len == 8*max_len && mode == 1) {
+			writeTDI(tdi_buf, tdo_tmp, buff_len, false);
+			update_tdo_buff(tdo_tmp, tdo, buff_len);
+			memset(tdi_buf, 0, max_len);
+			buff_len = 0;
+		} else if (buff_len == 6 && mode == 2) {
+			ret = update_tms_buff(&tms_tmp, 0, buff_len, _curr_tdi, tdo, true);
+			if (ret < 0)
+				return false;
+			else
+				buff_len = ret;
+			tms_tmp = 0;
+		}
+		_curr_tdi = tdi_bit;
+		_curr_tms = tms_bit;
+	}
+
+	 /* end -> force flush buffers */
+	if (buff_len > 0) {
+		switch (mode) {
+		case 1:
+			writeTDI(tdi_buf, tdo_tmp, buff_len, false);
+			update_tdo_buff(tdo_tmp, tdo, buff_len);
+			break;
+		case 2:
+			if (update_tms_buff(&tms_tmp, 0, buff_len, _curr_tdi,
+						tdo, true) < 0)
+				return false;
+			break;
+		}
+	}
+	if (_verbose) {
+		printSuccess("end state: tdi " + std::to_string(_curr_tdi) +
+				" tms " + std::to_string(_curr_tms));
+	}
+
+	return true;
 }

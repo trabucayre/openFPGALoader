@@ -5,20 +5,21 @@
 
 #ifndef JTAG_H
 #define JTAG_H
-#include <ftdi.h>
+
 #include <iostream>
 #include <string>
 #include <vector>
 
 #include "board.hpp"
 #include "cable.hpp"
-#include "ftdipp_mpsse.hpp"
 #include "jtagInterface.hpp"
 
 class Jtag {
  public:
-	Jtag(cable_t &cable, const jtag_pins_conf_t *pin_conf, std::string dev,
-		const std::string &serial, uint32_t clkHZ, int8_t verbose = 0,
+	Jtag(const cable_t &cable, const jtag_pins_conf_t *pin_conf,
+		const std::string &dev,
+		const std::string &serial, uint32_t clkHZ, int8_t verbose,
+		const std::string &ip_adr, int port,
 		const bool invert_read_edge = false,
 		const std::string &firmware_path = "");
 	~Jtag();
@@ -60,6 +61,12 @@ class Jtag {
 	 * \return false if fails
 	 */
 	bool insert_first(uint32_t device_id, uint16_t irlength);
+
+	/*!
+	 * \brief return a pointer to the transport subclass
+	 * \return a pointer instance of JtagInterface
+	 */
+	JtagInterface *get_ll_class() {return _jtag;}
 
 	int shiftIR(unsigned char *tdi, unsigned char *tdo, int irlen,
 		int end_state = RUN_TEST_IDLE);
@@ -103,11 +110,12 @@ class Jtag {
 	JtagInterface *_jtag;
 
  private:
-	void init_internal(cable_t &cable, const std::string &dev,
+	void init_internal(const cable_t &cable, const std::string &dev,
 		const std::string &serial,
 		const jtag_pins_conf_t *pin_conf, uint32_t clkHZ,
 		const std::string &firmware_path,
-		const bool invert_read_edge);
+		const bool invert_read_edge,
+		const std::string &ip_adr, int port);
 	/*!
 	 * \brief search in fpga_list and misc_dev_list for a device with idcode
 	 *        if found insert idcode and irlength in _devices_list and

@@ -7,6 +7,8 @@ file delete -force $build_path
 
 # Project creation
 set grade [dict create \
+	xc7a25tcpg238  -1 \
+	xc7a25tcsg325  -1 \
 	xc7a35tcpg236  -1 \
 	xc7a35tcsg324  -1 \
 	xc7a35tftg256  -1 \
@@ -16,10 +18,13 @@ set grade [dict create \
 	xc7a200tsbg484 -1 \
 	xc7k325tffg676 -1 \
 	xc7k325tffg900 -2 \
+	xc7s25csga225  -1 \
 	xc7s50csga324  -1 \
 	]
 
 set pkg_name [dict create \
+	xc7a25tcpg238  xc7a_cpg238 \
+	xc7a25tcsg325  xc7a_csg325 \
 	xc7a35tcpg236  xc7a_cpg236 \
 	xc7a35tcsg324  xc7a_csg324 \
 	xc7a35tftg256  xc7a_ftg256 \
@@ -30,6 +35,7 @@ set pkg_name [dict create \
 	xc7a200tfbg484 xc7a_fbg484 \
 	xc7k325tffg676 xc7k_ffg676 \
 	xc7k325tffg900 xc7k_ffg900 \
+	xc7s25csga225  xc7s_csga225 \
 	xc7s50csga324  xc7s_csga324 \
 	]
 

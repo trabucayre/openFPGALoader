@@ -11,7 +11,7 @@ Resetting an FPGA
     openFPGALoader [options] -r
 
 Using negative edge for TDO's sampling
-====================================
+======================================
 
 If transaction are unstable you can try to change read edge by using
 
@@ -43,7 +43,7 @@ Automatic file type detection bypass
 ====================================
 
 Default behavior is to use file extension to determine file parser.
-To avoid this mecanism ``--file-type type`` must be used.
+To avoid this mechanism ``--file-type type`` must be used.
 
 FT231/FT232 bitbang mode and pins configuration
 ===============================================
@@ -82,3 +82,20 @@ Writing to an arbitrary address in flash memory
 
 With FPGA using an external SPI flash (*xilinx*, *lattice ECP5/nexus/ice40*, *anlogic*, *efinix*) option ``-o`` allows
 one to write raw binary file to an arbitrary adress in FLASH.
+
+Using an alternative directory for *spiOverJtag*
+================================================
+
+By setting ``OPENFPGALOADER_SOJ_DIR`` it's possible to override default
+*spiOverJtag* bitstreams directory:
+
+.. code-block:: bash
+
+    export OPENFPGALOADER_SOJ_DIR=/somewhere
+    openFPGALoader xxxx
+
+or
+
+.. code-block:: bash
+
+    OPENFPGALOADER_SOJ_DIR=/somewhere openFPGALoader xxxx

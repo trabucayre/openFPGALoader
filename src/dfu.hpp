@@ -24,7 +24,8 @@ class DFU {
 		 * \param[in] altsetting: device altsetting to use
 		 * \param[in] verbose_lvl: verbose level 0 normal, -1 quiet, 1 verbose
 		 */
-		DFU(const std::string &filename, uint16_t vid, uint16_t pid,
+		DFU(const std::string &filename, bool bypass_bitstream,
+				uint16_t vid, uint16_t pid,
 				int16_t altsetting, int verbose_lvl);
 
 		~DFU();
@@ -234,7 +235,7 @@ class DFU {
 		int dev_idx;                         /**< device index in dfu_dev */
 		uint16_t _vid;                       /**< device Vendor ID */
 		uint16_t _pid;                       /**< device Product ID */
-		int16_t _altsetting;                 /**< device altesetting */
+		int16_t _altsetting;                 /**< device altsetting */
 		struct libusb_context *usb_ctx;      /**< usb context */
 		libusb_device_handle * dev_handle;   /**< current device handle */
 		int curr_intf;                       /**< device interface to use */

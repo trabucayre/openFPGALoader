@@ -12,9 +12,9 @@
 
 using namespace std;
 
-EfinixHexParser::EfinixHexParser(const string &filename, bool reverseOrder):
+EfinixHexParser::EfinixHexParser(const string &filename):
 		ConfigBitstreamParser(filename, ConfigBitstreamParser::ASCII_MODE,
-		false), _reverseOrder(reverseOrder)
+		false)
 {}
 
 int EfinixHexParser::parse()

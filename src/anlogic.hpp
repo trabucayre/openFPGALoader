@@ -41,6 +41,13 @@ class Anlogic: public Device, SPIInterface {
 		}
 
 		/*!
+		 * \brief bulk erase SPI flash
+		 */
+		bool bulk_erase_flash() override {
+			return SPIInterface::bulk_erase_flash();
+		}
+
+		/*!
 		 * \brief dump len byte from base_addr from SPI flash
 		 * \param[in] base_addr: start offset
 		 * \param[in] len: dump len
@@ -66,8 +73,6 @@ class Anlogic: public Device, SPIInterface {
 		 */
 		virtual bool post_flash_access() override {reset(); return true;}
 
-	private:
-		SVF_jtag _svf;
 };
 
 #endif  // SRC_ANLOGIC_HPP_

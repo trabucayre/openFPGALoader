@@ -24,7 +24,7 @@ class CologneChip: public Device, SPIInterface {
 	public:
 		CologneChip(FtdiSpi *spi, const std::string &filename,
 			const std::string &file_type, Device::prog_type_t prg_type,
-			uint16_t rstn_pin, uint16_t done_pin, uint16_t failn_pin, uint16_t oen_pin,
+			uint16_t rstn_pin, uint16_t done_pin, uint16_t fail_pin, uint16_t oen_pin,
 			bool verify, int8_t verbose);
 		CologneChip(Jtag* jtag, const std::string &filename,
 			const std::string &file_type, Device::prog_type_t prg_type,
@@ -34,12 +34,14 @@ class CologneChip: public Device, SPIInterface {
 
 		bool cfgDone();
 		void waitCfgDone();
-		bool dumpFlash(const std::string &filename, uint32_t base_addr, uint32_t len);
+		bool dumpFlash(uint32_t base_addr, uint32_t len) override;
 		virtual bool protect_flash(uint32_t len) override {
 			(void) len;
 			printError("protect flash not supported"); return false;}
 		virtual bool unprotect_flash() override {
 			printError("unprotect flash not supported"); return false;}
+		virtual bool bulk_erase_flash() override {
+			printError("bulk erase flash not supported"); return false;}
 		void program(unsigned int offset, bool unprotect_flash) override;
 
 		int idCode() override {return 0;}
@@ -64,7 +66,7 @@ class CologneChip: public Device, SPIInterface {
 		FtdiJtagMPSSE *_ftdi_jtag = NULL;
 		uint16_t _rstn_pin;
 		uint16_t _done_pin;
-		uint16_t _failn_pin;
+		uint16_t _fail_pin;
 		uint16_t _oen_pin;
 };
 

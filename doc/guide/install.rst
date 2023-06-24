@@ -19,7 +19,7 @@ Alternatively, you could build from source. First: install required libraries:
 
 .. code-block:: bash
 
-   sudo pacman -S git cmake make gcc pkgconf libftdi libusb zlib hidapi
+   sudo pacman -S git cmake make gcc pkgconf libftdi libusb zlib hidapi gzip
 
 Build step is similar as Debian
 
@@ -41,6 +41,8 @@ This application uses ``libftdi1``, so this library must be installed (and, depe
 .. code-block:: bash
 
     sudo apt install \
+      git \
+      gzip \
       libftdi1-2 \
       libftdi1-dev \
       libhidapi-hidraw0 \
@@ -85,6 +87,14 @@ You may also need to add this if you see link errors between ``libusb`` and ``pt
 
     -DLINK_CMAKE_THREADS=ON
 
+By default, ``libgpiod`` support is enabled
+If you don't want this option, use:
+
+.. code-block:: bash
+
+    -DENABLE_LIBGPIOD=OFF
+
+Additionaly you have to install ``libgpiod``
 
 To build the app:
 
@@ -125,6 +135,14 @@ These rules set access right and group (``plugdev``) when a converter is plugged
 
 After that you need to unplug and replug your device.
 
+.. HINT::
+   ``usermod`` is used to add ``$USER`` as a member of ``plugdev`` group.
+   However this update is not taken into account immediately: it's required to
+   logout from current session and login again.
+   Check, by using ``id $USER``, if ``plugdev`` is mentioned after ``groups=``.
+   An alternate (and temporary) solution is to use ``sudo - $USER`` to have
+   your user seen as a member of ``plugdev`` group (works only for the current terminal).
+
 macOS
 =====
 
@@ -133,6 +151,19 @@ openFPGALoader is available as a `Homebrew <https://brew.sh>`__ formula:
 .. code-block:: bash
 
     brew install openfpgaloader
+
+Alternatively, if you want to build it by hand:
+
+.. code-block:: bash
+
+    brew install --only-dependencies openfpgaloader
+    brew install cmake pkg-config zlib gzip
+    git clone https://github.com/trabucayre/openFPGALoader
+    cd openFPGALoader
+    mkdir build
+    cd build
+    cmake ..
+    make -j
 
 Windows
 =======

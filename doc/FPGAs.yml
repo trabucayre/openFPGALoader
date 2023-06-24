@@ -54,9 +54,10 @@ Gowin:
      - GW1NS-2C
      - GW1NSR-4C
      - GW1NZ-1
+     - GW2A-18C
     URL: https://www.gowinsemi.com/en/product/detail/2/
     Memory: OK
-    Flash: IF
+    Flash: IF / EF
 
 
 Intel:
@@ -68,7 +69,9 @@ Intel:
     Flash: OK
 
   - Description: Cyclone IV CE
-    Model: EP4CE22
+    Model:
+      - EP4CE22
+      - EP4CE115
     URL: https://www.intel.com/content/www/us/en/products/programmable/fpga/cyclone-iv/features.html
     Memory: OK
     Flash: OK
@@ -76,7 +79,9 @@ Intel:
   - Description: Cyclone V E
     Model:
       - 5CEA2
+      - 5CEA5
       - 5CEBA4
+      - 5CEBA9
     URL: https://www.intel.com/content/www/us/en/products/programmable/fpga/cyclone-v.html
     Memory: OK
     Flash: OK
@@ -96,6 +101,12 @@ Intel:
     Memory: OK
     Flash: OK
 
+  - Description: Max 10
+    Model: 10M08
+    URL: https://www.intel.fr/content/www/fr/fr/products/details/fpga/max/10.html
+    Memory: SVF
+    Flash: SVF
+
 
 Lattice:
 
@@ -107,8 +118,16 @@ Lattice:
 
   - Description: ECP5
     Model:
-      - 25F
-      - 5G 85F
+      - LFE5U-12
+      - LFE5U-25
+      - LFE5U-45
+      - LFE5U-85
+      - LFE5UM-25
+      - LFE5UM-45
+      - LFE5UM-85
+      - LFE5UM5G-25
+      - LFE5UM5G-45
+      - LFE5UM5G-85
     URL: http://www.latticesemi.com/Products/FPGAandCPLD/ECP5
     Memory: OK
     Flash: OK
@@ -163,6 +182,7 @@ Xilinx:
 
   - Description: Artix 7
     Model:
+      - xc7a25t
       - xc7a35ti
       - xc7a50t
       - xc7a75t
@@ -176,15 +196,41 @@ Xilinx:
     Model:
       - xc7k160t
       - xc7k325t
+      - xc7k410t
+      - xc7k420t
     URL: https://www.xilinx.com/products/silicon-devices/fpga/kintex-7.html#productTable
     Memory: OK
     Flash: OK
 
-  - Description: Spartan 3
-    Model: xc3s200
-    URL: https://www.xilinx.com/products/silicon-devices/fpga/spartan-3.html
+  - Description: Artix UltraScale+
+    Model:
+      - xcau25p
+    URL: https://www.xilinx.com/products/silicon-devices/fpga/artix-ultrascale-plus.html
+    Memory: OK
+    Flash: TBD
+
+  - Description: Kintex UltraScale
+    Model:
+      - xcku035
+      - xcku040
+    URL: https://www.xilinx.com/products/silicon-devices/fpga/kintex-ultrascale.html#productTable
     Memory: OK
     Flash: NA
+
+  - Description: Virtex UltraScale+
+    Model:
+      - xcvu9p
+    URL: https://www.xilinx.com/products/silicon-devices/fpga/virtex-ultrascale-plus.html#productTable
+    Memory: OK
+    Flash: OK
+
+  - Description: Spartan 3
+    Model:
+      - xc3s200
+      - xc3s500e
+    URL: https://www.xilinx.com/products/silicon-devices/fpga/spartan-3.html
+    Memory: OK
+    Flash: OK
 
   - Description: Spartan 6
     Model:
@@ -216,8 +262,10 @@ Xilinx:
     Memory: NA
     Flash: OK
 
-  - Description: XC2C (coolrunner II)
-    Model: xc2c32a
+  - Description: XC2C/XA2C (coolrunner II)
+    Model:
+      - xc2c32a
+      - xa2c64a
     URL: https://www.xilinx.com/support/documentation/data_sheets/ds090.pdf
     Memory: TBD
     Flash: OK
@@ -240,7 +288,10 @@ Xilinx:
     Flash: NA
 
   - Description: ZynqMPSoC
-    Model: xczu2cg
+    Model:
+      - xczu2cg
+      - xczu9eg
+      - xczu11eg
     URL: https://www.xilinx.com/products/silicon-devices/soc/zynq-ultrascale-mpsoc.html
     Memory: OK
     Flash: NA

@@ -50,7 +50,7 @@ FX2_ll::FX2_ll(uint16_t uninit_vid, uint16_t uninit_pid,
 	}
 
 	/* try to open an already init device
-	 * since fx2 may be not immediatly ready
+	 * since fx2 may be not immediately ready
 	 * retry with a delay
 	 */
 	int timeout = 100;

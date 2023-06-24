@@ -38,8 +38,8 @@ jobs:
       fail-fast: false
       matrix:
         os:
-        - 18
         - 20
+        - 22
     name: '🚧🐧 Ubuntu ${{ matrix.os }} | build'
     runs-on: ubuntu-${{ matrix.os }}.04
     steps:
@@ -52,6 +52,7 @@ jobs:
         sudo apt update -qq
         sudo apt install -y \
           cmake \
+          gzip \
           libftdi1-2 \
           libftdi1-dev \
           libhidapi-hidraw0 \
@@ -121,8 +122,8 @@ jobs:
       fail-fast: false
       matrix:
         os:
-        - 18
         - 20
+        - 22
     name: '🚦🐧 Ubuntu ${{ matrix.os }} | test'
     runs-on: ubuntu-${{ matrix.os }}.04
     steps:

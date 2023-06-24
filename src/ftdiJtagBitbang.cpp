@@ -30,18 +30,29 @@ using namespace std;
 #define display(...) do {}while(0)
 #endif
 
-FtdiJtagBitBang::FtdiJtagBitBang(const FTDIpp_MPSSE::mpsse_bit_config &cable,
-			const jtag_pins_conf_t *pin_conf, string dev, const std::string &serial,
-			uint32_t clkHZ, uint8_t verbose):
+FtdiJtagBitBang::FtdiJtagBitBang(const cable_t &cable,
+			const jtag_pins_conf_t *pin_conf, const string &dev,
+			const std::string &serial, uint32_t clkHZ, uint8_t verbose):
 			FTDIpp_MPSSE(cable, dev, serial, clkHZ, verbose), _bitmode(0),
 			_curr_tms(0), _rx_size(0)
 {
 	unsigned char *ptr;
 
-	_tck_pin = pin_conf->tck_pin;
-	_tms_pin = pin_conf->tms_pin;
-	_tdi_pin = pin_conf->tdi_pin;
-	_tdo_pin = pin_conf->tdo_pin;
+	/* Validate pins */
+	uint8_t pins[] = {pin_conf->tck_pin, pin_conf->tms_pin,
+		pin_conf->tdi_pin, pin_conf->tdo_pin};
+	for (uint32_t i = 0; i < sizeof(pins) / sizeof(pins[0]); i++) {
+		if (pins[i] > FT232RL_RI || pins[i] < FT232RL_TXD) {
+			printf("%d\n", pins[i]);
+			printError("Invalid pin ID");
+			throw std::exception();
+		}
+	}
+
+	_tck_pin = 1 << pin_conf->tck_pin;
+	_tms_pin = 1 << pin_conf->tms_pin;
+	_tdi_pin = 1 << pin_conf->tdi_pin;
+	_tdo_pin = 1 << pin_conf->tdo_pin;
 
 	/* store FTDI TX Fifo size */
 	if (_pid == 0x6001)  // FT232R
@@ -66,7 +77,8 @@ FtdiJtagBitBang::FtdiJtagBitBang(const FTDIpp_MPSSE::mpsse_bit_config &cable,
 
 	setClkFreq(clkHZ);
 
-	init(1, _tck_pin | _tms_pin | _tdi_pin, BITMODE_BITBANG);
+	if (init(1, _tck_pin | _tms_pin | _tdi_pin, BITMODE_BITBANG) != 0)
+		throw std::runtime_error("low level FTDI init failed");
 	setBitmode(BITMODE_BITBANG);
 }
 

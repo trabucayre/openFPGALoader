@@ -24,7 +24,7 @@ using namespace std;
  *        01 -> end of file
  *        02 -> extended addr
  *        03 -> start segment addr record
- *        04 -> extented linear addr record
+ *        04 -> extended linear addr record
  *        05 -> start linear addr record
  */
 
@@ -43,6 +43,7 @@ int McsParser::parse()
 {
 	string str;
 	istringstream lineStream(_raw_data);
+	_bit_data.resize(_file_size);
 
 	while (std::getline(lineStream, str, '\n')) {
 		char *ptr;

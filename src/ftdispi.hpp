@@ -11,6 +11,7 @@
 #include <vector>
 
 #include "board.hpp"
+#include "cable.hpp"
 #include "ftdipp_mpsse.hpp"
 #include "spiInterface.hpp"
 
@@ -28,7 +29,7 @@ class FtdiSpi : public FTDIpp_MPSSE, SPIInterface {
 
 	FtdiSpi(int vid, int pid, unsigned char interface, uint32_t clkHZ,
 		bool verbose);
-	FtdiSpi(const FTDIpp_MPSSE::mpsse_bit_config &conf,
+	FtdiSpi(const cable_t &cable,
 		spi_pins_conf_t spi_config, uint32_t clkHZ,
 		bool verbose);
 	~FtdiSpi();

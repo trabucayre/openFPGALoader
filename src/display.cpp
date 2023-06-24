@@ -20,7 +20,7 @@
 #define KCYN  "\x1B[36m"
 #define KWHT  "\x1B[37m"
 
-void printError(std::string err, bool eol)
+void printError(const std::string &err, bool eol)
 {
 	if (isatty(STDERR_FILENO))
 		std::cerr << KRED << err << "\e[0m";
@@ -31,7 +31,7 @@ void printError(std::string err, bool eol)
 		std::cerr << std::endl;
 }
 
-void printWarn(std::string warn, bool eol)
+void printWarn(const std::string &warn, bool eol)
 {
 	if (isatty(STDOUT_FILENO))
 		std::cout << KYEL << warn << "\e[0m" << std::flush;
@@ -42,7 +42,7 @@ void printWarn(std::string warn, bool eol)
 		std::cout << std::endl;
 }
 
-void printInfo(std::string info, bool eol)
+void printInfo(const std::string &info, bool eol)
 {
 	if (isatty(STDOUT_FILENO))
 		std::cout << KBLUL << info << "\e[0m" << std::flush;
@@ -53,7 +53,7 @@ void printInfo(std::string info, bool eol)
 		std::cout << std::endl;
 }
 
-void printSuccess(std::string success, bool eol)
+void printSuccess(const std::string &success, bool eol)
 {
 	if (isatty(STDOUT_FILENO))
 		std::cout << KGRN << success << "\e[0m" << std::flush;

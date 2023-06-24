@@ -20,7 +20,9 @@ class Altera: public Device, SPIInterface {
 				const std::string &file_type,
 				Device::prog_type_t prg_type,
 				const std::string &device_package,
-				bool verify, int8_t verbose);
+				const std::string &spiOverJtagPath,
+				bool verify, int8_t verbose,
+				bool skip_load_bridge, bool skip_reset);
 		~Altera();
 
 		void programMem(RawParser &_bit);
@@ -56,6 +58,12 @@ class Altera: public Device, SPIInterface {
 		bool unprotect_flash() override {
 			return SPIInterface::unprotect_flash();
 		}
+		/*!
+		 * \brief bulk erase SPI flash
+		 */
+		bool bulk_erase_flash() override {
+			return SPIInterface::bulk_erase_flash();
+		}
 
 		int spi_put(uint8_t cmd, uint8_t *tx, uint8_t *rx,
 				uint32_t len) override;
@@ -64,8 +72,8 @@ class Altera: public Device, SPIInterface {
 				uint32_t timeout, bool verbose = false) override;
 
 	protected:
-		bool prepare_flash_access() override {return load_bridge();}
-		bool post_flash_access() override {reset(); return true;}
+		bool prepare_flash_access() override;
+		bool post_flash_access() override;
 
 	private:
 		/*!
@@ -92,8 +100,8 @@ class Altera: public Device, SPIInterface {
 		void shiftVDR(uint8_t * tx, uint8_t * rx, uint32_t len,
 				int end_state = Jtag::UPDATE_DR, bool debug = false);
 
-		SVF_jtag _svf;
 		std::string _device_package;
+		std::string _spiOverJtagPath; /**< spiOverJtag explicit path */
 		uint32_t _vir_addr; /**< addr affected to virtual jtag */
 		uint32_t _vir_length; /**< length of virtual jtag IR */
 };

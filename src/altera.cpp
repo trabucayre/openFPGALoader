@@ -9,26 +9,31 @@
 
 #include <string>
 
+#include "common.hpp"
 #include "jtag.hpp"
 #include "device.hpp"
 #include "epcq.hpp"
 #include "progressBar.hpp"
 #include "rawParser.hpp"
+#if defined (_WIN64) || defined (_WIN32)
+#include "pathHelper.hpp"
+#endif
 
 #define IDCODE 6
 #define USER0  0x0C
 #define USER1  0x0E
 #define BYPASS 0x3FF
 #define IRLENGTH 10
-// DATA_DIR is defined at compile time.
-#define BIT_FOR_FLASH (DATA_DIR "/openFPGALoader/test_sfl.svf")
 
 Altera::Altera(Jtag *jtag, const std::string &filename,
 	const std::string &file_type, Device::prog_type_t prg_type,
-	const std::string &device_package, bool verify, int8_t verbose):
+	const std::string &device_package,
+	const std::string &spiOverJtagPath, bool verify, int8_t verbose,
+	bool skip_load_bridge, bool skip_reset):
 	Device(jtag, filename, file_type, verify, verbose),
-	SPIInterface(filename, verbose, 256, verify),
-	_svf(_jtag, _verbose), _device_package(device_package),
+	SPIInterface(filename, verbose, 256, verify, skip_load_bridge,
+				 skip_reset),
+	_device_package(device_package), _spiOverJtagPath(spiOverJtagPath),
 	_vir_addr(0x1000), _vir_length(14)
 {
 	if (prg_type == Device::RD_FLASH) {
@@ -148,19 +153,46 @@ void Altera::programMem(RawParser &_bit)
 	_jtag->set_state(Jtag::RUN_TEST_IDLE);
 }
 
+bool Altera::post_flash_access()
+{
+	if (_skip_reset)
+		printInfo("Skip resetting device");
+	else
+		reset();
+	return true;
+}
+
+bool Altera::prepare_flash_access()
+{
+	if (_skip_load_bridge) {
+		printInfo("Skip loading bridge for spiOverjtag");
+		return true;
+	}
+	return load_bridge();
+}
+
 bool Altera::load_bridge()
 {
-	if (_device_package.empty()) {
-		printError("Can't program SPI flash: missing device-package information");
-		return false;
+	std::string bitname;
+	if (!_spiOverJtagPath.empty()) {
+		bitname = _spiOverJtagPath;
+	} else {
+		if (_device_package.empty()) {
+			printError("Can't program SPI flash: missing device-package information");
+			return false;
+		}
+
+		bitname = get_shell_env_var("OPENFPGALOADER_SOJ_DIR", DATA_DIR "/openFPGALoader");
+#ifdef HAS_ZLIB
+		bitname += "/spiOverJtag_" + _device_package + ".rbf.gz";
+#else
+		bitname += "/spiOverJtag_" + _device_package + ".rbf";
+#endif
 	}
 
-	// DATA_DIR is defined at compile time.
-	std::string bitname = DATA_DIR "/openFPGALoader/spiOverJtag_";
-#ifdef HAS_ZLIB
-	bitname += _device_package + ".rbf.gz";
-#else
-	bitname += _device_package + ".rbf";
+#if defined (_WIN64) || defined (_WIN32)
+	/* Convert relative path embedded at compile time to an absolute path */
+	bitname = PathHelper::absolutePath(bitname);
 #endif
 
 	std::cout << "use: " << bitname << std::endl;
@@ -190,13 +222,9 @@ void Altera::program(unsigned int offset, bool unprotect_flash)
 	 */
 	/* mem mode -> svf */
 	if (_mode == Device::MEM_MODE) {
-		if (_file_extension == "svf") {
-			_svf.parse(_filename);
-		} else {
-			RawParser _bit(_filename, false);
-			_bit.parse();
-			programMem(_bit);
-		}
+		RawParser _bit(_filename, false);
+		_bit.parse();
+		programMem(_bit);
 	} else if (_mode == Device::SPI_MODE) {
 		// reverse only bitstream raw binaries data no
 		bool reverseOrder = false;

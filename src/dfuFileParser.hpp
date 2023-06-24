@@ -25,12 +25,12 @@ class DFUFileParser: public ConfigBitstreamParser {
 		DFUFileParser(const std::string &filename, bool verbose);
 		/*!
 		 * \brief read full content of the file, fill the buffer
-		 * \return EXIT_SUCCESS is file is fully read, EXIT_FAILURE otherwhise
+		 * \return EXIT_SUCCESS is file is fully read, EXIT_FAILURE otherwise
 		 */
 		int parse() override;
 		/*!
 		 * \brief read DFU suffix content of the file, fill _hdr structure
-		 * \return EXIT_SUCCESS if suffix is fully read, EXIT_FAILURE otherwhise
+		 * \return EXIT_SUCCESS if suffix is fully read, EXIT_FAILURE otherwise
 		 */
 		int parseHeader();
 		/*!

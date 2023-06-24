@@ -12,18 +12,20 @@
 #include <string>
 #include <vector>
 
+#include "cable.hpp"
 #include "jtagInterface.hpp"
 
 class CmsisDAP: public JtagInterface {
 	public:
 		/*!
-		 * \brief contructor: open device with vid/pid if != 0
+		 * \brief constructor: open device with vid/pid if != 0
 		 *                    else search for a compatible device
 		 * \param[in] vid: vendor id
 		 * \param[in] pid: product id
+		 * \param[in] index: interface number
 		 * \param[in] verbose: verbose level 0 normal, 1 verbose
 		 */
-		CmsisDAP(const int vid, const int pid, uint8_t verbose);
+		CmsisDAP(const cable_t &cable, int index, uint8_t verbose);
 
 		~CmsisDAP();
 
@@ -77,13 +79,13 @@ class CmsisDAP: public JtagInterface {
 	private:
 		/*!
 		 * \brief connect device in JTAG mode
-		 * \return 1 if success <= 0 otherwhise
+		 * \return 1 if success <= 0 otherwise
 		 */
 		int dapConnect();
 
 		/*!
 		 * \brief disconnect device
-		 * \return 1 if success <= 0 otherwhise
+		 * \return 1 if success <= 0 otherwise
 		 */
 		int dapDisconnect();
 		int dapResetTarget();

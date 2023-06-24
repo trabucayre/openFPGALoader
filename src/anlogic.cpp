@@ -29,7 +29,7 @@ Anlogic::Anlogic(Jtag *jtag, const std::string &filename,
 	const std::string &file_type,
 	Device::prog_type_t prg_type, bool verify, int8_t verbose):
 	Device(jtag, filename, file_type, verify, verbose),
-	SPIInterface(filename, verbose, 0, verify), _svf(_jtag, _verbose)
+	SPIInterface(filename, verbose, 0, verify)
 {
 	if (prg_type == Device::RD_FLASH) {
 		_mode = Device::READ_MODE;
@@ -63,11 +63,6 @@ void Anlogic::program(unsigned int offset, bool unprotect_flash)
 {
 	if (_mode == Device::NONE_MODE)
 		return;
-
-	if (_file_extension == "svf") {
-		_svf.parse(_filename);
-		return;
-	}
 
 	AnlogicBitParser bit(_filename, (_mode == Device::MEM_MODE), _verbose);
 

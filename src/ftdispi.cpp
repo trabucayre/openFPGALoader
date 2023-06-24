@@ -63,12 +63,13 @@ void FtdiSpi::setMode(uint8_t mode)
 		gpio_clear(_clk);
 }
 
-static FTDIpp_MPSSE::mpsse_bit_config bit_conf =
-	{0x403, 0x6010, INTERFACE_B, 0x08, 0x0B, 0x08, 0x0B};
+static cable_t cable = {
+	MODE_FTDI_SERIAL, 0x403, 0x6010, 0, 0, {INTERFACE_B, 0x08, 0x0B, 0x08, 0x0B, 0}
+};
 
 FtdiSpi::FtdiSpi(int vid, int pid, unsigned char interface, uint32_t clkHZ,
 	bool verbose):
-	FTDIpp_MPSSE(bit_conf, "", "", clkHZ, verbose)
+	FTDIpp_MPSSE(cable, "", "", clkHZ, verbose)
 {
 	(void)pid;
 	(void)vid;
@@ -80,10 +81,10 @@ FtdiSpi::FtdiSpi(int vid, int pid, unsigned char interface, uint32_t clkHZ,
 	init(1, 0x00, BITMODE_MPSSE);
 }
 
-FtdiSpi::FtdiSpi(const FTDIpp_MPSSE::mpsse_bit_config &conf,
+FtdiSpi::FtdiSpi(const cable_t &cable,
 		spi_pins_conf_t spi_config,
 		uint32_t clkHZ, bool verbose):
-		FTDIpp_MPSSE(conf, "", "", clkHZ, verbose),
+		FTDIpp_MPSSE(cable, "", "", clkHZ, verbose),
 		_cs_bits(1 << 3), _clk(1 << 0), _holdn(0), _wpn(0)
 {
 	if (spi_config.cs_pin)
@@ -93,7 +94,7 @@ FtdiSpi::FtdiSpi(const FTDIpp_MPSSE::mpsse_bit_config &conf,
 	if (spi_config.holdn_pin)
 		_holdn = spi_config.holdn_pin;
 	if (spi_config.wpn_pin)
-		_holdn = spi_config.wpn_pin;
+		_wpn = spi_config.wpn_pin;
 
 	/* clk is fixed by MPSSE engine
 	 * but CS, holdn, wpn are free -> update bits direction
@@ -238,7 +239,7 @@ int FtdiSpi::spi_put(uint8_t cmd, uint8_t *tx, uint8_t *rx, uint32_t len)
 	if (tx != NULL)
 		memcpy(jtx+1, tx, len);
 
-	/* send first alreay stored cmd,
+	/* send first already stored cmd,
 	 * in the same time store each byte
 	 * to next
 	 */

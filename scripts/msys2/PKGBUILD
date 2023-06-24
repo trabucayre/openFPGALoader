@@ -27,7 +27,7 @@ build() {
     -G "MSYS Makefiles" \
     -DCMAKE_INSTALL_PREFIX="${MINGW_PREFIX}" \
     ../../../..
-  cmake --build .
+  MSYS2_ARG_CONV_EXCL="-DDATA_DIR=" cmake --build .
 }
 
 check() {

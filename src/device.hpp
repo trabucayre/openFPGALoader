@@ -48,9 +48,12 @@ class Device {
 			printError("dump flash not supported"); return false;}
 		virtual bool protect_flash(uint32_t len) = 0;
 		virtual bool unprotect_flash() = 0;
+		virtual bool bulk_erase_flash() = 0;
 
 		virtual int  idCode() = 0;
 		virtual void reset();
+
+		virtual bool connectJtagToMCU() {return false;}
 
 	protected:
 		Jtag *_jtag;

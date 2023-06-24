@@ -12,14 +12,19 @@
 #include "device.hpp"
 #include "jtag.hpp"
 #include "spiInterface.hpp"
+#include "jedParser.hpp"
 
 class Xilinx: public Device, SPIInterface {
 	public:
 		Xilinx(Jtag *jtag, const std::string &filename,
+				const std::string &secondary_filename,
 				const std::string &file_type,
 				Device::prog_type_t prg_type,
 				const std::string &device_package,
-				bool verify, int8_t verbose);
+				const std::string &spiOverJtagPath,
+				const std::string &target_flash,
+				bool verify, int8_t verbose,
+				bool skip_load_bridge, bool skip_reset);
 		~Xilinx();
 
 		void program(unsigned int offset, bool unprotect_flash) override;
@@ -31,22 +36,33 @@ class Xilinx: public Device, SPIInterface {
 		/*!
 		 * \brief protect SPI flash blocks
 		 */
-		bool protect_flash(uint32_t len) override {
-			return SPIInterface::protect_flash(len);
-		}
+		bool protect_flash(uint32_t len) override;
 		/*!
 		 * \brief unprotect SPI flash blocks
 		 */
-		bool unprotect_flash() override {
-			return SPIInterface::unprotect_flash();
-		}
+		bool unprotect_flash() override;
+		/*!
+		 * \brief erase SPI flash blocks
+		 */
+		bool bulk_erase_flash() override;
 
 		int idCode() override;
 		void reset() override;
 
 		/* -------------- */
-		/* xc95 managment */
+		/* xc3s management */
 		/* -------------- */
+
+		/*!
+		 * \brief load SRAM (enable ISC, load
+		 *        and disable ISC
+		 * \return false if something wrong
+		 */
+		bool xc3s_flow_program(ConfigBitstreamParser *bit);
+
+		/* ------------------- */
+		/* xc95/xc3s managment */
+		/* ------------------- */
 
 		/*!
 		 * \brief enable ISC mode
@@ -56,6 +72,11 @@ class Xilinx: public Device, SPIInterface {
 		 * \brief disable ISC mode
 		 */
 		void flow_disable();
+
+		/* -------------- */
+		/* xc95 managment */
+		/* -------------- */
+
 		/*!
 		 * \brief erase internal flash
 		 * \return false if something wrong
@@ -96,7 +117,7 @@ class Xilinx: public Device, SPIInterface {
 		 */
 		void xc2c_flow_reinit();
 		/*!
-		 * \brief erase full internal flash (optionnally verify)
+		 * \brief erase full internal flash (optionally verify)
 		 * \return false if erase fails, true otherwise
 		 */
 		bool xc2c_flow_erase();
@@ -123,11 +144,11 @@ class Xilinx: public Device, SPIInterface {
 		/*!
 		 * \brief prepare SPI flash access (need to have bridge in RAM)
 		 */
-		virtual bool prepare_flash_access() override {return load_bridge();}
+		virtual bool prepare_flash_access() override;
 		/*!
 		 * \brief end of SPI flash access
 		 */
-		virtual bool post_flash_access() override {reset(); return true;}
+		virtual bool post_flash_access() override;
 
 	private:
 		/* list of xilinx family devices */
@@ -139,9 +160,13 @@ class Xilinx: public Device, SPIInterface {
 			SPARTAN7_FAMILY,
 			ARTIX_FAMILY,
 			KINTEX_FAMILY,
+			KINTEXUS_FAMILY,
+			KINTEXUSP_FAMILY,
 			ZYNQ_FAMILY,
 			ZYNQMP_FAMILY,
 			XCF_FAMILY,
+			ARTIXUSP_FAMILY,
+			VIRTEXUSP_FAMILY,
 			UNKNOWN_FAMILY  = 999
 		};
 
@@ -150,7 +175,7 @@ class Xilinx: public Device, SPIInterface {
 		/*!
 		 * \brief xilinx ZynqMP Ultrascale+ specific initialization
 		 * \param[in] family name
-		 * \return true if device has been correctly initilized
+		 * \return true if device has been correctly initialized
 		 */
 		bool zynqmp_init(const std::string &family);
 
@@ -160,12 +185,33 @@ class Xilinx: public Device, SPIInterface {
 		 * 	\return false if missing device mode, true otherwise
 		 */
 		bool load_bridge();
+
+		enum xilinx_flash_chip_t {
+			PRIMARY_FLASH = 0x1,
+			SECONDARY_FLASH = 0x2
+		};
+
+		/*!
+		 * \brief Starting from UltraScale, Xilinx devices can support dual
+		 *        QSPI flash configuration, with two different flash chips
+		 *        on the board. Target the selected one via the bridge by
+		 *        chaging the USER instruction to use.
+		 */
+		void select_flash_chip(xilinx_flash_chip_t flash_chip);
+
 		std::string _device_package;
+		std::string _spiOverJtagPath; /**< spiOverJtag explicit path */
 		int _xc95_line_len; /**< xc95 only: number of col by flash line */
 		uint16_t _cpld_nb_row; /**< number of flash rows */
 		uint16_t _cpld_nb_col; /**< number of cols in a row */
 		uint16_t _cpld_addr_size; /**< number of addr bits */
 		char _cpld_base_name[7]; /**< cpld name (without package size) */
+		int _irlen; /**< IR bit length */
+		std::map<std::string, std::vector<uint8_t>> _ircode_map; /**< bscan instructions based on model */
+		std::string _secondary_filename; /* path to the secondary flash file (SPIx8) */
+		std::string _secondary_file_extension; /* file type for the secondary flash file */
+		int _flash_chips; /* bitfield to select the target in boards with two flash chips */
+		std::string _user_instruction; /* which USER bscan instruction to interface with SPI */
 };
 
 #endif

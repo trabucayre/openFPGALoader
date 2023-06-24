@@ -45,3 +45,6 @@ build/
 /doc/compatibility/boards.inc
 /doc/compatibility/cable.inc
 /doc/compatibility/fpga.inc
+
+# VSCode local settings directory
+/.vscode/

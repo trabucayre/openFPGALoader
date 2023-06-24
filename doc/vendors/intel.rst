@@ -9,6 +9,7 @@ Intel/Altera
 .. NOTE::
 
   * CYC1000
+  * C10LP-RefKit
   * DE0
   * de0nano
 
@@ -21,7 +22,7 @@ SVF and RBF files are supported.
 
 .. code-block:: bash
 
-    quartus_cpf -c -q -g 3.3 -n 12.0MHz p project_name.sof project_name.svf
+    quartus_cpf -c -q 12.0MHz -g 3.3 -n p project_name.sof project_name.svf
 
 ``sof`` to ``rbf`` generation:
 
@@ -30,7 +31,7 @@ SVF and RBF files are supported.
     quartus_cpf  --option=bitstream_compression=off -c project_name.sof project_name.rbf
 
 .. WARNING::
-  As mentionned in ``cyclone`` handbooks, real-time decompression is not supported by FPGA in JTAG mode.
+  As mentioned in ``cyclone`` handbooks, real-time decompression is not supported by FPGA in JTAG mode.
   Keep in mind to disable this option.
 
 file load:
@@ -41,7 +42,7 @@ file load:
     # or
     openFPGALoader -b boardname project_name.rbf
 
-with ``boardname`` = ``de0``, ``cyc1000``, ``de0nano``, ``de0nanoSoc`` or ``qmtechCycloneV``.
+with ``boardname`` = ``de0``, ``cyc1000``, ``c10lp-refkit``, ``de0nano``, ``de0nanoSoc`` or ``qmtechCycloneV``.
 
 SPI flash
 ---------
@@ -52,12 +53,17 @@ RPD and RBF are supported.
 
 .. code-block:: bash
 
+    # CYC1000
     quartus_cpf -o auto_create_rpd=on -c -d EPCQ16A -s 10CL025YU256C8G project_name.svf project_name.jic
+    # C10LP-RefKit
+    quartus_cpf -o auto_create_rpd=on -c -d EPCQ16A -s 10CL055YU484C8G project_name.svf project_name.jic
 
 file load:
 
 .. code-block:: bash
 
-    openFPGALoader -b cyc1000 -r project_name_auto.rpd
+    openFPGALoader -b boardname -r project_name_auto.rpd
     # or
-    openFPGALoader -b cyc1000 -r project_name.rbf
+    openFPGALoader -b boardname -r project_name.rbf
+
+with ``boardname`` = ``cyc1000``, ``c10lp-refkit``.

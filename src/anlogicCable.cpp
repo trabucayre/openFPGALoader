@@ -44,9 +44,8 @@ enum analogicCableFreq {
 	ANLOGICCABLE_FREQ_90K  = 0xff
 };
 
-AnlogicCable::AnlogicCable(uint32_t clkHZ, uint8_t verbose):
-			_verbose(verbose),
-			dev_handle(NULL), usb_ctx(NULL), _tdi(0), _tms(0)
+AnlogicCable::AnlogicCable(uint32_t clkHZ):
+			dev_handle(NULL), usb_ctx(NULL)
 {
 	int ret;
 
