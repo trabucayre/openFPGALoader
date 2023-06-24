@@ -181,6 +181,13 @@
   Flash: OK
   Constraints: Colorlight-i9-v7.2
 
+- ID: colorlight-i9+
+  Description: Colorlight I9+
+  URL: https://www.colorlight-led.tech/colorlight-i9-2/
+  FPGA: Artix xc7a50tfgg484
+  Memory: OK
+  Flash: OK
+
 - ID: crosslinknx_evn
   Description: Lattice CrossLink-NX Evaluation Board
   URL: https://www.latticesemi.com/en/Products/DevelopmentBoardsAndKits/CrossLink-NXEvaluationBoard
