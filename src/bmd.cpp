@@ -193,9 +193,9 @@ void Bmd::remote_v0_jtag_tdi_tdo_seq(uint8_t *data_out, bool final_tms, const ui
 	/* Loop through the data to send/receive and handle it in chunks of up to 32 bits */
 	for (size_t cycle = 0; cycle < clock_cycles; cycle += 32U) {
 		/* Calculate how many bits need to be in this chunk, capped at 32 */
-		const size_t chunk_length = clock_cycles - cycle;
-		if (clock_cycles > 32U)
-			clock_cycles = 32U;
+		size_t chunk_length = clock_cycles - cycle;
+		if (chunk_length > 32U)
+			chunk_length = 32U;
 		/* If the result would complete the transaction, check if TMS needs to be high at the end */
 		const char packet_type =
 			cycle + chunk_length == clock_cycles && final_tms ? REMOTE_TDITDO_TMS : REMOTE_TDITDO_NOTMS;
