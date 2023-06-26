@@ -235,16 +235,16 @@ void Bmd::remote_v0_jtag_tdi_tdo_seq(uint8_t *data_out, bool final_tms, const ui
 	}
 }
 
-/* \param[in] tdi: serie of tdi state to send
- * \param[out] tdo: buffer to store tdo bits from device
- * \param[in] len: number of bit to read/write
- * \param[in] end: if true tms is set to one with the last tdi bit
+/* \param[in] data_in: serie of tdi state to send
+ * \param[out] data_out: buffer to store tdo bits from device
+ * \param[in] clock_cycles: number of bit to read/write
+ * \param[in] final_tms: if true tms is set to one with the last tdi bit
  * \return <= 0 if something wrong, len otherwise
  */
 int Bmd::writeTDI(uint8_t *data_in, uint8_t *data_out, uint32_t clock_cycles, bool final_tms)
 {
 	remote_v0_jtag_tdi_tdo_seq(data_out, final_tms, data_in, clock_cycles);
-	return 0;
+	return clock_cycles;
 }
 
 /*!
@@ -275,20 +275,6 @@ int Bmd::toggleClk(uint8_t tms, uint8_t tdi, uint32_t clk_len)
 	return clk_len;
 }
 
-char *Bmd::hexify(char *hex, const void *buf, size_t size)
-{
-	char *tmp = hex;
-	const uint8_t *b = (const uint8_t *)buf;
-
-	while (size--) {
-		*tmp++ = hexdigits[*b >> 4];
-		*tmp++ = hexdigits[*b++ & 0xF];
-	}
-	*tmp++ = 0;
-
-	return hex;
-}
-
 uint8_t unhex_digit(char hex)
 {
 	uint8_t tmp = hex - '0';
@@ -311,7 +297,7 @@ char *Bmd::unhexify(void *buf, const char *hex, size_t size)
 #ifdef __APPLE__
 static void open_bmd(std::string dev, const std::string &serial)
 {
-	throw std::runtime_error("lease implement find_debuggers for MACOS!\n");
+	throw std::runtime_error("Please implement find_debuggers for MACOS!\n");
 }
 
 #elif defined(__WIN32__) || defined(__CYGWIN__)
