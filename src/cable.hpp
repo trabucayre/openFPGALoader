@@ -27,7 +27,7 @@ enum communication_type {
 	MODE_LIBGPIOD_BITBANG, /*! Bitbang gpio pins */
 	MODE_JETSONNANO_BITBANG, /*! Bitbang gpio pins */
 	MODE_REMOTEBITBANG,    /*! Remote Bitbang mode */
-	MODE_BMP,              /*! BMP remote protocoll*/
+	MODE_BMD,              /*! BMD remote protocoll*/
 };
 
 /*!
@@ -119,7 +119,7 @@ static std::map <std::string, cable_t> cable_list = {
 	{"usb-blaster",        CABLE_DEF(MODE_USBBLASTER, 0x09Fb, 0x6001                   )},
 	{"usb-blasterII",      CABLE_DEF(MODE_USBBLASTER, 0x09Fb, 0x6810                   )},
 	{"xvc-client",         CABLE_DEF(MODE_XVC_CLIENT, 0x0000, 0x0000                   )},
-	{"bmp",                CABLE_DEF(MODE_BMP, 0x1d50, 0x6018                          )},
+	{"bmd",                CABLE_DEF(MODE_BMD, 0x1d50, 0x6018                          )},
 #ifdef ENABLE_LIBGPIOD
 	{"libgpiod",           CABLE_DEF(MODE_LIBGPIOD_BITBANG, 0, 0x0000                  )},
 #endif

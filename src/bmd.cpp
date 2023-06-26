@@ -3,7 +3,7 @@
  * Copyright (c) 2021 Uwe Bonnes <bon@elektron.ikp.physik.tu-darmstadt.de>
  */
 
-#include "bmp.hpp"
+#include "bmd.hpp"
 #include <sys/types.h>
 #include <dirent.h>
 #include <string.h>
@@ -15,15 +15,15 @@
 
 #include "display.hpp"
 
-#include "bmp_remote.h"
+#include "bmd_remote.h"
 
-#define BMP_IDSTRING "usb-Black_Magic_Debug_Black_Magic_Probe"
+#define BMD_IDSTRING "usb-Black_Magic_Debug_Black_Magic_Probe"
 
 #define REMOTE_MAX_MSG_SIZE (1024)
 
 #define FREQ_FIXED -1
 
-void Bmp::DEBUG_WIRE(const char *format, ...)
+void Bmd::DEBUG_WIRE(const char *format, ...)
 {
 	if (!_verbose)
 		return;
@@ -34,7 +34,7 @@ void Bmp::DEBUG_WIRE(const char *format, ...)
 }
 
 static const char hexdigits[] = "0123456789abcdef";
-static void open_bmp(std::string dev, const std::string &serial);
+static void open_bmd(std::string dev, const std::string &serial);
 #undef REMOTE_START_STR
 static const char REMOTE_START_STR[] = {																		\
 	'+', REMOTE_EOM, REMOTE_SOM, REMOTE_GEN_PACKET, REMOTE_START, REMOTE_EOM, 0};
@@ -58,11 +58,11 @@ static const char REMOTE_JTAG_TMS_STR[] = {                                     
 	REMOTE_SOM, REMOTE_JTAG_PACKET, '%', 'c', '%', '0', '2', 'x', '%', 'l', 'x', REMOTE_EOM, 0};
 
 
-Bmp::Bmp(std::string dev,
+Bmd::Bmd(std::string dev,
 		 const std::string &serial, uint32_t clkHZ, bool verbose)
 {
 	_verbose = verbose;
-	open_bmp(dev, serial);
+	open_bmd(dev, serial);
 	platform_buffer_write(REMOTE_START_STR, sizeof(REMOTE_START_STR));
 	char buffer[REMOTE_MAX_MSG_SIZE];
 	int c = platform_buffer_read(buffer, REMOTE_MAX_MSG_SIZE);
@@ -84,25 +84,25 @@ Bmp::Bmp(std::string dev,
 	/* Get Version*/
 	platform_buffer_write(REMOTE_HL_CHECK_STR, sizeof(REMOTE_HL_CHECK_STR));
 	int s = platform_buffer_read(buffer, REMOTE_MAX_MSG_SIZE);
-#define NEEDED_BMP_VERSION 3
+#define NEEDED_BMD_VERSION 3
 	if (s < 0) {
 		printWarn("Communication error");
 		return;
 	}
 	if (buffer[0] == REMOTE_RESP_ERR) {
-		printWarn("Update BMP firmware!");
+		printWarn("Update BMD firmware!");
 		return;
 	}
-	if ((buffer[1] - '0') <	 NEEDED_BMP_VERSION) {
-		printWarn("Please update BMP, expected version " +
-				  std::to_string(NEEDED_BMP_VERSION) + ", got " +
+	if ((buffer[1] - '0') <	 NEEDED_BMD_VERSION) {
+		printWarn("Please update BMD, expected version " +
+				  std::to_string(NEEDED_BMD_VERSION) + ", got " +
 				  buffer[1]);
 		return;
 	}
 	setClkFreq(clkHZ);
 };
 
-int Bmp::setClkFreq(uint32_t clkHZ)
+int Bmd::setClkFreq(uint32_t clkHZ)
 {
 	char buffer[REMOTE_MAX_MSG_SIZE];
 	int s;
@@ -131,7 +131,7 @@ int Bmp::setClkFreq(uint32_t clkHZ)
 	return freq[0];
 }
 
-int Bmp::writeTMS(uint8_t *tms, uint32_t len, bool flush_buffer)
+int Bmd::writeTMS(uint8_t *tms, uint32_t len, bool flush_buffer)
 {
 	char buffer[REMOTE_MAX_MSG_SIZE];
 	int s;
@@ -168,7 +168,7 @@ int Bmp::writeTMS(uint8_t *tms, uint32_t len, bool flush_buffer)
 #define TOUPPER(x) ((((x) >= 'a') && ((x) <= 'z')) ? ((x) - ('a' - 'A')) : (x))
 #define ISHEX(x)   ((((x) >= '0') && ((x) <= '9')) || (((x) >= 'A') && ((x) <= 'F')) || (((x) >= 'a') && ((x) <= 'f')))
 
-uint64_t Bmp::remote_hex_string_to_num(const uint32_t max, const char *const str)
+uint64_t Bmd::remote_hex_string_to_num(const uint32_t max, const char *const str)
 {
 	uint64_t ret = 0;
 	for (size_t i = 0; i < max; ++i) {
@@ -180,7 +180,7 @@ uint64_t Bmp::remote_hex_string_to_num(const uint32_t max, const char *const str
 	return ret;
 }
 
-void Bmp::remote_v0_jtag_tdi_tdo_seq(uint8_t *data_out, bool final_tms, const uint8_t *data_in, size_t clock_cycles)
+void Bmd::remote_v0_jtag_tdi_tdo_seq(uint8_t *data_out, bool final_tms, const uint8_t *data_in, size_t clock_cycles)
 {
 	/* NB: Until firmware version v1.7.1-233, the remote can only handle 32 clock cycles at a time */
 	if (!clock_cycles || (!data_in && !data_out))
@@ -235,7 +235,7 @@ void Bmp::remote_v0_jtag_tdi_tdo_seq(uint8_t *data_out, bool final_tms, const ui
  * \param[in] end: if true tms is set to one with the last tdi bit
  * \return <= 0 if something wrong, len otherwise
  */
-int Bmp::writeTDI(uint8_t *data_in, uint8_t *data_out, uint32_t clock_cycles, bool final_tms)
+int Bmd::writeTDI(uint8_t *data_in, uint8_t *data_out, uint32_t clock_cycles, bool final_tms)
 {
 	remote_v0_jtag_tdi_tdo_seq(data_out, final_tms, data_in, clock_cycles);
 	return 0;
@@ -248,7 +248,7 @@ int Bmp::writeTDI(uint8_t *data_in, uint8_t *data_out, uint32_t clock_cycles, bo
  * \param[in] clk_len: number of clock cycle
  * \return <= 0 if something wrong, clk_len otherwise
  */
-int Bmp::toggleClk(uint8_t tms, uint8_t tdi, uint32_t clk_len)
+int Bmd::toggleClk(uint8_t tms, uint8_t tdi, uint32_t clk_len)
 {
 	/* Set TDI as requested */
 	remote_v0_jtag_tdi_tdo_seq(NULL, (clk_len > 1) ? false: (tms), &tdi, 1);
@@ -258,7 +258,7 @@ int Bmp::toggleClk(uint8_t tms, uint8_t tdi, uint32_t clk_len)
 	return clk_len;
 }
 
-char *Bmp::hexify(char *hex, const void *buf, size_t size)
+char *Bmd::hexify(char *hex, const void *buf, size_t size)
 {
 	char *tmp = hex;
 	const uint8_t *b = (const uint8_t *)buf;
@@ -282,7 +282,7 @@ uint8_t unhex_digit(char hex)
 	return tmp;
 }
 
-char *Bmp::unhexify(void *buf, const char *hex, size_t size)
+char *Bmd::unhexify(void *buf, const char *hex, size_t size)
 {
 	uint8_t *b = (uint8_t *)buf;
 	while (size--) {
@@ -292,7 +292,7 @@ char *Bmp::unhexify(void *buf, const char *hex, size_t size)
 	return (char *)buf;
 }
 #ifdef __APPLE__
-static void open_bmp(std::string dev, const std::string &serial)
+static void open_bmd(std::string dev, const std::string &serial)
 {
 	throw std::runtime_error("lease implement find_debuggers for MACOS!\n");
 }
@@ -300,10 +300,10 @@ static void open_bmp(std::string dev, const std::string &serial)
 #elif defined(__WIN32__) || defined(__CYGWIN__)
 #include <windows.h>
 static HANDLE hComm;
-static void open_bmp(std::string dev, const std::string &serial)
+static void open_bmd(std::string dev, const std::string &serial)
 {
 	if (dev.empty()) {
-		/* FIXME: Implement searching for BMPs!*/
+		/* FIXME: Implement searching for BMDs!*/
 			throw std::runtime_error("Please specify device\n");
 	}
 	char device[256];
@@ -348,7 +348,7 @@ static void open_bmp(std::string dev, const std::string &serial)
 	}
 }
 
-int Bmp::platform_buffer_write(const char *data, int size)
+int Bmd::platform_buffer_write(const char *data, int size)
 {
 	DEBUG_WIRE("%s\n",data);
 	int s = 0;
@@ -372,7 +372,7 @@ int Bmp::platform_buffer_write(const char *data, int size)
 	return 0;
 }
 
-int Bmp::platform_buffer_read(void *data, size_t size)
+int Bmd::platform_buffer_read(void *data, size_t size)
 {
 	DWORD s;
 	uint8_t response = 0;
@@ -395,10 +395,10 @@ int Bmp::platform_buffer_read(void *data, size_t size)
 			return -3;
 		}
 		if (s > 0 ) {
-			Bmp::DEBUG_WIRE("%c", *c);
+			Bmd::DEBUG_WIRE("%c", *c);
 			if (*c == REMOTE_EOM) {
 				*c = 0;
-				Bmp::DEBUG_WIRE("\n");
+				Bmd::DEBUG_WIRE("\n");
 				return (c - data);
 			} else {
 				c++;
@@ -410,7 +410,7 @@ int Bmp::platform_buffer_read(void *data, size_t size)
 	return 0;
 }
 
-Bmp::~Bmp()
+Bmd::~Bmd()
 {
 	CloseHandle(hComm);
 	printInfo("Close");
@@ -454,11 +454,11 @@ static int set_interface_attribs(void)
 	return 0;
 }
 
-static void open_bmp(std::string dev, const std::string &serial)
+static void open_bmd(std::string dev, const std::string &serial)
 {
 	char name[4096];
 	if (dev.empty()) {
-		/* Try to find some BMP if0*/
+		/* Try to find some BMD if0*/
 		struct dirent *dp;
 		DIR *dir = opendir(DEVICE_BY_ID);
 		if (!dir) {
@@ -467,7 +467,7 @@ static void open_bmp(std::string dev, const std::string &serial)
 		int num_devices = 0;
 		int num_total = 0;
 		while ((dp = readdir(dir)) != NULL) {
-			if ((strstr(dp->d_name, BMP_IDSTRING)) &&
+			if ((strstr(dp->d_name, BMD_IDSTRING)) &&
 				(strstr(dp->d_name, "-if00"))) {
 				num_total++;
 				if ((!serial.empty()) && (!strstr(dp->d_name, serial.c_str())))
@@ -485,7 +485,7 @@ static void open_bmp(std::string dev, const std::string &serial)
 			dir = opendir(DEVICE_BY_ID);
 			if (dir) {
 				while ((dp = readdir(dir)) != NULL) {
-					if ((strstr(dp->d_name, BMP_IDSTRING)) &&
+					if ((strstr(dp->d_name, BMD_IDSTRING)) &&
 						(strstr(dp->d_name, "-if00")))
 						printWarn(std::string(dp->d_name));
 				}
@@ -520,19 +520,19 @@ static void open_bmp(std::string dev, const std::string &serial)
 	}
 }
 
-bool Bmp::platform_buffer_write(const void *const data, const size_t length)
+bool Bmd::platform_buffer_write(const void *const data, const size_t length)
 {
-	Bmp::DEBUG_WIRE("%s\n", data);
+	Bmd::DEBUG_WIRE("%s\n", data);
 	const ssize_t written = write(fd, data, length);
 	if (written < 0) {
 		fprintf(stdout, "Failed to write\n");
-		throw std::runtime_error("bmp write failed");
+		throw std::runtime_error("bmd write failed");
 	}
 
 	return (size_t)written == length;
 }
 
-int Bmp::platform_buffer_read(void *data, const size_t length)
+int Bmd::platform_buffer_read(void *data, const size_t length)
 {
 	uint8_t *c = (uint8_t *)data, *anchor = c;
 	int s;
@@ -577,7 +577,7 @@ int Bmp::platform_buffer_read(void *data, const size_t length)
 		s = read(fd, c, 1);
 		if (*c==REMOTE_EOM) {
 			*c = 0;
-			Bmp::DEBUG_WIRE("	   %s\n",data);
+			Bmd::DEBUG_WIRE("	   %s\n",data);
 			return (c - anchor);
 		} else {
 			c++;
@@ -587,7 +587,7 @@ int Bmp::platform_buffer_read(void *data, const size_t length)
 	return(-6);
 }
 
-Bmp::~Bmp()
+Bmd::~Bmd()
 {
 	close(fd);
 	printInfo("Close");

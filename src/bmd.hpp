@@ -3,25 +3,25 @@
  * Copyright (C) 2021 Uwe Bonnes bon@elektron.ikp.physik.tu-darmstadt.de
  */
 
-#ifndef SRC_BMP_HPP_
-#define SRC_BMP_HPP_
+#ifndef SRC_BMD_HPP_
+#define SRC_BMD_HPP_
 
 #include <libusb.h>
 
 #include "jtagInterface.hpp"
 
 /*!
- * \file Bmp.hpp
- * \class Bmp
+ * \file Bmd.hpp
+ * \class Bmd
  * \brief concrete class between jtag implementation and blackmagic debug probe remote protocoll
  * \author Uwe Bonnes
  */
 
-class Bmp : public JtagInterface {
+class Bmd : public JtagInterface {
 public:
-	Bmp(std::string dev,
+	Bmd(std::string dev,
 		const std::string &serial, uint32_t clkHZ, bool verbose);
-	~Bmp(void);
+	~Bmd(void);
 	int setClkFreq(uint32_t clkHZ) override;
 	uint32_t getClkFreq() { return _clkHZ;}
 	/* TMS */
@@ -45,4 +45,4 @@ private:
 protected:
 	uint32_t _clkHZ;
 };
-#endif // SRC_BMP_HPP_
+#endif // SRC_BMD_HPP_
