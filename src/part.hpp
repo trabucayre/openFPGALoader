@@ -178,6 +178,7 @@ typedef struct {
 } misc_device;
 
 static std::map <uint32_t, misc_device> misc_dev_list = {
+	{0x0ba04477, {"ADIv5 JTAG-DP port",    4}},
 	{0x4ba00477, {"ARM cortex A9",         4}},
 	{0x5ba00477, {"ARM cortex A53",        4}},
 	{0xfffffffe, {"ZynqMP dummy device",   12}},
@@ -186,6 +187,7 @@ static std::map <uint32_t, misc_device> misc_dev_list = {
 /* list of JTAG manufacturer ID */
 static std::map <uint16_t, std::string> list_manufacturer = {
 	{0x000, "CologneChip or efinix trion T4/T8"},
+	{0x020, "STM"},
 	{0x021, "lattice"},
 	{0x049, "Xilinx"},
 	{0x06e, "altera"},
