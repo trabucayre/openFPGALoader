@@ -39,7 +39,7 @@ private:
 	int platform_buffer_read(void *data, const size_t length);
 	char *unhexify(void *buf, const char *hex, size_t size);
 	char *hexify(char *hex, const void *buf, size_t size);
-	void DEBUG_WIRE(const char *format, ...);
+	void DEBUG_WIRE(const void *const data, const size_t length);
 	void remote_v0_jtag_tdi_tdo_seq(uint8_t *data_out, bool final_tms, const uint8_t *data_in, size_t clock_cycles);
 	uint64_t remote_hex_string_to_num(const uint32_t max, const char *const str);
 protected:

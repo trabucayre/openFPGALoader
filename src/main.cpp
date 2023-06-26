@@ -724,7 +724,7 @@ int parse_opt(int argc, char **argv, struct arguments *args,
 			("busdev-num",
 				"select a probe by it bus and device number (bus_num:device_addr)",
 				cxxopts::value<vector<string>>(bus_dev_num))
-			("S,serial", "Debugger serial number(FTDI)",
+			("S,serial", "Debugger serial number(FTDI, BMD)",
 				cxxopts::value<string>(args->serial))
 			("ftdi-channel",
 				"FTDI chip channel number (channels 0-3 map to A-D)",

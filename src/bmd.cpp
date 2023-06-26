@@ -3,6 +3,7 @@
  * Copyright (c) 2021 Uwe Bonnes <bon@elektron.ikp.physik.tu-darmstadt.de>
  */
 
+#include <stdio.h>
 #include "bmd.hpp"
 #include <sys/types.h>
 #include <dirent.h>
@@ -23,14 +24,15 @@
 
 #define FREQ_FIXED -1
 
-void Bmd::DEBUG_WIRE(const char *format, ...)
+void Bmd::DEBUG_WIRE(const void *const data, const size_t length)
 {
 	if (!_verbose)
 		return;
-	va_list ap;
-	va_start(ap, format);
-	vfprintf(stderr, format, ap);
-	va_end(ap);
+	uint8_t *c = (uint8_t *) data;
+	for (unsigned int i = 0; i < length; i++) {
+		fprintf(stderr, "%c", c[i]);
+	}
+	fprintf(stderr, " -> ");
 }
 
 static const char hexdigits[] = "0123456789abcdef";
@@ -108,7 +110,7 @@ int Bmd::setClkFreq(uint32_t clkHZ)
 	int s;
 	s = snprintf(buffer, REMOTE_MAX_MSG_SIZE, REMOTE_FREQ_SET_STR,
 				 clkHZ);
-	platform_buffer_write(REMOTE_FREQ_SET_STR, sizeof(REMOTE_FREQ_SET_STR));
+	platform_buffer_write(buffer, s);
 
 	s = platform_buffer_read(buffer, REMOTE_MAX_MSG_SIZE);
 
@@ -348,9 +350,9 @@ static void open_bmd(std::string dev, const std::string &serial)
 	}
 }
 
-int Bmd::platform_buffer_write(const char *data, int size)
+int Bmd::platform_buffer_write(const void *const data, const size_t length)
 {
-	DEBUG_WIRE("%s\n",data);
+	DEBUG_WIRE(data, length);
 	int s = 0;
 
 	do {
@@ -363,12 +365,6 @@ int Bmd::platform_buffer_write(const char *data, int size)
 		}
 		s += written;
 	} while (s < size);
-	fprintf(stderr, "%c%c: ", data[0], data[1]),
-		for (int i = 2, i < size, i++) {
-			fprintf(stderr, "%02x", data[i]);
-		}
-	fprintf(stderr, "\n");
-	}
 	return 0;
 }
 
@@ -395,10 +391,10 @@ int Bmd::platform_buffer_read(void *data, size_t size)
 			return -3;
 		}
 		if (s > 0 ) {
-			Bmd::DEBUG_WIRE("%c", *c);
+			Bmd::DEBUG_WIRE(&c, 1);
 			if (*c == REMOTE_EOM) {
 				*c = 0;
-				Bmd::DEBUG_WIRE("\n");
+				Bmd::DEBUG_WIRE("\n", 1);
 				return (c - data);
 			} else {
 				c++;
@@ -522,7 +518,7 @@ static void open_bmd(std::string dev, const std::string &serial)
 
 bool Bmd::platform_buffer_write(const void *const data, const size_t length)
 {
-	Bmd::DEBUG_WIRE("%s\n", data);
+	Bmd::DEBUG_WIRE(data, length);
 	const ssize_t written = write(fd, data, length);
 	if (written < 0) {
 		fprintf(stdout, "Failed to write\n");
@@ -575,9 +571,10 @@ int Bmd::platform_buffer_read(void *data, const size_t length)
 			return -5 ;
 		}
 		s = read(fd, c, 1);
+		fprintf(stderr, "%c", c[0]);
 		if (*c==REMOTE_EOM) {
 			*c = 0;
-			Bmd::DEBUG_WIRE("	   %s\n",data);
+			fprintf(stderr, "\n");
 			return (c - anchor);
 		} else {
 			c++;
