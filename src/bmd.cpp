@@ -126,7 +126,7 @@ int Bmd::setClkFreq(uint32_t clkHZ)
 
 	uint32_t freq[1];
 	unhexify(freq, &buffer[1], 4);
-	printInfo("Running at " + std::to_string(freq[0]) + " Hz");
+	printInfo("Running at " + std::to_string(freq[0]/(1.0 *1000 *1000)) + " MHz");
 	_clkHZ = freq[0];
 	return freq[0];
 }
