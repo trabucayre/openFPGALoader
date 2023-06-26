@@ -50,7 +50,7 @@ struct arguments {
 	string secondary_bit_file;
 	string device;
 	string cable;
-	string ftdi_serial;
+	string serial;
 	int ftdi_channel;
 	int status_pin;
 	uint32_t freq;
@@ -214,9 +214,9 @@ int main(int argc, char **argv)
 		cable.config.interface = mapping[args.ftdi_channel];
 	}
 
-	if (!args.ftdi_serial.empty()) {
+	if (!args.serial.empty()) {
 		if (cable.type != MODE_FTDI_SERIAL && cable.type != MODE_FTDI_BITBANG){
-			printError("Error: FTDI serial param is for FTDI cables.");
+			printError("Error: Serial number parameter not available for this cable!");
 			return EXIT_FAILURE;
 		}
 	}
@@ -440,7 +440,7 @@ int main(int argc, char **argv)
 
 	Jtag *jtag;
 	try {
-		jtag = new Jtag(cable, &pins_config, args.device, args.ftdi_serial,
+		jtag = new Jtag(cable, &pins_config, args.device, args.serial,
 				args.freq, args.verbose, args.ip_adr, args.port,
 				args.invert_read_edge, args.probe_firmware);
 	} catch (std::exception &e) {
@@ -634,7 +634,7 @@ int run_xvc_server(const struct arguments &args, const cable_t &cable,
 	try {
 		XVC_server *xvc = NULL;
 		xvc = new XVC_server(args.port, cable, pins_config, args.device,
-				args.ftdi_serial, args.freq, args.verbose, args.ip_adr,
+				args.serial, args.freq, args.verbose, args.ip_adr,
 				args.invert_read_edge, args.probe_firmware);
 		/* create connection */
 		xvc->open_connection();
@@ -724,8 +724,8 @@ int parse_opt(int argc, char **argv, struct arguments *args,
 			("busdev-num",
 				"select a probe by it bus and device number (bus_num:device_addr)",
 				cxxopts::value<vector<string>>(bus_dev_num))
-			("ftdi-serial", "FTDI chip serial number",
-				cxxopts::value<string>(args->ftdi_serial))
+			("S,serial", "Debugger serial number(FTDI)",
+				cxxopts::value<string>(args->serial))
 			("ftdi-channel",
 				"FTDI chip channel number (channels 0-3 map to A-D)",
 				cxxopts::value<int>(args->ftdi_channel))
