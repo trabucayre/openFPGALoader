@@ -25,7 +25,7 @@ public:
 	int setClkFreq(uint32_t clkHZ) override;
 	uint32_t getClkFreq() { return _clkHZ;}
 	/* TMS */
-	int writeTMS(uint8_t *tms, int len, bool flush_buffer) override;
+	int writeTMS(uint8_t *tms, uint32_t len, bool flush_buffer) override;
 	/* TDI */
 	int writeTDI(uint8_t *tx, uint8_t *rx, uint32_t len, bool end) override;
 	/* clk */
@@ -35,11 +35,13 @@ public:
 	int flush() override { return 0;};
 private:
 	bool _verbose;				/**< display more message */
-	int platform_buffer_write(const char *data, int size);
-	int platform_buffer_read(char *data, int maxsize);
+	bool platform_buffer_write(const void *const data, const size_t length);
+	int platform_buffer_read(void *data, const size_t length);
 	char *unhexify(void *buf, const char *hex, size_t size);
 	char *hexify(char *hex, const void *buf, size_t size);
 	void DEBUG_WIRE(const char *format, ...);
+	void remote_v0_jtag_tdi_tdo_seq(uint8_t *data_out, bool final_tms, const uint8_t *data_in, size_t clock_cycles);
+	uint64_t remote_hex_string_to_num(const uint32_t max, const char *const str);
 protected:
 	uint32_t _clkHZ;
 };

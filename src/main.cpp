@@ -215,7 +215,7 @@ int main(int argc, char **argv)
 	}
 
 	if (!args.serial.empty()) {
-		if (cable.type != MODE_FTDI_SERIAL && cable.type != MODE_FTDI_BITBANG){
+		if (cable.type != MODE_FTDI_SERIAL && cable.type != MODE_FTDI_BITBANG && cable.type != MODE_BMP){
 			printError("Error: Serial number parameter not available for this cable!");
 			return EXIT_FAILURE;
 		}

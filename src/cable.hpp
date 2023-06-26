@@ -119,7 +119,7 @@ static std::map <std::string, cable_t> cable_list = {
 	{"usb-blaster",        CABLE_DEF(MODE_USBBLASTER, 0x09Fb, 0x6001                   )},
 	{"usb-blasterII",      CABLE_DEF(MODE_USBBLASTER, 0x09Fb, 0x6810                   )},
 	{"xvc-client",         CABLE_DEF(MODE_XVC_CLIENT, 0x0000, 0x0000                   )},
-	{"bmp",                CABLE_DEF(MODE_DFU()                                        )},
+	{"bmp",                CABLE_DEF(MODE_BMP, 0x1d50, 0x6018                          )},
 #ifdef ENABLE_LIBGPIOD
 	{"libgpiod",           CABLE_DEF(MODE_LIBGPIOD_BITBANG, 0, 0x0000                  )},
 #endif

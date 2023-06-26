@@ -17,6 +17,7 @@
 #include "jtag.hpp"
 #include "ftdiJtagBitbang.hpp"
 #include "ftdiJtagMPSSE.hpp"
+#include "bmp.hpp"
 #ifdef ENABLE_LIBGPIOD
 #include "libgpiodJtagBitbang.hpp"
 #endif
@@ -36,7 +37,6 @@
 #ifdef ENABLE_XVC
 #include "xvc_client.hpp"
 #endif
-#include "bmp.hpp"
 
 using namespace std;
 

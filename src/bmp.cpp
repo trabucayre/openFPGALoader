@@ -17,7 +17,7 @@
 
 #include "bmp_remote.h"
 
-#define BMP_IDSTRING "usb-Black_Sphere_Technologies_Black_Magic_Probe"
+#define BMP_IDSTRING "usb-Black_Magic_Debug_Black_Magic_Probe"
 
 #define REMOTE_MAX_MSG_SIZE (1024)
 
@@ -35,82 +35,105 @@ void Bmp::DEBUG_WIRE(const char *format, ...)
 
 static const char hexdigits[] = "0123456789abcdef";
 static void open_bmp(std::string dev, const std::string &serial);
+#undef REMOTE_START_STR
+static const char REMOTE_START_STR[] = {																		\
+	'+', REMOTE_EOM, REMOTE_SOM, REMOTE_GEN_PACKET, REMOTE_START, REMOTE_EOM, 0};
+#undef REMOTE_JTAG_INIT_STR
+static const char REMOTE_JTAG_INIT_STR[] = {							\
+	'+', REMOTE_EOM, REMOTE_SOM, REMOTE_JTAG_PACKET, REMOTE_INIT, REMOTE_EOM, 0};
+#undef REMOTE_FREQ_SET_STR
+static const char REMOTE_FREQ_SET_STR[] = {								\
+	REMOTE_SOM, REMOTE_GEN_PACKET, REMOTE_FREQ_SET, '%', '0', '8', 'x', REMOTE_EOM, 0};
+#undef REMOTE_FREQ_GET_STR
+static const char REMOTE_FREQ_GET_STR[] = {
+	REMOTE_SOM, REMOTE_GEN_PACKET, REMOTE_FREQ_GET, REMOTE_EOM, 0};
+#undef REMOTE_HL_CHECK_STR
+static const char REMOTE_HL_CHECK_STR[] = {
+	REMOTE_SOM, REMOTE_HL_PACKET, REMOTE_HL_CHECK, REMOTE_EOM, 0};
+#undef REMOTE_JTAG_TMS_STR
+static const char REMOTE_JTAG_TMS_STR[] = {                                                                                           \
+	REMOTE_SOM, REMOTE_JTAG_PACKET, REMOTE_TMS, '%', '0', '2', 'x', '%', 'x', REMOTE_EOM, 0};
+#undef REMOTE_JTAG_TDIDO_STR
+	static const char REMOTE_JTAG_TDIDO_STR[] = {
+	REMOTE_SOM, REMOTE_JTAG_PACKET, '%', 'c', '%', '0', '2', 'x', '%', 'l', 'x', REMOTE_EOM, 0};
+
 
 Bmp::Bmp(std::string dev,
 		 const std::string &serial, uint32_t clkHZ, bool verbose)
 {
 	_verbose = verbose;
 	open_bmp(dev, serial);
-	char construct[REMOTE_MAX_MSG_SIZE];
-	int c = snprintf(construct, REMOTE_MAX_MSG_SIZE, "%s", REMOTE_START_STR);
-	platform_buffer_write(construct, c);
-	c = platform_buffer_read(construct, REMOTE_MAX_MSG_SIZE);
-	if ((c < 1) || (construct[0] == REMOTE_RESP_ERR)) {
+	platform_buffer_write(REMOTE_START_STR, sizeof(REMOTE_START_STR));
+	char buffer[REMOTE_MAX_MSG_SIZE];
+	int c = platform_buffer_read(buffer, REMOTE_MAX_MSG_SIZE);
+	if ((c < 1) || (buffer[0] == REMOTE_RESP_ERR)) {
 		printWarn("Remote Start failed, error " +
-				   c ? (char *)&(construct[1]) : "unknown");
+				   c ? (char *)&(buffer[1]) : "unknown");
 		throw std::runtime_error("remote_init failed");
 	}
-	printInfo("Remote is " + std::string(&construct[1]));
+	printInfo("Remote is " + std::string(&buffer[1]));
 
 	/* Init JTAG */
-	c = snprintf((char *)construct, REMOTE_MAX_MSG_SIZE, "%s",
-				 REMOTE_JTAG_INIT_STR);
-	platform_buffer_write(construct, c);
-	c = platform_buffer_read(construct, REMOTE_MAX_MSG_SIZE);
-	if ((c < 0) || (construct[0] == REMOTE_RESP_ERR)) {
+	platform_buffer_write(REMOTE_JTAG_INIT_STR, sizeof(REMOTE_JTAG_INIT_STR));
+	c = platform_buffer_read(buffer, REMOTE_MAX_MSG_SIZE);
+	if ((c < 0) || (buffer[0] == REMOTE_RESP_ERR)) {
 		printWarn("jtagtap_init failed, error " +
-				   c ? (char *)&(construct[1]) : "unknown");
+				   c ? (char *)&(buffer[1]) : "unknown");
 		throw std::runtime_error("jtag_init failed");
 	}
 	/* Get Version*/
-	int s = snprintf((char *)construct, REMOTE_MAX_MSG_SIZE, "%s",
-					 REMOTE_HL_CHECK_STR);
-	platform_buffer_write(construct, s);
-	s = platform_buffer_read(construct, REMOTE_MAX_MSG_SIZE);
-#define NEEDED_BMP_VERSION 2
-	if ((s < 0) || (construct[0] == REMOTE_RESP_ERR) ||
-		((construct[1] - '0') <	 NEEDED_BMP_VERSION)) {
-		printWarn("Please update BMP, expected version " +
-				  std::to_string(NEEDED_BMP_VERSION) + ", got " +
-				  construct[1]);
+	platform_buffer_write(REMOTE_HL_CHECK_STR, sizeof(REMOTE_HL_CHECK_STR));
+	int s = platform_buffer_read(buffer, REMOTE_MAX_MSG_SIZE);
+#define NEEDED_BMP_VERSION 3
+	if (s < 0) {
+		printWarn("Communication error");
 		return;
 	}
-
+	if (buffer[0] == REMOTE_RESP_ERR) {
+		printWarn("Update BMP firmware!");
+		return;
+	}
+	if ((buffer[1] - '0') <	 NEEDED_BMP_VERSION) {
+		printWarn("Please update BMP, expected version " +
+				  std::to_string(NEEDED_BMP_VERSION) + ", got " +
+				  buffer[1]);
+		return;
+	}
 	setClkFreq(clkHZ);
 };
 
 int Bmp::setClkFreq(uint32_t clkHZ)
 {
-	char construct[REMOTE_MAX_MSG_SIZE];
+	char buffer[REMOTE_MAX_MSG_SIZE];
 	int s;
-	s = snprintf(construct, REMOTE_MAX_MSG_SIZE, REMOTE_FREQ_SET_STR,
+	s = snprintf(buffer, REMOTE_MAX_MSG_SIZE, REMOTE_FREQ_SET_STR,
 				 clkHZ);
-	platform_buffer_write(construct, s);
+	platform_buffer_write(REMOTE_FREQ_SET_STR, sizeof(REMOTE_FREQ_SET_STR));
 
-	s = platform_buffer_read(construct, REMOTE_MAX_MSG_SIZE);
+	s = platform_buffer_read(buffer, REMOTE_MAX_MSG_SIZE);
 
-	if ((s < 1) || (construct[0] == REMOTE_RESP_ERR)) {
+	if ((s < 1) || (buffer[0] == REMOTE_RESP_ERR)) {
 		printWarn("Update Firmware to allow to set max SWJ frequency\n");
 	}
-	s = snprintf((char *)construct, REMOTE_MAX_MSG_SIZE,"%s",
+	s = snprintf((char *)buffer, REMOTE_MAX_MSG_SIZE,"%s",
 				 REMOTE_FREQ_GET_STR);
-	platform_buffer_write(construct, s);
+	platform_buffer_write(buffer, s);
 
-	s = platform_buffer_read(construct, REMOTE_MAX_MSG_SIZE);
+	s = platform_buffer_read(buffer, REMOTE_MAX_MSG_SIZE);
 
-	if ((s < 1) || (construct[0] == REMOTE_RESP_ERR))
+	if ((s < 1) || (buffer[0] == REMOTE_RESP_ERR))
 		return FREQ_FIXED;
 
 	uint32_t freq[1];
-	unhexify(freq, &construct[1], 4);
+	unhexify(freq, &buffer[1], 4);
 	printInfo("Running at " + std::to_string(freq[0]) + " Hz");
 	_clkHZ = freq[0];
 	return freq[0];
 }
 
-int Bmp::writeTMS(uint8_t *tms, int len, bool flush_buffer)
+int Bmp::writeTMS(uint8_t *tms, uint32_t len, bool flush_buffer)
 {
-	char construct[REMOTE_MAX_MSG_SIZE];
+	char buffer[REMOTE_MAX_MSG_SIZE];
 	int s;
 	uint32_t tms_word;
 	int ret = len;
@@ -126,14 +149,14 @@ int Bmp::writeTMS(uint8_t *tms, int len, bool flush_buffer)
 		if (chunk > 24)
 			tms_word |= *tms++ << 24;
 		len -= chunk;
-		s = snprintf((char *)construct, REMOTE_MAX_MSG_SIZE,
+		s = snprintf((char *)buffer, REMOTE_MAX_MSG_SIZE,
 					 REMOTE_JTAG_TMS_STR, chunk, tms_word);
-		platform_buffer_write(construct, s);
+		platform_buffer_write(buffer, s);
 
-		s = platform_buffer_read(construct, REMOTE_MAX_MSG_SIZE);
-		if ((s < 1) || (construct[0] == REMOTE_RESP_ERR)) {
+		s = platform_buffer_read(buffer, REMOTE_MAX_MSG_SIZE);
+		if ((s < 1) || (buffer[0] == REMOTE_RESP_ERR)) {
 			printWarn("jtagtap_tms_seq failed, error \n" +
-					   s ? (char *)&(construct[1]) : "unknown");
+					   s ? (char *)&(buffer[1]) : "unknown");
 			throw std::runtime_error("writeTMS failed");
 		}
 	}
@@ -141,61 +164,97 @@ int Bmp::writeTMS(uint8_t *tms, int len, bool flush_buffer)
 	return ret;
 }
 
-int Bmp::writeTDI(uint8_t *tdi, uint8_t *tdo, uint32_t len, bool end)
-{
-	int ret = len;
+#define HTON(x)    (((x) <= '9') ? (x) - '0' : ((TOUPPER(x)) - 'A' + 10))
+#define TOUPPER(x) ((((x) >= 'a') && ((x) <= 'z')) ? ((x) - ('a' - 'A')) : (x))
+#define ISHEX(x)   ((((x) >= '0') && ((x) <= '9')) || (((x) >= 'A') && ((x) <= 'F')) || (((x) >= 'a') && ((x) <= 'f')))
 
-	if(!len || (!tdi && !tdo))
-		return len;
-	while (len) {
-		int chunk = (len > 4000) ? 4000 : len;
-		len -= chunk;
-		int byte_count = (chunk + 7) >> 3;
-		char construct[REMOTE_MAX_MSG_SIZE];
-		int s = snprintf(
-			construct, REMOTE_MAX_MSG_SIZE,
-			REMOTE_JTAG_IOSEQ_STR,
-			(!len && end) ? REMOTE_IOSEQ_TMS : REMOTE_IOSEQ_NOTMS,
-			(((tdi) ? REMOTE_IOSEQ_FLAG_IN	: REMOTE_IOSEQ_FLAG_NONE) |
-			 ((tdo) ? REMOTE_IOSEQ_FLAG_OUT : REMOTE_IOSEQ_FLAG_NONE)),
-			chunk);
-		char *p = construct + s;
-		if (tdi) {
-			hexify(p, tdi, byte_count);
-			p += 2 * byte_count;
-			tdi += byte_count;
-		}
-		*p++ = REMOTE_EOM;
-		*p	 = 0;
-		platform_buffer_write(construct, p - construct);
-		s = platform_buffer_read(construct, REMOTE_MAX_MSG_SIZE);
-		if ((s > 0) && (construct[0] == REMOTE_RESP_OK)) {
-			if (tdo) {
-				unhexify(tdo, (const char*)&construct[1], byte_count);
-				tdo += byte_count;
-			}
-			continue;
-		}
-		printWarn(std::string(__func__) + " error: " + std::to_string(s));
-		break;
+uint64_t Bmp::remote_hex_string_to_num(const uint32_t max, const char *const str)
+{
+	uint64_t ret = 0;
+	for (size_t i = 0; i < max; ++i) {
+		const char value = str[i];
+		if (!ISHEX(value))
+			return ret;
+		ret = (ret << 4U) | HTON(value);
 	}
 	return ret;
 }
 
+void Bmp::remote_v0_jtag_tdi_tdo_seq(uint8_t *data_out, bool final_tms, const uint8_t *data_in, size_t clock_cycles)
+{
+	/* NB: Until firmware version v1.7.1-233, the remote can only handle 32 clock cycles at a time */
+	if (!clock_cycles || (!data_in && !data_out))
+		return;
+
+	char buffer[REMOTE_MAX_MSG_SIZE];
+	size_t offset = 0;
+	/* Loop through the data to send/receive and handle it in chunks of up to 32 bits */
+	for (size_t cycle = 0; cycle < clock_cycles; cycle += 32U) {
+		/* Calculate how many bits need to be in this chunk, capped at 32 */
+		const size_t chunk_length = clock_cycles - cycle;
+		if (clock_cycles > 32U)
+			clock_cycles = 32U;
+		/* If the result would complete the transaction, check if TMS needs to be high at the end */
+		const char packet_type =
+			cycle + chunk_length == clock_cycles && final_tms ? REMOTE_TDITDO_TMS : REMOTE_TDITDO_NOTMS;
+
+		/* Build a representation of the data to send safely */
+		uint32_t data = 0U;
+		const size_t bytes = (chunk_length + 7U) >> 3U;
+		if (data_in) {
+			for (size_t idx = 0; idx < bytes; ++idx)
+				data |= data_in[offset + idx] << (idx * 8U);
+		}
+		/*
+		 * Build the remote protocol message to send, and send it.
+		 * This uses its own copy of the REMOTE_JTAG_TDIDO_STR to correct for how
+		 * formatting a uint32_t is platform-specific.
+		 */
+		int length = snprintf(
+			buffer, REMOTE_MAX_MSG_SIZE, "!J%c%02zx%" PRIx32 "%c", packet_type, chunk_length, data, REMOTE_EOM);
+		platform_buffer_write(buffer, length);
+
+		/* Receive the response and check if it's an error response */
+		length = platform_buffer_read(buffer, REMOTE_MAX_MSG_SIZE);
+		if (!length || buffer[0] == REMOTE_RESP_ERR) {
+			printWarn("remote_jtag_tdi_tdo_seq failed, error %s\n", length ? buffer + 1 : "unknown");
+			exit(-1);
+		}
+		if (data_out) {
+			const uint64_t data = remote_hex_string_to_num(-1, buffer + 1);
+			for (size_t idx = 0; idx < bytes; ++idx)
+				data_out[offset + idx] = (uint8_t)(data >> (idx * 8U));
+		}
+		offset += bytes;
+	}
+}
+
+/* \param[in] tdi: serie of tdi state to send
+ * \param[out] tdo: buffer to store tdo bits from device
+ * \param[in] len: number of bit to read/write
+ * \param[in] end: if true tms is set to one with the last tdi bit
+ * \return <= 0 if something wrong, len otherwise
+ */
+int Bmp::writeTDI(uint8_t *data_in, uint8_t *data_out, uint32_t clock_cycles, bool final_tms)
+{
+	remote_v0_jtag_tdi_tdo_seq(data_out, final_tms, data_in, clock_cycles);
+	return 0;
+}
+
+/*!
+ * \brief send a serie of clock cycle with constant TMS and TDI
+ * \param[in] tms: tms state
+ * \param[in] tdi: tdi state
+ * \param[in] clk_len: number of clock cycle
+ * \return <= 0 if something wrong, clk_len otherwise
+ */
 int Bmp::toggleClk(uint8_t tms, uint8_t tdi, uint32_t clk_len)
 {
-	char construct[REMOTE_MAX_MSG_SIZE];
-	int s = snprintf(
-		construct, REMOTE_MAX_MSG_SIZE, REMOTE_JTAG_JTCK_STR,
-		(tms) ? 1 : 0, (tdi) ? 1 : 0, clk_len);
-	platform_buffer_write(construct, s);
-
-	s = platform_buffer_read(construct, REMOTE_MAX_MSG_SIZE);
-	if ((s < 1) || (construct[0] == REMOTE_RESP_ERR)) {
-		printWarn("toggleClk, error" +
-				  s ? (char *)&(construct[1]) : "unknown");
-		throw std::runtime_error("toggleClk");
-	}
+	/* Set TDI as requested */
+	remote_v0_jtag_tdi_tdo_seq(NULL, (clk_len > 1) ? false: (tms), &tdi, 1);
+	clk_len--;
+	if (clk_len > 1)
+		remote_v0_jtag_tdi_tdo_seq(NULL, (tms), NULL, clk_len - 1);
 	return clk_len;
 }
 
@@ -304,10 +363,16 @@ int Bmp::platform_buffer_write(const char *data, int size)
 		}
 		s += written;
 	} while (s < size);
+	fprintf(stderr, "%c%c: ", data[0], data[1]),
+		for (int i = 2, i < size, i++) {
+			fprintf(stderr, "%02x", data[i]);
+		}
+	fprintf(stderr, "\n");
+	}
 	return 0;
 }
 
-int Bmp::platform_buffer_read(char *data, int maxsize)
+int Bmp::platform_buffer_read(void *data, size_t size)
 {
 	DWORD s;
 	uint8_t response = 0;
@@ -455,29 +520,26 @@ static void open_bmp(std::string dev, const std::string &serial)
 	}
 }
 
-int Bmp::platform_buffer_write(const char *data, int size)
+bool Bmp::platform_buffer_write(const void *const data, const size_t length)
 {
-	int s;
-
 	Bmp::DEBUG_WIRE("%s\n", data);
-	s = write(fd, data, size);
-	if (s < 0) {
+	const ssize_t written = write(fd, data, length);
+	if (written < 0) {
 		fprintf(stdout, "Failed to write\n");
 		throw std::runtime_error("bmp write failed");
 	}
 
-	return size;
+	return (size_t)written == length;
 }
 
-int Bmp::platform_buffer_read(char *data, int maxsize)
+int Bmp::platform_buffer_read(void *data, const size_t length)
 {
-	char *c;
+	uint8_t *c = (uint8_t *)data, *anchor = c;
 	int s;
 	int ret;
 	fd_set	rset;
 	struct timeval tv;
 
-	c = data;
 	tv.tv_sec = 0;
 	tv.tv_usec = 500 * 1000 ;
 
@@ -516,11 +578,11 @@ int Bmp::platform_buffer_read(char *data, int maxsize)
 		if (*c==REMOTE_EOM) {
 			*c = 0;
 			Bmp::DEBUG_WIRE("	   %s\n",data);
-			return (c - data);
+			return (c - anchor);
 		} else {
 			c++;
 		}
-	} while ((s >= 0) && ((c - data) < maxsize));
+	} while ((s >= 0) && ((c < anchor + length)));
 	printWarn("Failed to read");
 	return(-6);
 }
