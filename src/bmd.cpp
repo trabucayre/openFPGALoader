@@ -38,13 +38,13 @@ void Bmd::DEBUG_WIRE(const void *const data, const size_t length)
 static const char hexdigits[] = "0123456789abcdef";
 static void open_bmd(std::string dev, const std::string &serial);
 #undef REMOTE_START_STR
-static const char REMOTE_START_STR[] = {																		\
+static const char REMOTE_START_STR[] = {
 	'+', REMOTE_EOM, REMOTE_SOM, REMOTE_GEN_PACKET, REMOTE_START, REMOTE_EOM, 0};
 #undef REMOTE_JTAG_INIT_STR
-static const char REMOTE_JTAG_INIT_STR[] = {							\
+static const char REMOTE_JTAG_INIT_STR[] = {
 	'+', REMOTE_EOM, REMOTE_SOM, REMOTE_JTAG_PACKET, REMOTE_INIT, REMOTE_EOM, 0};
 #undef REMOTE_FREQ_SET_STR
-static const char REMOTE_FREQ_SET_STR[] = {								\
+static const char REMOTE_FREQ_SET_STR[] = {
 	REMOTE_SOM, REMOTE_GEN_PACKET, REMOTE_FREQ_SET, '%', '0', '8', 'x', REMOTE_EOM, 0};
 #undef REMOTE_FREQ_GET_STR
 static const char REMOTE_FREQ_GET_STR[] = {
@@ -53,11 +53,15 @@ static const char REMOTE_FREQ_GET_STR[] = {
 static const char REMOTE_HL_CHECK_STR[] = {
 	REMOTE_SOM, REMOTE_HL_PACKET, REMOTE_HL_CHECK, REMOTE_EOM, 0};
 #undef REMOTE_JTAG_TMS_STR
-static const char REMOTE_JTAG_TMS_STR[] = {                                                                                           \
+static const char REMOTE_JTAG_TMS_STR[] = {
 	REMOTE_SOM, REMOTE_JTAG_PACKET, REMOTE_TMS, '%', '0', '2', 'x', '%', 'x', REMOTE_EOM, 0};
 #undef REMOTE_JTAG_TDIDO_STR
-	static const char REMOTE_JTAG_TDIDO_STR[] = {
+static const char REMOTE_JTAG_TDIDO_STR[] = {
 	REMOTE_SOM, REMOTE_JTAG_PACKET, '%', 'c', '%', '0', '2', 'x', '%', 'l', 'x', REMOTE_EOM, 0};
+#undef REMOTE_JTAG_CYCLE_STR
+static const char REMOTE_JTAG_CYCLE_STR[] = {
+	REMOTE_SOM, REMOTE_JTAG_PACKET, REMOTE_CYCLE, '%', 'u', '%', 'u', '%', '0', '8', 'x', REMOTE_EOM, 0};
+
 
 
 Bmd::Bmd(std::string dev,
@@ -252,11 +256,22 @@ int Bmd::writeTDI(uint8_t *data_in, uint8_t *data_out, uint32_t clock_cycles, bo
  */
 int Bmd::toggleClk(uint8_t tms, uint8_t tdi, uint32_t clk_len)
 {
-	/* Set TDI as requested */
-	remote_v0_jtag_tdi_tdo_seq(NULL, (clk_len > 1) ? false: (tms), &tdi, 1);
-	clk_len--;
-	if (clk_len > 1)
-		remote_v0_jtag_tdi_tdo_seq(NULL, (tms), NULL, clk_len - 1);
+	(void) tms;
+	(void) tdi;
+	/* Avoid timeout */
+	uint32_t max_chunk =_clkHZ >> 1;
+	char buffer[REMOTE_MAX_MSG_SIZE];
+	for (uint32_t cycle = 0; cycle < clk_len; cycle += max_chunk) {
+		uint32_t chunk = clk_len - cycle;
+		if (chunk > max_chunk) {
+			chunk = max_chunk;
+		}
+		int length = snprintf(buffer, REMOTE_MAX_MSG_SIZE, REMOTE_JTAG_CYCLE_STR, (tms), (tdi), chunk);
+		platform_buffer_write(buffer, length);
+		int s = platform_buffer_read(buffer, REMOTE_MAX_MSG_SIZE);
+		if ((s < 1) || (buffer[0] == REMOTE_RESP_ERR))
+			return -1;
+	}
 	return clk_len;
 }
 
