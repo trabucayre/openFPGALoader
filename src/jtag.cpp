@@ -200,7 +200,7 @@ int Jtag::detectChain(int max_dev)
 			 * GateMate and Efinix Trion T4/T8 devices
 			 */
 			if (tmp != 0x20000001)
-				found = search_and_insert_device_with_idcode(tmp & 0x0fffffff);
+				found = search_and_insert_device_with_idcode(tmp);
 			if (!found) /* if masked not found -> search for full */
 				found = search_and_insert_device_with_idcode(tmp);
 
@@ -231,7 +231,7 @@ bool Jtag::search_and_insert_device_with_idcode(uint32_t idcode)
 	if (dev != fpga_list.end())
 		irlength = dev->second.irlength;
 	if (irlength == -1) {
-		auto misc = misc_dev_list.find(idcode);
+		auto misc = misc_dev_list.find(idcode & MISC_DEV_MASK);
 		if (misc != misc_dev_list.end())
 			irlength = misc->second.irlength;
 	}

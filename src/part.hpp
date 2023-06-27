@@ -177,10 +177,15 @@ typedef struct {
 	int irlength;
 } misc_device;
 
+/* Maybe a manual list with per device mask is more adequate
+ *
+ * E.g Atmel AVR devices would need a mask 0x0f0003ffU
+ */
+#define MISC_DEV_MASK 0x0ff003ffU
 static std::map <uint32_t, misc_device> misc_dev_list = {
-	{0x4ba00477, {"ARM cortex A9",         4}},
-	{0x5ba00477, {"ARM cortex A53",        4}},
-	{0xfffffffe, {"ZynqMP dummy device",   12}},
+	{0x0ba00077, {"ADIv5 JTAG-DP port",    4}},
+	{0x06400041, {"STM32 Device",          5}},
+	{0x0ff00ffe, {"ZynqMP dummy device",   12}},
 };
 
 /* list of JTAG manufacturer ID */

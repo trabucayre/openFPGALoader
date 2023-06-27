@@ -887,7 +887,7 @@ bool Xilinx::flow_program(JedParser *jed)
 	 */
 	size_t nb_section = jed->nb_section() / (15);
 
-	ProgressBar progress("Write Flash", nb_section, 50, _quiet);
+	ProgressBar progress("Write XC95 Flash", nb_section, 50, _quiet);
 
 	for (size_t i = 0; i < nb_section; i++) {
 		uint16_t addr2 = i * 32;
@@ -918,6 +918,7 @@ bool Xilinx::flow_program(JedParser *jed)
 					_jtag->shiftDR(wr_buf, NULL, 8 * (_xc95_line_len + 2));
 					_jtag->toggleClk((_jtag->getClkFreq() * 50) / 1000);
 					_jtag->shiftDR(NULL, rd_buf, 8 * (_xc95_line_len + 2) + 2);
+                                        fprintf(stderr, "xc95 prog: i %ld ii% d loop %d\n", i, ii, loop_try);
 					if ((rd_buf[0] & 0x03) == 0x01)
 						break;
 				}

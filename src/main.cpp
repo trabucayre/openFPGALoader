@@ -470,11 +470,11 @@ int main(int argc, char **argv)
 				fpga_list[t].family.c_str(),
 				fpga_list[t].model.c_str());
 				printf("\tirlength %d\n", fpga_list[t].irlength);
-			} else if (misc_dev_list.find(t) != misc_dev_list.end()) {
+			} else if (misc_dev_list.find(t & MISC_DEV_MASK) != misc_dev_list.end()) {
 				printf("\tidcode   0x%x\n\ttype     %s\n\tirlength %d\n",
 				t,
-				misc_dev_list[t].name.c_str(),
-				misc_dev_list[t].irlength);
+				misc_dev_list[t & MISC_DEV_MASK].name.c_str(),
+				misc_dev_list[t & MISC_DEV_MASK].irlength);
 			}
 		}
 		if (args.detect == true) {
