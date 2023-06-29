@@ -517,6 +517,13 @@
   Memory: OK
   Flash: OK
 
+- ID: redpitaya14
+  Description: Redpitaya/STEMlab xc7z7010 with 125MHz 14 bits ADC
+  URL: https://redpitaya.com/stemlab-125-14/
+  FPGA: Zynq7000 xc7z010clg400
+  Memory: OK
+  Flash: NA
+
 - ID: runber
   Description: SeeedStudio Gowin RUNBER
   URL: https://www.seeedstudio.com/Gowin-RUNBER-Development-Board-p-4779.html
