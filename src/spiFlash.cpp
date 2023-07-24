@@ -73,6 +73,9 @@
 /* */
 #define FLASH_WRVECR   0x61
 #define FLASH_RDVECR   0x65
+/* reset-enable + reset */
+#define FLASH_RSTEN   0x66
+#define FLASH_RST      0x99
 
 /* microchip SST26VF032B / SST26VF032BA */
 /* Read Block Protection Register */
@@ -500,6 +503,8 @@ void SPIFlash::reset()
 	uint8_t data[8];
 	memset(data, 0xff, 8);
 	_spi->spi_put(0xff, data, NULL, 8);
+	_spi->spi_put(FLASH_RSTEN, NULL, NULL, 0);
+	_spi->spi_put(FLASH_RST, NULL, NULL, 0);
 }
 
 void SPIFlash::read_id()
@@ -533,11 +538,11 @@ void SPIFlash::read_id()
 		printInfo(content);
 	} else {
 		/* read extended */
-		if ((_jedec_id & 0xff) != 0) {
+		/*if ((_jedec_id & 0xff) != 0) {
 			has_edid = true;
 			len += (_jedec_id & 0x0ff);
 			_spi->spi_put(0x9F, NULL, rx, len);
-		}
+		}*/
 
 		/* must be 0x20BA1810 ... */
 
