@@ -133,6 +133,7 @@ set(OPENFPGALOADER_SOURCE
 	src/xilinxMapParser.cpp
 	src/colognechip.cpp
 	src/colognechipCfgParser.cpp
+	src/bmd.cpp
 )
 
 set(OPENFPGALOADER_HEADERS
@@ -186,6 +187,7 @@ set(OPENFPGALOADER_HEADERS
 	src/xilinxMapParser.hpp
 	src/colognechip.hpp
 	src/colognechipCfgParser.hpp
+	src/bmd.hpp
 )
 
 link_directories(

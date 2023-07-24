@@ -17,6 +17,7 @@
 #include "jtag.hpp"
 #include "ftdiJtagBitbang.hpp"
 #include "ftdiJtagMPSSE.hpp"
+#include "bmd.hpp"
 #ifdef ENABLE_LIBGPIOD
 #include "libgpiodJtagBitbang.hpp"
 #endif
@@ -151,6 +152,9 @@ void Jtag::init_internal(const cable_t &cable, const string &dev, const string &
 		_jtag = new RemoteBitbang_client(ip_adr, port, _verbose);
 		break;
 #endif
+	case MODE_BMD:
+		_jtag = new Bmd(dev, serial, clkHZ, _verbose);
+		break;
 	default:
 		std::cerr << "Jtag: unknown cable type" << std::endl;
 		throw std::exception();
