@@ -5,7 +5,7 @@
 
 #define _DEFAULT_SOURCE
 
-#include <libusb-1.0/libusb.h>
+#include <libusb.h>
 #include <stdio.h>
 #include <string.h>
 #include <unistd.h>
@@ -43,7 +43,7 @@ enum CH347JtagSig {
 	SIG_TMS =      0b10,
 	SIG_TDI =   0b10000,
 };
-static void sync_cb(libusb_transfer *transfer) {
+static void LIBUSB_CALL sync_cb(struct libusb_transfer *transfer) {
 	int *complete = (int *)transfer->user_data;
 	*complete = true;
 }
@@ -265,7 +265,8 @@ int CH347Jtag::writeTMS(uint8_t *tms, uint32_t len, bool flush_buffer)
 			obuf[2] = (wlen - 3) >> 8;
 			int ret = usb_xfer(wlen, 0, 0);
 			if (ret < 0) {
-				cerr << "writeTMS: usb bulk write failed: " << libusb_strerror(ret) << endl;
+				cerr << "writeTMS: usb bulk write failed: " <<
+					libusb_strerror(static_cast<libusb_error>(ret)) << endl;
 				return -EXIT_FAILURE;
 			}
 			ptr = obuf;
@@ -296,7 +297,8 @@ int CH347Jtag::toggleClk(uint8_t tms, uint8_t tdi, uint32_t len)
 			obuf[2] = (wlen - 3) >> 8;
 			int ret = usb_xfer(wlen, 0, 0);
 			if (ret < 0) {
-				cerr << "writeCLK: usb bulk write failed: " << libusb_strerror(ret) << endl;
+				cerr << "writeCLK: usb bulk write failed: " <<
+					libusb_strerror(static_cast<libusb_error>(ret)) << endl;
 				return -EXIT_FAILURE;
 			}
 			ptr = obuf;
@@ -327,7 +329,8 @@ int CH347Jtag::writeTDI(uint8_t *tx, uint8_t *rx, uint32_t len, bool end)
 		unsigned actual_length = 0;
 		int ret = usb_xfer(chunk + 3, (rx) ? chunk + 3 : 0, &actual_length);
 		if (ret < 0) {
-			cerr << "writeTDI: usb bulk read failed: " << libusb_strerror(ret) << endl;
+			cerr << "writeTDI: usb bulk read failed: " <<
+				libusb_strerror(static_cast<libusb_error>(ret)) << endl;
 			return -EXIT_FAILURE;
 		}
 		if (!rx)
@@ -365,7 +368,8 @@ int CH347Jtag::writeTDI(uint8_t *tx, uint8_t *rx, uint32_t len, bool end)
 	int ret = usb_xfer(wlen, (rx) ? (bits + 3) : 0, &actual_length);
 
 	if (ret < 0) {
-		cerr << "writeTDI: usb bulk read failed: " << libusb_strerror(ret) << endl;
+		cerr << "writeTDI: usb bulk read failed: " <<
+			libusb_strerror(static_cast<libusb_error>(ret)) << endl;
 		return -EXIT_FAILURE;
 	}
 	if (!rx)
