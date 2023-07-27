@@ -458,7 +458,7 @@ bool Jlink::write_device(const uint8_t *buf, uint32_t size)
 
 string Jlink::get_version()
 {
-	uint16_t length;
+	uint16_t length = 0;
 	cmd_read(EMU_CMD_VERSION, &length);
 	uint8_t version[length];
 	read_device(version, length);
