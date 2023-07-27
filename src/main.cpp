@@ -278,6 +278,10 @@ int main(int argc, char **argv)
 				target = new CologneChip(spi, args.bit_file, args.file_type, args.prg_type,
 					board->reset_pin, board->done_pin, DBUS6, board->oe_pin,
 					args.verify, args.verbose);
+			} else {
+				printError("Error (SPI mode): " + board->manufacturer +
+					" is an unsupported/unknown target");
+				return EXIT_FAILURE;
 			}
 			if (args.prg_type == Device::RD_FLASH) {
 				if (args.file_size == 0) {
