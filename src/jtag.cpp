@@ -450,7 +450,7 @@ int Jtag::shiftIR(unsigned char *tdi, unsigned char *tdo, int irlen, int end_sta
 
 void Jtag::set_state(int newState)
 {
-	unsigned char tms;
+	unsigned char tms = 0;
 	while (newState != _state) {
 		display("_state : %16s(%02d) -> %s(%02d) ",
 			getStateName((tapState_t)_state),
