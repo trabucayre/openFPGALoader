@@ -836,7 +836,7 @@ bool Lattice::EnableCfgIf()
 
 bool Lattice::DisableCfg()
 {
-	uint8_t tx_buf, rx_buf;
+	uint8_t tx_buf = 0, rx_buf;
 	wr_rd(0x26, &tx_buf, 1, &rx_buf, 1);
 	_jtag->set_state(Jtag::RUN_TEST_IDLE);
 	_jtag->toggleClk(1000);
