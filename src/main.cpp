@@ -895,9 +895,9 @@ int parse_opt(int argc, char **argv, struct arguments *args,
 			}
 			try {
 				args->bus_addr = static_cast<uint8_t>(std::stoi(bus_dev_num[0],
-					nullptr, 16));
+					nullptr, 10));
 				args->device_addr = static_cast<uint8_t>(
-					std::stoi(bus_dev_num[1], nullptr, 16));
+					std::stoi(bus_dev_num[1], nullptr, 10));
 			} catch (std::exception &e) {
 				printError("Error: busdev-num invalid format: must be numeric values");
 				throw std::exception();
