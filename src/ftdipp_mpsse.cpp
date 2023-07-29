@@ -156,8 +156,18 @@ void FTDIpp_MPSSE::open_device(const std::string &serial, unsigned int baudrate)
 		ret = ftdi_usb_open_bus_addr(_ftdi, _bus, _addr);
 #endif
 	if (ret < 0) {
-		fprintf(stderr, "unable to open ftdi device: %d (%s)\n",
-			ret, ftdi_get_error_string(_ftdi));
+		char description[256];
+		if (_bus == 0 || _addr == 0)
+			snprintf(description, sizeof(description), "");
+		else
+#if (FTDI_VERSION < 104)
+			snprintf(description, sizeof(description), "");
+#else
+			snprintf(description, sizeof(description), " (USB bus %d addr %d)",
+				 _bus, _addr);
+#endif
+		fprintf(stderr, "unable to open ftdi device: %d (%s)%s\n",
+			ret, ftdi_get_error_string(_ftdi), description);
 		ftdi_free(_ftdi);
 		throw std::runtime_error("unable to open ftdi device");
 	}
