@@ -108,7 +108,7 @@ Efinix::Efinix(Jtag* jtag, const std::string &filename,
 
 	/* 5: open SPI interface */
 	_spi = new FtdiSpi(spi_cable, spi_board->spi_pins_config,
-			jtag->getClkFreq(), verbose > 0);
+			jtag->getClkFreq(), verbose);
 
 	/* 6: configure pins direction and default state */
 	init_common(prg_type);
