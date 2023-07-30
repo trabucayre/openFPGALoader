@@ -29,7 +29,7 @@ struct gpiod_line;
 class LibgpiodJtagBitbang : public JtagInterface {
  public:
 	LibgpiodJtagBitbang(const jtag_pins_conf_t *pin_conf,
-		const std::string &dev, uint32_t clkHZ, uint8_t verbose);
+		const std::string &dev, uint32_t clkHZ, int8_t verbose);
 	virtual ~LibgpiodJtagBitbang();
 
 	int setClkFreq(uint32_t clkHZ) override;

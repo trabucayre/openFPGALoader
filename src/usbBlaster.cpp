@@ -38,8 +38,8 @@ using namespace std;
 #endif
 
 UsbBlaster::UsbBlaster(const cable_t &cable, const std::string &firmware_path,
-		uint8_t verbose):
-			_verbose(verbose), _nb_bit(0),
+		int8_t verbose):
+			_verbose(verbose>1), _nb_bit(0),
 			_curr_tms(0), _buffer_size(64)
 {
 	if (cable.pid == 0x6001)

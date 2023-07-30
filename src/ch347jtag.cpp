@@ -144,8 +144,8 @@ int CH347Jtag::setClk(const uint8_t &factor) {
 	return 0;
 }
 
-CH347Jtag::CH347Jtag(uint32_t clkHZ, uint8_t verbose):
-	_verbose(verbose), dev_handle(NULL), usb_ctx(NULL)
+CH347Jtag::CH347Jtag(uint32_t clkHZ, int8_t verbose):
+	_verbose(verbose>1), dev_handle(NULL), usb_ctx(NULL)
 {
 	int actual_length = 0;
 	struct libusb_device_descriptor desc;

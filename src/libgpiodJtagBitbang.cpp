@@ -35,10 +35,8 @@
 LibgpiodJtagBitbang::LibgpiodJtagBitbang(
 		const jtag_pins_conf_t *pin_conf,
 		const std::string &dev, __attribute__((unused)) uint32_t clkHZ,
-		uint8_t verbose)
+		int8_t verbose):_verbose(verbose>1)
 {
-	_verbose = verbose;
-
 	_tck_pin = pin_conf->tck_pin;
 	_tms_pin = pin_conf->tms_pin;
 	_tdi_pin = pin_conf->tdi_pin;

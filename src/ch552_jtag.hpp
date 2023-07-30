@@ -24,7 +24,7 @@
 class CH552_jtag : public JtagInterface, private FTDIpp_MPSSE {
  public:
 	CH552_jtag(const cable_t &cable, const std::string &dev,
-		const std::string &serial, uint32_t clkHZ, uint8_t verbose = false);
+		const std::string &serial, uint32_t clkHZ, int8_t verbose = false);
 	virtual ~CH552_jtag();
 
 	int setClkFreq(uint32_t clkHZ) override;

@@ -60,7 +60,7 @@ enum dirtyJtagSig {
 	SIG_TMS =   (1 << 4)
 };
 
-DirtyJtag::DirtyJtag(uint32_t clkHZ, uint8_t verbose):
+DirtyJtag::DirtyJtag(uint32_t clkHZ, int8_t verbose):
 			_verbose(verbose),
 			dev_handle(NULL), usb_ctx(NULL), _tdi(0), _tms(0)
 {

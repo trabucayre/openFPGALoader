@@ -10,7 +10,7 @@
 
 class CH347Jtag : public JtagInterface {
  public:
-	CH347Jtag(uint32_t clkHZ, uint8_t verbose);
+	CH347Jtag(uint32_t clkHZ, int8_t verbose);
 	virtual ~CH347Jtag();
 
 	int setClkFreq(uint32_t clkHZ) override;
@@ -29,7 +29,7 @@ class CH347Jtag : public JtagInterface {
 	int flush() override {return 0;}
 
  private:
-	uint8_t _verbose;
+	bool _verbose;
 	int setClk(const uint8_t &factor);
 
 	libusb_device_handle *dev_handle;

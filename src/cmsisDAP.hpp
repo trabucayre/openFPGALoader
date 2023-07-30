@@ -25,7 +25,7 @@ class CmsisDAP: public JtagInterface {
 		 * \param[in] index: interface number
 		 * \param[in] verbose: verbose level 0 normal, 1 verbose
 		 */
-		CmsisDAP(const cable_t &cable, int index, uint8_t verbose);
+		CmsisDAP(const cable_t &cable, int index, int8_t verbose);
 
 		~CmsisDAP();
 
@@ -98,7 +98,7 @@ class CmsisDAP: public JtagInterface {
 		int writeJtagSequence(uint8_t tms, uint8_t *tx, uint8_t *rx,
 				uint32_t len, bool end);
 
-		uint8_t _verbose;                /**< display more message */
+		bool _verbose;                /**< display more message */
 		int16_t _device_idx;          /**< device index */
 		uint16_t _vid;                /**< device Vendor ID */
 		uint16_t _pid;                /**< device Product ID */

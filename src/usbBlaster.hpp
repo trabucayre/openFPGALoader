@@ -41,7 +41,7 @@ class UsbBlaster_ll {
 class UsbBlaster : public JtagInterface {
  public:
 	UsbBlaster(const cable_t &cable, const std::string &firmware_path,
-			uint8_t verbose = 0);
+			int8_t verbose = 0);
 	virtual ~UsbBlaster();
 
 	int setClkFreq(uint32_t clkHZ) override;
@@ -86,7 +86,7 @@ class UsbBlaster : public JtagInterface {
 	int setBitmode(uint8_t mode);
 	uint8_t *_in_buf;
 
-	uint8_t _verbose;
+	int8_t _verbose;
 	uint8_t _tck_pin; /*!< tck pin: 1 << pin id */
 	uint8_t _tms_pin; /*!< tms pin: 1 << pin id */
 	uint8_t _tdi_pin; /*!< tdi pin: 1 << pin id */

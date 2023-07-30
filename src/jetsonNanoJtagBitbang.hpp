@@ -49,7 +49,7 @@
 class JetsonNanoJtagBitbang : public JtagInterface {
  public:
 	JetsonNanoJtagBitbang(const jtag_pins_conf_t *pin_conf,
-		const std::string &dev, uint32_t clkHZ, uint8_t verbose);
+		const std::string &dev, uint32_t clkHZ, int8_t verbose);
 	virtual ~JetsonNanoJtagBitbang();
 
 	int setClkFreq(uint32_t clkHZ) override;

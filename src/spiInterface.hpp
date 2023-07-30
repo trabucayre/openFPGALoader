@@ -21,7 +21,7 @@
 class SPIInterface {
  public:
 	SPIInterface();
-	SPIInterface(const std::string &filename, uint8_t verbose,
+	SPIInterface(const std::string &filename, int8_t verbose,
 			uint32_t rd_burst, bool verify, bool skip_load_bridge = false,
 			bool skip_reset = false);
 	virtual ~SPIInterface() {}
@@ -111,7 +111,7 @@ class SPIInterface {
 	 */
 	virtual bool post_flash_access() {return false;}
 
-	uint8_t _spif_verbose;
+	int8_t _spif_verbose;
 	uint32_t _spif_rd_burst;
 	bool _spif_verify;
 	bool _skip_load_bridge;

@@ -19,7 +19,7 @@
 
 class DirtyJtag : public JtagInterface {
  public:
-	DirtyJtag(uint32_t clkHZ, uint8_t verbose);
+	DirtyJtag(uint32_t clkHZ, int8_t verbose);
 	virtual ~DirtyJtag();
 
 	int setClkFreq(uint32_t clkHZ) override;
@@ -43,7 +43,7 @@ class DirtyJtag : public JtagInterface {
 	int flush() override;
 
  private:
-	uint8_t _verbose;
+	int8_t _verbose;
 
 	int sendBitBang(uint8_t mask, uint8_t val, uint8_t *read, bool last);
 	bool getVersion();
