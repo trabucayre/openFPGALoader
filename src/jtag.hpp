@@ -110,12 +110,6 @@ class Jtag {
 	JtagInterface *_jtag;
 
  private:
-	void init_internal(const cable_t &cable, const std::string &dev,
-		const std::string &serial,
-		const jtag_pins_conf_t *pin_conf, uint32_t clkHZ,
-		const std::string &firmware_path,
-		const bool invert_read_edge,
-		const std::string &ip_adr, int port);
 	/*!
 	 * \brief search in fpga_list and misc_dev_list for a device with idcode
 	 *        if found insert idcode and irlength in _devices_list and
@@ -124,7 +118,7 @@ class Jtag {
 	 * \return false if not found, true otherwise
 	 */
 	bool search_and_insert_device_with_idcode(uint32_t idcode);
-	int8_t _verbose;
+	bool _verbose;
 	int _state;
 	int _tms_buffer_size;
 	int _num_tms;

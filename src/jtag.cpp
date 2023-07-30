@@ -82,21 +82,6 @@ Jtag::Jtag(const cable_t &cable, const jtag_pins_conf_t *pin_conf,
 			_tms_buffer_size(128), _num_tms(0),
 			_board_name("nope"), device_index(0)
 {
-	init_internal(cable, dev, serial, pin_conf, clkHZ, firmware_path,
-			invert_read_edge, ip_adr, port);
-	detectChain(5);
-}
-
-Jtag::~Jtag()
-{
-	free(_tms_buffer);
-	delete _jtag;
-}
-
-void Jtag::init_internal(const cable_t &cable, const string &dev, const string &serial,
-	const jtag_pins_conf_t *pin_conf, uint32_t clkHZ, const string &firmware_path,
-	const bool invert_read_edge, const string &ip_adr, int port)
-{
 	switch (cable.type) {
 	case MODE_ANLOGICCABLE:
 		_jtag = new AnlogicCable(clkHZ);
@@ -104,30 +89,30 @@ void Jtag::init_internal(const cable_t &cable, const string &dev, const string &
 	case MODE_FTDI_BITBANG:
 		if (pin_conf == NULL)
 			throw std::exception();
-		_jtag = new FtdiJtagBitBang(cable, pin_conf, dev, serial, clkHZ, _verbose);
+		_jtag = new FtdiJtagBitBang(cable, pin_conf, dev, serial, clkHZ, verbose);
 		break;
 	case MODE_FTDI_SERIAL:
 		_jtag = new FtdiJtagMPSSE(cable, dev, serial, clkHZ,
-				invert_read_edge, _verbose);
+				invert_read_edge, verbose);
 		break;
 	case MODE_CH552_JTAG:
-		_jtag = new CH552_jtag(cable, dev, serial, clkHZ, _verbose);
+		_jtag = new CH552_jtag(cable, dev, serial, clkHZ, verbose);
 		break;
 	case MODE_CH347:
-		_jtag = new CH347Jtag(clkHZ, _verbose);
+		_jtag = new CH347Jtag(clkHZ, verbose);
 		break;
 	case MODE_DIRTYJTAG:
-		_jtag = new DirtyJtag(clkHZ, _verbose);
+		_jtag = new DirtyJtag(clkHZ, verbose);
 		break;
 	case MODE_JLINK:
-		_jtag = new Jlink(clkHZ, _verbose, cable.vid, cable.pid);
+		_jtag = new Jlink(clkHZ, verbose, cable.vid, cable.pid);
 		break;
 	case MODE_USBBLASTER:
-		_jtag = new UsbBlaster(cable, firmware_path, _verbose);
+		_jtag = new UsbBlaster(cable, firmware_path, verbose);
 		break;
 	case MODE_CMSISDAP:
 #ifdef ENABLE_CMSISDAP
-		_jtag = new CmsisDAP(cable, cable.config.index, _verbose);
+		_jtag = new CmsisDAP(cable, cable.config.index, verbose);
 		break;
 #else
 		std::cerr << "Jtag: support for cmsisdap was not enabled at compile time" << std::endl;
@@ -135,7 +120,7 @@ void Jtag::init_internal(const cable_t &cable, const string &dev, const string &
 #endif
 	case MODE_XVC_CLIENT:
 #ifdef ENABLE_XVC
-		_jtag = new XVC_client(ip_adr, port, clkHZ, _verbose);
+		_jtag = new XVC_client(ip_adr, port, clkHZ, verbose);
 		break;
 #else
 		std::cerr << "Jtag: support for xvc-client was not enabled at compile time" << std::endl;
@@ -143,17 +128,17 @@ void Jtag::init_internal(const cable_t &cable, const string &dev, const string &
 #endif
 #ifdef ENABLE_LIBGPIOD
 	case MODE_LIBGPIOD_BITBANG:
-		_jtag = new LibgpiodJtagBitbang(pin_conf, dev, clkHZ, _verbose);
+		_jtag = new LibgpiodJtagBitbang(pin_conf, dev, clkHZ, verbose);
 		break;
 #endif
 #ifdef ENABLE_JETSONNANOGPIO
 	case MODE_JETSONNANO_BITBANG:
-		_jtag = new JetsonNanoJtagBitbang(pin_conf, dev, clkHZ, _verbose);
+		_jtag = new JetsonNanoJtagBitbang(pin_conf, dev, clkHZ, verbose);
 		break;
 #endif
 #ifdef ENABLE_REMOTEBITBANG
 	case MODE_REMOTEBITBANG:
-		_jtag = new RemoteBitbang_client(ip_adr, port, _verbose);
+		_jtag = new RemoteBitbang_client(ip_adr, port, verbose);
 		break;
 #endif
 	default:
@@ -163,8 +148,15 @@ void Jtag::init_internal(const cable_t &cable, const string &dev, const string &
 
 	_tms_buffer = (unsigned char *)malloc(sizeof(unsigned char) * _tms_buffer_size);
 	memset(_tms_buffer, 0, _tms_buffer_size);
+
+	detectChain(5);
 }
 
+Jtag::~Jtag()
+{
+	free(_tms_buffer);
+	delete _jtag;
+}
 int Jtag::detectChain(int max_dev)
 {
 	char message[256];
