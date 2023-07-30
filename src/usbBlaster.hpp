@@ -3,17 +3,17 @@
  * Copyright (C) 2020 Gwenhael Goavec-Merou <gwenhael.goavec-merou@trabucayre.com>
  */
 
-#ifndef USBBLASTER_H
-#define USBBLASTER_H
+#ifndef SRC_USBBLASTER_HPP_
+#define SRC_USBBLASTER_HPP_
 #include <ftdi.h>
 #include <iostream>
 #include <string>
 #include <vector>
 
 #include "cable.hpp"
-#include "jtagInterface.hpp"
 #include "ftdipp_mpsse.hpp"
 #include "fx2_ll.hpp"
+#include "jtagInterface.hpp"
 
 /*!
  * \file UsbBlaster.hpp
@@ -111,11 +111,7 @@ class UsbBlasterI: public UsbBlaster_ll {
 		int write(uint8_t *wr_buf, int wr_len,
 				uint8_t *rd_buf, int rd_len) override;
 	private:
-		/*
-		 * \brief init and configure FT245
-		 */
-		void init_internal();
-		struct ftdi_context *_ftdi; /*!< ftid_context */
+		struct ftdi_context *_ftdi; /*!< ftdi_context */
 };
 
 /*!
@@ -136,4 +132,4 @@ class UsbBlasterII: public UsbBlaster_ll {
 	private:
 		FX2_ll *fx2;
 };
-#endif
+#endif  // SRC_USBBLASTER_HPP_

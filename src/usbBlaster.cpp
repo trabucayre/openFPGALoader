@@ -9,13 +9,13 @@
 
 #include <iostream>
 #include <map>
-#include <vector>
 #include <string>
+#include <vector>
 
 #include "display.hpp"
-#include "usbBlaster.hpp"
 #include "ftdipp_mpsse.hpp"
 #include "fx2_ll.hpp"
+#include "usbBlaster.hpp"
 
 using namespace std;
 
@@ -39,7 +39,7 @@ using namespace std;
 
 UsbBlaster::UsbBlaster(const cable_t &cable, const std::string &firmware_path,
 		int8_t verbose):
-			_verbose(verbose>1), _nb_bit(0),
+			_verbose(verbose > 1), _nb_bit(0),
 			_curr_tms(0), _buffer_size(64)
 {
 	if (cable.pid == 0x6001)
@@ -211,7 +211,7 @@ int UsbBlaster::writeTDI(uint8_t *tx, uint8_t *rx, uint32_t len, bool end)
 		int num_read = _nb_bit;
 		if (writeBit((rx)? rx_ptr:NULL, num_read/2) < 0)
 			return -EXIT_FAILURE;
-		if (rx) // realign bits
+		if (rx)  // realign bits
 			*rx_ptr >>= (8 - nb_bit);
 	}
 
@@ -223,7 +223,7 @@ int UsbBlaster::writeTDI(uint8_t *tx, uint8_t *rx, uint32_t len, bool end)
 			mask |= _tdi_pin;
 		_in_buf[_nb_bit++] = mask;
 		_in_buf[_nb_bit++] = mask | mode | _tck_pin;
-		uint8_t tmp;
+		uint8_t tmp = 0;
 		if (writeBit((rx)? &tmp:NULL, 1) < 0)
 			return -EXIT_FAILURE;
 		if (rx)
