@@ -28,10 +28,10 @@ class FtdiSpi : public FTDIpp_MPSSE, SPIInterface {
 	};
 
 	FtdiSpi(int vid, int pid, unsigned char interface, uint32_t clkHZ,
-		bool verbose);
+		int8_t verbose);
 	FtdiSpi(const cable_t &cable,
 		spi_pins_conf_t spi_config, uint32_t clkHZ,
-		bool verbose);
+		int8_t verbose);
 	~FtdiSpi();
 
 	void setMode(uint8_t mode);

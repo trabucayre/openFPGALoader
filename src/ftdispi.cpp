@@ -68,7 +68,7 @@ static cable_t cable = {
 };
 
 FtdiSpi::FtdiSpi(int vid, int pid, unsigned char interface, uint32_t clkHZ,
-	bool verbose):
+	int8_t verbose):
 	FTDIpp_MPSSE(cable, "", "", clkHZ, verbose)
 {
 	(void)pid;
@@ -83,7 +83,7 @@ FtdiSpi::FtdiSpi(int vid, int pid, unsigned char interface, uint32_t clkHZ,
 
 FtdiSpi::FtdiSpi(const cable_t &cable,
 		spi_pins_conf_t spi_config,
-		uint32_t clkHZ, bool verbose):
+		uint32_t clkHZ, int8_t verbose):
 		FTDIpp_MPSSE(cable, "", "", clkHZ, verbose),
 		_cs_bits(1 << 3), _clk(1 << 0), _holdn(0), _wpn(0)
 {

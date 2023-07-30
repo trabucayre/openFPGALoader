@@ -256,7 +256,7 @@ int main(int argc, char **argv)
 			pins_config = board->spi_pins_config;
 
 		try {
-			spi = new FtdiSpi(cable, pins_config, args.freq, args.verbose > 0);
+			spi = new FtdiSpi(cable, pins_config, args.freq, args.verbose);
 		} catch (std::exception &e) {
 			printError("Error: Failed to claim cable");
 			return EXIT_FAILURE;
