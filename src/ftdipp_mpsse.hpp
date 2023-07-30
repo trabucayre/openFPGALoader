@@ -61,7 +61,7 @@ class FTDIpp_MPSSE {
 		int mpsse_get_buffer_size() {return _buffer_size;}
 		unsigned int udevstufftoint(const char *udevstring, int base);
 		bool search_with_dev(const std::string &device);
-		int8_t _verbose;
+		bool _verbose;
 		mpsse_bit_config _cable;
 		int _vid;
 		int _pid;
