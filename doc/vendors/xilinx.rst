@@ -36,6 +36,10 @@ To have access to this file you need to configure the tool:
   For alchitry board the bitstream must be configured with a buswidth of 1 or 2.
   Quad mode can't be used with alchitry's FLASH.
 
+.. WARNING::
+  For boards based on a Zynq (7000 or MPSoC), boot mode must be configured for JTAG (for Zedboard JP7->JP11 must be
+  to GND).
+
 Loading a bitstream
 ===================
 
@@ -61,6 +65,9 @@ SPI flash
   ``.bit``, ``.bin``, and ``.mcs`` are supported for FLASH.
 
 ``.mcs`` must be generated through Vivado with a tcl script like:
+
+.. WARNING::
+  For boards based on Zynq device (7000 and MPSoC) SPI flash is not accessible through PL.
 
 .. code-block:: tcl
 
