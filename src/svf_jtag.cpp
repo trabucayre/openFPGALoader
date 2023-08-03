@@ -148,7 +148,7 @@ void SVF_jtag::parse_XYR(vector<string> const &vstr, svf_XYR &t)
 			for (unsigned int b = 0; b < byte_len; b++) {
 				write_buffer[b] &= smaskbuff[b];
 			}
-			delete smaskbuff;
+			delete[] smaskbuff;
 		}
 		unsigned char *read_buffer = NULL;
 		if (!t.tdo.empty()) {
@@ -174,11 +174,11 @@ void SVF_jtag::parse_XYR(vector<string> const &vstr, svf_XYR &t)
 					throw exception();
 				}
 			}
-			delete tdobuf;
-			delete maskbuf;
+			delete[] tdobuf;
+			delete[] maskbuf;
 		}
-		delete write_buffer;
-		delete read_buffer;
+		delete[] write_buffer;
+		delete[] read_buffer;
 	}
 }
 
