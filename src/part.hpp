@@ -19,9 +19,11 @@ typedef struct {
 
 /* Highest nibble (version) must always be set to 0 */
 static std::map <uint32_t, fpga_model> fpga_list = {
+	/* Anlogic */
 	{0x0a014c35, {"anlogic", "eagle s20", "EG4S20BG256", 8}},
 	{0x00004c37, {"anlogic", "elf2", "EF2M45", 8}},
 
+	/* Xilinx 7-Series / Artix-7 */
 	{0x037c2093, {"xilinx", "artix a7 25t", "xc7a25", 6}},
 	{0x0362D093, {"xilinx", "artix a7 35t", "xc7a35", 6}},
 	{0x0362c093, {"xilinx", "artix a7 50t",  "xc7a50t", 6}},
@@ -29,18 +31,22 @@ static std::map <uint32_t, fpga_model> fpga_list = {
 	{0x03631093, {"xilinx", "artix a7 100t", "xc7a100", 6}},
 	{0x03636093, {"xilinx", "artix a7 200t", "xc7a200", 6}},
 
+	/* Xilinx 7-Series / Kintex-7 */
 	{0x0364c093, {"xilinx", "kintex7", "xc7k160t", 6}},
 	{0x03651093, {"xilinx", "kintex7", "xc7k325t", 6}},
 	{0x03656093, {"xilinx", "kintex7", "xc7k410t", 6}},
 	{0x23752093, {"xilinx", "kintex7", "xc7k420t", 6}},
 
+	/* Xilinx Ultrascale / Kintex */
 	{0x13822093, {"xilinx", "kintexus", "xcku040", 6}},
 	{0x13823093, {"xilinx", "kintexus", "xcku035", 6}},
 
+	/* Xilinx Spartan3 */
 	{0x01414093, {"xilinx", "spartan3", "xc3s200",  6}},
 	{0x11c1a093, {"xilinx", "spartan3e", "xc3s250e", 6}},
 	{0x01c22093, {"xilinx", "spartan3e", "xc3s500e", 6}},
 
+	/* Xilinx Spartan6 */
 	{0x04001093, {"xilinx", "spartan6", "xc6slx9",  6}},
 	{0x04002093, {"xilinx", "spartan6", "xc6slx16", 6}},
 	{0x04004093, {"xilinx", "spartan6", "xc6slx25", 6}},
@@ -51,27 +57,37 @@ static std::map <uint32_t, fpga_model> fpga_list = {
 	{0x037c4093, {"xilinx", "spartan7", "xc7s25", 6}},
 	{0x0362f093, {"xilinx", "spartan7", "xc7s50", 6}},
 
+	/* Xilinx XC2 */
 	{0x06e5d093, {"xilinx", "xc2c",     "xc2c64a",   8}},
 	{0x06e1c093, {"xilinx", "xc2c",     "xc2c32a",   8}},
+
+	/* Xilinx XC9 */
 	{0x09602093, {"xilinx", "xc9500xl", "xc9536xl",  8}},
 	{0x09604093, {"xilinx", "xc9500xl", "xc9572xl",  8}},
 	{0x09608093, {"xilinx", "xc9500xl", "xc95144xl", 8}},
 	{0x09616093, {"xilinx", "xc9500xl", "xc95288xl", 8}},
 
+	/* Xilinx XCF */
 	{0x05044093, {"xilinx", "xcf",      "xcf01s",    8}},
 	{0x05045093, {"xilinx", "xcf",      "xcf02s",    8}},
 	{0x05046093, {"xilinx", "xcf",      "xcf04s",    8}},
 
+	/* Xilinx 7-Series / Zynq */
 	{0x03722093, {"xilinx", "zynq",     "xc7z010", 6}},
 	{0x03727093, {"xilinx", "zynq",     "xc7z020", 6}},
 	{0x23731093, {"xilinx", "zynq",     "xc7z045", 6}},
 
+	/* Xilinx Ultrascale+ / Kintex */
 	{0x04a62093, {"xilinx", "kintexusp", "xcku5p", 6}},
+
+	/* Xilinx Ultrascale+ / Artix */
 	{0x04A64093, {"xilinx", "artixusp", "xcau25p", 6}},
 
+	/* Xilinx Ultrascale+ / Virtex */
 	{0x04b31093, {"xilinx", "virtexusp", "xcvu9p", 18}},
 	{0x14b79093, {"xilinx", "virtexusp", "xcvu37p", 18}},
 
+	/* Xilinx Ultrascale+ / ZynqMP */
 	/* When powering a zynq ultrascale+ MPSoC, PL Tap and ARM dap
 	 * are disabled and only PS tap with a specific IDCODE is seen.
 	 * 0x03 must be written into JTAG_CTRL followed by RTI and
@@ -87,12 +103,15 @@ static std::map <uint32_t, fpga_model> fpga_list = {
 	{0x04740093, {"xilinx", "zynqmp",     "xczu11eg", 6}},
 	{0x04730093, {"xilinx", "zynqmp",      "xczu7ev", 6}},
 
+	/* Altera Cyclone III/IV */
 	{0x020f20dd, {"altera", "cyclone III/IV", "EP3C16/EP4CE15", 10}},
 	{0x020f70dd, {"altera", "cyclone IV", "EP4CE115", 10}},
 
+	/* Altera Cyclone 10 */
 	{0x020f30dd, {"altera", "cyclone 10 LP", "10CL025", 10}},
 	{0x020f50dd, {"altera", "cyclone 10 LP", "10CL055", 10}},
 
+	/* Altera Cyclone V */
 	{0x02b010dd, {"altera", "cyclone V", "5CGX*3", 10}},
 	{0x02b020dd, {"altera", "cyclone V", "5CGT*5/5CGX*5", 10}},
 	{0x02b030dd, {"altera", "cyclone V", "5CGT*7/5CGX*7", 10}},
@@ -108,29 +127,37 @@ static std::map <uint32_t, fpga_model> fpga_list = {
 	{0x02d110dd, {"altera", "cyclone V Soc", "5CSE*A2/5CSX*2", 10}},
 	{0x02d120dd, {"altera", "cyclone V Soc", "5CSE*A5/5CST*5/5CSX*5", 10}},
 
+	/* Altera Max 10 */
 	{0x031820dd, {"altera", "MAX 10",    "10M08SAU169C8G", 10}},
 	{0x031050dd, {"altera", "MAX 10",    "10M50DAF484", 10}},
 
+	/* Efinix Trion */
 	{0x00000001, {"efinix", "Trion",    "T4/T8",            4}},
 	{0x00210a79, {"efinix", "Trion",    "T8QFP144/T13/T20", 4}},
 	{0x00220a79, {"efinix", "Trion",    "T55/T85/T120",     4}},
 	{0x00240a79, {"efinix", "Trion",    "T20BGA324/T35",    4}},
+
+	/* Efinix Titanium */
 	{0x00660a79, {"efinix", "Titanium", "Ti60",             5}},
 	{0x00360a79, {"efinix", "Titanium", "Ti60ES",           5}},
 	{0x00661a79, {"efinix", "Titanium", "Ti35",             5}},
 
+	/* Lattice Crosslink-NX */
 	{0x010F0043, {"lattice", "CrosslinkNX", "LIFCL-17", 8}},
 	{0x010F1043, {"lattice", "CrosslinkNX", "LIFCL-40", 8}},
 
+	/* Lattice Certus-NX */
 	{0x010F0043, {"lattice", "CertusNX", "LFD2NX-17", 8}},
 	{0x010F1043, {"lattice", "CertusNX", "LFD2NX-40", 8}},
 
+	/* Lattice MachXO2 */
 	{0x012b8043, {"lattice", "MachXO2",   "LCMXO2-256HC", 8}},
 	{0x012b9043, {"lattice", "MachXO2",   "LCMXO2-640HC", 8}},
 	{0x012ba043, {"lattice", "MachXO2",   "LCMXO2-1200HC", 8}},
 	{0x012bd043, {"lattice", "MachXO2",   "LCMXO2-7000HC", 8}},
 	{0x012b5043, {"lattice", "MachXO2",   "LCMXO2-7000HE", 8}},
 
+	/* Lattice MachXO3 */
 	{0x012BB043, {"lattice", "MachXO3LF", "LCMX03LF-1300C", 8}},
 	{0x012B2043, {"lattice", "MachXO3LF", "LCMX03LF-1300E", 8}},
 	{0x012BB043, {"lattice", "MachXO3LF", "LCMX03LF-2100C", 8}},
@@ -144,6 +171,7 @@ static std::map <uint32_t, fpga_model> fpga_list = {
 
 	{0x012e3043, {"lattice", "MachXO3D", "LCMX03D-9400HC", 8}},
 
+	/* Lattice ECP5 */
 	{0x21111043, {"lattice", "ECP5", "LFE5U-12", 8}},
 	{0x41111043, {"lattice", "ECP5", "LFE5U-25", 8}},
 	{0x41112043, {"lattice", "ECP5", "LFE5U-45", 8}},
@@ -155,8 +183,10 @@ static std::map <uint32_t, fpga_model> fpga_list = {
 	{0x81112043, {"lattice", "ECP5", "LFE5UM5G-45", 8}},
 	{0x81113043, {"lattice", "ECP5", "LFE5UM5G-85", 8}},
 
+	/* Lattice XP2 */
 	{0x0129a043, {"lattice", "XP2", "LFXP2-8E", 8}},
 
+	/* Lattice GW1 */
 	{0x0100481b, {"Gowin", "GW1N", "GW1N(R)-9C", 8}},
 	{0x0100581b, {"Gowin", "GW1N", "GW1NR-9", 8}},
 	{0x0900281B, {"Gowin", "GW1N", "GW1N-1", 8}},
@@ -165,8 +195,11 @@ static std::map <uint32_t, fpga_model> fpga_list = {
 	{0x0100681b, {"Gowin", "GW1NZ", "GW1NZ-1", 8}},
 	{0x0300181b, {"Gowin", "GW1NS", "GW1NS-2C", 8}},
 	{0x0100981b, {"Gowin", "GW1NSR", "GW1NSR-4C", 8}},
+
+	/* Lattice GW2 */
 	{0x0000081b, {"Gowin", "GW2A", "GW2A(R)-18(C)", 8}},
 
+	/* CologneChip GateMate*/
 	/* keep highest nibble to prevent confusion with Efinix T4/T8 IDCODE */
 	{0x20000001, {"colognechip", "GateMate Series", "GM1Ax", 6}},
 };
