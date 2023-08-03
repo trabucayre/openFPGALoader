@@ -19,9 +19,19 @@ typedef struct {
 
 /* Highest nibble (version) must always be set to 0 */
 static std::map <uint32_t, fpga_model> fpga_list = {
-	/* Anlogic */
+	/**************************************************************************/
+	/*                            Anlogic                                     */
+	/**************************************************************************/
+
+	/* Anlogic Eagle */
 	{0x0a014c35, {"anlogic", "eagle s20", "EG4S20BG256", 8}},
+
+	/* Anlogic Elf2 */
 	{0x00004c37, {"anlogic", "elf2",      "EF2M45", 8}},
+
+	/**************************************************************************/
+	/*                             Xilinx                                     */
+	/**************************************************************************/
 
 	/* Xilinx XCF */
 	{0x05044093, {"xilinx", "xcf",      "xcf01s",    8}},
@@ -103,6 +113,10 @@ static std::map <uint32_t, fpga_model> fpga_list = {
 	{0x04740093, {"xilinx", "zynqmp", "xczu11eg", 6}},
 	{0x04730093, {"xilinx", "zynqmp",  "xczu7ev", 6}},
 
+	/**************************************************************************/
+	/*                             Altera                                     */
+	/**************************************************************************/
+
 	/* Altera Cyclone III/IV */
 	{0x020f20dd, {"altera", "cyclone III/IV", "EP3C16/EP4CE15", 10}},
 	{0x020f70dd, {"altera", "cyclone IV",     "EP4CE115",       10}},
@@ -131,6 +145,10 @@ static std::map <uint32_t, fpga_model> fpga_list = {
 	{0x020f30dd, {"altera", "cyclone 10 LP", "10CL025", 10}},
 	{0x020f50dd, {"altera", "cyclone 10 LP", "10CL055", 10}},
 
+	/**************************************************************************/
+	/*                             Efinix                                     */
+	/**************************************************************************/
+
 	/* Efinix Trion */
 	{0x00000001, {"efinix", "Trion",    "T4/T8",            4}},
 	{0x00210a79, {"efinix", "Trion",    "T8QFP144/T13/T20", 4}},
@@ -141,6 +159,10 @@ static std::map <uint32_t, fpga_model> fpga_list = {
 	{0x00660a79, {"efinix", "Titanium", "Ti60",             5}},
 	{0x00360a79, {"efinix", "Titanium", "Ti60ES",           5}},
 	{0x00661a79, {"efinix", "Titanium", "Ti35",             5}},
+
+	/**************************************************************************/
+	/*                             Lattice                                    */
+	/**************************************************************************/
 
 	/* Lattice XP2 */
 	{0x0129a043, {"lattice", "XP2", "LFXP2-8E", 8}},
@@ -186,6 +208,10 @@ static std::map <uint32_t, fpga_model> fpga_list = {
 	{0x010F0043, {"lattice", "CertusNX", "LFD2NX-17", 8}},
 	{0x010F1043, {"lattice", "CertusNX", "LFD2NX-40", 8}},
 
+	/**************************************************************************/
+	/*                             Gowin                                      */
+	/**************************************************************************/
+
 	/* Gowin GW1 */
 	{0x0100481b, {"Gowin", "GW1N",   "GW1N(R)-9C", 8}},
 	{0x0100581b, {"Gowin", "GW1N",   "GW1NR-9",    8}},
@@ -198,6 +224,10 @@ static std::map <uint32_t, fpga_model> fpga_list = {
 
 	/* Gowin GW2 */
 	{0x0000081b, {"Gowin", "GW2A", "GW2A(R)-18(C)", 8}},
+
+	/**************************************************************************/
+	/*                           CologneChip                                  */
+	/**************************************************************************/
 
 	/* CologneChip GateMate*/
 	/* keep highest nibble to prevent confusion with Efinix T4/T8 IDCODE */
