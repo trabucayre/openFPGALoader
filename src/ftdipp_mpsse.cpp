@@ -158,7 +158,7 @@ void FTDIpp_MPSSE::open_device(const std::string &serial, unsigned int baudrate)
 	if (ret < 0) {
 		char description[256];
 		if (_bus == 0 || _addr == 0)
-			snprintf(description, sizeof(description), "");
+			memset(description, '\0', 256);
 		else
 #if (FTDI_VERSION < 104)
 			snprintf(description, sizeof(description), "");
