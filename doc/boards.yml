@@ -489,6 +489,13 @@
   Memory: OK
   Flash: NA
 
+- ID: qmtechCyclone10
+  Description: QMTech Cyclone 10 Starter Kit
+  URL: http://www.chinaqmtech.com/productinfo/1858435.html
+  FPGA: Cyclone 10 LP 10CL016YU484C8G
+  Memory: OK
+  Flash: OK
+
 - ID: qmtechCycloneIV
   Description: QMTech CycloneIV Core Board
   URL: https://fr.aliexpress.com/item/32949281189.html
