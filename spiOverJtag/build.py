@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-from edalize import get_edatool
+from edalize.edatool import get_edatool
 import os
 
 if len(os.sys.argv) != 2:
@@ -151,6 +151,7 @@ if tool in ["ise", "vivado"]:
     files.append({'name': cst_file, 'file_type': cst_type})
 else:
     full_part = {
+        "10cl016484": "10CL016YU484C8G",
         "10cl025256": "10CL025YU256C8G",
         "10cl055484": "10CL055YU484C8G",
         "ep4ce11523": "EP4CE115F23C7",
