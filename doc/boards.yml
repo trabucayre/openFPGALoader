@@ -423,6 +423,13 @@
   Memory: OK
   Flash: OK
 
+- ID: mini_itx
+  Description: Avnet Mini-ITX Base Kit
+  URL: https://www.avnet.com/wps/portal/us/products/avnet-boards/avnet-board-families/mini-itx/
+  FPGA: AMD Xilinx XC7Z045/XC7Z100-2FFG900
+  Memory: OK
+  Flash: NA
+
 - ID: nexys_a7_50
   Description: Digilent Nexys A7(Nexys 4 DDR)
   URL: https://digilent.com/reference/programmable-logic/nexys-a7/start
