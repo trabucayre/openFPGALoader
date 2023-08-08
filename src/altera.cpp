@@ -78,7 +78,7 @@ void Altera::reset()
 void Altera::programMem(RawParser &_bit)
 {
 	int byte_length = _bit.getLength()/8;
-	uint8_t *data = _bit.getData();
+	const uint8_t *data = _bit.getData();
 
 	uint32_t clk_period = 1e9/static_cast<float>(_jtag->getClkFreq());
 
@@ -232,7 +232,7 @@ void Altera::program(unsigned int offset, bool unprotect_flash)
 			reverseOrder = true;
 
 		/* prepare data to write */
-		uint8_t *data = NULL;
+		const uint8_t *data = NULL;
 		int length = 0;
 
 		RawParser bit(_filename, reverseOrder);
@@ -266,7 +266,7 @@ int Altera::idCode()
 
 /* SPI interface */
 
-int Altera::spi_put(uint8_t cmd, uint8_t *tx, uint8_t *rx, uint32_t len)
+int Altera::spi_put(uint8_t cmd, const uint8_t *tx, uint8_t *rx, uint32_t len)
 {
 	/* +1 because send first cmd + len byte + 1 for rx due to a delay of
 	 * one bit
@@ -291,7 +291,7 @@ int Altera::spi_put(uint8_t cmd, uint8_t *tx, uint8_t *rx, uint32_t len)
 
 	return 0;
 }
-int Altera::spi_put(uint8_t *tx, uint8_t *rx, uint32_t len)
+int Altera::spi_put(const uint8_t *tx, uint8_t *rx, uint32_t len)
 {
 	return spi_put(tx[0], &tx[1], rx, len-1);
 }

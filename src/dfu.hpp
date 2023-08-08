@@ -52,12 +52,12 @@ class DFU {
 		 * \brief dfu descriptor structure (not provided by libusb
 		 */
 		struct dfu_desc {
-		    uint8_t  bLength;
-		    uint8_t  bDescriptorType;
-		    uint8_t  bmAttributes;
-		    uint16_t wDetachTimeOut;
-		    uint16_t wTransferSize;
-		    uint16_t bcdDFUVersion;
+			uint8_t  bLength;
+			uint8_t  bDescriptorType;
+			uint8_t  bmAttributes;
+			uint16_t wDetachTimeOut;
+			uint16_t wTransferSize;
+			uint16_t bcdDFUVersion;
 		} __attribute__((__packed__));
 
 		struct dfu_dev {
@@ -200,7 +200,7 @@ class DFU {
 		 * \brief send an IN/OUT request
 		 */
 		int send(bool out, uint8_t brequest, uint16_t wvalue,
-				unsigned char *data, uint16_t length);
+				const uint8_t *data, uint16_t length);
 		/*!
 		 * \brief fill specific DFU structure with extra descriptor
 		 * \param[in] intf: interface descriptor with extra area

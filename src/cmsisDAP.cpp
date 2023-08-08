@@ -49,11 +49,11 @@ enum cmsisdap_info_id {
 	INFO_ID_PID                = 0x02,  // Get the Product ID (string).
 	INFO_ID_SERNUM             = 0x03,  // Get the Serial Number (string).
 	INFO_ID_FWVERS             = 0x04,  // Get the CMSIS-DAP Firmware
-							     	    // Version (string).
+								 		// Version (string).
 	INFO_ID_TARGET_DEV_VENDOR  = 0x05,  // Get the Target Device Vendor (string).
 	INFO_ID_TARGET_DEV_NAME    = 0x06,  // Get the Target Device Name (string).
 	INFO_ID_HWCAP              = 0xF0,  // Get information about the
-							     	    // Capabilities (BYTE) of the Debug Unit
+								 		// Capabilities (BYTE) of the Debug Unit
 	INFO_ID_SWO_TEST_TIM_PARAM = 0xF1,  // Get the Test Domain Timer parameter
 	INFO_ID_SWO_TRACE_BUF_SIZE = 0xFD,  // Get the SWO Trace Buffer Size (WORD).
 	INFO_ID_MAX_PKT_CNT        = 0xFE,  // Get the maximum Packet Count (BYTE).
@@ -186,23 +186,23 @@ CmsisDAP::CmsisDAP(const cable_t &cable, int index, int8_t verbose):_verbose(ver
 	 * 0 -> info
 	 * 1 -> len (1: info0, 2: info0, info1)
 	 * Available transfer protocols to target:
-    	Info0 - Bit 0: 1 = SWD Serial Wire Debug communication is implemented
-                       0 = SWD Commands not implemented
-        Info0 - Bit 1: 1 = JTAG communication is implemented
-                       0 = JTAG Commands not implemented
-       Serial Wire Trace (SWO) support:
-        Info0 - Bit 2: 1 = SWO UART - UART Serial Wire Output is implemented
-                       0 = not implemented
-        Info0 - Bit 3: 1 = SWO Manchester - Manchester Serial Wire Output is implemented
-                       0 = not implemented
-       Command extensions for transfer protocol:
-        Info0 - Bit 4: 1 = Atomic Commands - Atomic Commands support is implemented
-                       0 = Atomic Commands not implemented
-       Time synchronisation via Test Domain Timer:
-        Info0 - Bit 5: 1 = Test Domain Timer - debug unit support for Test Domain Timer is implemented
-                       0 = not implemented
-       SWO Streaming Trace support:
-        Info0 - Bit 6: 1 = SWO Streaming Trace is implemented (0 = not implemented).
+		Info0 - Bit 0: 1 = SWD Serial Wire Debug communication is implemented
+					   0 = SWD Commands not implemented
+		Info0 - Bit 1: 1 = JTAG communication is implemented
+					   0 = JTAG Commands not implemented
+	   Serial Wire Trace (SWO) support:
+		Info0 - Bit 2: 1 = SWO UART - UART Serial Wire Output is implemented
+					   0 = not implemented
+		Info0 - Bit 3: 1 = SWO Manchester - Manchester Serial Wire Output is implemented
+					   0 = not implemented
+	   Command extensions for transfer protocol:
+		Info0 - Bit 4: 1 = Atomic Commands - Atomic Commands support is implemented
+					   0 = Atomic Commands not implemented
+	   Time synchronisation via Test Domain Timer:
+		Info0 - Bit 5: 1 = Test Domain Timer - debug unit support for Test Domain Timer is implemented
+					   0 = not implemented
+	   SWO Streaming Trace support:
+		Info0 - Bit 6: 1 = SWO Streaming Trace is implemented (0 = not implemented).
 	*/
 	memset(_buffer, 0, 63);
 	int res = read_info(INFO_ID_HWCAP, _buffer, 63);
@@ -313,7 +313,7 @@ int CmsisDAP::setClkFreq(uint32_t clkHZ)
  * flush the buffer
  * tms states are written only if max or if flush_buffer set
  */
-int CmsisDAP::writeTMS(uint8_t *tms, uint32_t len, bool flush_buffer)
+int CmsisDAP::writeTMS(const uint8_t *tms, uint32_t len, bool flush_buffer)
 {
 	/* nothing to send
 	 * check if the buffer must be flushed
@@ -349,14 +349,15 @@ int CmsisDAP::writeTMS(uint8_t *tms, uint32_t len, bool flush_buffer)
 
 /* 0x14 + number of sequence + seq1 details + tdi + seq2 details + tdi + ...
  */
-int CmsisDAP::writeJtagSequence(uint8_t tms, uint8_t *tx, uint8_t *rx,
+int CmsisDAP::writeJtagSequence(uint8_t tms, const uint8_t *tx, uint8_t *rx,
 		uint32_t len, bool end)
 {
 	int ret;
 	int real_len = len - (end ? 1 : 0);  // full xfer size according to end
-	uint8_t *rx_ptr = rx, *tx_ptr = tx;  // rd & wr ptr
+	uint8_t *rx_ptr = rx;
+	const uint8_t *tx_ptr = tx;  // rd & wr ptr
 	int xfer_byte_len, xfer_bit_len;  // size of one sequence
-                                              // in byte and bit
+											  // in byte and bit
 	int byte_to_read = 0;  // for rd operation number of read in one xfer
 	/* constant part of all sequences info byte */
 	uint8_t seq_info_base = ((rx) ? DAP_JTAG_SEQ_TDO_CAPTURE : 0) |
@@ -462,7 +463,7 @@ int CmsisDAP::writeJtagSequence(uint8_t tms, uint8_t *tx, uint8_t *rx,
 /* send TDI by filling jtag sequence
  * tx buffer is considered to be correctly aligned (LSB first)
  */
-int CmsisDAP::writeTDI(uint8_t *tx, uint8_t *rx, uint32_t len, bool end)
+int CmsisDAP::writeTDI(const uint8_t *tx, uint8_t *rx, uint32_t len, bool end)
 {
 	return writeJtagSequence(0, tx, rx, len, end);
 }

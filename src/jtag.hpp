@@ -72,9 +72,9 @@ class Jtag {
 		int end_state = RUN_TEST_IDLE);
 	int shiftIR(unsigned char tdi, int irlen,
 		int end_state = RUN_TEST_IDLE);
-	int shiftDR(unsigned char *tdi, unsigned char *tdo, int drlen,
+	int shiftDR(const uint8_t *tdi, unsigned char *tdo, int drlen,
 		int end_state = RUN_TEST_IDLE);
-	int read_write(unsigned char *tdi, unsigned char *tdo, int len, char last);
+	int read_write(const uint8_t *tdi, unsigned char *tdo, int len, char last);
 
 	void toggleClk(int nb);
 	void go_test_logic_reset();

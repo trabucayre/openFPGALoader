@@ -54,10 +54,10 @@ class UsbBlaster : public JtagInterface {
 	 * \param flush_buffer force flushing the buffer
 	 * \return number of state written
 	 * */
-	int writeTMS(uint8_t *tms, uint32_t len, bool flush_buffer) override;
+	int writeTMS(const uint8_t *tms, uint32_t len, bool flush_buffer) override;
 
 	/* TDI */
-	int writeTDI(uint8_t *tx, uint8_t *rx, uint32_t len, bool end) override;
+	int writeTDI(const uint8_t *tx, uint8_t *rx, uint32_t len, bool end) override;
 	/*!
 	 * \brief toggle clock with static tms and tdi
 	 * \param tms TMS state

@@ -298,7 +298,7 @@ void Jtag::go_test_logic_reset()
 	_state = TEST_LOGIC_RESET;
 }
 
-int Jtag::read_write(unsigned char *tdi, unsigned char *tdo, int len, char last)
+int Jtag::read_write(const uint8_t *tdi, unsigned char *tdo, int len, char last)
 {
 	flushTMS(false);
 	_jtag->writeTDI(tdi, tdo, len, last);
@@ -317,7 +317,7 @@ void Jtag::toggleClk(int nb)
 	return;
 }
 
-int Jtag::shiftDR(unsigned char *tdi, unsigned char *tdo, int drlen, int end_state)
+int Jtag::shiftDR(const uint8_t *tdi, unsigned char *tdo, int drlen, int end_state)
 {
 	/* get number of devices in the JTAG chain
 	 * after the selected one
@@ -361,7 +361,7 @@ int Jtag::shiftDR(unsigned char *tdi, unsigned char *tdo, int drlen, int end_sta
 			uint8_t tx[n];
 			memset(tx, 0xff, n);
 			read_write(tx, NULL, bits_after, 1);  // its the last force
-			                                      // tms high with last bit
+												  // tms high with last bit
 		}
 
 		/* move to end_state */

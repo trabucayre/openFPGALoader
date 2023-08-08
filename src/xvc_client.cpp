@@ -43,8 +43,8 @@ XVC_client::XVC_client(const std::string &ip_addr, int port,
 	std::regex r("[_:]");
 	string rep((const char *)buffer);
 
-    std::sregex_token_iterator start{ rep.begin(), rep.end(), r, -1 }, end;
-    std::vector<std::string> toto(start, end);
+	std::sregex_token_iterator start{ rep.begin(), rep.end(), r, -1 }, end;
+	std::vector<std::string> toto(start, end);
 
 	if (toto.size() != 3)
 		throw std::runtime_error("wrong getinfo: answer");
@@ -87,7 +87,7 @@ XVC_client::~XVC_client()
 	close(_sock);
 }
 
-int XVC_client::writeTMS(uint8_t *tms, uint32_t len, bool flush_buffer)
+int XVC_client::writeTMS(const uint8_t *tms, uint32_t len, bool flush_buffer)
 {
 	// empty buffer
 	// if asked flush
@@ -121,7 +121,7 @@ int XVC_client::writeTMS(uint8_t *tms, uint32_t len, bool flush_buffer)
 	return len;
 }
 
-int XVC_client::writeTDI(uint8_t *tx, uint8_t *rx, uint32_t len, bool end)
+int XVC_client::writeTDI(const uint8_t *tx, uint8_t *rx, uint32_t len, bool end)
 {
 	if (len == 0)  // nothing to do
 		return 0;
@@ -130,7 +130,8 @@ int XVC_client::writeTDI(uint8_t *tx, uint8_t *rx, uint32_t len, bool end)
 
 	uint32_t xfer_len = _buffer_size * 8;  // default to buffer capacity
 	uint8_t tms = (_last_tms) ? 0xff : 0x00;  // set tms byte
-	uint8_t *tx_ptr = tx, *rx_ptr = rx;  // use pointer to simplify algo
+	const uint8_t *tx_ptr = tx;
+	uint8_t *rx_ptr = rx;  // use pointer to simplify algo
 
 	/* write by burst */
 	for (uint32_t rest = 0; rest < len; rest += xfer_len) {

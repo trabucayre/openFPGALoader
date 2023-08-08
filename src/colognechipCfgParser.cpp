@@ -22,7 +22,7 @@ int CologneChipCfgParser::parse()
 		std::string val = buffer.substr(0, buffer.find("//"));
 		val.erase(std::remove_if(val.begin(), val.end(), ::isspace), val.end());
 		if (val != "") {
-			_bit_data += std::stol(val, nullptr, 16);
+			_bit_data.push_back(std::stol(val, nullptr, 16));
 		}
 	}
 	_bit_length = _bit_data.size() * 8;

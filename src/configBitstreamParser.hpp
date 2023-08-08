@@ -11,6 +11,7 @@
 #include <iostream>
 #include <fstream>
 #include <string>
+#include <vector>
 #include <map>
 
 class ConfigBitstreamParser {
@@ -19,7 +20,7 @@ class ConfigBitstreamParser {
 			bool verbose = false);
 		virtual ~ConfigBitstreamParser();
 		virtual int parse() = 0;
-		uint8_t *getData() {return (uint8_t*)_bit_data.c_str();}
+		const uint8_t *getData() const {return _bit_data.data();}
 		int getLength() {return _bit_length;}
 
 		/**
@@ -62,7 +63,7 @@ class ConfigBitstreamParser {
 		int _bit_length;
 		int _file_size;
 		bool _verbose;
-		std::string _bit_data;
+		std::vector<uint8_t> _bit_data;
 		std::string _raw_data; /**< unprocessed file content */
 		std::map<std::string, std::string> _hdr;
 };

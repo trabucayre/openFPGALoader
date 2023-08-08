@@ -233,7 +233,7 @@ int SPIFlash::sectors_erase(int base_addr, int size)
 	return ret;
 }
 
-int SPIFlash::write_page(int addr, uint8_t *data, int len)
+int SPIFlash::write_page(int addr, const uint8_t *data, int len)
 {
 	uint32_t addr_len;
 	uint8_t write_cmd;
@@ -340,7 +340,7 @@ bool SPIFlash::dump(const std::string &filename, const int &base_addr,
 	return true;
 }
 
-int SPIFlash::erase_and_prog(int base_addr, uint8_t *data, int len)
+int SPIFlash::erase_and_prog(int base_addr, const uint8_t *data, int len)
 {
 	if (_jedec_id == 0) {
 		try {
@@ -435,7 +435,7 @@ int SPIFlash::erase_and_prog(int base_addr, uint8_t *data, int len)
 	if (sectors_erase(base_addr, len) == -1)
 		return -1;
 
-	uint8_t *ptr = data;
+	const uint8_t *ptr = data;
 	int size = 0;
 	for (int addr = 0; addr < len; addr += size, ptr+=size) {
 		size = (addr + 256 > len)?(len-addr) : 256;

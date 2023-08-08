@@ -116,7 +116,7 @@ bool SPIInterface::bulk_erase_flash()
 	return post_flash_access() && ret;
 }
 
-bool SPIInterface::write(uint32_t offset, uint8_t *data, uint32_t len,
+bool SPIInterface::write(uint32_t offset, const uint8_t *data, uint32_t len,
 		bool unprotect_flash)
 {
 	bool ret = true;

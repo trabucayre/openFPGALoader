@@ -77,7 +77,7 @@ void Anlogic::program(unsigned int offset, bool unprotect_flash)
 	if (_verbose)
 		bit.displayHeader();
 
-	uint8_t *data = bit.getData();
+	const uint8_t *data = bit.getData();
 	int len = bit.getLength() / 8;
 
 	if (_mode == Device::SPI_MODE) {
@@ -110,7 +110,7 @@ void Anlogic::program(unsigned int offset, bool unprotect_flash)
 
 		ProgressBar progress("Loading", len, 50, _quiet);
 		int pos = 0;
-		uint8_t *ptr = data;
+		const uint8_t *ptr = data;
 		while (len > 0) {
 			int xfer_len = (len > 512)?512:len;
 			int tx_end;
@@ -184,7 +184,7 @@ bool Anlogic::prepare_flash_access()
  * In write only operations to care about this delay
  */
 
-int Anlogic::spi_put(uint8_t cmd, uint8_t *tx, uint8_t *rx, uint32_t len)
+int Anlogic::spi_put(uint8_t cmd, const uint8_t *tx, uint8_t *rx, uint32_t len)
 {
 	int xfer_len = len + 1;
 	if (rx)
@@ -210,7 +210,7 @@ int Anlogic::spi_put(uint8_t cmd, uint8_t *tx, uint8_t *rx, uint32_t len)
 	}
 	return 0;
 }
-int Anlogic::spi_put(uint8_t *tx, uint8_t *rx, uint32_t len)
+int Anlogic::spi_put(const uint8_t *tx, uint8_t *rx, uint32_t len)
 {
 	int xfer_len = len;
 	if (rx)

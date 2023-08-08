@@ -60,7 +60,7 @@ void Ice40::reset()
 /* cf. TN1248 (iCE40 Programming and Configuration)
  * Appendix A. SPI Slave Configuration Procedure
  */
-bool Ice40::program_cram(uint8_t *data, uint32_t length)
+bool Ice40::program_cram(const uint8_t *data, uint32_t length)
 {
 	uint32_t timeout = 1000;
 
@@ -78,7 +78,7 @@ bool Ice40::program_cram(uint8_t *data, uint32_t length)
 	/* load configuration data MSB first
 	 */
 	ProgressBar progress("Loading to CRAM", length, 50, _verbose);
-	uint8_t *ptr = data;
+	const uint8_t *ptr = data;
 	int size = 0;
 	for (uint32_t addr = 0; addr < length; addr += size, ptr+=size) {
 		size = (addr + 256 > length)?(length-addr) : 256;
@@ -127,7 +127,7 @@ void Ice40::program(unsigned int offset, bool unprotect_flash)
 		return;
 	}
 
-	uint8_t *data = bit.getData();
+	const uint8_t *data = bit.getData();
 	int length = bit.getLength() / 8;
 
 	if (_mode == Device::MEM_MODE) {

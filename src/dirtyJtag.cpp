@@ -113,7 +113,7 @@ bool DirtyJtag::getVersion()
 					CMD_STOP};
 	uint8_t rx_buf[64];
 	ret = libusb_bulk_transfer(dev_handle, DIRTYJTAG_WRITE_EP,
-			        buf, 2, &actual_length, DIRTYJTAG_TIMEOUT);
+					buf, 2, &actual_length, DIRTYJTAG_TIMEOUT);
 	if (ret < 0) {
 		cerr << "getVersion: usb bulk write failed " << ret << endl;
 		return false;
@@ -162,7 +162,7 @@ int DirtyJtag::setClkFreq(uint32_t clkHZ)
 					static_cast<uint8_t>(0xff & ((clkHZ / 1000)     )),
 					CMD_STOP};
 	ret = libusb_bulk_transfer(dev_handle, DIRTYJTAG_WRITE_EP,
-			        buf, 4, &actual_length, DIRTYJTAG_TIMEOUT);
+					buf, 4, &actual_length, DIRTYJTAG_TIMEOUT);
 	if (ret < 0) {
 		cerr << "setClkFreq: usb bulk write failed " << ret << endl;
 		return -EXIT_FAILURE;
@@ -171,7 +171,7 @@ int DirtyJtag::setClkFreq(uint32_t clkHZ)
 	return clkHZ;
 }
 
-int DirtyJtag::writeTMS(uint8_t *tms, uint32_t len, bool flush_buffer)
+int DirtyJtag::writeTMS(const uint8_t *tms, uint32_t len, bool flush_buffer)
 {
 	(void) flush_buffer;
 	int actual_length;
@@ -241,7 +241,7 @@ int DirtyJtag::flush()
 	return 0;
 }
 
-int DirtyJtag::writeTDI(uint8_t *tx, uint8_t *rx, uint32_t len, bool end)
+int DirtyJtag::writeTDI(const uint8_t *tx, uint8_t *rx, uint32_t len, bool end)
 {
 	int actual_length;
 	uint32_t real_bit_len = len - (end ? 1 : 0);
@@ -286,7 +286,7 @@ int DirtyJtag::writeTDI(uint8_t *tx, uint8_t *rx, uint32_t len, bool end)
 
 		actual_length = 0;
 		int ret = libusb_bulk_transfer(dev_handle, DIRTYJTAG_WRITE_EP,
-		        (unsigned char *)tx_buf, (byte_to_send + header_offset),
+				(unsigned char *)tx_buf, (byte_to_send + header_offset),
 				&actual_length, DIRTYJTAG_TIMEOUT);
 		if ((ret < 0) || (actual_length != (int)(byte_to_send + header_offset))) {
 			cerr << "writeTDI: fill: usb bulk write failed " << ret <<

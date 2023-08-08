@@ -22,7 +22,7 @@ class Ice40: public Device, SPIInterface {
 		~Ice40();
 
 		void program(unsigned int offset, bool unprotect_flash) override;
-		bool program_cram(uint8_t *data, uint32_t length);
+		bool program_cram(const uint8_t *data, uint32_t length);
 		bool dumpFlash(uint32_t base_addr, uint32_t len) override;
 		bool protect_flash(uint32_t len) override;
 		bool unprotect_flash() override;
@@ -31,12 +31,12 @@ class Ice40: public Device, SPIInterface {
 		int idCode() override {return 0;}
 		void reset() override;
 
-		int spi_put(uint8_t cmd, uint8_t *tx, uint8_t *rx,
+		int spi_put(uint8_t cmd, const uint8_t *tx, uint8_t *rx,
 				uint32_t len) override {
 			(void)cmd; (void)tx; (void)rx; (void)len;
 			return 0;
 		}
-		int spi_put(uint8_t *tx, uint8_t *rx, uint32_t len) override {
+		int spi_put(const uint8_t *tx, uint8_t *rx, uint32_t len) override {
 			(void)tx; (void)rx; (void)len;
 			return 0;
 		}

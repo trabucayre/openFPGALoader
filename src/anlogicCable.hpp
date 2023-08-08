@@ -25,9 +25,9 @@ class AnlogicCable : public JtagInterface {
 	int setClkFreq(uint32_t clkHZ) override;
 
 	/* TMS */
-	int writeTMS(uint8_t *tms, uint32_t len, bool flush_buffer) override;
+	int writeTMS(const uint8_t *tms, uint32_t len, bool flush_buffer) override;
 	/* TDI */
-	int writeTDI(uint8_t *tx, uint8_t *rx, uint32_t len, bool end) override;
+	int writeTDI(const uint8_t *tx, uint8_t *rx, uint32_t len, bool end) override;
 	/* clk */
 	int toggleClk(uint8_t tms, uint8_t tdi, uint32_t clk_len) override;
 
@@ -45,7 +45,7 @@ class AnlogicCable : public JtagInterface {
  private:
 	int write(uint8_t *in_buf, uint8_t *out_buf, int len, int rd_len);
 
-    libusb_device_handle *dev_handle;
+	libusb_device_handle *dev_handle;
 	libusb_context *usb_ctx;
 };
 #endif  // SRC_ANLOGICCABLE_HPP_

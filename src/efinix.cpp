@@ -415,7 +415,7 @@ bool Efinix::prepare_flash_access()
  *        so to send only a cmd set len to 0 (or omit this param)
  */
 int Efinix::spi_put(uint8_t cmd,
-			uint8_t *tx, uint8_t *rx, uint32_t len)
+			const uint8_t *tx, uint8_t *rx, uint32_t len)
 {
 	int kXferLen = len + 1 + ((rx == NULL) ? 0 : 1);
 	uint8_t jtx[kXferLen];
@@ -440,7 +440,7 @@ int Efinix::spi_put(uint8_t cmd,
 	return 0;
 }
 
-int Efinix::spi_put(uint8_t *tx, uint8_t *rx, uint32_t len)
+int Efinix::spi_put(const uint8_t *tx, uint8_t *rx, uint32_t len)
 {
 	int kXferLen = len + ((rx == NULL) ? 0 : 1);
 	uint8_t jtx[kXferLen];

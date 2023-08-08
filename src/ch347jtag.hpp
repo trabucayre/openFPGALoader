@@ -13,12 +13,12 @@ class CH347Jtag : public JtagInterface {
 	CH347Jtag(uint32_t clkHZ, int8_t verbose);
 	virtual ~CH347Jtag();
 
-	int setClkFreq(uint32_t clkHZ) override;
-
+	int setClkFreq(uint32_t clkHZ) override { return _setClkFreq(clkHZ); };
+	int _setClkFreq(uint32_t clkHZ);
 	/* TMS */
-	int writeTMS(uint8_t *tms, uint32_t len, bool flush_buffer) override;
+	int writeTMS(const uint8_t *tms, uint32_t len, bool flush_buffer) override;
 	/* TDI */
-	int writeTDI(uint8_t *tx, uint8_t *rx, uint32_t len, bool end) override;
+	int writeTDI(const uint8_t *tx, uint8_t *rx, uint32_t len, bool end) override;
 	/* clk */
 	int toggleClk(uint8_t tms, uint8_t tdo, uint32_t clk_len) override;
 

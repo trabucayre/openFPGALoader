@@ -89,7 +89,7 @@ uint32_t UsbBlaster::getClkFreq()
 	return ll_driver->getClkFreq();
 }
 
-int UsbBlaster::writeTMS(uint8_t *tms, uint32_t len, bool flush_buffer)
+int UsbBlaster::writeTMS(const uint8_t *tms, uint32_t len, bool flush_buffer)
 {
 	int ret;
 
@@ -138,14 +138,14 @@ int UsbBlaster::writeTMS(uint8_t *tms, uint32_t len, bool flush_buffer)
 
 #include "configBitstreamParser.hpp"
 
-int UsbBlaster::writeTDI(uint8_t *tx, uint8_t *rx, uint32_t len, bool end)
+int UsbBlaster::writeTDI(const uint8_t *tx, uint8_t *rx, uint32_t len, bool end)
 {
 	uint32_t real_len = (end) ? len -1 : len;
 	uint32_t nb_byte = real_len >> 3;
 	uint32_t nb_bit = (real_len & 0x07);
 	uint8_t mode = (rx != NULL)? DO_RDWR : DO_WRITE;
 
-	uint8_t *tx_ptr = tx;
+	const uint8_t *tx_ptr = tx;
 	uint8_t *rx_ptr = rx;
 
 	/* security: send residual
@@ -349,8 +349,8 @@ UsbBlasterI::UsbBlasterI()
 		throw std::exception();
 	}
 
-     ret = ftdi_usb_open(_ftdi, 0x09fb, 0x6001);
-    if (ret < 0) {
+	 ret = ftdi_usb_open(_ftdi, 0x09fb, 0x6001);
+	if (ret < 0) {
 		fprintf(stderr, "unable to open ftdi device: %d (%s)\n",
 			ret, ftdi_get_error_string(_ftdi));
 		ftdi_free(_ftdi);

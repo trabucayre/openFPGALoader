@@ -163,8 +163,8 @@ int FtdiSpi::ft2232_spi_wr_then_rd(
 
 /* Returns 0 upon success, a negative number upon errors. */
 int FtdiSpi::ft2232_spi_wr_and_rd(//struct ftdi_spi *spi,
-			    uint32_t writecnt,
-			    const uint8_t * writearr, uint8_t * readarr)
+				uint32_t writecnt,
+				const uint8_t * writearr, uint8_t * readarr)
 {
 	uint32_t max_xfer = (readarr) ? _buffer_size : 4096;
 	uint8_t buf[max_xfer];
@@ -229,7 +229,7 @@ int FtdiSpi::ft2232_spi_wr_and_rd(//struct ftdi_spi *spi,
 }
 
 /* method spiInterface::spi_put */
-int FtdiSpi::spi_put(uint8_t cmd, uint8_t *tx, uint8_t *rx, uint32_t len)
+int FtdiSpi::spi_put(uint8_t cmd, const uint8_t *tx, uint8_t *rx, uint32_t len)
 {
 	uint32_t xfer_len = len + 1;
 	uint8_t jtx[xfer_len];
@@ -252,7 +252,7 @@ int FtdiSpi::spi_put(uint8_t cmd, uint8_t *tx, uint8_t *rx, uint32_t len)
 }
 
 /* method spiInterface::spi_put */
-int FtdiSpi::spi_put(uint8_t *tx, uint8_t *rx, uint32_t len)
+int FtdiSpi::spi_put(const uint8_t *tx, uint8_t *rx, uint32_t len)
 {
 	return ft2232_spi_wr_and_rd(len, tx, rx);
 }
