@@ -78,6 +78,7 @@ Gowin::Gowin(Jtag *jtag, const string filename, const string &file_type, std::st
 		Device::prog_type_t prg_type, bool external_flash,
 		bool verify, int8_t verbose): Device(jtag, filename, file_type,
 		verify, verbose), is_gw1n1(false), is_gw2a(false),
+		is_gw5a(false),
 		_external_flash(external_flash),
 		_spi_sck(BSCAN_SPI_SCK), _spi_cs(BSCAN_SPI_CS),
 		_spi_di(BSCAN_SPI_DI), _spi_do(BSCAN_SPI_DO),
@@ -160,6 +161,15 @@ Gowin::Gowin(Jtag *jtag, const string filename, const string &file_type, std::st
 			/* FIXME: implement GW2 checksum calculation */
 			skip_checksum = true;
 			is_gw2a = true;
+			break;
+		case 0x0001081b: /* GW5AST-138 */
+		case 0x0001181b: /* GW5AT-138 */
+		case 0x0001281b: /* GW5A-25 */
+			_external_flash = true;
+			/* FIXME: implement GW5 checksum calculation */
+			skip_checksum = true;
+			is_gw5a = true;
+			break;
 	};
 
 	if (mcufw.size() > 0) {
@@ -256,6 +266,8 @@ void Gowin::program(unsigned int offset, bool unprotect_flash)
 	length = _fs->getLength();
 
 	if (_mode == FLASH_MODE) {
+		if (is_gw5a)
+			throw std::runtime_error("Error: write to flash on GW5A is not yet supported");
 		if (!_external_flash) { /* write into internal flash */
 			programFlash();
 		} else { /* write bitstream into external flash */
@@ -301,6 +313,13 @@ void Gowin::program(unsigned int offset, bool unprotect_flash)
 	}
 
 	wr_rd(READ_IDCODE, NULL, 0, NULL, 0);
+
+	/* Work around FPGA stuck in Bad Command status */
+	if (is_gw5a) {
+		reset();
+		_jtag->set_state(Jtag::RUN_TEST_IDLE);
+		_jtag->toggleClk(1000000);
+	}
 
 	/* erase SRAM */
 	if (!EnableCfg())
@@ -617,6 +636,11 @@ bool Gowin::flashSRAM(uint8_t *data, int length)
 	int byte_length = length / 8;
 
 	ProgressBar progress("Flash SRAM", byte_length, 50, _quiet);
+
+	/* UG704 3.4.3 */
+	if (is_gw5a) {
+		wr_rd(INIT_ADDR, NULL, 0, NULL, 0);
+	}
 
 	/* 2.2.6.4 */
 	wr_rd(XFER_WRITE, NULL, 0, NULL, 0);
