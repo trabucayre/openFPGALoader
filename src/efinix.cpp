@@ -291,7 +291,8 @@ void Efinix::programSPI(unsigned int offset, const uint8_t *data,
 
 void Efinix::programJTAG(const uint8_t *data, const int length)
 {
-	int xfer_len = 512, tx_end;
+	int xfer_len = 512;
+	Jtag::tapState_t tx_end;
 	uint8_t tx[512];
 
 	if (_fpga_family == TITANIUM_FAMILY)

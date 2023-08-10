@@ -338,7 +338,7 @@ bool Lattice::program_mem()
 
 	uint8_t tmp[1024];
 	int size = 1024;
-	int next_state = Jtag::SHIFT_DR;
+	Jtag::tapState_t next_state = Jtag::SHIFT_DR;
 
 	ProgressBar progress("Loading", length, 50, _quiet);
 
@@ -433,7 +433,7 @@ bool Lattice::program_intFlash(ConfigBitstreamParser *_cbp)
 
 				if(ufm_start > 2045) {
 					printError("UFM section detected in JEDEC file, but "
-					 	"calculated flash start address was out of bounds");
+						"calculated flash start address was out of bounds");
 					return false;
 				}
 			} else if (note == "END CONFIG DATA") {
@@ -1308,7 +1308,7 @@ uint16_t Lattice::getUFMStartPageFromJEDEC(JedParser *_jed, int id)
 	addres.
 	TODO: In any case, JEDEC files don't carry part information. Verify against
 	IDCODE read previously? */
-	
+
 	if(raw_page_offset > 9211) {
 		return raw_page_offset - 9211 - 1; // 7000
 	} else if(raw_page_offset > 5758) {

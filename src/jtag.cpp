@@ -317,7 +317,7 @@ void Jtag::toggleClk(int nb)
 	return;
 }
 
-int Jtag::shiftDR(const uint8_t *tdi, unsigned char *tdo, int drlen, int end_state)
+int Jtag::shiftDR(const uint8_t *tdi, unsigned char *tdo, int drlen, tapState_t end_state)
 {
 	/* get number of devices in the JTAG chain
 	 * after the selected one
@@ -370,7 +370,7 @@ int Jtag::shiftDR(const uint8_t *tdi, unsigned char *tdo, int drlen, int end_sta
 	return 0;
 }
 
-int Jtag::shiftIR(unsigned char tdi, int irlen, int end_state)
+int Jtag::shiftIR(unsigned char tdi, int irlen, tapState_t end_state)
 {
 	if (irlen > 8) {
 		cerr << "Error: this method this direct char don't support more than 1 byte" << endl;
@@ -379,7 +379,7 @@ int Jtag::shiftIR(unsigned char tdi, int irlen, int end_state)
 	return shiftIR(&tdi, NULL, irlen, end_state);
 }
 
-int Jtag::shiftIR(unsigned char *tdi, unsigned char *tdo, int irlen, int end_state)
+int Jtag::shiftIR(unsigned char *tdi, unsigned char *tdo, int irlen, tapState_t end_state)
 {
 	display("%s: avant shiftIR\n", __func__);
 	int bypass_after = 0;

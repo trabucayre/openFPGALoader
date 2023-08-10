@@ -113,7 +113,7 @@ void Anlogic::program(unsigned int offset, bool unprotect_flash)
 		const uint8_t *ptr = data;
 		while (len > 0) {
 			int xfer_len = (len > 512)?512:len;
-			int tx_end;
+			Jtag::tapState_t tx_end;
 			if (len - xfer_len == 0)
 				tx_end = Jtag::RUN_TEST_IDLE;
 			else

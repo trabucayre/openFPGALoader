@@ -571,7 +571,8 @@ void Xilinx::program_mem(ConfigBitstreamParser *bitfile)
 	/* GGM: TODO */
 	int byte_length = bitfile->getLength() / 8;
 	const uint8_t *data = bitfile->getData();
-	int tx_len, tx_end;
+	int tx_len;
+	Jtag::tapState_t tx_end;
 	int burst_len = byte_length / 100;
 
 	ProgressBar progress("Flash SRAM", byte_length, 50, _quiet);
@@ -728,7 +729,8 @@ bool Xilinx::xc3s_flow_program(ConfigBitstreamParser *bit)
 	int byte_length = bit->getLength() / 8;
 	int burst_len = byte_length / 100;
 	const uint8_t *data = bit->getData();
-	int tx_len = burst_len * 8, tx_end = Jtag::SHIFT_DR;
+	int tx_len = burst_len * 8;
+	Jtag::tapState_t tx_end = Jtag::SHIFT_DR;
 	ProgressBar progress("Flash SRAM", byte_length, 50, _quiet);
 
 	flow_enable();
@@ -1081,7 +1083,7 @@ bool Xilinx::xcf_program(ConfigBitstreamParser *bitfile)
 	uint32_t data_len = bitfile->getLength() / 8;
 	uint32_t xfer_len, offset = 0;
 	uint32_t addr = 0;
-	int xfer_end;
+	Jtag::tapState_t xfer_end;
 
 	/* limit JTAG clock frequency to 15MHz */
 	if (_jtag->getClkFreq() > 15e6)

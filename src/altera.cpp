@@ -101,7 +101,7 @@ void Altera::programMem(RawParser &_bit)
 
 	int xfer_len = 512;
 	int tx_len;
-	int tx_end;
+	Jtag::tapState_t tx_end;
 
 	for (int i=0; i < byte_length; i+=xfer_len) {
 		if (i + xfer_len > byte_length) {  // last packet with some size
@@ -352,7 +352,7 @@ void Altera::shiftVIR(uint32_t reg)
 }
 
 void Altera::shiftVDR(uint8_t * tx, uint8_t * rx, uint32_t len,
-		int end_state, bool debug)
+		Jtag::tapState_t end_state, bool debug)
 {
 	(void) debug;
 	uint8_t tx_ir[2] = {USER0, 0};

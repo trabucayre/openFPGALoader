@@ -632,7 +632,8 @@ bool Gowin::connectJtagToMCU()
 /* TN653 p. 9 */
 bool Gowin::flashSRAM(const uint8_t *data, int length)
 {
-	int tx_len, tx_end;
+	int tx_len;
+	Jtag::tapState_t tx_end;
 	int byte_length = length / 8;
 
 	ProgressBar progress("Flash SRAM", byte_length, 50, _quiet);
