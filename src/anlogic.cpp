@@ -113,11 +113,7 @@ void Anlogic::program(unsigned int offset, bool unprotect_flash)
 		const uint8_t *ptr = data;
 		while (len > 0) {
 			int xfer_len = (len > 512)?512:len;
-			Jtag::tapState_t tx_end;
-			if (len - xfer_len == 0)
-				tx_end = Jtag::RUN_TEST_IDLE;
-			else
-				tx_end = Jtag::SHIFT_DR;
+			Jtag::tapState_t tx_end = (len - xfer_len) ? Jtag::SHIFT_DR : Jtag::RUN_TEST_IDLE;
 			_jtag->shiftDR(ptr, NULL, xfer_len * 8, tx_end);
 			len -= xfer_len;
 			progress.display(pos);
@@ -143,7 +139,7 @@ void Anlogic::program(unsigned int offset, bool unprotect_flash)
 	}
 }
 
-int Anlogic::idCode()
+uint32_t Anlogic::idCode()
 {
 	unsigned char tx_data[4];
 	unsigned char rx_data[4];

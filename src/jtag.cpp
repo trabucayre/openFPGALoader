@@ -440,7 +440,7 @@ int Jtag::shiftIR(unsigned char *tdi, unsigned char *tdo, int irlen, tapState_t 
 	return 0;
 }
 
-void Jtag::set_state(int newState)
+void Jtag::set_state(tapState_t newState)
 {
 	unsigned char tms = 0;
 	while (newState != _state) {
@@ -621,6 +621,9 @@ void Jtag::set_state(int newState)
 				_state = SELECT_DR_SCAN;
 			}
 			break;
+		case UNKNOWN:;
+			// UNKNOWN should not be valid...
+			throw std::exception();
 		}
 
 		setTMS(tms);

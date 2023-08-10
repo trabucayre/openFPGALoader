@@ -330,7 +330,7 @@ void Xilinx::reset()
 	_jtag->toggleClk(2000);
 }
 
-int Xilinx::idCode()
+uint32_t Xilinx::idCode()
 {
 	int id = 0;
 	unsigned char tx_data[4]= {0x00, 0x00, 0x00, 0x00};

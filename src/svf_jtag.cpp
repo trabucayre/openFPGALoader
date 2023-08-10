@@ -217,12 +217,12 @@ void SVF_jtag::parse_runtest(vector<string> const &vstr)
 		end_state = fsm_state[*res];
 	}
 	if (run_state != -1) {
-		_run_state = run_state;
+		_run_state = (Jtag::tapState_t)run_state;
 	}
 	if (end_state != -1) {
-		_end_state = end_state;
+		_end_state = (Jtag::tapState_t)end_state;
 	} else if (run_state != -1) {
-		_end_state = run_state;
+		_end_state = (Jtag::tapState_t)run_state;
 	}
 	_jtag->set_state(_run_state);
 	_jtag->toggleClk(nb_iter);
@@ -336,7 +336,7 @@ void SVF_jtag::handle_instruction(vector<string> const &vstr)
 
 SVF_jtag::SVF_jtag(Jtag *jtag, bool verbose):_verbose(verbose), _freq_hz(0),
 	_enddr((Jtag::tapState_t)fsm_state["IDLE"]), _endir((Jtag::tapState_t)fsm_state["IDLE"]),
-	_run_state(fsm_state["IDLE"]), _end_state(fsm_state["IDLE"])
+	_run_state((Jtag::tapState_t)fsm_state["IDLE"]), _end_state((Jtag::tapState_t)fsm_state["IDLE"])
 
 {
 	_jtag = jtag;

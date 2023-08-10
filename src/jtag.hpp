@@ -67,6 +67,7 @@ class Jtag {
 	 * \return a pointer instance of JtagInterface
 	 */
 	JtagInterface *get_ll_class() {return _jtag;}
+
 	enum tapState_t {
 		TEST_LOGIC_RESET = 0,
 		RUN_TEST_IDLE = 1,
@@ -88,16 +89,16 @@ class Jtag {
 	};
 
 	int shiftIR(unsigned char *tdi, unsigned char *tdo, int irlen,
-				Jtag::tapState_t end_state = RUN_TEST_IDLE);
+		tapState_t end_state = RUN_TEST_IDLE);
 	int shiftIR(unsigned char tdi, int irlen,
-		Jtag::tapState_t end_state = RUN_TEST_IDLE);
+		tapState_t end_state = RUN_TEST_IDLE);
 	int shiftDR(const uint8_t *tdi, unsigned char *tdo, int drlen,
-		Jtag::tapState_t end_state = RUN_TEST_IDLE);
+		tapState_t end_state = RUN_TEST_IDLE);
 	int read_write(const uint8_t *tdi, unsigned char *tdo, int len, char last);
 
 	void toggleClk(int nb);
 	void go_test_logic_reset();
-	void set_state(int newState);
+	void set_state(tapState_t newState);
 	int flushTMS(bool flush_buffer = false);
 	void flush() {flushTMS(); _jtag->flush();}
 	void setTMS(unsigned char tms);
@@ -119,7 +120,7 @@ class Jtag {
 	 */
 	bool search_and_insert_device_with_idcode(uint32_t idcode);
 	bool _verbose;
-	int _state;
+	tapState_t _state;
 	int _tms_buffer_size;
 	int _num_tms;
 	unsigned char *_tms_buffer;

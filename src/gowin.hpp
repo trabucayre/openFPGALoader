@@ -22,7 +22,7 @@ class Gowin: public Device, SPIInterface {
 				Device::prog_type_t prg_type, bool external_flash,
 				bool verify, int8_t verbose);
 		~Gowin();
-		int idCode() override;
+		uint32_t idCode() override;
 		void reset() override;
 		void program(unsigned int offset, bool unprotect_flash) override;
 		void programFlash();

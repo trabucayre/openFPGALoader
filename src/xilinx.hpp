@@ -46,7 +46,7 @@ class Xilinx: public Device, SPIInterface {
 		 */
 		bool bulk_erase_flash() override;
 
-		int idCode() override;
+		uint32_t idCode() override;
 		void reset() override;
 
 		/* -------------- */

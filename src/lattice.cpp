@@ -843,7 +843,7 @@ bool Lattice::DisableCfg()
 	return true;
 }
 
-int Lattice::idCode()
+uint32_t Lattice::idCode()
 {
 	uint8_t device_id[4];
 	wr_rd(READ_DEVICE_ID_CODE, NULL, 0, device_id, 4);
@@ -1308,7 +1308,7 @@ uint16_t Lattice::getUFMStartPageFromJEDEC(JedParser *_jed, int id)
 	addres.
 	TODO: In any case, JEDEC files don't carry part information. Verify against
 	IDCODE read previously? */
-
+	
 	if(raw_page_offset > 9211) {
 		return raw_page_offset - 9211 - 1; // 7000
 	} else if(raw_page_offset > 5758) {

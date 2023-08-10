@@ -39,7 +39,7 @@ class Altera: public Device, SPIInterface {
 			return SPIInterface::dump(base_addr, len);
 		}
 
-		int idCode() override;
+		uint32_t idCode() override;
 		void reset() override;
 
 		/*************************/

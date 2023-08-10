@@ -22,7 +22,7 @@ class Anlogic: public Device, SPIInterface {
 		~Anlogic();
 
 		void program(unsigned int offset, bool unprotect_flash) override;
-		int idCode() override;
+		uint32_t idCode() override;
 		void reset() override;
 
 		/* spi interface */

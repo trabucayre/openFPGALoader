@@ -37,7 +37,7 @@ class Efinix: public Device, SPIInterface {
 		bool bulk_erase_flash() override {
 			printError("bulk erase flash not supported"); return false;}
 		/* not supported in SPI Active mode */
-		int idCode() override {return 0;}
+		uint32_t idCode() override {return 0;}
 		void reset() override;
 
 		/* spi interface */

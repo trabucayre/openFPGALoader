@@ -400,7 +400,7 @@ bool Gowin::DisableCfg()
 	return pollFlag(STATUS_SYSTEM_EDIT_MODE, 0);
 }
 
-int Gowin::idCode()
+uint32_t Gowin::idCode()
 {
 	uint8_t device_id[4];
 	wr_rd(READ_IDCODE, NULL, 0, device_id, 4);

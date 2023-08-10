@@ -44,7 +44,7 @@ class CologneChip: public Device, SPIInterface {
 			printError("bulk erase flash not supported"); return false;}
 		void program(unsigned int offset, bool unprotect_flash) override;
 
-		int idCode() override {return 0;}
+		uint32_t idCode() override {return 0;}
 		void reset() override;
 
 	private:

@@ -250,7 +250,7 @@ void Altera::program(unsigned int offset, bool unprotect_flash)
 	}
 }
 
-int Altera::idCode()
+uint32_t Altera::idCode()
 {
 	unsigned char tx_data[4] = {IDCODE};
 	unsigned char rx_data[4];
