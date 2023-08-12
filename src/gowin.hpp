@@ -63,6 +63,7 @@ class Gowin: public Device, SPIInterface {
 		ConfigBitstreamParser *_fs;
 		bool is_gw1n1;
 		bool is_gw2a;
+		bool is_gw5a;
 		bool skip_checksum;   /**< bypass checksum verification (GW2A) */
 		bool _external_flash; /**< select between int or ext flash */
 		uint8_t _spi_sck;     /**< clk signal offset in bscan SPI */

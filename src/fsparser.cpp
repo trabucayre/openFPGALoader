@@ -180,6 +180,13 @@ int FsParser::parse()
 		case 0x0000281b: /* GW2A-55    */
 			nb_line = 2038;
 			break;
+		case 0x0001081b: /* GW5AST-138 */
+			/*
+			 * FIXME: Lack of information,
+			 * so just accept everything.
+			 */
+			nb_line = 65535;
+			break;
 		default:
 			printWarn("Warning: Unknown IDCODE");
 			nb_line = 0;
