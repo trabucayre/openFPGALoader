@@ -20,7 +20,7 @@
 #include "rawParser.hpp"
 #include "spiFlash.hpp"
 
-#include <byteswap.h>
+//#include <byteswap.h>
 
 using namespace std;
 
@@ -140,7 +140,6 @@ Gowin::Gowin(Jtag *jtag, const string filename, const string &file_type, std::st
 			}
 		}
 	}
-	_jtag->setClkFreq(2500000);
 
 	/* erase and program flash differ for GW1N1 */
 	if (idcode == 0x0900281B)
@@ -224,12 +223,16 @@ void Gowin::reset()
 
 void Gowin::programFlash()
 {
+	_jtag->setClkFreq(2500000);
+
 	const uint8_t *data = _fs->getData();
 	int length = _fs->getLength();
 	
-	send_command(0x3a);
-	send_command(0);
+	
+	send_command(CONFIG_DISABLE);
+	send_command(NOOP);
 	_jtag->go_test_logic_reset();
+	_jtag->flush();
 	usleep(500*1000);
 	
 	eraseSRAM();
@@ -452,6 +455,13 @@ bool Gowin::pollFlag(uint32_t mask, uint32_t value)
 	return true;
 }
 
+inline uint32_t bswap_32(uint32_t x)
+{
+	return ((x << 24) & 0xff000000 ) |
+	       ((x <<  8) & 0x00ff0000 ) |
+	       ((x >>  8) & 0x0000ff00 ) |
+	       ((x >> 24) & 0x000000ff );
+}
 /* TN653 p. 17-21 */
 bool Gowin::writeFLASH(uint32_t page, const uint8_t *data, int length)
 {
@@ -486,11 +496,12 @@ bool Gowin::writeFLASH(uint32_t page, const uint8_t *data, int length)
 			sendClkUs((is_gw1n1) ? 32 : 16);
 		}
 		sendClkUs((is_gw1n1) ? 2400 : 6);
+		_jtag->flush();
 		usleep(200);
 	}
 	send_command(CONFIG_DISABLE);
 	send_command(NOOP);
-
+	_jtag->flush();
 	usleep(600*1000);
 	send_command(CONFIG_DISABLE);
 	send_command(NOOP);
@@ -499,6 +510,7 @@ bool Gowin::writeFLASH(uint32_t page, const uint8_t *data, int length)
 	send_command(NOOP);
 	if (_verbose)
 		displayReadReg(readStatusReg());
+	_jtag->flush();
 	sleep(1);
 
 	return true;
@@ -519,7 +531,7 @@ bool Gowin::writeSRAM(const uint8_t *data, int length)
 	_jtag->shiftDR(data, NULL, length);
 	send_command(CONFIG_DISABLE); // config disable
 	send_command(NOOP); // noop
-
+	_jtag->flush();
 	sleep(1);
 
 	if (readStatusReg() & STATUS_DONE_FINAL)
@@ -553,6 +565,7 @@ bool Gowin::eraseFLASH()
 	send_command(NOOP);
 	if (_verbose)
 		displayReadReg(readStatusReg());
+	_jtag->flush();
 	usleep(500*1000);
 	if (_verbose)
 		displayReadReg(readStatusReg());
@@ -562,9 +575,9 @@ bool Gowin::eraseFLASH()
 
 void Gowin::sendClkUs(unsigned us)
 {
-	//unsigned freq = _jtag->getClkFreq() / 1000000;
-	//freq = (freq) ? freq : 1;
-	unsigned clocks = us * 2; // at 2MHz 1us ~ 2 clocks
+	uint64_t clocks = _jtag->getClkFreq();
+	clocks *= us;
+	clocks /= 1000000;
 	_jtag->toggleClk(clocks);
 }
 
