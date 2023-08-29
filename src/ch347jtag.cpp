@@ -223,17 +223,12 @@ CH347Jtag::~CH347Jtag()
 
 int CH347Jtag::_setClkFreq(uint32_t clkHZ)
 {
-	unsigned i = 0, sl = 2000000;
-	if (clkHZ <= 2000000) {
-		_clkHZ = 2000000;
-		i = 0;
-	} else {
-		for (; i < 5; ++i, sl *= 2) {
-			if (clkHZ < sl) break;
-			_clkHZ = sl;
-		}
-		i--;
+	unsigned i = 0, sl = 1800000;
+	for (; i < 6; ++i, sl *= 2) {
+		if (clkHZ < sl)
+			break;
 	}
+	_clkHZ = sl;
 	if (setClk(i)) {
 		printError("failed to set clock rate");
 		return 0;
@@ -280,7 +275,9 @@ int CH347Jtag::toggleClk(uint8_t tms, uint8_t tdi, uint32_t len)
 	uint8_t bits = 0;
 	if (tms) bits |= SIG_TMS;
 	if (tdi) bits |= SIG_TDI;
-
+	if (!bits && len > 7) {
+		return writeTDI(0, 0, len, false);
+	}
 	uint8_t *ptr = obuf;
 	for (uint32_t i = 0; i < len; ++i) {
 		if (ptr == obuf) {
@@ -309,7 +306,7 @@ int CH347Jtag::toggleClk(uint8_t tms, uint8_t tdi, uint32_t len)
 
 int CH347Jtag::writeTDI(const uint8_t *tx, uint8_t *rx, uint32_t len, bool end)
 {
-	if (!tx || !len)
+	if (!len)
 		return 0;
 	unsigned bytes = (len - ((end)?1:0)) / 8;
 	unsigned bits = len - bytes * 8;
@@ -320,7 +317,11 @@ int CH347Jtag::writeTDI(const uint8_t *tx, uint8_t *rx, uint32_t len, bool end)
 	while (tptr < txend) {
 		unsigned avail = sizeof(obuf) - 3;
 		unsigned chunk = (txend - tptr < avail)? txend - tptr: avail;
-		memcpy(&obuf[3], tptr, chunk);
+		if (tx) {
+			memcpy(&obuf[3], tptr, chunk);
+		} else {
+			memset(&obuf[3], 0, chunk);
+		}
 		tptr += chunk;
 		// write header
 		obuf[0] = cmd;
@@ -351,7 +352,7 @@ int CH347Jtag::writeTDI(const uint8_t *tx, uint8_t *rx, uint32_t len, bool end)
 	uint8_t x = 0;
 	const uint8_t *bptr = &tx[bytes];
 	for (unsigned i = 0; i < bits; ++i) {
-		uint8_t txb = bptr[i >> 3];
+		uint8_t txb = (tx) ? bptr[i >> 3] : 0;
 		uint8_t _tdi = (txb & (1 << (i & 7))) ? SIG_TDI : 0;
 		x = _tdi;
 		if (end && i == bits - 1) {
