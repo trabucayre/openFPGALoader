@@ -211,6 +211,17 @@ bool Gowin::send_command(uint8_t cmd)
 #include <libkern/OSByteOrder.h>
 #define le32toh(x) OSSwapLittleToHostInt32(x)
 #define htole32(x) OSSwapHostToLittleInt32(x)
+#elif (defined(_WIN16) || defined(_WIN32) || defined(_WIN64)) || defined(__WINDOWS__)
+	#if BYTE_ORDER == LITTLE_ENDIAN
+		#if defined(_MSC_VER)
+			#include <stdlib.h>
+			#define htole32(x) (x)
+			#define le32toh(x) (x)
+		#elif defined(__GNUC__) || defined(__clang__)
+			#define htole32(x) (x)
+			#define le32toh(x) (x)
+		#endif
+	#endif
 #endif
 
 uint32_t Gowin::readReg32(uint8_t cmd)
