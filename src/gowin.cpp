@@ -207,6 +207,12 @@ bool Gowin::send_command(uint8_t cmd)
 	return true;
 }
 
+#ifdef __APPLE__
+#include <libkern/OSByteOrder.h>
+#define le32toh(x) OSSwapLittleToHostInt32(x)
+#define htole32(x) OSSwapHostToLittleInt32(x)
+#endif
+
 uint32_t Gowin::readReg32(uint8_t cmd)
 {
 	uint32_t reg = 0, tmp = 0xff;
