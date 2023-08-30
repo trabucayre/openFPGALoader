@@ -25,7 +25,6 @@ class Gowin: public Device, SPIInterface {
 		uint32_t idCode() override;
 		void reset() override;
 		void program(unsigned int offset, bool unprotect_flash) override;
-		void programFlash();
 		bool connectJtagToMCU() override;
 
 		/* spi interface */
@@ -43,15 +42,19 @@ class Gowin: public Device, SPIInterface {
 			uint32_t timeout, bool verbose) override;
 
 	private:
-		bool wr_rd(uint8_t cmd, uint8_t *tx, int tx_len,
-				uint8_t *rx, int rx_len, bool verbose = false);
-		bool EnableCfg();
-		bool DisableCfg();
+		bool send_command(uint8_t cmd);
+		uint32_t readReg32(uint8_t cmd);
+		void sendClkUs(unsigned us);
+		bool enableCfg();
+		bool disableCfg();
 		bool pollFlag(uint32_t mask, uint32_t value);
 		bool eraseSRAM();
 		bool eraseFLASH();
-		bool flashSRAM(const uint8_t *data, int length);
-		bool flashFLASH(uint32_t page, const uint8_t *data, int length);
+		void programFlash();
+		void programExtFlash(unsigned int offset, bool unprotect_flash);
+		void programSRAM();
+		bool writeSRAM(const uint8_t *data, int length);
+		bool writeFLASH(uint32_t page, const uint8_t *data, int length);
 		void displayReadReg(uint32_t dev);
 		uint32_t readStatusReg();
 		uint32_t readUserCode();

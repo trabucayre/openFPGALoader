@@ -15,11 +15,12 @@
 
 #include "jtag.hpp"
 #include "gowin.hpp"
-#include "progressBar.hpp"
 #include "display.hpp"
 #include "fsparser.hpp"
 #include "rawParser.hpp"
 #include "spiFlash.hpp"
+
+#include <byteswap.h>
 
 using namespace std;
 
@@ -56,6 +57,7 @@ using namespace std;
 #  define STATUS_READY				(1 << 15)
 #  define STATUS_POR				(1 << 16)
 #  define STATUS_FLASH_LOCK			(1 << 17)
+
 #define EF_PROGRAM			0x71
 #define EFLASH_ERASE		0x75
 #define SWITCH_TO_MCU_JTAG		0x7a
@@ -66,19 +68,21 @@ using namespace std;
 #define BSCAN_SPI_CS            (1 << 3)
 #define BSCAN_SPI_DI            (1 << 5)
 #define BSCAN_SPI_DO            (1 << 7)
-#define BSCAN_SPI_MSK           ((0x01 << 6))
+#define BSCAN_SPI_MSK           (1 << 6)
 /* GW1NSR-4C pins def */
 #define BSCAN_GW1NSR_4C_SPI_SCK (1 << 7)
 #define BSCAN_GW1NSR_4C_SPI_CS  (1 << 5)
 #define BSCAN_GW1NSR_4C_SPI_DI  (1 << 3)
 #define BSCAN_GW1NSR_4C_SPI_DO  (1 << 1)
-#define BSCAN_GW1NSR_4C_SPI_MSK ((0x01 << 0))
+#define BSCAN_GW1NSR_4C_SPI_MSK (1 << 0)
+
+#define HZ_TO_US (2)
+#define HZ_TO_MS (HZ_TO_US * 1000)
 
 Gowin::Gowin(Jtag *jtag, const string filename, const string &file_type, std::string mcufw,
 		Device::prog_type_t prg_type, bool external_flash,
 		bool verify, int8_t verbose): Device(jtag, filename, file_type,
-		verify, verbose), is_gw1n1(false), is_gw2a(false),
-		is_gw5a(false),
+		verify, verbose), is_gw1n1(false), is_gw2a(false), is_gw5a(false),
 		_external_flash(external_flash),
 		_spi_sck(BSCAN_SPI_SCK), _spi_cs(BSCAN_SPI_CS),
 		_spi_di(BSCAN_SPI_DI), _spi_do(BSCAN_SPI_DO),
@@ -196,124 +200,104 @@ Gowin::~Gowin()
 		delete _mcufw;
 }
 
+bool Gowin::send_command(uint8_t cmd)
+{
+	_jtag->shiftIR(&cmd, nullptr, 8);
+	_jtag->toggleClk(8);
+
+	return true;
+}
+
+uint32_t Gowin::readReg32(uint8_t cmd)
+{
+	uint32_t reg = 0, tmp = 0xff;
+	send_command(cmd);
+	_jtag->shiftDR((uint8_t *)&tmp, (uint8_t *)&reg, 32);
+	return le32toh(reg);
+}
+
 void Gowin::reset()
 {
-	wr_rd(RELOAD, NULL, 0, NULL, 0);
-	wr_rd(NOOP, NULL, 0, NULL, 0);
+	send_command(RELOAD);
+	send_command(NOOP);
 }
 
 void Gowin::programFlash()
 {
 	const uint8_t *data = _fs->getData();
 	int length = _fs->getLength();
-
-	const uint8_t *mcu_data = nullptr;
-	int mcu_length = 0;
-
-	if (_mcufw) {
-		mcu_data = _mcufw->getData();
-		mcu_length = _mcufw->getLength();
-	}
-
-	/* erase SRAM */
-	if (!EnableCfg())
-		return;
+	
+	send_command(0x3a);
+	send_command(0);
+	_jtag->go_test_logic_reset();
+	usleep(500*1000);
+	
 	eraseSRAM();
-	wr_rd(XFER_DONE, NULL, 0, NULL, 0);
-	wr_rd(NOOP, NULL, 0, NULL, 0);
-	if (!DisableCfg())
-		return;
-
-	if (!EnableCfg())
-		return;
 	if (!eraseFLASH())
 		return;
-	if (!DisableCfg())
-		return;
 	/* test status a faire */
-	if (!flashFLASH(0, data, length))
+	if (!writeFLASH(0, data, length))
 		return;
-	if (mcu_data) {
-		if (!flashFLASH(0x380, mcu_data, mcu_length))
+	if (_mcufw) {
+		const uint8_t *mcu_data = _mcufw->getData();
+		int mcu_length = _mcufw->getLength();
+		if (!writeFLASH(0x380, mcu_data, mcu_length))
 			return;
 	}
 	if (_verify)
 		printWarn("writing verification not supported");
-	if (!DisableCfg())
-		return;
-	wr_rd(RELOAD, NULL, 0, NULL, 0);
-	wr_rd(NOOP, NULL, 0, NULL, 0);
-
-	/* wait for reload */
-	usleep(2*150*1000);
 
 	/* check if file checksum == checksum in FPGA */
-	checkCRC();
+	if (!skip_checksum)
+		checkCRC();
 
 	if (_verbose)
 		displayReadReg(readStatusReg());
 }
 
-void Gowin::program(unsigned int offset, bool unprotect_flash)
-{
-	const uint8_t *data;
-	int length;
+void Gowin::programExtFlash(unsigned int offset, bool unprotect_flash) {
+	_jtag->setClkFreq(10000000);
 
-	if (_mode == NONE_MODE || !_fs)
-		return;
+	if (!enableCfg())
+		throw std::runtime_error("Error: fail to enable configuration");
 
-	data = _fs->getData();
-	length = _fs->getLength();
+	eraseSRAM();
+	send_command(XFER_DONE);
+	send_command(NOOP);
 
-	if (_mode == FLASH_MODE) {
-		if (is_gw5a)
-			throw std::runtime_error("Error: write to flash on GW5A is not yet supported");
-		if (!_external_flash) { /* write into internal flash */
-			programFlash();
-		} else { /* write bitstream into external flash */
-			_jtag->setClkFreq(10000000);
-
-			if (!EnableCfg())
-				throw std::runtime_error("Error: fail to enable configuration");
-
-			eraseSRAM();
-			wr_rd(XFER_DONE, NULL, 0, NULL, 0);
-			wr_rd(NOOP, NULL, 0, NULL, 0);
-
-			if (!is_gw2a) {
-				wr_rd(0x3D, NULL, 0, NULL, 0);
-			} else {
-				DisableCfg();
-				wr_rd(NOOP, NULL, 0, NULL, 0);
-			}
-
-			SPIFlash spiFlash(this, unprotect_flash,
-					(_verbose ? 1 : (_quiet ? -1 : 0)));
-			spiFlash.reset();
-			spiFlash.read_id();
-			spiFlash.display_status_reg(spiFlash.read_status_reg());
-			if (spiFlash.erase_and_prog(offset, data, length / 8) != 0)
-				throw std::runtime_error("Error: write to flash failed");
-			if (_verify)
-				if (!spiFlash.verify(offset, data, length / 8, 256))
-					throw std::runtime_error("Error: flash vefication failed");
-			if (!is_gw2a) {
-				if (!DisableCfg())
-					throw std::runtime_error("Error: fail to disable configuration");
-			}
-
-			reset();
-		}
-
-		return;
+	if (!is_gw2a) {
+		send_command(0x3D);
+	} else {
+		disableCfg();
+		send_command(NOOP);
 	}
 
+	SPIFlash spiFlash(this, unprotect_flash,
+					  (_verbose ? 1 : (_quiet ? -1 : 0)));
+	spiFlash.reset();
+	spiFlash.read_id();
+	spiFlash.display_status_reg(spiFlash.read_status_reg());
+	const uint8_t *data = _fs->getData();
+	int length = _fs->getLength();
+
+	if (spiFlash.erase_and_prog(offset, data, length / 8) != 0)
+		throw std::runtime_error("Error: write to flash failed");
+	if (_verify)
+		if (!spiFlash.verify(offset, data, length / 8, 256))
+			throw std::runtime_error("Error: flash vefication failed");
+	if (!is_gw2a) {
+		if (!disableCfg())
+			throw std::runtime_error("Error: fail to disable configuration");
+	}
+
+	reset();
+
+}
+
+void Gowin::programSRAM() {
 	if (_verbose) {
 		displayReadReg(readStatusReg());
 	}
-
-	wr_rd(READ_IDCODE, NULL, 0, NULL, 0);
-
 	/* Work around FPGA stuck in Bad Command status */
 	if (is_gw5a) {
 		reset();
@@ -321,145 +305,96 @@ void Gowin::program(unsigned int offset, bool unprotect_flash)
 		_jtag->toggleClk(1000000);
 	}
 
-	/* erase SRAM */
-	if (!EnableCfg())
-		return;
 	eraseSRAM();
-	if (!DisableCfg())
-		return;
 
-	/* load bitstream in SRAM */
-	if (!EnableCfg())
-		return;
-	if (!flashSRAM(data, length))
-		return;
-	if (!DisableCfg())
+	if (!writeSRAM(_fs->getData(), _fs->getLength()))
 		return;
 
 	/* ocheck if file checksum == checksum in FPGA */
-	checkCRC();
+	if (!skip_checksum)
+		checkCRC();
 	if (_verbose)
 		displayReadReg(readStatusReg());
 }
 
-void Gowin::checkCRC()
+void Gowin::program(unsigned int offset, bool unprotect_flash)
 {
-	if (skip_checksum)
+	if (!_fs)
 		return;
 
-	bool is_match = true;
-	char mess[256];
-	uint32_t status = readUserCode();
-	uint16_t checksum = static_cast<FsParser *>(_fs)->checksum();
-	string hdr = "";
-	try {
-		hdr = _fs->getHeaderVal("checkSum");
-	} catch (std::exception &e) {
-		if (_verbose)
-			printError(e.what());
-	}
-	if (static_cast<uint16_t>(0xffff & status) != checksum) {
-		/* no match:
-		 * user code register contains checksum or
-		 * user_code when:
-		 * set_option -user_code
-		 * is used: try to compare with this value
-		 */
-		if (hdr.empty()) {
-			is_match = false;
-			snprintf(mess, 256, "Read: 0x%08x checksum: 0x%04x\n",
-				status, checksum);
-		} else {
-			uint32_t user_code = strtol(hdr.c_str(), NULL, 16);
-			if (status != user_code) {
-				is_match = false;
-				snprintf(mess, 256,
-					"Read 0x%08x (checksum: 0x%08x, user_code: 0x%08x)\n",
-					status, checksum, user_code);
-			}
-		}
-	}
-	if (is_match) {
-		printSuccess("CRC check: Success");
-	} else {
-		printError("CRC check : FAIL");
-		printError(mess);
-	}
+	if (_mode == FLASH_MODE) {
+		if (is_gw5a)
+			throw std::runtime_error("Error: write to flash on GW5A is not yet supported");
+		if (_external_flash)
+			programExtFlash(offset, unprotect_flash);
+		else
+			programFlash();
+	} else if (_mode == MEM_MODE)
+		programSRAM();
+
+	return;
 }
 
-bool Gowin::EnableCfg()
+void Gowin::checkCRC()
 {
-	wr_rd(CONFIG_ENABLE, NULL, 0, NULL, 0);
+	uint32_t ucode = readUserCode();
+	uint16_t checksum = static_cast<FsParser *>(_fs)->checksum();
+	if (static_cast<uint16_t>(0xffff & ucode) == checksum) {
+		printSuccess("CRC check: Success");
+		return;
+	}
+	/* no match:
+	 * user code register contains checksum or
+	 * user_code when set_option -user_code
+	 * is used, try to compare with this value
+	 */
+	string hdr = "";
+	char mess[256];
+	try {
+		hdr = _fs->getHeaderVal("checkSum");
+		if (!hdr.empty()) {
+		} else {
+			uint32_t user_code = strtol(hdr.c_str(), NULL, 16);
+			if (ucode != user_code) {
+				snprintf(mess, 256, "Read 0x%08x (checksum: 0x%08x, user_code: 0x%08x)\n",
+					 ucode, checksum, user_code);
+				printError("CRC check : FAIL");
+				printError(mess);
+			}
+			printSuccess("CRC check: Success");
+		}
+	} catch (std::exception &e) {}
+	snprintf(mess, 256, "Read: 0x%08x checksum: 0x%04x\n", ucode, checksum);
+	printError("CRC check : FAIL");
+	printError(mess);
+}
+
+bool Gowin::enableCfg()
+{
+	send_command(CONFIG_ENABLE);
 	return pollFlag(STATUS_SYSTEM_EDIT_MODE, STATUS_SYSTEM_EDIT_MODE);
 }
 
-bool Gowin::DisableCfg()
+bool Gowin::disableCfg()
 {
-	wr_rd(CONFIG_DISABLE, NULL, 0, NULL, 0);
-	wr_rd(NOOP, NULL, 0, NULL, 0);
+	send_command(CONFIG_DISABLE);
+	send_command(NOOP);
 	return pollFlag(STATUS_SYSTEM_EDIT_MODE, 0);
 }
 
 uint32_t Gowin::idCode()
 {
-	uint8_t device_id[4];
-	wr_rd(READ_IDCODE, NULL, 0, device_id, 4);
-	return device_id[3] << 24 |
-					device_id[2] << 16 |
-					device_id[1] << 8  |
-					device_id[0];
+	return readReg32(READ_IDCODE);
 }
 
 uint32_t Gowin::readStatusReg()
 {
-	uint32_t reg;
-	uint8_t rx[4];
-	wr_rd(STATUS_REGISTER, NULL, 0, rx, 4);
-	reg = rx[3] << 24 | rx[2] << 16 | rx[1] << 8 | rx[0];
-	return reg;
+	return readReg32(STATUS_REGISTER);
 }
 
 uint32_t Gowin::readUserCode()
 {
-	uint8_t rx[4];
-	wr_rd(READ_USERCODE, NULL, 0, rx, 4);
-	return rx[3] << 24 | rx[2] << 16 | rx[1] << 8 | rx[0];
-}
-
-bool Gowin::wr_rd(uint8_t cmd,
-					uint8_t *tx, int tx_len,
-					uint8_t *rx, int rx_len,
-					bool verbose)
-{
-	int xfer_len = rx_len;
-	if (tx_len > rx_len)
-		xfer_len = tx_len;
-
-	uint8_t xfer_tx[xfer_len], xfer_rx[xfer_len];
-	memset(xfer_tx, 0, xfer_len);
-	int i;
-	if (tx != NULL) {
-		for (i = 0; i < tx_len; i++)
-			xfer_tx[i] = tx[i];
-	}
-
-	_jtag->shiftIR(&cmd, NULL, 8);
-	_jtag->toggleClk(6);
-	if (rx || tx) {
-		_jtag->shiftDR(xfer_tx, (rx) ? xfer_rx : NULL, 8 * xfer_len);
-		_jtag->toggleClk(6);
-		_jtag->flush();
-	}
-	if (rx) {
-		if (verbose) {
-			for (i=xfer_len-1; i >= 0; i--)
-				printf("%02x ", xfer_rx[i]);
-			printf("\n");
-		}
-		for (i = 0; i < rx_len; i++)
-			rx[i] = (xfer_rx[i]);
-	}
-	return true;
+	return readReg32(READ_USERCODE);
 }
 
 void Gowin::displayReadReg(uint32_t dev)
@@ -506,7 +441,7 @@ bool Gowin::pollFlag(uint32_t mask, uint32_t value)
 	do {
 		status = readStatusReg();
 		if (_verbose)
-			printf("pollFlag: %x\n", status);
+			printf("pollFlag: %x (%x)\n", status, status & mask);
 		if (timeout == 100000000){
 			printError("timeout");
 			return false;
@@ -518,162 +453,79 @@ bool Gowin::pollFlag(uint32_t mask, uint32_t value)
 }
 
 /* TN653 p. 17-21 */
-bool Gowin::flashFLASH(uint32_t page, const uint8_t *data, int length)
+bool Gowin::writeFLASH(uint32_t page, const uint8_t *data, int length)
 {
-	uint8_t tx[4] = {0x4E, 0x31, 0x57, 0x47};
-	uint8_t tmp[4];
-	uint32_t addr;
-	int nb_iter;
-	int byte_length = length / 8;
-	int buffer_length;
-	uint8_t *buffer;
-	int nb_xpage;
-	uint8_t tt[39];
-	memset(tt, 0, 39);
-
-	_jtag->go_test_logic_reset();
-
-	if (page == 0) {
-		/* we have to send
-		 * bootcode a X=0, Y=0 (4Bytes)
-		 * 5 x 32 dummy bits
-		 * full bitstream
-		 */
-		buffer_length = byte_length+(6*4);
-		unsigned char bufvalues[]={
-										0x47, 0x57, 0x31, 0x4E,
-										0xff, 0xff , 0xff, 0xff,
-										0xff, 0xff , 0xff, 0xff,
-										0xff, 0xff , 0xff, 0xff,
-										0xff, 0xff , 0xff, 0xff,
-										0xff, 0xff , 0xff, 0xff};
-		nb_xpage = buffer_length/256;
-		if (nb_xpage * 256 != buffer_length) {
-			nb_xpage++;
-			buffer_length = nb_xpage * 256;
+	uint8_t xpage[256];
+	length /= 8;
+	for (int off = 0; off < length; off += 256) {
+		int l = 256;
+		if (length - off < l) {
+			memset(xpage, 0xff, sizeof(xpage));
+			l = length - off;
+		}
+		memcpy(xpage, &data[off], l);
+		unsigned addr = off / 4 + page;
+		if (addr) {
+			sendClkUs(120);
+		} else {
+			// autoboot pattern
+			static uint8_t pat[4] = {'G', 'W', '1', 'N'};
+			memcpy(xpage, pat, 4);
 		}
 
-		buffer = new uint8_t[buffer_length];
-		/* fill theorical size with 0xff */
-		memset(buffer, 0xff, buffer_length);
-		/* fill first page with code */
-		memcpy(buffer, bufvalues, 6*4);
-		/* bitstream just after opcode */
-		memcpy(buffer+6*4, data, byte_length);
-	} else {
-		buffer_length = byte_length;
-		nb_xpage = buffer_length/256;
-		if (nb_xpage * 256 != buffer_length) {
-			nb_xpage++;
-			buffer_length = nb_xpage * 256;
+		send_command(CONFIG_ENABLE);
+		send_command(EF_PROGRAM);
+
+		unsigned w = htole32(addr);
+		_jtag->shiftDR((uint8_t *)&w, nullptr, 32);
+		sendClkUs(120);
+		for (int y = 0; y < 64; ++y) {
+			memcpy(&w, &xpage[y * 4], 4);
+			w = bswap_32(w);
+			_jtag->shiftDR((uint8_t *)&w, nullptr, 32);
+			sendClkUs((is_gw1n1) ? 32 : 16);
 		}
-		buffer = new uint8_t[buffer_length];
-		memset(buffer, 0xff, buffer_length);
-		memcpy(buffer, data, byte_length);
+		sendClkUs((is_gw1n1) ? 2400 : 6);
+		usleep(200);
 	}
+	send_command(CONFIG_DISABLE);
+	send_command(NOOP);
 
+	usleep(600*1000);
+	send_command(CONFIG_DISABLE);
+	send_command(NOOP);
 
-	ProgressBar progress("write Flash", buffer_length, 50, _quiet);
+	send_command(RELOAD);
+	send_command(NOOP);
+	if (_verbose)
+		displayReadReg(readStatusReg());
+	sleep(1);
 
-	for (int i=0, xpage = 0; xpage < nb_xpage; i += (nb_iter * 4), xpage++) {
-		wr_rd(CONFIG_ENABLE, NULL, 0, NULL, 0);
-		wr_rd(EF_PROGRAM, NULL, 0, NULL, 0);
-		if ((page + xpage) != 0)
-			_jtag->toggleClk(312);
-		addr = (page + xpage) << 6;
-		tmp[3] = 0xff&(addr >> 24);
-		tmp[2] = 0xff&(addr >> 16);
-		tmp[1] = 0xff&(addr >> 8);
-		tmp[0] = addr&0xff;
-		_jtag->shiftDR(tmp, NULL, 32);
-		_jtag->toggleClk(312);
-
-		int xoffset = xpage * 256;  // each page containt 256Bytes
-		if (xoffset + 256 > buffer_length)
-			nb_iter = (buffer_length-xoffset) / 4;
-		else
-			nb_iter = 64;
-
-		for (int ypage = 0; ypage < nb_iter; ypage++) {
-			unsigned char *t = buffer+xoffset + 4*ypage;
-			for (int x=0; x < 4; x++) {
-				if (page == 0)
-					tx[3-x] = t[x];
-				else
-					tx[x] = t[x];
-			}
-			_jtag->shiftDR(tx, NULL, 32);
-
-			if (!is_gw1n1)
-				_jtag->toggleClk(40);
-		}
-		if (is_gw1n1) {
-			//usleep(10*2400*2);
-			uint8_t tt2[6008/8];
-			memset(tt2, 0, 6008/8);
-			_jtag->toggleClk(6008);
-		}
-		progress.display(i);
-	}
-	/* 2.2.6.6 */
-	_jtag->set_state(Jtag::RUN_TEST_IDLE);
-
-	progress.done();
-	delete[] buffer;
 	return true;
 }
 
 bool Gowin::connectJtagToMCU()
 {
-	wr_rd(SWITCH_TO_MCU_JTAG, NULL, 0, NULL, 0);
+	send_command(SWITCH_TO_MCU_JTAG);
 	return true;
 }
 
 /* TN653 p. 9 */
-bool Gowin::flashSRAM(const uint8_t *data, int length)
+bool Gowin::writeSRAM(const uint8_t *data, int length)
 {
-	int tx_len;
-	Jtag::tapState_t tx_end;
-	int byte_length = length / 8;
+	send_command(CONFIG_ENABLE); // config enable
+	send_command(INIT_ADDR); // address initialize
+	send_command(XFER_WRITE); // transfer configuration data
+	_jtag->shiftDR(data, NULL, length);
+	send_command(CONFIG_DISABLE); // config disable
+	send_command(NOOP); // noop
 
-	ProgressBar progress("Flash SRAM", byte_length, 50, _quiet);
+	sleep(1);
 
-	/* UG704 3.4.3 */
-	if (is_gw5a) {
-		wr_rd(INIT_ADDR, NULL, 0, NULL, 0);
-	}
-
-	/* 2.2.6.4 */
-	wr_rd(XFER_WRITE, NULL, 0, NULL, 0);
-
-	int xfer_len = 256;
-
-	for (int i=0; i < byte_length; i+=xfer_len) {
-		if (i + xfer_len > byte_length) {  // last packet with some size
-			tx_len = (byte_length - i) * 8;
-			tx_end = Jtag::EXIT1_DR;  // to move in EXIT1_DR
-		} else {
-			tx_len = xfer_len * 8;
-			/* 2.2.6.5 */
-			tx_end = Jtag::SHIFT_DR;
-		}
-		_jtag->shiftDR(data+i, NULL, tx_len, tx_end);
-		//_jtag->flush();
-		progress.display(i);
-	}
-	/* 2.2.6.6 */
-	_jtag->set_state(Jtag::RUN_TEST_IDLE);
-
-	/* p.15 fig 2.11 */
-	wr_rd(XFER_DONE, NULL, 0, NULL, 0);
-
-	if (pollFlag(STATUS_DONE_FINAL, STATUS_DONE_FINAL)) {
-		progress.done();
+	if (readStatusReg() & STATUS_DONE_FINAL)
 		return true;
-	} else {
-		progress.fail();
+	else
 		return false;
-	}
 }
 
 /* Erase SRAM:
@@ -681,30 +533,39 @@ bool Gowin::flashSRAM(const uint8_t *data, int length)
  */
 bool Gowin::eraseFLASH()
 {
-	uint8_t tt[37500 * 8];
-	memset(tt, 0, 37500 * 8);
-	unsigned char tx[4] = {0, 0, 0, 0};
-	printInfo("erase Flash ", false);
-	wr_rd(EFLASH_ERASE, NULL, 0, NULL, 0);
-	_jtag->set_state(Jtag::RUN_TEST_IDLE);
-
-	/* GW1N1 need 65 x 32bits
-	 * others 1 x 32bits
-	 */
-	int nb_iter = (is_gw1n1)?65:1;
-	for (int i = 0; i < nb_iter; i++) {
-		_jtag->shiftDR(tx, NULL, 32);
-		_jtag->toggleClk(6);
+	printInfo("Erase Flash ", false);
+	send_command(CONFIG_ENABLE);
+	send_command(EFLASH_ERASE);
+	uint32_t tx = 0;
+	_jtag->shiftDR((uint8_t *)&tx, NULL, 32);
+	if (is_gw1n1) {
+		for (unsigned i = 0; i < 64; ++i)
+			_jtag->shiftDR((uint8_t *)&tx, NULL, 32);
 	}
-	/* TN653 specifies to wait for 160ms with
-	 * there are no bit in status register to specify
-	 * when this operation is done so we need to wait
-	 */
-	//usleep(2*120000);
-	//uint8_t tt[37500];
-	_jtag->toggleClk(37500*8);
+	sendClkUs(150*1000);
+	if (_verbose)
+		displayReadReg(readStatusReg());
+	send_command(CONFIG_DISABLE);
+	send_command(NOOP);
+	send_command(CONFIG_DISABLE);
+	send_command(NOOP);
+	send_command(RELOAD);
+	send_command(NOOP);
+	if (_verbose)
+		displayReadReg(readStatusReg());
+	usleep(500*1000);
+	if (_verbose)
+		displayReadReg(readStatusReg());
 	printSuccess("Done");
 	return true;
+}
+
+void Gowin::sendClkUs(unsigned us)
+{
+	//unsigned freq = _jtag->getClkFreq() / 1000000;
+	//freq = (freq) ? freq : 1;
+	unsigned clocks = us * 2; // at 2MHz 1us ~ 2 clocks
+	_jtag->toggleClk(clocks);
 }
 
 /* Erase SRAM:
@@ -712,17 +573,18 @@ bool Gowin::eraseFLASH()
  */
 bool Gowin::eraseSRAM()
 {
-	printInfo("erase SRAM ", false);
-	wr_rd(ERASE_SRAM, NULL, 0, NULL, 0);
-	wr_rd(NOOP, NULL, 0, NULL, 0);
+	printInfo("Erase SRAM ", false);
+	send_command(CONFIG_ENABLE);
+	send_command(ERASE_SRAM);
+	send_command(NOOP);
+	sendClkUs(32*1000);
+	send_command(XFER_DONE);
+	send_command(NOOP);
 
-	/* TN653 specifies to wait for 4ms with
-	 * clock generated but
-	 * status register bit MEMORY_ERASE goes low when ERASE_SRAM
-	 * is send and goes high after erase
-	 * this check seems enough
-	 */
-	if (pollFlag(STATUS_MEMORY_ERASE, STATUS_MEMORY_ERASE)) {
+	//sendClkUs(500);
+	send_command(CONFIG_DISABLE);
+	send_command(NOOP);
+	if (readStatusReg() & STATUS_MEMORY_ERASE) {
 		printSuccess("Done");
 		return true;
 	} else {
@@ -744,10 +606,6 @@ bool Gowin::eraseSRAM()
  * data 1 -> high, 0 -> low
  * but all byte must be bit reversal...
  */
-
-#define spi_gowin_write(_wr, _rd, _len) do { \
-	_jtag->shiftDR(_wr, _rd, _len); \
-	_jtag->toggleClk(6); } while (0)
 
 int Gowin::spi_put(uint8_t cmd, const uint8_t *tx, uint8_t *rx, uint32_t len)
 {
@@ -774,11 +632,11 @@ int Gowin::spi_put(const uint8_t *tx, uint8_t *rx, uint32_t len)
 			for (uint32_t i = 0; i < len; i++)
 				jtx[i] = FsParser::reverseByte(tx[i]);
 		}
-		bool ret = wr_rd(0x16, NULL, 0, NULL, 0, false);
+		bool ret = send_command(0x16);
 		if (!ret)
 			return -1;
 		_jtag->set_state(Jtag::EXIT2_DR);
-		ret = _jtag->shiftDR(jtx, (rx)? jrx:NULL, 8*len);
+		_jtag->shiftDR(jtx, (rx)? jrx:NULL, 8*len);
 		if (rx) {
 			for (uint32_t i=0; i < len; i++) {
 				rx[i] = FsParser::reverseByte(jrx[i]>>1) |
@@ -789,7 +647,8 @@ int Gowin::spi_put(const uint8_t *tx, uint8_t *rx, uint32_t len)
 		/* set CS/SCK/DI low */
 		uint8_t t = _spi_msk | _spi_do;
 		t &= ~_spi_cs;
-		spi_gowin_write(&t, NULL, 8);
+		_jtag->shiftDR(&t, NULL, 8);
+		_jtag->toggleClk(6);
 		_jtag->flush();
 
 		/* send bit/bit full tx content (or set di to 0 when NULL) */
@@ -798,9 +657,11 @@ int Gowin::spi_put(const uint8_t *tx, uint8_t *rx, uint32_t len)
 			t = _spi_msk | _spi_do;
 			if (tx != NULL && tx[i>>3] & (1 << (7-(i&0x07))))
 				t |= _spi_di;
-			spi_gowin_write(&t, NULL, 8);
+			_jtag->shiftDR(&t, NULL, 8);
+			_jtag->toggleClk(6);
 			t |= _spi_sck;
-			spi_gowin_write(&t, (rx) ? &r : NULL, 8);
+			_jtag->shiftDR(&t, (rx) ? &r : NULL, 8);
+			_jtag->toggleClk(6);
 			_jtag->flush();
 			/* if read reconstruct bytes */
 			if (rx) {
@@ -813,7 +674,8 @@ int Gowin::spi_put(const uint8_t *tx, uint8_t *rx, uint32_t len)
 		/* set CS and unset SCK (next xfer) */
 		t &= ~_spi_sck;
 		t |= _spi_cs;
-		spi_gowin_write(&t, NULL, 8);
+		_jtag->shiftDR(&t, NULL, 8);
+		_jtag->toggleClk(6);
 		_jtag->flush();
 	}
 	return 0;
@@ -831,11 +693,11 @@ int Gowin::spi_wait(uint8_t cmd, uint8_t mask, uint8_t cond,
 		tx[0] = FsParser::reverseByte(cmd);
 
 		do {
-			bool ret = wr_rd(0x16, NULL, 0, NULL, 0, false);
+			bool ret = send_command(0x16);
 			if (!ret)
 				return -1;
 			_jtag->set_state(Jtag::EXIT2_DR);
-			ret = _jtag->shiftDR(tx, rx, 8 * 3);
+			_jtag->shiftDR(tx, rx, 8 * 3);
 
 			tmp = (FsParser::reverseByte(rx[1]>>1)) | (0x01 & rx[2]);
 			count ++;
@@ -852,16 +714,19 @@ int Gowin::spi_wait(uint8_t cmd, uint8_t mask, uint8_t cond,
 
 		/* set CS/SCK/DI low */
 		t = _spi_msk | _spi_do;
-		spi_gowin_write(&t, NULL, 8);
+		_jtag->shiftDR(&t, NULL, 8);
+		_jtag->toggleClk(6);
 
 		/* send command bit/bit */
 		for (int i = 0; i < 8; i++) {
 			t = _spi_msk | _spi_do;
 			if ((cmd & (1 << (7-i))) != 0)
 				t |= _spi_di;
-			spi_gowin_write(&t, NULL, 8);
+			_jtag->shiftDR(&t, NULL, 8);
+			_jtag->toggleClk(6);
 			t |= _spi_sck;
-			spi_gowin_write(&t, NULL, 8);
+			_jtag->shiftDR(&t, NULL, 8);
+			_jtag->toggleClk(6);
 			_jtag->flush();
 		}
 
@@ -872,9 +737,11 @@ int Gowin::spi_wait(uint8_t cmd, uint8_t mask, uint8_t cond,
 			for (int i = 0; i < 8; i++) {
 				uint8_t r;
 				t &= ~_spi_sck;
-				spi_gowin_write(&t, NULL, 8);
+				_jtag->shiftDR(&t, NULL, 8);
+				_jtag->toggleClk(6);
 				t |= _spi_sck;
-				spi_gowin_write(&t, &r, 8);
+				_jtag->shiftDR(&t, &r, 8);
+				_jtag->toggleClk(6);
 				_jtag->flush();
 				if ((r & _spi_do) != 0)
 					tmp |= 1 << (7-i);
@@ -892,7 +759,8 @@ int Gowin::spi_wait(uint8_t cmd, uint8_t mask, uint8_t cond,
 		/* set CS & unset SCK (next xfer) */
 		t &= ~_spi_sck;
 		t |= _spi_cs;
-		spi_gowin_write(&t, NULL, 8);
+		_jtag->shiftDR(&t, NULL, 8);
+		_jtag->toggleClk(6);
 		_jtag->flush();
 	}
 
