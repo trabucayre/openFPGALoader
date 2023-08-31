@@ -37,13 +37,13 @@ class Efinix: public Device, SPIInterface {
 		bool bulk_erase_flash() override {
 			printError("bulk erase flash not supported"); return false;}
 		/* not supported in SPI Active mode */
-		int idCode() override {return 0;}
+		uint32_t idCode() override {return 0;}
 		void reset() override;
 
 		/* spi interface */
-		int spi_put(uint8_t cmd, uint8_t *tx, uint8_t *rx,
+		int spi_put(uint8_t cmd, const uint8_t *tx, uint8_t *rx,
 			uint32_t len) override;
-		int spi_put(uint8_t *tx, uint8_t *rx, uint32_t len) override;
+		int spi_put(const uint8_t *tx, uint8_t *rx, uint32_t len) override;
 		int spi_wait(uint8_t cmd, uint8_t mask, uint8_t cond,
 			uint32_t timeout, bool verbose = false) override;
 

@@ -33,8 +33,8 @@ class LibgpiodJtagBitbang : public JtagInterface {
 	virtual ~LibgpiodJtagBitbang();
 
 	int setClkFreq(uint32_t clkHZ) override;
-	int writeTMS(uint8_t *tms_buf, uint32_t len, bool flush_buffer) override;
-	int writeTDI(uint8_t *tx, uint8_t *rx, uint32_t len, bool end) override;
+	int writeTMS(const uint8_t *tms_buf, uint32_t len, bool flush_buffer) override;
+	int writeTDI(const uint8_t *tx, uint8_t *rx, uint32_t len, bool end) override;
 	int toggleClk(uint8_t tms, uint8_t tdo, uint32_t clk_len) override;
 
 	int get_buffer_size() override { return 0; }

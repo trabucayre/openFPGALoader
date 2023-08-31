@@ -109,9 +109,9 @@ int AnlogicBitParser::parse()
 	for (auto it = blocks.begin(); it != blocks.end(); it++) {
 		for (size_t xpos = 0; xpos < it->size(); xpos++) {
 			if (_reverseOrder == true)
-				_bit_data += reverseByte(((*it)[xpos]));
+				_bit_data.push_back(reverseByte(((*it)[xpos])));
 			else
-				_bit_data += ((*it)[xpos]);
+				_bit_data.push_back((*it)[xpos]);
 		}
 	}
 	_bit_length = _bit_data.size() * 8;

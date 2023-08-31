@@ -77,7 +77,7 @@ void Anlogic::program(unsigned int offset, bool unprotect_flash)
 	if (_verbose)
 		bit.displayHeader();
 
-	uint8_t *data = bit.getData();
+	const uint8_t *data = bit.getData();
 	int len = bit.getLength() / 8;
 
 	if (_mode == Device::SPI_MODE) {
@@ -110,14 +110,10 @@ void Anlogic::program(unsigned int offset, bool unprotect_flash)
 
 		ProgressBar progress("Loading", len, 50, _quiet);
 		int pos = 0;
-		uint8_t *ptr = data;
+		const uint8_t *ptr = data;
 		while (len > 0) {
 			int xfer_len = (len > 512)?512:len;
-			int tx_end;
-			if (len - xfer_len == 0)
-				tx_end = Jtag::RUN_TEST_IDLE;
-			else
-				tx_end = Jtag::SHIFT_DR;
+			Jtag::tapState_t tx_end = (len - xfer_len) ? Jtag::SHIFT_DR : Jtag::RUN_TEST_IDLE;
 			_jtag->shiftDR(ptr, NULL, xfer_len * 8, tx_end);
 			len -= xfer_len;
 			progress.display(pos);
@@ -143,7 +139,7 @@ void Anlogic::program(unsigned int offset, bool unprotect_flash)
 	}
 }
 
-int Anlogic::idCode()
+uint32_t Anlogic::idCode()
 {
 	unsigned char tx_data[4];
 	unsigned char rx_data[4];
@@ -184,7 +180,7 @@ bool Anlogic::prepare_flash_access()
  * In write only operations to care about this delay
  */
 
-int Anlogic::spi_put(uint8_t cmd, uint8_t *tx, uint8_t *rx, uint32_t len)
+int Anlogic::spi_put(uint8_t cmd, const uint8_t *tx, uint8_t *rx, uint32_t len)
 {
 	int xfer_len = len + 1;
 	if (rx)
@@ -210,7 +206,7 @@ int Anlogic::spi_put(uint8_t cmd, uint8_t *tx, uint8_t *rx, uint32_t len)
 	}
 	return 0;
 }
-int Anlogic::spi_put(uint8_t *tx, uint8_t *rx, uint32_t len)
+int Anlogic::spi_put(const uint8_t *tx, uint8_t *rx, uint32_t len)
 {
 	int xfer_len = len;
 	if (rx)

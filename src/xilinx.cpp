@@ -330,7 +330,7 @@ void Xilinx::reset()
 	_jtag->toggleClk(2000);
 }
 
-int Xilinx::idCode()
+uint32_t Xilinx::idCode()
 {
 	int id = 0;
 	unsigned char tx_data[4]= {0x00, 0x00, 0x00, 0x00};
@@ -508,7 +508,7 @@ bool Xilinx::load_bridge()
 void Xilinx::program_spi(ConfigBitstreamParser * bit, unsigned int offset,
 		bool unprotect_flash)
 {
-	uint8_t *data = bit->getData();
+	const uint8_t *data = bit->getData();
 	int length = bit->getLength() / 8;
 	SPIInterface::write(offset, data, length, unprotect_flash);
 }
@@ -570,8 +570,9 @@ void Xilinx::program_mem(ConfigBitstreamParser *bitfile)
 	 */
 	/* GGM: TODO */
 	int byte_length = bitfile->getLength() / 8;
-	uint8_t *data = bitfile->getData();
-	int tx_len, tx_end;
+	const uint8_t *data = bitfile->getData();
+	int tx_len;
+	Jtag::tapState_t tx_end;
 	int burst_len = byte_length / 100;
 
 	ProgressBar progress("Flash SRAM", byte_length, 50, _quiet);
@@ -585,9 +586,9 @@ void Xilinx::program_mem(ConfigBitstreamParser *bitfile)
 			tx_end = Jtag::UPDATE_DR;
 		} else {
 			tx_len = burst_len * 8;
-	        /*
-	         * 12: Enter the SHIFT-DR state.              X     0   2
-	         */
+			/*
+			 * 12: Enter the SHIFT-DR state.              X     0   2
+			 */
 			tx_end = Jtag::SHIFT_DR;
 		}
 		_jtag->shiftDR(data+i, NULL, tx_len, tx_end);
@@ -727,8 +728,9 @@ bool Xilinx::xc3s_flow_program(ConfigBitstreamParser *bit)
 {
 	int byte_length = bit->getLength() / 8;
 	int burst_len = byte_length / 100;
-	uint8_t *data = bit->getData();
-	int tx_len = burst_len * 8, tx_end = Jtag::SHIFT_DR;
+	const uint8_t *data = bit->getData();
+	int tx_len = burst_len * 8;
+	Jtag::tapState_t tx_end = Jtag::SHIFT_DR;
 	ProgressBar progress("Flash SRAM", byte_length, 50, _quiet);
 
 	flow_enable();
@@ -769,8 +771,9 @@ bool Xilinx::xc3s_flow_program(ConfigBitstreamParser *bit)
 	_jtag->toggleClk(32);
 	if (_jtag->shiftIR(BYPASS, _irlen) < 0)
 		return false;
-	data[0] = 0x00;
-	if (_jtag->shiftDR(data, NULL, 1) < 0)
+	//data[0] = 0x00;
+	uint8_t d = 0;
+	if (_jtag->shiftDR(&d, NULL, 1) < 0)
 		return false;
 	_jtag->toggleClk(1);
 
@@ -1076,11 +1079,11 @@ bool Xilinx::xcf_program(ConfigBitstreamParser *bitfile)
 	uint8_t tx_buf[4096 / 8];
 	uint16_t pkt_len =
 		((_jtag->get_target_device_id() == 0x05044093) ? 2048 : 4096) / 8;
-	uint8_t *data = bitfile->getData();
+	const uint8_t *data = bitfile->getData();
 	uint32_t data_len = bitfile->getLength() / 8;
 	uint32_t xfer_len, offset = 0;
 	uint32_t addr = 0;
-	int xfer_end;
+	Jtag::tapState_t xfer_end;
 
 	/* limit JTAG clock frequency to 15MHz */
 	if (_jtag->getClkFreq() > 15e6)
@@ -1520,7 +1523,7 @@ bool Xilinx::xc2c_flow_program(JedParser *jed)
  *        so to send only a cmd set len to 0 (or omit this param)
  */
 int Xilinx::spi_put(uint8_t cmd,
-			uint8_t *tx, uint8_t *rx, uint32_t len)
+			const uint8_t *tx, uint8_t *rx, uint32_t len)
 {
 	int xfer_len = len + 1 + ((rx == NULL) ? 0 : 1);
 	uint8_t jtx[xfer_len];
@@ -1546,7 +1549,7 @@ int Xilinx::spi_put(uint8_t cmd,
 	return 0;
 }
 
-int Xilinx::spi_put(uint8_t *tx, uint8_t *rx, uint32_t len)
+int Xilinx::spi_put(const uint8_t *tx, uint8_t *rx, uint32_t len)
 {
 	int xfer_len = len + ((rx == NULL) ? 0 : 1);
 	uint8_t jtx[xfer_len];

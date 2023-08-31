@@ -50,7 +50,7 @@ class Device {
 		virtual bool unprotect_flash() = 0;
 		virtual bool bulk_erase_flash() = 0;
 
-		virtual int  idCode() = 0;
+		virtual uint32_t idCode() = 0;
 		virtual void reset();
 
 		virtual bool connectJtagToMCU() {return false;}

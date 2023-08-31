@@ -58,10 +58,10 @@ class SVF_jtag {
 	bool _verbose;
 
 	uint32_t _freq_hz;
-	int _enddr;
-	int _endir;
-	int _run_state;
-	int _end_state;
+	Jtag::tapState_t _enddr;
+	Jtag::tapState_t _endir;
+	Jtag::tapState_t _run_state;
+	Jtag::tapState_t _end_state;
 	svf_XYR hdr;
 	svf_XYR hir;
 	svf_XYR sdr;

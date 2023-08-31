@@ -136,9 +136,9 @@ int FsParser::parse()
 	 */
 
 	for (auto &&line : _lstRawData) {
-		for (size_t i = 0; i < line.size(); i+=8) {
+		for (size_t i = 0; i < line.size(); i += 8) {
 			uint8_t data = bitToVal(&line[i], 8);
-			_bit_data += (_reverseByte) ? reverseByte(data) : data;
+			_bit_data.push_back((_reverseByte) ? reverseByte(data) : data);
 		}
 	}
 

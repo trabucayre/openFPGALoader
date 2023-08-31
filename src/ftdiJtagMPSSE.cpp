@@ -107,7 +107,7 @@ void FtdiJtagMPSSE::config_edge()
 	}
 }
 
-int FtdiJtagMPSSE::writeTMS(uint8_t *tms, uint32_t len, bool flush_buffer)
+int FtdiJtagMPSSE::writeTMS(const uint8_t *tms, uint32_t len, bool flush_buffer)
 {
 	(void) flush_buffer;
 	display("%s %d %d\n", __func__, len, (len/8)+1);
@@ -208,7 +208,7 @@ int FtdiJtagMPSSE::flush()
 	return mpsse_write();
 }
 
-int FtdiJtagMPSSE::writeTDI(uint8_t *tdi, uint8_t *tdo, uint32_t len, bool last)
+int FtdiJtagMPSSE::writeTDI(const uint8_t *tdi, uint8_t *tdo, uint32_t len, bool last)
 {
 	/* 3 possible case :
 	 *  - n * 8bits to send -> use byte command

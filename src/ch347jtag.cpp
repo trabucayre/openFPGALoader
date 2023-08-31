@@ -193,7 +193,7 @@ CH347Jtag::CH347Jtag(uint32_t clkHZ, int8_t verbose):
 	}
 	libusb_bulk_transfer(dev_handle, CH347JTAG_READ_EP, ibuf, 512,
 		&actual_length, CH347JTAG_TIMEOUT);
-	setClkFreq(clkHZ);
+	_setClkFreq(clkHZ);
 	return;
 usb_release:
 	libusb_release_interface(dev_handle, CH347JTAG_INTF);
@@ -221,7 +221,7 @@ CH347Jtag::~CH347Jtag()
 	}
 }
 
-int CH347Jtag::setClkFreq(uint32_t clkHZ)
+int CH347Jtag::_setClkFreq(uint32_t clkHZ)
 {
 	unsigned i = 0, sl = 2000000;
 	if (clkHZ <= 2000000) {
@@ -244,7 +244,7 @@ int CH347Jtag::setClkFreq(uint32_t clkHZ)
 	return _clkHZ;
 }
 
-int CH347Jtag::writeTMS(uint8_t *tms, uint32_t len, bool flush_buffer)
+int CH347Jtag::writeTMS(const uint8_t *tms, uint32_t len, bool flush_buffer)
 {
 	(void) flush_buffer;
 
@@ -307,15 +307,15 @@ int CH347Jtag::toggleClk(uint8_t tms, uint8_t tdi, uint32_t len)
 	return EXIT_SUCCESS;
 }
 
-int CH347Jtag::writeTDI(uint8_t *tx, uint8_t *rx, uint32_t len, bool end)
+int CH347Jtag::writeTDI(const uint8_t *tx, uint8_t *rx, uint32_t len, bool end)
 {
 	if (!tx || !len)
 		return 0;
 	unsigned bytes = (len - ((end)?1:0)) / 8;
 	unsigned bits = len - bytes * 8;
 	uint8_t *rptr = rx;
-	uint8_t *tptr = tx;
-	uint8_t *txend = &tx[bytes];
+	const uint8_t *tptr = tx;
+	const uint8_t *txend = tx + bytes;
 	uint8_t cmd = (rx) ? CMD_BYTES_WR : CMD_BYTES_WO;
 	while (tptr < txend) {
 		unsigned avail = sizeof(obuf) - 3;
@@ -349,7 +349,7 @@ int CH347Jtag::writeTDI(uint8_t *tx, uint8_t *rx, uint32_t len, bool end)
 	cmd = (rx) ? CMD_BITS_WR : CMD_BITS_WO;
 	uint8_t *ptr = &obuf[3];
 	uint8_t x = 0;
-	uint8_t *bptr = &tx[bytes];
+	const uint8_t *bptr = &tx[bytes];
 	for (unsigned i = 0; i < bits; ++i) {
 		uint8_t txb = bptr[i >> 3];
 		uint8_t _tdi = (txb & (1 << (i & 7))) ? SIG_TDI : 0;

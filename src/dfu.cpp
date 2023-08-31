@@ -312,8 +312,8 @@ int DFU::searchDFUDevices()
 
 		if (_verbose > 0) {
 			printf("%04x:%04x (bus %d, device %2d)\n",
-            	desc.idVendor, desc.idProduct,
-            	libusb_get_bus_number(usb_dev),
+				desc.idVendor, desc.idProduct,
+				libusb_get_bus_number(usb_dev),
 				libusb_get_device_address(usb_dev));
 		}
 
@@ -435,12 +435,12 @@ int DFU::parseDFUDescriptor(const struct libusb_interface_descriptor *intf,
 
 /* abstraction to send/receive to control */
 int DFU::send(bool out, uint8_t brequest, uint16_t wvalue,
-		unsigned char *data, uint16_t length)
+		const uint8_t *data, uint16_t length)
 {
 	uint8_t type = out ? DFU_REQUEST_OUT : DFU_REQUEST_IN;
 	int ret = libusb_control_transfer(dev_handle, type,
 				brequest, wvalue, curr_intf,
-				data, length, 5000);
+				const_cast<uint8_t *>(data), length, 5000);
 	if (ret < 0) {
 		if (checkDevicePresent()) {
 			/* close device ? */
@@ -624,8 +624,8 @@ void DFU::displayDFU()
 	printf("Found DFU:\n");
 	for (unsigned int i = 0; i < dfu_dev.size(); i++) {
 		printf("%04x:%04x (bus %d, device %2d),",
-            dfu_dev[i].vid, dfu_dev[i].pid,
-            dfu_dev[i].bus, dfu_dev[i].device);
+			dfu_dev[i].vid, dfu_dev[i].pid,
+			dfu_dev[i].bus, dfu_dev[i].device);
 		printf(" path: %d",dfu_dev[i].path[0]);
 		for (size_t j = 1; j < strlen(((const char *)dfu_dev[i].path)); j++)
 			printf(".%d", dfu_dev[i].path[j]);
@@ -690,7 +690,7 @@ int DFU::download()
 	}
 
 	int ret, ret_val = EXIT_SUCCESS;
-	uint8_t *buffer, *ptr;
+	const uint8_t *buffer, *ptr;
 	int size, xfer_len;
 	int bMaxPacketSize0 = dfu_dev[dev_idx].bMaxPacketSize0;
 

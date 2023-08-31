@@ -217,12 +217,12 @@ void SVF_jtag::parse_runtest(vector<string> const &vstr)
 		end_state = fsm_state[*res];
 	}
 	if (run_state != -1) {
-		_run_state = run_state;
+		_run_state = (Jtag::tapState_t)run_state;
 	}
 	if (end_state != -1) {
-		_end_state = end_state;
+		_end_state = (Jtag::tapState_t)end_state;
 	} else if (run_state != -1) {
-		_end_state = run_state;
+		_end_state = (Jtag::tapState_t)run_state;
 	}
 	_jtag->set_state(_run_state);
 	_jtag->toggleClk(nb_iter);
@@ -245,13 +245,13 @@ void SVF_jtag::handle_instruction(vector<string> const &vstr)
 		if (_verbose) cout << "trst value : " << vstr[1] << endl;
 	} else if (!vstr[0].compare("ENDDR")) {
 		if (_verbose) cout << "enddr value : " << vstr[1] << endl;
-		_enddr = fsm_state[vstr[1]];
+		_enddr = (Jtag::tapState_t)fsm_state[vstr[1]];
 	} else if (!vstr[0].compare("ENDIR")) {
 		if (_verbose) cout << "endir value : " << vstr[1] << endl;
-		_endir = fsm_state[vstr[1]];
+		_endir = (Jtag::tapState_t)fsm_state[vstr[1]];
 	} else if (!vstr[0].compare("STATE")) {
 		if (_verbose) cout << "state value : " << vstr[1] << endl;
-		_jtag->set_state(fsm_state[vstr[1]]);
+		_jtag->set_state((Jtag::tapState_t)fsm_state[vstr[1]]);
 	} else if (!vstr[0].compare("RUNTEST")) {
 		parse_runtest(vstr);
 	} else if (!vstr[0].compare("HIR")) {
@@ -284,7 +284,7 @@ void SVF_jtag::handle_instruction(vector<string> const &vstr)
 		parse_XYR(vstr, sir);
 		if (_verbose) {
 			for (auto &&t : vstr)
-			 	cout << t << " ";
+				cout << t << " ";
 			cout << endl;
 			cout << "\tlen   : " << sir.len << endl;
 			cout << "\ttdo   : " << sir.tdo.size()*4 << endl;
@@ -335,8 +335,8 @@ void SVF_jtag::handle_instruction(vector<string> const &vstr)
 }
 
 SVF_jtag::SVF_jtag(Jtag *jtag, bool verbose):_verbose(verbose), _freq_hz(0),
-	_enddr(fsm_state["IDLE"]), _endir(fsm_state["IDLE"]),
-	_run_state(fsm_state["IDLE"]), _end_state(fsm_state["IDLE"])
+	_enddr((Jtag::tapState_t)fsm_state["IDLE"]), _endir((Jtag::tapState_t)fsm_state["IDLE"]),
+	_run_state((Jtag::tapState_t)fsm_state["IDLE"]), _end_state((Jtag::tapState_t)fsm_state["IDLE"])
 
 {
 	_jtag = jtag;

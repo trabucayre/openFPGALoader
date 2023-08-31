@@ -23,7 +23,7 @@ int EfinixHexParser::parse()
 	istringstream lineStream(_raw_data);
 
 	while (std::getline(lineStream, buffer, '\n')) {
-		_bit_data += std::stol(buffer, nullptr, 16);
+		_bit_data.push_back(std::stol(buffer, nullptr, 16));
 	}
 	_bit_length = _bit_data.size() * 8;
 

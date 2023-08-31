@@ -42,7 +42,7 @@ int XilinxMapParser::parse()
 
 	while(std::getline(ss, line, '\n')) {
 		bool empty = true;  // to said if line contains only '\t' (empty)
-		                    // or one or more blank in a non empty line
+							// or one or more blank in a non empty line
 		size_t prev_pos = 0, next_pos;
 		int row = 0;
 		/* suppress potential '\r' (thanks windows) */

@@ -232,25 +232,25 @@ void displayFeabits(uint16_t _featbits)
 			printf(" Error!\n");
 	}
 	printf("\tMaster Mode SPI                          : %s\n",
-	    (((_featbits>>11)&0x01)?"enable":"disable"));
+		(((_featbits>>11)&0x01)?"enable":"disable"));
 	printf("\tI2c port                                 : %s\n",
-	    (((_featbits>>10)&0x01)?"disable":"enable"));
+		(((_featbits>>10)&0x01)?"disable":"enable"));
 	printf("\tSlave SPI port                           : %s\n",
-	    (((_featbits>>9)&0x01)?"disable":"enable"));
+		(((_featbits>>9)&0x01)?"disable":"enable"));
 	printf("\tJTAG port                                : %s\n",
-	    (((_featbits>>8)&0x01)?"disable":"enable"));
+		(((_featbits>>8)&0x01)?"disable":"enable"));
 	printf("\tDONE                                     : %s\n",
-	    (((_featbits>>7)&0x01)?"enable":"disable"));
+		(((_featbits>>7)&0x01)?"enable":"disable"));
 	printf("\tINITN                                    : %s\n",
-	    (((_featbits>>6)&0x01)?"enable":"disable"));
+		(((_featbits>>6)&0x01)?"enable":"disable"));
 	printf("\tPROGRAMN                                 : %s\n",
-	    (((_featbits>>5)&0x01)?"disable":"enable"));
+		(((_featbits>>5)&0x01)?"disable":"enable"));
 	printf("\tMy_ASSP                                  : %s\n",
-	    (((_featbits>>4)&0x01)?"enable":"disable"));
+		(((_featbits>>4)&0x01)?"enable":"disable"));
 	printf("\tPassword (Flash Protect Key) Protect All : %s\n",
-	    (((_featbits>>3)&0x01)?"Enabled" : "Disabled"));
+		(((_featbits>>3)&0x01)?"Enabled" : "Disabled"));
 	printf("\tPassword (Flash Protect Key) Protect     : %s\n",
-	    (((_featbits>>2)&0x01)?"Enabled" : "Disabled"));
+		(((_featbits>>2)&0x01)?"Enabled" : "Disabled"));
 }
 
 bool Lattice::checkStatus(uint32_t val, uint32_t mask)
@@ -330,7 +330,7 @@ bool Lattice::program_mem()
 	_jtag->set_state(Jtag::RUN_TEST_IDLE);
 	_jtag->toggleClk(1000);
 
-	uint8_t *data = _bit.getData();
+	const uint8_t *data = _bit.getData();
 	int length = _bit.getLength()/8;
 	wr_rd(0x7A, NULL, 0, NULL, 0);
 	_jtag->set_state(Jtag::RUN_TEST_IDLE);
@@ -338,7 +338,7 @@ bool Lattice::program_mem()
 
 	uint8_t tmp[1024];
 	int size = 1024;
-	int next_state = Jtag::SHIFT_DR;
+	Jtag::tapState_t next_state = Jtag::SHIFT_DR;
 
 	ProgressBar progress("Loading", length, 50, _quiet);
 
@@ -433,7 +433,7 @@ bool Lattice::program_intFlash(ConfigBitstreamParser *_cbp)
 
 				if(ufm_start > 2045) {
 					printError("UFM section detected in JEDEC file, but "
-					 	"calculated flash start address was out of bounds");
+						"calculated flash start address was out of bounds");
 					return false;
 				}
 			} else if (note == "END CONFIG DATA") {
@@ -843,7 +843,7 @@ bool Lattice::DisableCfg()
 	return true;
 }
 
-int Lattice::idCode()
+uint32_t Lattice::idCode()
 {
 	uint8_t device_id[4];
 	wr_rd(READ_DEVICE_ID_CODE, NULL, 0, device_id, 4);
@@ -1296,11 +1296,11 @@ uint16_t Lattice::getUFMStartPageFromJEDEC(JedParser *_jed, int id)
 	uint32_t bit_offset = _jed->offset_for_section(id);
 	/* Convert to starting page, relative to Configuration Flash's page 0.
 	For 7000 parts only, first UFM page starts 16 bytes (1 page) after
-        the last Configuration Flash page, based on looking at
-        Diamond-generated JEDECs.
+		the last Configuration Flash page, based on looking at
+		Diamond-generated JEDECs.
 
-        For all other parts, the first UFM page immediately follows the last
-        Configuration Flash page. */
+		For all other parts, the first UFM page immediately follows the last
+		Configuration Flash page. */
 	uint16_t raw_page_offset = bit_offset / 128;
 
 	/* Raw page offsets won't overlap- see Lattice TN-02155, page 49. So we
@@ -1329,7 +1329,7 @@ uint16_t Lattice::getUFMStartPageFromJEDEC(JedParser *_jed, int id)
 /* SPI implementation */
 /* ------------------ */
 
-int Lattice::spi_put(uint8_t cmd, uint8_t *tx, uint8_t *rx, uint32_t len)
+int Lattice::spi_put(uint8_t cmd, const uint8_t *tx, uint8_t *rx, uint32_t len)
 {
 	int xfer_len = len + 1;
 	uint8_t jtx[xfer_len];
@@ -1355,7 +1355,7 @@ int Lattice::spi_put(uint8_t cmd, uint8_t *tx, uint8_t *rx, uint32_t len)
 	return 0;
 }
 
-int Lattice::spi_put(uint8_t *tx, uint8_t *rx, uint32_t len)
+int Lattice::spi_put(const uint8_t *tx, uint8_t *rx, uint32_t len)
 {
 	int xfer_len = len;
 	uint8_t jtx[xfer_len];
@@ -2009,7 +2009,7 @@ bool Lattice::program_pubkey_MachXO3D()
 		printSuccess("DONE");
 	}
 
-	uint8_t* data = _pk.getData();
+	const uint8_t* data = _pk.getData();
 	len =  _pk.getLength()/8;
 
 	if (data[0] == 0x0f && data[1] == 0xf0) {

@@ -76,7 +76,7 @@ RemoteBitbang_client::~RemoteBitbang_client()
 	close(_sock);
 }
 
-int RemoteBitbang_client::writeTMS(uint8_t *tms, uint32_t len,
+int RemoteBitbang_client::writeTMS(const uint8_t *tms, uint32_t len,
 		bool flush_buffer)
 {
 	// empty buffer
@@ -100,7 +100,7 @@ int RemoteBitbang_client::writeTMS(uint8_t *tms, uint32_t len,
 	return len;
 }
 
-int RemoteBitbang_client::writeTDI(uint8_t *tx, uint8_t *rx, uint32_t len,
+int RemoteBitbang_client::writeTDI(const uint8_t *tx, uint8_t *rx, uint32_t len,
 		bool end)
 {
 	if (len == 0)  // nothing to do
@@ -190,7 +190,7 @@ bool RemoteBitbang_client::open_connection(const string &ip_addr)
 	}
 
 	int one = 1;
-    setsockopt(_sock, IPPROTO_TCP, TCP_NODELAY, (const char *)&one,
+	setsockopt(_sock, IPPROTO_TCP, TCP_NODELAY, (const char *)&one,
 			sizeof(one));
 
 	return true;

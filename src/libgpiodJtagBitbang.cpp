@@ -272,8 +272,8 @@ int LibgpiodJtagBitbang::read_tdo()
 #ifdef GPIOD_APIV2
 	gpiod_line_value req = gpiod_line_request_get_value(
 		_tdo_request, _tdo_pin);
-        if (req == GPIOD_LINE_VALUE_ERROR)
-        {
+		if (req == GPIOD_LINE_VALUE_ERROR)
+		{
 		display("Error reading TDO line\n");
 		throw std::runtime_error("Error reading TDO line\n");
 	}
@@ -291,7 +291,7 @@ int LibgpiodJtagBitbang::setClkFreq(__attribute__((unused)) uint32_t clkHZ)
 	return 0;
 }
 
-int LibgpiodJtagBitbang::writeTMS(uint8_t *tms_buf, uint32_t len,
+int LibgpiodJtagBitbang::writeTMS(const uint8_t *tms_buf, uint32_t len,
 		__attribute__((unused)) bool flush_buffer)
 {
 	int tms;
@@ -311,7 +311,7 @@ int LibgpiodJtagBitbang::writeTMS(uint8_t *tms_buf, uint32_t len,
 	return len;
 }
 
-int LibgpiodJtagBitbang::writeTDI(uint8_t *tx, uint8_t *rx, uint32_t len, bool end)
+int LibgpiodJtagBitbang::writeTDI(const uint8_t *tx, uint8_t *rx, uint32_t len, bool end)
 {
 	int tms = _curr_tms;
 	int tdi = _curr_tdi;

@@ -23,7 +23,7 @@ class Lattice: public Device, SPIInterface {
 		Lattice(Jtag *jtag, std::string filename, const std::string &file_type,
 			Device::prog_type_t prg_type, std::string flash_sector, bool verify,
 			int8_t verbose);
-		int idCode() override;
+		uint32_t idCode() override;
 		int userCode();
 		void reset() override {}
 		void program(unsigned int offset, bool unprotect_flash) override;
@@ -55,9 +55,9 @@ class Lattice: public Device, SPIInterface {
 		}
 
 		/* spi interface */
-		int spi_put(uint8_t cmd, uint8_t *tx, uint8_t *rx,
+		int spi_put(uint8_t cmd, const uint8_t *tx, uint8_t *rx,
 		uint32_t len) override;
-		int spi_put(uint8_t *tx, uint8_t *rx, uint32_t len) override;
+		int spi_put(const uint8_t *tx, uint8_t *rx, uint32_t len) override;
 		int spi_wait(uint8_t cmd, uint8_t mask, uint8_t cond,
 				uint32_t timeout, bool verbose = false) override;
 

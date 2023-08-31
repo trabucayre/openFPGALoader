@@ -115,7 +115,7 @@ int main(int argc, char **argv)
 			/* index_chain file_size target_flash external_flash altsetting */
 			-1,            0,        "primary",   false,         -1,
 			/* vid, pid, index bus_addr, device_addr */
-			    0,   0,   -1,     0,         0,
+				0,   0,   -1,     0,         0,
 			"127.0.0.1", 0, false, false, "", false, false,
 			/* xvc server */
 			false, 3721, "-",
@@ -533,7 +533,7 @@ int main(int argc, char **argv)
 		return EXIT_SUCCESS;
 	}
 
-    /* check if selected device is supported
+	/* check if selected device is supported
 	 * mainly used in conjunction with --index-chain
 	 */
 	if (fpga_list.find(idcode) == fpga_list.end()) {

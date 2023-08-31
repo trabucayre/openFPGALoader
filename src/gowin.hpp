@@ -22,7 +22,7 @@ class Gowin: public Device, SPIInterface {
 				Device::prog_type_t prg_type, bool external_flash,
 				bool verify, int8_t verbose);
 		~Gowin();
-		int idCode() override;
+		uint32_t idCode() override;
 		void reset() override;
 		void program(unsigned int offset, bool unprotect_flash) override;
 		void programFlash();
@@ -36,9 +36,9 @@ class Gowin: public Device, SPIInterface {
 			printError("unprotect flash not supported"); return false;}
 		virtual bool bulk_erase_flash() override {
 			printError("bulk erase flash not supported"); return false;}
-		int spi_put(uint8_t cmd, uint8_t *tx, uint8_t *rx,
+		int spi_put(uint8_t cmd, const uint8_t *tx, uint8_t *rx,
 			uint32_t len) override;
-		int spi_put(uint8_t *tx, uint8_t *rx, uint32_t len) override;
+		int spi_put(const uint8_t *tx, uint8_t *rx, uint32_t len) override;
 		int spi_wait(uint8_t cmd, uint8_t mask, uint8_t cond,
 			uint32_t timeout, bool verbose) override;
 
@@ -50,8 +50,8 @@ class Gowin: public Device, SPIInterface {
 		bool pollFlag(uint32_t mask, uint32_t value);
 		bool eraseSRAM();
 		bool eraseFLASH();
-		bool flashSRAM(uint8_t *data, int length);
-		bool flashFLASH(uint32_t page, uint8_t *data, int length);
+		bool flashSRAM(const uint8_t *data, int length);
+		bool flashFLASH(uint32_t page, const uint8_t *data, int length);
 		void displayReadReg(uint32_t dev);
 		uint32_t readStatusReg();
 		uint32_t readUserCode();

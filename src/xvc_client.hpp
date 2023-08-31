@@ -43,7 +43,7 @@ class XVC_client: public JtagInterface {
 		 * \param[in] flush_buffer: force buffer to be send or not
 		 * \return <= 0 if something wrong, len otherwise
 		 */
-		int writeTMS(uint8_t *tms, uint32_t len, bool flush_buffer) override;
+		int writeTMS(const uint8_t *tms, uint32_t len, bool flush_buffer) override;
 
 		/*!
 		 * \brief write and read len bits with optional tms set to 1 if end
@@ -53,7 +53,7 @@ class XVC_client: public JtagInterface {
 		 * \param[in] end: if true tms is set to one with the last tdi bit
 		 * \return <= 0 if something wrong, len otherwise
 		 */
-		int writeTDI(uint8_t *tx, uint8_t *rx, uint32_t len, bool end) override;
+		int writeTDI(const uint8_t *tx, uint8_t *rx, uint32_t len, bool end) override;
 
 		/*!
 		 * \brief send a serie of clock cycle with constant TMS and TDI

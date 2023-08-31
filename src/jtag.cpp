@@ -298,7 +298,7 @@ void Jtag::go_test_logic_reset()
 	_state = TEST_LOGIC_RESET;
 }
 
-int Jtag::read_write(unsigned char *tdi, unsigned char *tdo, int len, char last)
+int Jtag::read_write(const uint8_t *tdi, unsigned char *tdo, int len, char last)
 {
 	flushTMS(false);
 	_jtag->writeTDI(tdi, tdo, len, last);
@@ -317,7 +317,7 @@ void Jtag::toggleClk(int nb)
 	return;
 }
 
-int Jtag::shiftDR(unsigned char *tdi, unsigned char *tdo, int drlen, int end_state)
+int Jtag::shiftDR(const uint8_t *tdi, unsigned char *tdo, int drlen, tapState_t end_state)
 {
 	/* get number of devices in the JTAG chain
 	 * after the selected one
@@ -361,7 +361,7 @@ int Jtag::shiftDR(unsigned char *tdi, unsigned char *tdo, int drlen, int end_sta
 			uint8_t tx[n];
 			memset(tx, 0xff, n);
 			read_write(tx, NULL, bits_after, 1);  // its the last force
-			                                      // tms high with last bit
+												  // tms high with last bit
 		}
 
 		/* move to end_state */
@@ -370,7 +370,7 @@ int Jtag::shiftDR(unsigned char *tdi, unsigned char *tdo, int drlen, int end_sta
 	return 0;
 }
 
-int Jtag::shiftIR(unsigned char tdi, int irlen, int end_state)
+int Jtag::shiftIR(unsigned char tdi, int irlen, tapState_t end_state)
 {
 	if (irlen > 8) {
 		cerr << "Error: this method this direct char don't support more than 1 byte" << endl;
@@ -379,7 +379,7 @@ int Jtag::shiftIR(unsigned char tdi, int irlen, int end_state)
 	return shiftIR(&tdi, NULL, irlen, end_state);
 }
 
-int Jtag::shiftIR(unsigned char *tdi, unsigned char *tdo, int irlen, int end_state)
+int Jtag::shiftIR(unsigned char *tdi, unsigned char *tdo, int irlen, tapState_t end_state)
 {
 	display("%s: avant shiftIR\n", __func__);
 	int bypass_after = 0;
@@ -440,7 +440,7 @@ int Jtag::shiftIR(unsigned char *tdi, unsigned char *tdo, int irlen, int end_sta
 	return 0;
 }
 
-void Jtag::set_state(int newState)
+void Jtag::set_state(tapState_t newState)
 {
 	unsigned char tms = 0;
 	while (newState != _state) {
@@ -621,6 +621,9 @@ void Jtag::set_state(int newState)
 				_state = SELECT_DR_SCAN;
 			}
 			break;
+		case UNKNOWN:;
+			// UNKNOWN should not be valid...
+			throw std::exception();
 		}
 
 		setTMS(tms);

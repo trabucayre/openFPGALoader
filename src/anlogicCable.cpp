@@ -123,7 +123,7 @@ int AnlogicCable::setClkFreq(uint32_t clkHZ)
 	}
 
 	ret = libusb_bulk_transfer(dev_handle, ANLOGICCABLE_CONF_EP,
-			        buf, 2, &actual_length, 1000);
+					buf, 2, &actual_length, 1000);
 	if (ret < 0) {
 		cerr << "setClkFreq: usb bulk write failed " << ret << endl;
 		return -EXIT_FAILURE;
@@ -137,7 +137,7 @@ int AnlogicCable::setClkFreq(uint32_t clkHZ)
 	return clkHZ;
 }
 
-int AnlogicCable::writeTMS(uint8_t *tms, uint32_t len, bool flush_buffer)
+int AnlogicCable::writeTMS(const uint8_t *tms, uint32_t len, bool flush_buffer)
 {
 	(void) flush_buffer;
 
@@ -148,7 +148,7 @@ int AnlogicCable::writeTMS(uint8_t *tms, uint32_t len, bool flush_buffer)
 	uint8_t mask = (ANLOGICCABLE_TCK_PIN << 4);
 
 	int full_len = len;
-	uint8_t *tx_ptr = tms;
+	const uint8_t *tx_ptr = tms;
 
 	while (full_len > 0) {
 		/* when len > buffer capacity -> limit to capacity
@@ -219,13 +219,13 @@ int AnlogicCable::flush()
 	return 0;
 }
 
-int AnlogicCable::writeTDI(uint8_t *tx, uint8_t *rx, uint32_t len, bool end)
+int AnlogicCable::writeTDI(const uint8_t *tx, uint8_t *rx, uint32_t len, bool end)
 {
 	uint8_t buf[512];
 	uint8_t mask = (ANLOGICCABLE_TCK_PIN << 4);
 
 	int full_len = len;
-	uint8_t *tx_ptr = tx;
+	const uint8_t *tx_ptr = tx;
 	uint8_t *rx_ptr = rx;
 
 	while (full_len > 0) {

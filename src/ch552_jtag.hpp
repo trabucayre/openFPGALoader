@@ -32,11 +32,11 @@ class CH552_jtag : public JtagInterface, private FTDIpp_MPSSE {
 	uint32_t getClkFreq() override {return FTDIpp_MPSSE::getClkFreq();}
 
 	/* TMS */
-	int writeTMS(uint8_t *tms, uint32_t len, bool flush_buffer) override;
+	int writeTMS(const uint8_t *tms, uint32_t len, bool flush_buffer) override;
 	/* clock */
 	int toggleClk(uint8_t tms, uint8_t tdi, uint32_t clk_len) override;
 	/* TDI */
-	int writeTDI(uint8_t *tx, uint8_t *rx, uint32_t len, bool end) override;
+	int writeTDI(const uint8_t *tx, uint8_t *rx, uint32_t len, bool end) override;
 
 	/*!
 	 * \brief return internal buffer size (in byte).

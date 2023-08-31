@@ -44,7 +44,7 @@ class SPIInterface {
 	 * \param[in] verbose: verbose level
 	 * \return false when something fails
 	 */
-	bool write(uint32_t offset, uint8_t *data, uint32_t len,
+	bool write(uint32_t offset, const uint8_t *data, uint32_t len,
 		bool unprotect_flash);
 
 	/*!
@@ -78,7 +78,7 @@ class SPIInterface {
 	 *                 to send only a cmd set len to 0
 	 * \return 0 when success
 	 */
-	virtual int spi_put(uint8_t cmd, uint8_t *tx, uint8_t *rx,
+	virtual int spi_put(uint8_t cmd, const uint8_t *tx, uint8_t *rx,
 						uint32_t len) = 0;
 
 	/*!
@@ -88,7 +88,7 @@ class SPIInterface {
 	 * \param[in] len: number of byte to send/receive
 	 * \return 0 when success
 	 */
-	virtual int spi_put(uint8_t *tx, uint8_t *rx, uint32_t len) = 0;
+	virtual int spi_put(const uint8_t *tx, uint8_t *rx, uint32_t len) = 0;
 
 	/*!
 	 * \brief wait until register content and mask match cond, or timeout

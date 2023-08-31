@@ -88,7 +88,7 @@ int CH552_jtag::setClkFreq(uint32_t clkHZ) {
 	return ret;
 }
 
-int CH552_jtag::writeTMS(uint8_t *tms, uint32_t len, bool flush_buffer)
+int CH552_jtag::writeTMS(const uint8_t *tms, uint32_t len, bool flush_buffer)
 {
 	(void) flush_buffer;
 	display("%s %d %d\n", __func__, len, (len/8)+1);
@@ -172,7 +172,7 @@ int CH552_jtag::flush()
 	return ret;
 }
 
-int CH552_jtag::writeTDI(uint8_t *tdi, uint8_t *tdo, uint32_t len, bool last)
+int CH552_jtag::writeTDI(const uint8_t *tdi, uint8_t *tdo, uint32_t len, bool last)
 {
 	bool rd_mode = (tdo) ? true : false;
 	/* 3 possible case :

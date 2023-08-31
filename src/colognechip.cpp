@@ -187,7 +187,7 @@ void CologneChip::program(unsigned int offset, bool unprotect_flash)
 
 	cfg->parse();
 
-	uint8_t *data = cfg->getData();
+	const uint8_t *data = cfg->getData();
 	int length = cfg->getLength() / 8;
 
 	switch (_mode) {
@@ -214,7 +214,7 @@ void CologneChip::program(unsigned int offset, bool unprotect_flash)
  * Write configuration into FPGA latches via SPI after active reset.
  * CFG_MD[3:0] must be set to 0x40 (SPI passive).
  */
-void CologneChip::programSPI_sram(uint8_t *data, int length)
+void CologneChip::programSPI_sram(const uint8_t *data, int length)
 {
 	/* hold device in reset for a moment */
 	reset();
@@ -234,7 +234,7 @@ void CologneChip::programSPI_sram(uint8_t *data, int length)
  * done, release reset to start FPGA in active SPI mode (load from flash).
  * CFG_MD[3:0] must be set to 0x00 (SPI active).
  */
-void CologneChip::programSPI_flash(unsigned int offset, uint8_t *data,
+void CologneChip::programSPI_flash(unsigned int offset, const uint8_t *data,
 		int length, bool unprotect_flash)
 {
 	/* hold device in reset during flash write access */
@@ -266,7 +266,7 @@ void CologneChip::programSPI_flash(unsigned int offset, uint8_t *data,
  * Write configuration into FPGA latches via JTAG after active reset.
  * CFG_MD[3:0] must be set to 0xF0 (JTAG).
  */
-void CologneChip::programJTAG_sram(uint8_t *data, int length)
+void CologneChip::programJTAG_sram(const uint8_t *data, int length)
 {
 	/* hold device in reset for a moment */
 	reset();
@@ -303,7 +303,7 @@ void CologneChip::programJTAG_sram(uint8_t *data, int length)
  * Write configuration to flash via JTAG-SPI-bypass. The FPGA will not start
  * as it is in JTAG mode with CFG_MD[3:0] set to 0xF0 (JTAG).
  */
-void CologneChip::programJTAG_flash(unsigned int offset, uint8_t *data,
+void CologneChip::programJTAG_flash(unsigned int offset, const uint8_t *data,
 		int length, bool unprotect_flash)
 {
 	/* hold device in reset for a moment */
@@ -327,7 +327,7 @@ void CologneChip::programJTAG_flash(unsigned int offset, uint8_t *data,
 /**
  * Overrides spi_put() to access SPI components via JTAG-SPI-bypass.
  */
-int CologneChip::spi_put(uint8_t cmd, uint8_t *tx, uint8_t *rx, uint32_t len)
+int CologneChip::spi_put(uint8_t cmd, const uint8_t *tx, uint8_t *rx, uint32_t len)
 {
 	int xfer_len = len + 1;
 	uint8_t jtx[xfer_len+2];
@@ -358,7 +358,7 @@ int CologneChip::spi_put(uint8_t cmd, uint8_t *tx, uint8_t *rx, uint32_t len)
 /**
  * Overrides spi_put() to access SPI components via JTAG-SPI-bypass.
  */
-int CologneChip::spi_put(uint8_t *tx, uint8_t *rx, uint32_t len)
+int CologneChip::spi_put(const uint8_t *tx, uint8_t *rx, uint32_t len)
 {
 	int xfer_len = len;
 	uint8_t jtx[xfer_len+2];

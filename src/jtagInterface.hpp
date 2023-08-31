@@ -30,7 +30,7 @@ class JtagInterface {
 	 * \param len: number of bit to send
 	 * \return number of bit send/received
 	 */
-	virtual int writeTMS(uint8_t *tms, uint32_t len, bool flush_buffer) = 0;
+	virtual int writeTMS(const uint8_t *tms, uint32_t len, bool flush_buffer) = 0;
 
 	/*!
 	 * \brief send TDI bits (mainly in shift DR/IR state)
@@ -41,7 +41,7 @@ class JtagInterface {
 	 *             but only in shift[i|d]r, if end is false tms remain the same.
 	 * \return number of bit written and/or read
 	 */
-	virtual int writeTDI(uint8_t *tx, uint8_t *rx, uint32_t len, bool end) = 0;
+	virtual int writeTDI(const uint8_t *tx, uint8_t *rx, uint32_t len, bool end) = 0;
 	/*!
 	 * \brief send TMD and TDI and receive tdo bits;
 	 * \param tms: array of TMS values (used to write)

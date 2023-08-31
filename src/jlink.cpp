@@ -26,12 +26,12 @@ using namespace std;
 
 // convert 2Byte to 1 short
 #define CONV_16B(_val) ((((uint16_t) _val[0]) << 0) | \
-					    (((uint16_t) _val[1]) << 8))
+						(((uint16_t) _val[1]) << 8))
 // convert 4Byte to 1 word
 #define CONV_32B(_val) ((((uint32_t) _val[0]) <<  0) | \
-					    (((uint32_t) _val[1]) <<  8) | \
-					    (((uint32_t) _val[2]) << 16) | \
-					    (((uint32_t) _val[3]) << 24))
+						(((uint32_t) _val[1]) <<  8) | \
+						(((uint32_t) _val[2]) << 16) | \
+						(((uint32_t) _val[3]) << 24))
 // a 0-byte is introduce when reading a packet with
 // size multiple of 64 Byte but < 0x8000
 #define HAS_0BYTE(_len) ((_len != 0) && (_len % 64 == 0) && (_len != 0x8000))
@@ -89,7 +89,7 @@ Jlink::~Jlink()
 	libusb_exit(jlink_ctx);
 }
 
-int Jlink::writeTMS(uint8_t *tms, uint32_t len, bool flush_buffer)
+int Jlink::writeTMS(const uint8_t *tms, uint32_t len, bool flush_buffer)
 {
 	// empty buffer
 	// if asked flush
@@ -123,7 +123,7 @@ int Jlink::writeTMS(uint8_t *tms, uint32_t len, bool flush_buffer)
 	return len;
 }
 
-int Jlink::writeTDI(uint8_t *tx, uint8_t *rx, uint32_t len, bool end)
+int Jlink::writeTDI(const uint8_t *tx, uint8_t *rx, uint32_t len, bool end)
 {
 	if (len == 0)  // nothing to do
 		return 0;
@@ -132,7 +132,8 @@ int Jlink::writeTDI(uint8_t *tx, uint8_t *rx, uint32_t len, bool end)
 
 	uint32_t xfer_len = BUF_SIZE * 8;  // default to buffer capacity
 	uint8_t tms = (_last_tms) ? 0xff : 0x00;  // set tms byte
-	uint8_t *tx_ptr = tx, *rx_ptr = rx;  // use pointer to simplify algo
+	const uint8_t *tx_ptr = tx;
+	uint8_t *rx_ptr = rx;  // use pointer to simplify algo
 
 	/* write by burst */
 	for (uint32_t rest = 0; rest < len; rest += xfer_len) {
@@ -477,9 +478,9 @@ int Jlink::get_hw_version()
 		return -1;
 
 	_hw_type = (version / 1000000) % 100;
-    _major = (version / 10000) % 100;
-    _minor = (version / 100) % 100;
-    _revision = version % 100;
+	_major = (version / 10000) % 100;
+	_minor = (version / 100) % 100;
+	_revision = version % 100;
 
 	if (_debug)
 		printf("%08x ", version);

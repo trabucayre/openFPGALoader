@@ -39,7 +39,7 @@ class Altera: public Device, SPIInterface {
 			return SPIInterface::dump(base_addr, len);
 		}
 
-		int idCode() override;
+		uint32_t idCode() override;
 		void reset() override;
 
 		/*************************/
@@ -65,9 +65,9 @@ class Altera: public Device, SPIInterface {
 			return SPIInterface::bulk_erase_flash();
 		}
 
-		int spi_put(uint8_t cmd, uint8_t *tx, uint8_t *rx,
+		int spi_put(uint8_t cmd, const uint8_t *tx, uint8_t *rx,
 				uint32_t len) override;
-		int spi_put(uint8_t *tx, uint8_t *rx, uint32_t len) override;
+		int spi_put(const uint8_t *tx, uint8_t *rx, uint32_t len) override;
 		int spi_wait(uint8_t cmd, uint8_t mask, uint8_t cond,
 				uint32_t timeout, bool verbose = false) override;
 
@@ -98,7 +98,7 @@ class Altera: public Device, SPIInterface {
 		 * \param[in] end_state: next state at the end of xfer
 		 */
 		void shiftVDR(uint8_t * tx, uint8_t * rx, uint32_t len,
-				int end_state = Jtag::UPDATE_DR, bool debug = false);
+				Jtag::tapState_t end_state = Jtag::UPDATE_DR, bool debug = false);
 
 		std::string _device_package;
 		std::string _spiOverJtagPath; /**< spiOverJtag explicit path */

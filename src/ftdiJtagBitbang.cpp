@@ -116,7 +116,7 @@ int FtdiJtagBitBang::setBitmode(uint8_t mode)
 	return ret;
 }
 
-int FtdiJtagBitBang::writeTMS(uint8_t *tms, uint32_t len, bool flush_buffer)
+int FtdiJtagBitBang::writeTMS(const uint8_t *tms, uint32_t len, bool flush_buffer)
 {
 	int ret;
 
@@ -162,7 +162,7 @@ int FtdiJtagBitBang::writeTMS(uint8_t *tms, uint32_t len, bool flush_buffer)
 	return len;
 }
 
-int FtdiJtagBitBang::writeTDI(uint8_t *tx, uint8_t *rx, uint32_t len, bool end)
+int FtdiJtagBitBang::writeTDI(const uint8_t *tx, uint8_t *rx, uint32_t len, bool end)
 {
 	uint32_t iter;
 	uint32_t xfer_size = (rx) ? _rx_size : _buffer_size;

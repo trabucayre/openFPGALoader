@@ -175,7 +175,7 @@ Gowin::Gowin(Jtag *jtag, const string filename, const string &file_type, std::st
 	if (mcufw.size() > 0) {
 		if (idcode != 0x0100981b)
 			throw std::runtime_error("Microcontroller firmware flashing only supported on GW1NSR-4C");
-		
+
 		_mcufw = new RawParser(mcufw, false);
 
 		if (_mcufw->parse() == EXIT_FAILURE) {
@@ -204,12 +204,12 @@ void Gowin::reset()
 
 void Gowin::programFlash()
 {
-	uint8_t *data = _fs->getData();
+	const uint8_t *data = _fs->getData();
 	int length = _fs->getLength();
-	
-	uint8_t *mcu_data = nullptr;
+
+	const uint8_t *mcu_data = nullptr;
 	int mcu_length = 0;
-	
+
 	if (_mcufw) {
 		mcu_data = _mcufw->getData();
 		mcu_length = _mcufw->getLength();
@@ -256,7 +256,7 @@ void Gowin::programFlash()
 
 void Gowin::program(unsigned int offset, bool unprotect_flash)
 {
-	uint8_t *data;
+	const uint8_t *data;
 	int length;
 
 	if (_mode == NONE_MODE || !_fs)
@@ -400,7 +400,7 @@ bool Gowin::DisableCfg()
 	return pollFlag(STATUS_SYSTEM_EDIT_MODE, 0);
 }
 
-int Gowin::idCode()
+uint32_t Gowin::idCode()
 {
 	uint8_t device_id[4];
 	wr_rd(READ_IDCODE, NULL, 0, device_id, 4);
@@ -456,7 +456,7 @@ bool Gowin::wr_rd(uint8_t cmd,
 				printf("%02x ", xfer_rx[i]);
 			printf("\n");
 		}
-	    for (i = 0; i < rx_len; i++)
+		for (i = 0; i < rx_len; i++)
 			rx[i] = (xfer_rx[i]);
 	}
 	return true;
@@ -518,7 +518,7 @@ bool Gowin::pollFlag(uint32_t mask, uint32_t value)
 }
 
 /* TN653 p. 17-21 */
-bool Gowin::flashFLASH(uint32_t page, uint8_t *data, int length)
+bool Gowin::flashFLASH(uint32_t page, const uint8_t *data, int length)
 {
 	uint8_t tx[4] = {0x4E, 0x31, 0x57, 0x47};
 	uint8_t tmp[4];
@@ -630,9 +630,10 @@ bool Gowin::connectJtagToMCU()
 }
 
 /* TN653 p. 9 */
-bool Gowin::flashSRAM(uint8_t *data, int length)
+bool Gowin::flashSRAM(const uint8_t *data, int length)
 {
-	int tx_len, tx_end;
+	int tx_len;
+	Jtag::tapState_t tx_end;
 	int byte_length = length / 8;
 
 	ProgressBar progress("Flash SRAM", byte_length, 50, _quiet);
@@ -748,7 +749,7 @@ bool Gowin::eraseSRAM()
 	_jtag->shiftDR(_wr, _rd, _len); \
 	_jtag->toggleClk(6); } while (0)
 
-int Gowin::spi_put(uint8_t cmd, uint8_t *tx, uint8_t *rx, uint32_t len)
+int Gowin::spi_put(uint8_t cmd, const uint8_t *tx, uint8_t *rx, uint32_t len)
 {
 	uint8_t jrx[len+1], jtx[len+1];
 	jtx[0] = cmd;
@@ -762,7 +763,7 @@ int Gowin::spi_put(uint8_t cmd, uint8_t *tx, uint8_t *rx, uint32_t len)
 	return ret;
 }
 
-int Gowin::spi_put(uint8_t *tx, uint8_t *rx, uint32_t len)
+int Gowin::spi_put(const uint8_t *tx, uint8_t *rx, uint32_t len)
 {
 	if (is_gw2a) {
 		uint8_t jtx[len];

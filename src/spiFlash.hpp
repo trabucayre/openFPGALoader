@@ -64,7 +64,7 @@ class SPIFlash {
 		 */
 		int sectors_erase(int base_addr, int len);
 		/* write */
-		int write_page(int addr, uint8_t *data, int len);
+		int write_page(int addr, const uint8_t *data, int len);
 		/* read */
 		int read(int base_addr, uint8_t *data, int len);
 		/*!
@@ -79,7 +79,7 @@ class SPIFlash {
 		bool dump(const std::string &filename, const int &base_addr,
 				const int &len, int rd_burst = 0);
 		/* combo flash + erase */
-		int erase_and_prog(int base_addr, uint8_t *data, int len);
+		int erase_and_prog(int base_addr, const uint8_t *data, int len);
 		/*!
 		 * \brief check if area base_addr to base_addr + len match
 		 *        data content
