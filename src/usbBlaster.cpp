@@ -434,7 +434,7 @@ UsbBlasterII::UsbBlasterII(const string &firmware_path)
 {
 	std::string fpath;
 	uint8_t buf[5];
-	if (firmware_path.empty() && BLASTERII_DIR == "") {
+	if (firmware_path.empty() && strlen(BLASTERII_DIR) == 0) {
 		printError("missing FX2 firmware");
 		printError("use --probe-firmware with something");
 		printError("like /opt/intelFPGA/VERSION/quartus/linux64/blaster_6810.hex");

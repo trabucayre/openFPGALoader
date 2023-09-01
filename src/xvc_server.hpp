@@ -82,8 +82,8 @@ class XVC_server {
 		int _sock;             /*!< server socket descriptor */
 		struct sockaddr_in _sock_addr;
 		std::thread *_thread;  /*!< connection thread */
-		bool _is_stopped;      /*!< true when thread is stopped */
-		bool _must_stop;       /*!< true to stop thread */
+		volatile bool _is_stopped;      /*!< true when thread is stopped */
+		volatile bool _must_stop;       /*!< true to stop thread */
 		uint32_t _buffer_size; /*!< buffer max capacity TDI+TMS */
 		uint8_t *_tmstdi;      /*!< TDI/TMS from client */
 		uint8_t *_result;      /*!< buffer for server -> client */

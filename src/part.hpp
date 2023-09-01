@@ -179,7 +179,7 @@ static std::map <uint32_t, fpga_model> fpga_list = {
 	/* Lattice MachXO3 */
 	{0x012BB043, {"lattice", "MachXO3LF", "LCMX03LF-1300C", 8}},
 	{0x012B2043, {"lattice", "MachXO3LF", "LCMX03LF-1300E", 8}},
-	{0x012BB043, {"lattice", "MachXO3LF", "LCMX03LF-2100C", 8}},
+	{0x612BB043, {"lattice", "MachXO3LF", "LCMX03LF-2100C", 8}},
 	{0x012B3043, {"lattice", "MachXO3LF", "LCMX03LF-2100E", 8}},
 	{0x012BC043, {"lattice", "MachXO3LF", "LCMX03LF-4300C", 8}},
 	{0x012B4043, {"lattice", "MachXO3LF", "LCMX03LF-4300E", 8}},
@@ -207,8 +207,8 @@ static std::map <uint32_t, fpga_model> fpga_list = {
 	{0x010F1043, {"lattice", "CrosslinkNX", "LIFCL-40", 8}},
 
 	/* Lattice Certus-NX */
-	{0x010F0043, {"lattice", "CertusNX", "LFD2NX-17", 8}},
-	{0x010F1043, {"lattice", "CertusNX", "LFD2NX-40", 8}},
+	{0x310F0043, {"lattice", "CertusNX", "LFD2NX-17", 8}},
+	{0x310F1043, {"lattice", "CertusNX", "LFD2NX-40", 8}},
 
 	/**************************************************************************/
 	/*                             Gowin                                      */

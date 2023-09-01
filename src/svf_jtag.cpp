@@ -142,6 +142,8 @@ void SVF_jtag::parse_XYR(vector<string> const &vstr, svf_XYR &t)
 	}
 	if (write_data != -1) {
 		size_t byte_len = (t.len + 7) / 8;
+		if (byte_len == 0)
+			return;
 		unsigned char *write_buffer = parse_hex(t.tdi, byte_len, 0);
 		if (!t.smask.empty()) {
 			unsigned char *smaskbuff = parse_hex(t.smask, byte_len, 0);
@@ -171,6 +173,8 @@ void SVF_jtag::parse_XYR(vector<string> const &vstr, svf_XYR &t)
 						cerr << uppercase << hex << int(read_buffer[j]);
 					}
 					cerr << " isn't the one expected: " << uppercase << t.tdo << endl;
+					delete[] tdobuf;
+					delete[] maskbuf;
 					throw exception();
 				}
 			}

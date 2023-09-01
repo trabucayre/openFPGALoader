@@ -216,6 +216,6 @@ bool ConfigBitstreamParser::decompress_bitstream(string source, string *dest)
 
 	/* clean up and return */
 	(void)inflateEnd(&strm);
-	return ret == Z_STREAM_END;
+	return true;
 #endif
 }

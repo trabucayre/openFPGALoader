@@ -187,8 +187,8 @@ void JedParser::parseEField(const vector<string> &content)
 {
 	_featuresRow = 0;
 	string featuresRow = content[0].substr(1);
-	for (size_t i = 0; i < featuresRow.size(); i++)
-		_featuresRow |= ((featuresRow[i] - '0') << i);
+	for (size_t i = 0; i < featuresRow.size(); ++i)
+		_featuresRow |= (uint64_t(featuresRow[i] - '0') << i);
 	string feabits = content[1];
 	_feabits = 0;
 	for (size_t i = 0; i < feabits.size(); i++) {

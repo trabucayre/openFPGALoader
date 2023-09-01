@@ -95,7 +95,7 @@ CmsisDAP::CmsisDAP(const cable_t &cable, int index, int8_t verbose):_verbose(ver
 	std::vector<struct hid_device_info *> dev_found;
 	_ll_buffer = (unsigned char *)malloc(sizeof(unsigned char) * 65);
 	if (!_ll_buffer)
-		std::runtime_error("internal buffer allocation failed");
+		throw std::runtime_error("internal buffer allocation failed");
 	_buffer = _ll_buffer+2;
 
 	/* only hid support */

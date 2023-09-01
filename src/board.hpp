@@ -160,9 +160,9 @@ static std::map <std::string, target_board_t> board_list = {
 	DFU_BOARD("icebreaker-bitsy", "", "dfu", 0x1d50, 0x6146, 0),
 	JTAG_BOARD("kc705",           "", "digilent", 0, 0, CABLE_DEFAULT),
 	JTAG_BOARD("LD-SCHOKO",       "LFE5U-45F-6CABGA256", "", 0, 0, CABLE_MHZ(6)),
-	DFU_BOARD("LD-SCHOKO",        "", "dfu", 0x16d0, 0x116d, 0),
+	DFU_BOARD("LD-SCHOKO-DFU",        "", "dfu", 0x16d0, 0x116d, 0),
 	JTAG_BOARD("LD-KONFEKT",      "LFE5U-12F-6BG256C", "", 0, 0, CABLE_MHZ(6)),
-	DFU_BOARD("LD-KONFEKT",       "", "dfu", 0x16d0, 0x116d, 0),
+	DFU_BOARD("LD-KONFEKT-DFU",       "", "dfu", 0x16d0, 0x116d, 0),
 	JTAG_BOARD("licheeTang",      "", "anlogicCable", 0, 0, CABLE_DEFAULT),
 	/* left for backward compatibility, use tec0117 instead */
 	JTAG_BOARD("littleBee",       "", "ft2232",     0, 0, CABLE_DEFAULT),

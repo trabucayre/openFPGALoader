@@ -765,11 +765,10 @@ bool Lattice::program_flash(unsigned int offset, bool unprotect_flash)
 	} else if (_file_extension == "pub") {
 		/* clear current SRAM content */
 		clearSRAM();
-		retval = program_pubkey_MachXO3D();
+		program_pubkey_MachXO3D();
 	} else {
 		//  machox2 + bit
 		if (_file_extension == "bit" && _fpga_family == MACHXO2_FAMILY) {
-			retval = true;
 			try {
 				LatticeBitParser _bit(_filename, true, _verbose);
 				_bit.parse();
@@ -1357,23 +1356,24 @@ int Lattice::spi_put(uint8_t cmd, const uint8_t *tx, uint8_t *rx, uint32_t len)
 
 int Lattice::spi_put(const uint8_t *tx, uint8_t *rx, uint32_t len)
 {
-	int xfer_len = len;
-	uint8_t jtx[xfer_len];
-	uint8_t jrx[xfer_len];
+	if (len == 0)
+		return 0;
+	uint8_t jtx[len];
+	uint8_t jrx[len];
 
-	if (tx) {
-		for (uint32_t i=0; i < len; i++)
-			jtx[i] = LatticeBitParser::reverseByte(tx[i]);
+	for (uint32_t i = 0; i < len; ++i) {
+		jtx[i] = (tx) ? LatticeBitParser::reverseByte(tx[i]) : 0;
+		jrx[i] = 0;
 	}
 
 	/* send first already stored cmd,
 	 * in the same time store each byte
 	 * to next
 	 */
-	_jtag->shiftDR(jtx, (rx == NULL)? NULL: jrx, 8*xfer_len);
+	_jtag->shiftDR(jtx, (rx) ? jrx : nullptr, 8 * len);
 
-	if (rx != NULL) {
-		for (uint32_t i=0; i < len; i++)
+	if (rx) {
+		for (uint32_t i = 0; i < len; ++i)
 			rx[i] = LatticeBitParser::reverseByte(jrx[i]);
 	}
 	return 0;
@@ -1383,7 +1383,7 @@ int Lattice::spi_wait(uint8_t cmd, uint8_t mask, uint8_t cond,
 		uint32_t timeout, bool verbose)
 {
 	uint8_t rx;
-	uint8_t dummy[2];
+	uint8_t dummy[2] = {0xff};
 	uint8_t tmp;
 	uint8_t tx = LatticeBitParser::reverseByte(cmd);
 	uint32_t count = 0;
@@ -2045,9 +2045,6 @@ bool Lattice::program_pubkey_MachXO3D()
 				printf("%02x", pubkey[j]);
 			}
 			printf("]\n");
-		}
-
-		if (_verbose) {
 			printf("Trailing bytes: [");
 			for (; i < len; i++) {
 				printf("%02x ", data[i]);

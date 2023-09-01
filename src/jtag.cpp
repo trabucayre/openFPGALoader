@@ -147,6 +147,8 @@ Jtag::Jtag(const cable_t &cable, const jtag_pins_conf_t *pin_conf,
 	}
 
 	_tms_buffer = (unsigned char *)malloc(sizeof(unsigned char) * _tms_buffer_size);
+	if (_tms_buffer == nullptr)
+		throw std::runtime_error("Error: memory allocation failed");
 	memset(_tms_buffer, 0, _tms_buffer_size);
 
 	detectChain(5);
@@ -618,7 +620,7 @@ void Jtag::set_state(tapState_t newState)
 				_state = RUN_TEST_IDLE;
 			} else {
 				tms = 1;
-				_state = SELECT_DR_SCAN;
+				_state = SELECT_IR_SCAN;
 			}
 			break;
 		case UNKNOWN:;

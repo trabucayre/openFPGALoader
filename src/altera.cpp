@@ -54,7 +54,7 @@ Altera::Altera(Jtag *jtag, const std::string &filename,
 					printError("\tplease use rbf or svf file");
 					printError("\tor use --write-flash with: ", false);
 					printError("-b board_name or --fpga_part xxxx");
-					std::runtime_error("Error: wrong file");
+					throw std::runtime_error("Error: wrong file");
 				} else {
 					_mode = Device::SPI_MODE;
 				}
