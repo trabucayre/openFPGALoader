@@ -43,20 +43,37 @@ enum CH347JtagSig {
 	SIG_TMS =      0b10,
 	SIG_TDI =   0b10000,
 };
+
 static void LIBUSB_CALL sync_cb(struct libusb_transfer *transfer) {
 	int *complete = (int *)transfer->user_data;
 	*complete = true;
 }
 
-int CH347Jtag::usb_xfer(unsigned wlen, unsigned rlen, unsigned *ract) {
-	wcomplete = 0;
+// defer should only be used with rlen == 0
+
+int CH347Jtag::usb_xfer(unsigned wlen, unsigned rlen, unsigned *ract, bool defer) {
 	if (_verbose) {
+		fprintf(stderr, "obuf - _obuf = %ld\n", obuf - _obuf);
 		fprintf(stderr, "obuf[%d] = {", wlen);
 		for (unsigned i = 0; i < wlen; ++i) {
 			fprintf(stderr, "%02x ", obuf[i]);
 		}
 		fprintf(stderr, "}\n\n");
 	}
+	
+	if (defer) {
+		obuf += wlen;
+		return 0;
+	}
+	// write out whole buffer
+	wlen += obuf - _obuf;
+	obuf = _obuf;
+
+	if (wlen == 0) {
+		return 0;
+	}
+	
+	int wcomplete = 0, rcomplete = 0;
 	libusb_fill_bulk_transfer(wtrans, dev_handle, CH347JTAG_WRITE_EP, obuf,
 		wlen, sync_cb, &wcomplete, CH347JTAG_TIMEOUT);
 	int r = libusb_submit_transfer(wtrans);
@@ -131,12 +148,14 @@ wait_rcompletion:
 }
 
 int CH347Jtag::setClk(const uint8_t &factor) {
+	// flush the obuf
+	usb_xfer(0, 0, 0, false); // is called from constructor, don't replace with virtual flush()
 	memset(obuf, 0, 16);
 	obuf[0] = CMD_CLK;
 	obuf[1] = 6;
 	obuf[4] = factor;
 	unsigned actual = 0;
-	int rv = usb_xfer(9, 4, &actual);
+	int rv = usb_xfer(9, 4, &actual, false);
 	if (rv || actual != 4)
 		return -1;
 	if (ibuf[0] != 0xd0 || ibuf[3] != 0)
@@ -145,7 +164,7 @@ int CH347Jtag::setClk(const uint8_t &factor) {
 }
 
 CH347Jtag::CH347Jtag(uint32_t clkHZ, int8_t verbose):
-	_verbose(verbose>1), dev_handle(NULL), usb_ctx(NULL)
+      _verbose(verbose>1), dev_handle(NULL), usb_ctx(NULL), obuf(_obuf)
 {
 	int actual_length = 0;
 	struct libusb_device_descriptor desc;
@@ -223,17 +242,12 @@ CH347Jtag::~CH347Jtag()
 
 int CH347Jtag::_setClkFreq(uint32_t clkHZ)
 {
-	unsigned i = 0, sl = 2000000;
-	if (clkHZ <= 2000000) {
-		_clkHZ = 2000000;
-		i = 0;
-	} else {
-		for (; i < 5; ++i, sl *= 2) {
-			if (clkHZ < sl) break;
-			_clkHZ = sl;
-		}
-		i--;
+	unsigned i = 0, sl = 1800000;
+	for (; i < 6; ++i, sl *= 2) {
+		if (clkHZ < sl)
+			break;
 	}
+	_clkHZ = sl;
 	if (setClk(i)) {
 		printError("failed to set clock rate");
 		return 0;
@@ -246,24 +260,25 @@ int CH347Jtag::_setClkFreq(uint32_t clkHZ)
 
 int CH347Jtag::writeTMS(const uint8_t *tms, uint32_t len, bool flush_buffer)
 {
-	(void) flush_buffer;
-
+	if (get_obuf_length() < (int)(len * 2 + 4)) { // check if there is enough room left
+		flush();
+	}
 	uint8_t *ptr = obuf;
 	for (uint32_t i = 0; i < len; ++i) {
 		if (ptr == obuf) {
 			*ptr++ = CMD_BITS_WO;
 			ptr += 2;  // leave place for length;
 		}
-		uint8_t x = /*SIG_TDI |*/ ((tms[i >> 3] & (1 << (i & 7))) ? SIG_TMS : 0);
+		uint8_t x = ((tms[i >> 3] & (1 << (i & 7))) ? SIG_TMS : 0);
 		*ptr++ = x;
 		*ptr++ = x | SIG_TCK;
-		unsigned wlen = ptr - obuf;
-		if (wlen > sizeof(obuf) - 3 || i == len - 1) {
+		int wlen = ptr - obuf;
+		if (wlen + 1 >= get_obuf_length() || i == len - 1) {
 			*ptr++ = x;  // clear TCK
-			++wlen;
+			wlen = ptr - obuf;
 			obuf[1] = wlen - 3;
 			obuf[2] = (wlen - 3) >> 8;
-			int ret = usb_xfer(wlen, 0, 0);
+			int ret = usb_xfer(wlen, 0, 0, !flush_buffer);
 			if (ret < 0) {
 				cerr << "writeTMS: usb bulk write failed: " <<
 					libusb_strerror(static_cast<libusb_error>(ret)) << endl;
@@ -280,6 +295,13 @@ int CH347Jtag::toggleClk(uint8_t tms, uint8_t tdi, uint32_t len)
 	uint8_t bits = 0;
 	if (tms) bits |= SIG_TMS;
 	if (tdi) bits |= SIG_TDI;
+	if (!bits && len > 7) {
+		return writeTDI(0, 0, len, false);
+	}
+	
+	if (get_obuf_length() < (int)(len * 2 + 4)) {
+		flush();
+	}
 
 	uint8_t *ptr = obuf;
 	for (uint32_t i = 0; i < len; ++i) {
@@ -289,13 +311,13 @@ int CH347Jtag::toggleClk(uint8_t tms, uint8_t tdi, uint32_t len)
 		}
 		*ptr++ = bits;
 		*ptr++ = bits | SIG_TCK;
-		unsigned wlen = ptr - obuf;
-		if (wlen > sizeof(obuf) - 3 || i == len - 1) {
+		int wlen = ptr - obuf;
+		if (wlen + 1 >= get_obuf_length() || i == len - 1) {
 			*ptr++ = bits;  // clear TCK
-			++wlen;
+			wlen = ptr - obuf;
 			obuf[1] = wlen - 3;
 			obuf[2] = (wlen - 3) >> 8;
-			int ret = usb_xfer(wlen, 0, 0);
+			int ret = usb_xfer(wlen, 0, 0, true);
 			if (ret < 0) {
 				cerr << "writeCLK: usb bulk write failed: " <<
 					libusb_strerror(static_cast<libusb_error>(ret)) << endl;
@@ -309,25 +331,32 @@ int CH347Jtag::toggleClk(uint8_t tms, uint8_t tdi, uint32_t len)
 
 int CH347Jtag::writeTDI(const uint8_t *tx, uint8_t *rx, uint32_t len, bool end)
 {
-	if (!tx || !len)
+	if (len == 0)
 		return 0;
-	unsigned bytes = (len - ((end)?1:0)) / 8;
+	unsigned bytes = (len - (end ? 1 : 0)) / 8;
 	unsigned bits = len - bytes * 8;
 	uint8_t *rptr = rx;
 	const uint8_t *tptr = tx;
 	const uint8_t *txend = tx + bytes;
-	uint8_t cmd = (rx) ? CMD_BYTES_WR : CMD_BYTES_WO;
+	uint8_t cmd = (rx != nullptr) ? CMD_BYTES_WR : CMD_BYTES_WO;
 	while (tptr < txend) {
-		unsigned avail = sizeof(obuf) - 3;
-		unsigned chunk = (txend - tptr < avail)? txend - tptr: avail;
-		memcpy(&obuf[3], tptr, chunk);
+		if (get_obuf_length() < 4) {
+			flush();
+		}
+		int avail = get_obuf_length() - 3;
+		int chunk = (txend - tptr < avail)? txend - tptr: avail;
+		if (tx) {
+			memcpy(&obuf[3], tptr, chunk);
+		} else {
+			memset(&obuf[3], 0, chunk);
+		}
 		tptr += chunk;
 		// write header
 		obuf[0] = cmd;
 		obuf[1] = chunk;
 		obuf[2] = chunk >> 8;
 		unsigned actual_length = 0;
-		int ret = usb_xfer(chunk + 3, (rx) ? chunk + 3 : 0, &actual_length);
+		int ret = usb_xfer(chunk + 3, (rx) ? chunk + 3 : 0, &actual_length, rx == 0 && get_obuf_length());
 		if (ret < 0) {
 			cerr << "writeTDI: usb bulk read failed: " <<
 				libusb_strerror(static_cast<libusb_error>(ret)) << endl;
@@ -347,11 +376,14 @@ int CH347Jtag::writeTDI(const uint8_t *tx, uint8_t *rx, uint32_t len, bool end)
 	if (bits == 0)
 		return EXIT_SUCCESS;
 	cmd = (rx) ? CMD_BITS_WR : CMD_BITS_WO;
+	if (get_obuf_length() < (int)(4 + bits * 2)) {
+		flush();
+	}
 	uint8_t *ptr = &obuf[3];
 	uint8_t x = 0;
-	const uint8_t *bptr = &tx[bytes];
+	const uint8_t *bptr = tx + bytes;
 	for (unsigned i = 0; i < bits; ++i) {
-		uint8_t txb = bptr[i >> 3];
+		uint8_t txb = (tx) ? bptr[i >> 3] : 0;
 		uint8_t _tdi = (txb & (1 << (i & 7))) ? SIG_TDI : 0;
 		x = _tdi;
 		if (end && i == bits - 1) {
@@ -365,7 +397,7 @@ int CH347Jtag::writeTDI(const uint8_t *tx, uint8_t *rx, uint32_t len, bool end)
 	obuf[0] = cmd;
 	obuf[1] = wlen - 3;
 	obuf[2] = (wlen - 3) >> 8;
-	int ret = usb_xfer(wlen, (rx) ? (bits + 3) : 0, &actual_length);
+	int ret = usb_xfer(wlen, (rx) ? (bits + 3) : 0, &actual_length, rx == nullptr);
 
 	if (ret < 0) {
 		cerr << "writeTDI: usb bulk read failed: " <<
@@ -381,9 +413,9 @@ int CH347Jtag::writeTDI(const uint8_t *tx, uint8_t *rx, uint32_t len, bool end)
 		cerr << "writeTDI: invalid read data: " << endl;
 		return -EXIT_FAILURE;
 	}
-	for (unsigned i = 0; i < size / 16; ++i) {
+	for (unsigned i = 0; i < size / 8; ++i) {
 		uint8_t b = 0;
-		uint8_t *xb = &ibuf[3 + i * 16 + 1];
+		uint8_t *xb = &ibuf[3 + i * 8];
 		for (unsigned j = 0; j < 8; ++j)
 			b |= (xb[j] & 1) << j;
 		*rptr++ = b;
