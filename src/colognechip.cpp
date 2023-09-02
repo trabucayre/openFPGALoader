@@ -6,6 +6,8 @@
 
 #include "colognechip.hpp"
 
+#include <memory>
+
 #define JTAG_CONFIGURE  0x06
 #define JTAG_SPI_BYPASS 0x05
 #define SLEEP_US 500
@@ -125,7 +127,7 @@ bool CologneChip::dumpFlash(uint32_t base_addr, uint32_t len)
 	if (_spi) {
 		/* enable output and hold reset */
 		_spi->gpio_clear(_rstn_pin | _oen_pin);
-	} else {
+	} else if (_ftdi_jtag) {
 		/* enable output and disable reset */
 		_ftdi_jtag->gpio_clear(_oen_pin);
 		_ftdi_jtag->gpio_set(_rstn_pin);
@@ -134,13 +136,9 @@ bool CologneChip::dumpFlash(uint32_t base_addr, uint32_t len)
 	/* prepare SPI access */
 	printInfo("Read Flash ", false);
 	try {
-		SPIFlash *flash;
-		if (_spi) {
-			flash = new SPIFlash(reinterpret_cast<SPIInterface *>(_spi), false,
-					_verbose);
-		} else {
-			flash = new SPIFlash(this, false, _verbose);
-		}
+		std::unique_ptr<SPIFlash> flash(_spi ?
+				new SPIFlash(reinterpret_cast<SPIInterface *>(_spi), false, _verbose):
+				new SPIFlash(this, false, _verbose));
 		flash->reset();
 		flash->power_up();
 		flash->dump(_filename, base_addr, len);
@@ -172,14 +170,14 @@ void CologneChip::program(unsigned int offset, bool unprotect_flash)
 	if (_mode == Device::NONE_MODE || _mode == Device::READ_MODE)
 		return;
 
-	ConfigBitstreamParser *cfg;
+	std::unique_ptr<ConfigBitstreamParser> cfg;
 	if (_file_extension == "cfg") {
-		cfg = new CologneChipCfgParser(_filename);
+		cfg.reset(new CologneChipCfgParser(_filename));
 	} else if (_file_extension == "bit") {
-		cfg = new RawParser(_filename, false);
+		cfg.reset(new RawParser(_filename, false));
 	} else { /* unknown type: */
 		if (_mode == Device::FLASH_MODE) {
-			cfg = new RawParser(_filename, false);
+			cfg.reset(new RawParser(_filename, false));
 		} else {
 			throw std::runtime_error("incompatible file format");
 		}
@@ -192,18 +190,16 @@ void CologneChip::program(unsigned int offset, bool unprotect_flash)
 
 	switch (_mode) {
 		case Device::FLASH_MODE:
-			if (_jtag != NULL) {
+			if (_jtag != NULL)
 				programJTAG_flash(offset, data, length, unprotect_flash);
-			} else if (_jtag == NULL) {
+			else
 				programSPI_flash(offset, data, length, unprotect_flash);
-			}
 			break;
 		case Device::MEM_MODE:
-			if (_jtag != NULL) {
+			if (_jtag != NULL)
 				programJTAG_sram(data, length);
-			} else if (_jtag == NULL) {
+			else
 				programSPI_sram(data, length);
-			}
 			break;
 		default: /* avoid warning */
 			break;
@@ -389,7 +385,7 @@ int CologneChip::spi_wait(uint8_t cmd, uint8_t mask, uint8_t cond,
 						  uint32_t timeout, bool verbose)
 {
 	uint8_t rx[2];
-	uint8_t dummy[2];
+	uint8_t dummy[2] = {0xff};
 	uint8_t tmp;
 	uint8_t tx = ConfigBitstreamParser::reverseByte(cmd);
 	uint32_t count = 0;

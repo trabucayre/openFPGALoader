@@ -561,7 +561,7 @@ int DFU::dfu_detach()
 
 int DFU::get_status(struct dfu_status *status)
 {
-	uint8_t buffer[6];
+	uint8_t buffer[6] = {0};
 	int res;
 
 	res = send(false, DFU_GETSTATUS, 0, buffer, 6);
@@ -586,7 +586,7 @@ int DFU::get_status(struct dfu_status *status)
  */
 char DFU::get_state()
 {
-	char c;
+	char c = 0;
 
 	int res = send(false, DFU_GETSTATE, 0, (unsigned char *)&c, 1);
 

@@ -10,6 +10,7 @@
 #include <stdexcept>
 #include <string>
 #include <vector>
+#include <memory>
 
 #include "jtag.hpp"
 #include "bitparser.hpp"
@@ -371,10 +372,11 @@ void Xilinx::program(unsigned int offset, bool unprotect_flash)
 		return;
 
 	if (_mode == Device::FLASH_MODE && _file_extension == "jed") {
-		JedParser *jed;
+		if (_fpga_family != XC95_FAMILY && _fpga_family != XC2C_FAMILY)
+			throw std::runtime_error("Error: jed only supported for xc95 and xc2c");
 		printInfo("Open file ", false);
-
-		jed = new JedParser(_filename, _verbose);
+		
+		std::unique_ptr<JedParser> jed(new JedParser(_filename, _verbose));
 		if (jed->parse() == EXIT_FAILURE) {
 			printError("FAIL");
 			return;
@@ -382,11 +384,9 @@ void Xilinx::program(unsigned int offset, bool unprotect_flash)
 		printSuccess("DONE");
 
 		if (_fpga_family == XC95_FAMILY)
-			flow_program(jed);
+			flow_program(jed.get());
 		else if (_fpga_family == XC2C_FAMILY)
-			xc2c_flow_program(jed);
-		else
-			throw std::runtime_error("Error: jed only supported for xc95 and xc2c");
+			xc2c_flow_program(jed.get());
 		return;
 	}
 
@@ -974,7 +974,7 @@ std::string Xilinx::flow_read()
 	std::string buffer;
 	uint8_t wr_buf[16+2];  // largest section length
 	uint8_t rd_buf[16+2];
-	memset(wr_buf, 0xff, 16);
+	memset(wr_buf, 0xff, sizeof(wr_buf));
 
 	/* limit JTAG clock frequency to 1MHz */
 	if (_jtag->getClkFreq() > 1e6)
@@ -1433,7 +1433,6 @@ std::string Xilinx::xc2c_flow_read()
 
 bool Xilinx::xc2c_flow_program(JedParser *jed)
 {
-	uint8_t wr_buf[249];  // largest section length
 	uint32_t delay_loop = (_jtag->getClkFreq() * 20) / 1000;
 	uint8_t shift_addr = 8 - _cpld_addr_size;
 
@@ -1472,6 +1471,7 @@ bool Xilinx::xc2c_flow_program(JedParser *jed)
 	for (auto row : listfuse) {
 		uint16_t pos = 0;
 		uint8_t addr = _gray_code[iter] >> shift_addr;
+		uint8_t wr_buf[249] = {0};  // largest section length
 		for (auto col : row) {
 			if (col)
 				wr_buf[pos >> 3] |= (1 << (pos & 0x07));
@@ -1577,7 +1577,7 @@ int Xilinx::spi_wait(uint8_t cmd, uint8_t mask, uint8_t cond,
 			uint32_t timeout, bool verbose)
 {
 	uint8_t rx[2];
-	uint8_t dummy[2];
+	uint8_t dummy[2] = {0xff};
 	uint8_t tmp;
 	uint8_t tx = McsParser::reverseByte(cmd);
 	uint32_t count = 0;

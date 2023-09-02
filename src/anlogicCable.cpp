@@ -93,7 +93,6 @@ int AnlogicCable::setClkFreq(uint32_t clkHZ)
 
 	if (clkHZ > 6000000) {
 		printWarn("Anlogic JTAG probe limited to 6MHz");
-		clkHZ = 6000000;
 	}
 
 	if (clkHZ >= 6000000) {
