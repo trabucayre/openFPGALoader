@@ -79,7 +79,8 @@ Jtag::Jtag(const cable_t &cable, const jtag_pins_conf_t *pin_conf,
 			const bool invert_read_edge, const string &firmware_path):
 			_verbose(verbose > 1),
 			_state(UNKNOWN),
-			_board_name("nope"), device_index(0)
+			_board_name("nope"), device_index(0),
+			_txff(nullptr)
 {
 	switch (cable.type) {
 	case MODE_ANLOGICCABLE:
@@ -260,7 +261,7 @@ int Jtag::detectChain(int max_dev)
 	/* cleanup */
 	_devices_list.clear();
 	_irlength_list.clear();
-
+	_ir_bits_before = _ir_bits_after = _dr_bits_before = _dr_bits_after = 0;
 	go_test_logic_reset();
 	set_state(SHIFT_DR);
 
@@ -337,11 +338,48 @@ bool Jtag::insert_first(uint32_t device_id, uint16_t irlength)
 	return true;
 }
 
-uint16_t Jtag::device_select(uint16_t index)
+int Jtag::device_select(unsigned index)
 {
-	if (index > (uint16_t) _devices_list.size())
+	if (index > _devices_list.size())
 		return -1;
 	device_index = index;
+	/* get number of devices, in the JTAG chain,
+	 * before the selected one
+	 */
+	_dr_bits_before = _devices_list.size() - device_index - 1;
+	/* get number of devices in the JTAG chain
+	 * after the selected one
+	 */
+	_dr_bits_after = device_index;
+	unsigned max_bits = std::max(_dr_bits_after, _dr_bits_before);
+	/* when the device is not alone and not
+	 * the first a serie of bypass must be
+	 * send to complete send ir sequence
+	 */
+	_ir_bits_after = 0;
+	for (int i = 0; i < device_index; ++i)
+		_ir_bits_after += _irlength_list[i];
+
+	max_bits = std::max(_ir_bits_after, max_bits);
+
+	/* send serie of bypass instructions
+	 * final size depends on number of device
+	 * before targeted and irlength of each one
+	 */
+	_ir_bits_before = 0;
+	for (unsigned i = device_index + 1; i < _devices_list.size(); ++i)
+		_ir_bits_before += _irlength_list[i];
+	max_bits = std::max(_ir_bits_before, max_bits);
+
+	if (_txff) delete[] _txff;
+
+	_txff = nullptr;
+
+	unsigned size = (max_bits + 7) / 8;
+	if (size) {
+		_txff = new uint8_t[size];
+		memset(_txff, 0xff, sizeof(size));
+	}
 	return device_index;
 }
 
@@ -372,30 +410,14 @@ void Jtag::toggleClk(int nb)
 
 int Jtag::shiftDR(const uint8_t *tdi, unsigned char *tdo, int drlen, tapState_t end_state)
 {
-	/* get number of devices in the JTAG chain
-	 * after the selected one
-	 */
-	int bits_after = device_index;
-
 	/* if current state not shift DR
 	 * move to this state
 	 */
 	if (_state != SHIFT_DR) {
 		set_state(SHIFT_DR);
 
-		/* get number of devices, in the JTAG chain,
-		 * before the selected one
-		 */
-		int bits_before = _devices_list.size() - device_index - 1;
-
-		/* if not 0 send enough bits
-		 */
-		if (bits_before > 0) {
-			int n = (bits_before + 7) / 8;
-			uint8_t tx[n];
-			memset(tx, 0xff, n);
-			read_write(tx, NULL, bits_before, 0);
-		}
+		if (_dr_bits_before)
+			read_write(_txff, NULL, _dr_bits_before, false);
 	}
 
 	/* write tdi (and read tdo) to the selected device
@@ -403,18 +425,15 @@ int Jtag::shiftDR(const uint8_t *tdi, unsigned char *tdo, int drlen, tapState_t 
 	 * is the last of the chain and a state change must
 	 * be done
 	 */
-	read_write(tdi, tdo, drlen, bits_after == 0 && end_state != SHIFT_DR);
+	read_write(tdi, tdo, drlen, _dr_bits_after == 0 && end_state != SHIFT_DR);
 
 	/* if it's asked to move in FSM */
 	if (end_state != SHIFT_DR) {
 		/* if current device is not the last */
-		if (bits_after > 0) {
-			int n = (bits_after + 7) / 8;
-			uint8_t tx[n];
-			memset(tx, 0xff, n);
-			read_write(tx, NULL, bits_after, 1);  // its the last force
-												  // tms high with last bit
-		}
+		if (_dr_bits_after)
+			read_write(_txff, NULL, _dr_bits_after, true);  // its the last force
+								   // tms high with last bit
+
 
 		/* move to end_state */
 		set_state(end_state);
@@ -434,35 +453,12 @@ int Jtag::shiftIR(unsigned char tdi, int irlen, tapState_t end_state)
 int Jtag::shiftIR(unsigned char *tdi, unsigned char *tdo, int irlen, tapState_t end_state)
 {
 	display("%s: avant shiftIR\n", __func__);
-	int bypass_after = 0;
-	if (end_state != SHIFT_IR) {
-		/* when the device is not alone and not
-		 * the first a serie of bypass must be
-		 * send to complete send ir sequence
-		 */
-		for (int i = 0; i < device_index; i++)
-			bypass_after += _irlength_list[i];
-	}
 
 	/* if not in SHIFT IR move to this state */
 	if (_state != SHIFT_IR) {
 		set_state(SHIFT_IR);
-
-		/* send serie of bypass instructions
-		 * final size depends on number of device
-		 * before targeted and irlength of each one
-		 */
-		int bypass_before = 0;
-		for (unsigned int i = device_index + 1; i < _devices_list.size(); i++)
-			bypass_before += _irlength_list[i];
-
-		/* if > 0 send bits */
-		if (bypass_before > 0) {
-			int n = (bypass_before + 7) / 8;
-			uint8_t tx[n];
-			memset(tx, 0xff, n);
-			read_write(tx, NULL, bypass_before, 0);
-		}
+		if (_ir_bits_before)
+			read_write(_txff, NULL, _ir_bits_before, false);
 	}
 
 	display("%s: envoi ircode\n", __func__);
@@ -472,17 +468,13 @@ int Jtag::shiftIR(unsigned char *tdi, unsigned char *tdo, int irlen, tapState_t 
 	 * is the last of the chain and a state change must
 	 * be done
 	 */
-	read_write(tdi, tdo, irlen, bypass_after == 0 && end_state != SHIFT_IR);
+	read_write(tdi, tdo, irlen, _ir_bits_after == 0 && end_state != SHIFT_IR);
 
 	/* it's asked to move out of SHIFT IR state */
 	if (end_state != SHIFT_IR) {
 		/* again if devices after fill '1' */
-		if (bypass_after > 0) {
-			int n = (bypass_after + 7) / 8;
-			uint8_t tx[n];
-			memset(tx, 0xff, n);
-			read_write(tx, NULL, bypass_after, 1);
-		}
+		if (_ir_bits_after > 0)
+			read_write(_txff, NULL, _ir_bits_after, true);
 		/* move to the requested state */
 		set_state(end_state);
 	}

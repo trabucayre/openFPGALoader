@@ -53,7 +53,7 @@ class Jtag {
 	 * \param[in] index: index in the chain
 	 * \return -1 if index is out of bound, index otherwise
 	 */
-	uint16_t device_select(uint16_t index);
+	int device_select(unsigned index);
 	/*!
 	 * \brief inject a device into list at the begin
 	 * \param[in] device_id: idcode
@@ -120,6 +120,12 @@ class Jtag {
 	std::string _board_name;
 
 	int device_index; /*!< index for targeted FPGA */
+	// Assume passive devices in JTAG chain are switched to BYPASS mode,
+	// thus each device requeres 1 bit during SHIFT-DR
+	unsigned _dr_bits_before, _dr_bits_after;
+	// For the above we need for add BYPASS commands for each passive device
+	unsigned _ir_bits_before, _ir_bits_after;
+	uint8_t *_txff;
 	std::vector<int32_t> _devices_list; /*!< ordered list of devices idcode */
 	std::vector<int16_t> _irlength_list; /*!< ordered list of irlength */
 
