@@ -620,7 +620,7 @@ void Jtag::set_state(tapState_t newState)
 				_state = RUN_TEST_IDLE;
 			} else {
 				tms = 1;
-				_state = SELECT_IR_SCAN;
+				_state = SELECT_DR_SCAN;
 			}
 			break;
 		case UNKNOWN:;
