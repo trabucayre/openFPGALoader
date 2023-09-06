@@ -251,6 +251,8 @@ static std::map <uint32_t, misc_device> misc_dev_list = {
 	{0x4ba00477, {"ARM cortex A9",         4}},
 	{0x5ba00477, {"ARM cortex A53",        4}},
 	{0xfffffffe, {"ZynqMP dummy device",   12}},
+	{0x1000563d, {"GD32VF103", 5}},
+	{0x790007a3, {"GD32VF103", 5}},
 };
 
 /* list of JTAG manufacturer ID */
