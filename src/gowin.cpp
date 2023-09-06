@@ -480,6 +480,7 @@ inline uint32_t bswap_32(uint32_t x)
 /* TN653 p. 17-21 */
 bool Gowin::writeFLASH(uint32_t page, const uint8_t *data, int length)
 {
+	printInfo("Write FLASH ", false);
 	uint8_t xpage[256];
 	length /= 8;
 	for (int off = 0; off < length; off += 256) {
@@ -527,7 +528,7 @@ bool Gowin::writeFLASH(uint32_t page, const uint8_t *data, int length)
 		displayReadReg(readStatusReg());
 	_jtag->flush();
 	sleep(1);
-
+	printSuccess("Done");
 	return true;
 }
 
@@ -540,6 +541,7 @@ bool Gowin::connectJtagToMCU()
 /* TN653 p. 9 */
 bool Gowin::writeSRAM(const uint8_t *data, int length)
 {
+	printInfo("Write SRAM ", false);
 	send_command(CONFIG_ENABLE); // config enable
 	send_command(INIT_ADDR); // address initialize
 	send_command(XFER_WRITE); // transfer configuration data
@@ -548,11 +550,13 @@ bool Gowin::writeSRAM(const uint8_t *data, int length)
 	send_command(NOOP); // noop
 	_jtag->flush();
 	sleep(1);
-
-	if (readStatusReg() & STATUS_DONE_FINAL)
+	if (readStatusReg() & STATUS_DONE_FINAL) {
+		printSuccess("Done");
 		return true;
-	else
+	} else {
+		printSuccess("Fail");
 		return false;
+	}
 }
 
 /* Erase SRAM:
