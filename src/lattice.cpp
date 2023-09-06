@@ -1361,10 +1361,13 @@ int Lattice::spi_put(const uint8_t *tx, uint8_t *rx, uint32_t len)
 	uint8_t jtx[len];
 	uint8_t jrx[len];
 
-	for (uint32_t i = 0; i < len; ++i) {
-		jtx[i] = (tx) ? LatticeBitParser::reverseByte(tx[i]) : 0;
-		jrx[i] = 0;
-	}
+	memset(jrx, 0, len);
+
+	if (tx)
+		for (uint32_t i = 0; i < len; ++i)
+			jtx[i] = LatticeBitParser::reverseByte(tx[i]);
+	else
+		memset(jtx, 0, len);
 
 	/* send first already stored cmd,
 	 * in the same time store each byte
