@@ -403,6 +403,7 @@ Jtag::tapState_t XVC_server::set_state(const uint8_t *tms_seq, uint32_t len)
 				_state = (tms) ? Jtag::UPDATE_DR : Jtag::SHIFT_DR;
 				break;
 			case Jtag::UPDATE_DR:
+			case Jtag::UPDATE_IR:
 				_state = (tms) ? Jtag::SELECT_DR_SCAN : Jtag::RUN_TEST_IDLE;
 				break;
 
@@ -423,9 +424,6 @@ Jtag::tapState_t XVC_server::set_state(const uint8_t *tms_seq, uint32_t len)
 				break;
 			case Jtag::EXIT2_IR:
 				_state = (tms) ? Jtag::UPDATE_IR : Jtag::SHIFT_IR;
-				break;
-			case Jtag::UPDATE_IR:
-				_state = (tms) ? Jtag::SELECT_DR_SCAN : Jtag::RUN_TEST_IDLE;
 				break;
 			default:
 				/* pass */

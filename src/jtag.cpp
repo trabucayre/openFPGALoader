@@ -555,6 +555,7 @@ void Jtag::set_state(tapState_t newState)
 			}
 			break;
 		case UPDATE_DR:
+		case UPDATE_IR:
 			if (newState == RUN_TEST_IDLE) {
 				tms = 0;
 				_state = RUN_TEST_IDLE;
@@ -614,15 +615,6 @@ void Jtag::set_state(tapState_t newState)
 			default:
 				tms = 1;
 				_state = UPDATE_IR;
-			}
-			break;
-		case UPDATE_IR:
-			if (newState == RUN_TEST_IDLE) {
-				tms = 0;
-				_state = RUN_TEST_IDLE;
-			} else {
-				tms = 1;
-				_state = SELECT_DR_SCAN;
 			}
 			break;
 		case UNKNOWN:;
