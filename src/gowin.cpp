@@ -1076,7 +1076,6 @@ int Gowin::spi_put_gw5a(const uint8_t cmd, const uint8_t *tx, uint8_t *rx,
 		// set TMS/CS high by moving to a state where TMS == 1
 		_jtag->set_state(Jtag::TEST_LOGIC_RESET, curr_tdi);
 		_jtag->toggleClk(5);  // Required ?
-		_jtag->flushTMS(true);
 		if (rx) {  // Reconstruct read sequence and drop first 3bits.
 			for (uint32_t i = 0; i < len; i++)
 				rx[i] = FsParser::reverseByte((jrx[i] >> 3) |
@@ -1148,7 +1147,6 @@ bool Gowin::gw5a_disable_spi()
 	 */
 	_jtag->setWriteEdge(_prev_wr_edge);
 	_jtag->setReadEdge(_prev_rd_edge);
-	_jtag->flushTMS(true);
 	_jtag->flush();
 	// 1. sent 15 TMS pulse
 	// TEST_LOGIC_RESET to SELECT_DR_SCAN: 01
@@ -1167,7 +1165,6 @@ bool Gowin::gw5a_disable_spi()
 	_jtag->set_state(Jtag::EXIT1_DR);  // 01 : 16
 	_jtag->set_state(Jtag::PAUSE_DR);  // 0
 
-	_jtag->flushTMS(true);
 	_jtag->flush();
 	// 2. 8 TCK clock cycle with TMS=1
 	_jtag->set_state(Jtag::TEST_LOGIC_RESET);  // 5 cycles
