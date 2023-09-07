@@ -78,8 +78,7 @@ Jtag::Jtag(const cable_t &cable, const jtag_pins_conf_t *pin_conf,
 			const string &ip_adr, int port,
 			const bool invert_read_edge, const string &firmware_path):
 			_verbose(verbose > 1),
-			_state(RUN_TEST_IDLE),
-			_tms_buffer_size(128), _num_tms(0),
+			_state(UNKNOWN),
 			_board_name("nope"), device_index(0)
 {
 	switch (cable.type) {
@@ -145,20 +144,111 @@ Jtag::Jtag(const cable_t &cable, const jtag_pins_conf_t *pin_conf,
 		std::cerr << "Jtag: unknown cable type" << std::endl;
 		throw std::exception();
 	}
-
-	_tms_buffer = (unsigned char *)malloc(sizeof(unsigned char) * _tms_buffer_size);
-	if (_tms_buffer == nullptr)
-		throw std::runtime_error("Error: memory allocation failed");
-	memset(_tms_buffer, 0, _tms_buffer_size);
+	
+	create_paths();
 
 	detectChain(5);
 }
 
 Jtag::~Jtag()
 {
-	free(_tms_buffer);
 	delete _jtag;
 }
+
+constexpr static Jtag::tapState_t edges[16][2] = {
+    {Jtag::RUN_TEST_IDLE, Jtag::TEST_LOGIC_RESET}, // TEST_LOGIC_RESET
+    {Jtag::RUN_TEST_IDLE, Jtag::SELECT_DR_SCAN}, // RUN_TEST_IDLE
+    
+    {Jtag::CAPTURE_DR, Jtag::SELECT_IR_SCAN}, // SELECT_DR_SCAN
+    {Jtag::SHIFT_DR, Jtag::EXIT1_DR}, // CAPTURE_DR
+    {Jtag::SHIFT_DR, Jtag::EXIT1_DR}, // SHIFT_DR
+    {Jtag::PAUSE_DR, Jtag::UPDATE_DR}, // EXIT1_DR
+    {Jtag::PAUSE_DR, Jtag::EXIT2_DR}, // PAUSE_DR
+    {Jtag::SHIFT_DR, Jtag::UPDATE_DR}, // EXIT2_DR
+    {Jtag::RUN_TEST_IDLE, Jtag::SELECT_DR_SCAN}, // UPDATE_DR
+    
+    {Jtag::CAPTURE_IR, Jtag::TEST_LOGIC_RESET}, // SELECT_IR_SCAN
+    {Jtag::SHIFT_IR, Jtag::EXIT1_IR}, // CAPTURE_IR
+    {Jtag::SHIFT_IR, Jtag::EXIT1_IR}, // SHIFT_IR
+    {Jtag::PAUSE_IR, Jtag::UPDATE_IR}, // EXIT1_IR
+    {Jtag::PAUSE_IR, Jtag::EXIT2_IR}, // PAUSE_IR
+    {Jtag::SHIFT_IR, Jtag::UPDATE_IR}, // EXIT2_IR
+    {Jtag::RUN_TEST_IDLE, Jtag::SELECT_DR_SCAN}, // UPDATE_IR, same as UPDATE_DR
+};
+
+void Jtag::dive(unsigned origin, unsigned prev, const Path &p) {
+	for (unsigned i = 0; i < 2; ++i) {
+		unsigned x = edges[prev][i];
+		if (paths[origin][x].len <= p.len) continue;
+		Path pn;
+		pn.len = p.len + 1;
+		pn.tms_bits = p.tms_bits | i << p.len;
+		
+		paths[origin][x] = pn;
+		dive(origin, x, pn);
+	}
+}
+
+constexpr static const char *getStateName[16] = {
+    "TEST_LOGIC_RESET",
+    "RUN_TEST_IDLE",
+    "SELECT_DR_SCAN",
+    "CAPTURE_DR",
+    "SHIFT_DR",
+    "EXIT1_DR",
+    "PAUSE_DR",
+    "EXIT2_DR",
+    "UPDATE_DR",
+    "SELECT_IR_SCAN",
+    "CAPTURE_IR",
+    "SHIFT_IR",
+    "EXIT1_IR",
+    "PAUSE_IR",
+    "EXIT2_IR",
+    "UPDATE_IR",
+};
+
+void Jtag::print_path(tapState_t from, tapState_t to) {
+	uint8_t path = paths[from][to].tms_bits;
+	printf ("Start: %s[%d]\n", getStateName[from], from);
+	tapState_t x = from;
+	for (unsigned i = 0; i < paths[from][to].len; ++i) {
+		unsigned step = path & 1;
+		path >>= 1;
+		x = edges[x][step];
+		printf("\t%d:TMS=%d: -> %s[%d]\n", i + 1, step, getStateName[x], x);
+	}
+	printf("Should arrive at %s[%d]\n", getStateName[x], x);
+}
+
+void Jtag::create_paths() {
+	uint8_t max_len = 0;
+	for (unsigned i = 0; i < 16; ++i) {
+		for (unsigned j = 0; j < 16; ++j) {
+			paths[i][j].len = 0xff;
+			paths[i][j].tms_bits = 0;
+		}
+		Path p = {0, 0};
+		paths[i][i] = p;
+		dive(i, i, p);
+		for (unsigned j = 0; j < 16; ++j) {
+			max_len = std::max(max_len, paths[i][j].len);
+		}
+	}
+#if 0
+	printf("max tms sequence is %d\n", max_len);
+	print_path(TEST_LOGIC_RESET, RUN_TEST_IDLE);
+	print_path(RUN_TEST_IDLE, SHIFT_IR);
+	print_path(RUN_TEST_IDLE, SHIFT_DR);
+	print_path(SHIFT_IR, RUN_TEST_IDLE);
+	print_path(SHIFT_DR, PAUSE_DR);
+	print_path(PAUSE_DR, SHIFT_DR);
+	print_path(SHIFT_IR, PAUSE_IR);
+	print_path(PAUSE_IR, SHIFT_DR);
+	print_path(PAUSE_IR, RUN_TEST_IDLE);
+#endif
+}
+
 int Jtag::detectChain(int max_dev)
 {
 	char message[256];
@@ -219,7 +309,6 @@ int Jtag::detectChain(int max_dev)
 		}
 	}
 	go_test_logic_reset();
-	flushTMS(true);
 	return _devices_list.size();
 }
 
@@ -256,53 +345,16 @@ uint16_t Jtag::device_select(uint16_t index)
 	return device_index;
 }
 
-void Jtag::setTMS(unsigned char tms)
-{
-	display("%s %x %d %d\n", __func__, tms, _num_tms, (_num_tms >> 3));
-	if (_num_tms+1 == _tms_buffer_size * 8)
-		flushTMS(false);
-	if (tms != 0)
-		_tms_buffer[_num_tms>>3] |= (0x1) << (_num_tms & 0x7);
-	_num_tms++;
-}
-
-/* reconstruct byte sent to TMS pins
- * - use up to 6 bits
- * -since next bit after length is use to
- *  fix TMS state after sent we copy last bit
- *  to bit after next
- * -bit 7 is TDI state for each clk cycles
- */
-
-int Jtag::flushTMS(bool flush_buffer)
-{
-	int ret = 0;
-	if (_num_tms != 0) {
-		display("%s: %d %x\n", __func__, _num_tms, _tms_buffer[0]);
-
-		ret = _jtag->writeTMS(_tms_buffer, _num_tms, flush_buffer);
-
-		/* reset buffer and number of bits */
-		memset(_tms_buffer, 0, _tms_buffer_size);
-		_num_tms = 0;
-	} else if (flush_buffer) {
-		_jtag->flush();
-	}
-	return ret;
-}
-
 void Jtag::go_test_logic_reset()
 {
 	/* independently to current state 5 clk with TMS high is enough */
-	for (int i = 0; i < 6; i++)
-		setTMS(0x01);
-	flushTMS(false);
+	uint8_t bits = 0xff;
+	_jtag->writeTMS(&bits, 5, false);
 	_state = TEST_LOGIC_RESET;
 }
 
 int Jtag::read_write(const uint8_t *tdi, unsigned char *tdo, int len, char last)
 {
-	flushTMS(false);
 	_jtag->writeTDI(tdi, tdo, len, last);
 	if (last == 1)
 		_state = (_state == SHIFT_DR) ? EXIT1_DR : EXIT1_IR;
@@ -311,8 +363,7 @@ int Jtag::read_write(const uint8_t *tdi, unsigned char *tdo, int len, char last)
 
 void Jtag::toggleClk(int nb)
 {
-	unsigned char c = (TEST_LOGIC_RESET == _state) ? 1 : 0;
-	flushTMS(false);
+	uint8_t c = (TEST_LOGIC_RESET == _state) ? 1 : 0;
 	if (_jtag->toggleClk(c, 0, nb) >= 0)
 		return;
 	throw std::exception();
@@ -331,7 +382,6 @@ int Jtag::shiftDR(const uint8_t *tdi, unsigned char *tdo, int drlen, tapState_t 
 	 */
 	if (_state != SHIFT_DR) {
 		set_state(SHIFT_DR);
-		flushTMS(false);  // force transmit tms state
 
 		/* get number of devices, in the JTAG chain,
 		 * before the selected one
@@ -397,8 +447,6 @@ int Jtag::shiftIR(unsigned char *tdi, unsigned char *tdo, int irlen, tapState_t 
 	/* if not in SHIFT IR move to this state */
 	if (_state != SHIFT_IR) {
 		set_state(SHIFT_IR);
-		/* force flush */
-		flushTMS(false);
 
 		/* send serie of bypass instructions
 		 * final size depends on number of device
@@ -444,226 +492,9 @@ int Jtag::shiftIR(unsigned char *tdi, unsigned char *tdo, int irlen, tapState_t 
 
 void Jtag::set_state(tapState_t newState)
 {
-	unsigned char tms = 0;
-	while (newState != _state) {
-		display("_state : %16s(%02d) -> %s(%02d) ",
-			getStateName((tapState_t)_state),
-			_state,
-			getStateName((tapState_t)newState), newState);
-		switch (_state) {
-		case TEST_LOGIC_RESET:
-			if (newState == TEST_LOGIC_RESET) {
-				tms = 1;
-			} else {
-				tms = 0;
-				_state = RUN_TEST_IDLE;
-			}
-			break;
-		case RUN_TEST_IDLE:
-			if (newState == RUN_TEST_IDLE) {
-				tms = 0;
-			} else {
-				tms = 1;
-				_state = SELECT_DR_SCAN;
-			}
-			break;
-		case SELECT_DR_SCAN:
-			switch (newState) {
-			case CAPTURE_DR:
-			case SHIFT_DR:
-			case EXIT1_DR:
-			case PAUSE_DR:
-			case EXIT2_DR:
-			case UPDATE_DR:
-				tms = 0;
-				_state = CAPTURE_DR;
-				break;
-			default:
-				tms = 1;
-				_state = SELECT_IR_SCAN;
-			}
-			break;
-		case SELECT_IR_SCAN:
-			switch (newState) {
-			case CAPTURE_IR:
-			case SHIFT_IR:
-			case EXIT1_IR:
-			case PAUSE_IR:
-			case EXIT2_IR:
-			case UPDATE_IR:
-				tms = 0;
-				_state = CAPTURE_IR;
-				break;
-			default:
-				tms = 1;
-				_state = TEST_LOGIC_RESET;
-			}
-			break;
-			/* DR column */
-		case CAPTURE_DR:
-			if (newState == SHIFT_DR) {
-				tms = 0;
-				_state = SHIFT_DR;
-			} else {
-				tms = 1;
-				_state = EXIT1_DR;
-			}
-			break;
-		case SHIFT_DR:
-			if (newState == SHIFT_DR) {
-				tms = 0;
-			} else {
-				tms = 1;
-				_state = EXIT1_DR;
-			}
-			break;
-		case EXIT1_DR:
-			switch (newState) {
-			case PAUSE_DR:
-			case EXIT2_DR:
-			case SHIFT_DR:
-			case EXIT1_DR:
-				tms = 0;
-				_state = PAUSE_DR;
-				break;
-			default:
-				tms = 1;
-				_state = UPDATE_DR;
-			}
-			break;
-		case PAUSE_DR:
-			if (newState == PAUSE_DR) {
-				tms = 0;
-			} else {
-				tms = 1;
-				_state = EXIT2_DR;
-			}
-			break;
-		case EXIT2_DR:
-			switch (newState) {
-			case SHIFT_DR:
-			case EXIT1_DR:
-			case PAUSE_DR:
-				tms = 0;
-				_state = SHIFT_DR;
-				break;
-			default:
-				tms = 1;
-				_state = UPDATE_DR;
-			}
-			break;
-		case UPDATE_DR:
-		case UPDATE_IR:
-			if (newState == RUN_TEST_IDLE) {
-				tms = 0;
-				_state = RUN_TEST_IDLE;
-			} else {
-				tms = 1;
-				_state = SELECT_DR_SCAN;
-			}
-			break;
-			/* IR column */
-		case CAPTURE_IR:
-			if (newState == SHIFT_IR) {
-				tms = 0;
-				_state = SHIFT_IR;
-			} else {
-				tms = 1;
-				_state = EXIT1_IR;
-			}
-			break;
-		case SHIFT_IR:
-			if (newState == SHIFT_IR) {
-				tms = 0;
-			} else {
-				tms = 1;
-				_state = EXIT1_IR;
-			}
-			break;
-		case EXIT1_IR:
-			switch (newState) {
-			case PAUSE_IR:
-			case EXIT2_IR:
-			case SHIFT_IR:
-			case EXIT1_IR:
-				tms = 0;
-				_state = PAUSE_IR;
-				break;
-			default:
-				tms = 1;
-				_state = UPDATE_IR;
-			}
-			break;
-		case PAUSE_IR:
-			if (newState == PAUSE_IR) {
-				tms = 0;
-			} else {
-				tms = 1;
-				_state = EXIT2_IR;
-			}
-			break;
-		case EXIT2_IR:
-			switch (newState) {
-			case SHIFT_IR:
-			case EXIT1_IR:
-			case PAUSE_IR:
-				tms = 0;
-				_state = SHIFT_IR;
-				break;
-			default:
-				tms = 1;
-				_state = UPDATE_IR;
-			}
-			break;
-		case UNKNOWN:;
-			// UNKNOWN should not be valid...
-			throw std::exception();
-		}
-
-		setTMS(tms);
-		display("%d %d %d %x\n", tms, _num_tms-1, _state,
-			_tms_buffer[(_num_tms-1) / 8]);
+	if (_state >= UNKNOWN || newState >= UNKNOWN) {
+		throw std::exception();
 	}
-	/* force write buffer */
-	flushTMS(false);
-}
-
-const char *Jtag::getStateName(tapState_t s)
-{
-	switch (s) {
-	case TEST_LOGIC_RESET:
-		return "TEST_LOGIC_RESET";
-	case RUN_TEST_IDLE:
-		return "RUN_TEST_IDLE";
-	case SELECT_DR_SCAN:
-		return "SELECT_DR_SCAN";
-	case CAPTURE_DR:
-		return "CAPTURE_DR";
-	case SHIFT_DR:
-		return "SHIFT_DR";
-	case EXIT1_DR:
-		return "EXIT1_DR";
-	case PAUSE_DR:
-		return "PAUSE_DR";
-	case EXIT2_DR:
-		return "EXIT2_DR";
-	case UPDATE_DR:
-		return "UPDATE_DR";
-	case SELECT_IR_SCAN:
-		return "SELECT_IR_SCAN";
-	case CAPTURE_IR:
-		return "CAPTURE_IR";
-	case SHIFT_IR:
-		return "SHIFT_IR";
-	case EXIT1_IR:
-		return "EXIT1_IR";
-	case PAUSE_IR:
-		return "PAUSE_IR";
-	case EXIT2_IR:
-		return "EXIT2_IR";
-	case UPDATE_IR:
-		return "UPDATE_IR";
-	default:
-		return "Unknown";
-	}
+	_jtag->writeTMS(&paths[_state][newState].tms_bits, paths[_state][newState].len, false);
+	_state = newState;
 }

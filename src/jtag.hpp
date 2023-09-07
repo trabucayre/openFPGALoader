@@ -99,11 +99,7 @@ class Jtag {
 	void toggleClk(int nb);
 	void go_test_logic_reset();
 	void set_state(tapState_t newState);
-	int flushTMS(bool flush_buffer = false);
-	void flush() {flushTMS(); _jtag->flush();}
-	void setTMS(unsigned char tms);
-
-	const char *getStateName(tapState_t s);
+	void flush() {_jtag->flush();}
 
 	/* utilities */
 	void setVerbose(int8_t verbose){_verbose = verbose;}
@@ -121,13 +117,19 @@ class Jtag {
 	bool search_and_insert_device_with_idcode(uint32_t idcode);
 	bool _verbose;
 	tapState_t _state;
-	int _tms_buffer_size;
-	int _num_tms;
-	unsigned char *_tms_buffer;
 	std::string _board_name;
 
 	int device_index; /*!< index for targeted FPGA */
 	std::vector<int32_t> _devices_list; /*!< ordered list of devices idcode */
 	std::vector<int16_t> _irlength_list; /*!< ordered list of irlength */
+
+	struct Path {
+		uint8_t tms_bits;
+		uint8_t len;
+	} paths[16][16];
+
+	void dive(unsigned origin, unsigned prev, const Path &p);
+	void print_path(tapState_t from, tapState_t to);
+	void create_paths();
 };
 #endif
