@@ -85,7 +85,7 @@ class Jtag {
 		PAUSE_IR = 13,
 		EXIT2_IR = 14,
 		UPDATE_IR = 15,
-		UNKNOWN = 999
+		UNKNOWN = 16,
 	};
 
 	int shiftIR(unsigned char *tdi, unsigned char *tdo, int irlen,
