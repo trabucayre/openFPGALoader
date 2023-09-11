@@ -137,9 +137,9 @@ using namespace std;
 #define PUBKEY_LENGTH_BYTES				64			/* length of the public key (MachXO3D) in bytes */
 
 Lattice::Lattice(Jtag *jtag, const string filename, const string &file_type,
-	Device::prog_type_t prg_type, std::string flash_sector, bool verify, int8_t verbose):
+	Device::prog_type_t prg_type, std::string flash_sector, bool verify, int8_t verbose, bool skip_load_bridge, bool skip_reset):
 		Device(jtag, filename, file_type, verify, verbose),
-		SPIInterface(filename, verbose, 0, verify),
+		SPIInterface(filename, verbose, 0, verify, skip_load_bridge, skip_reset),
 		_fpga_family(UNKNOWN_FAMILY), _flash_sector(LATTICE_FLASH_UNDEFINED)
 {
 	if (prg_type == Device::RD_FLASH) {
