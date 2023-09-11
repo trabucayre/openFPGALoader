@@ -567,7 +567,7 @@ int main(int argc, char **argv)
 				args.prg_type, args.external_flash, args.verify, args.verbose);
 		} else if (fab == "lattice") {
 			fpga = new Lattice(jtag, args.bit_file, args.file_type,
-				args.prg_type, args.flash_sector, args.verify, args.verbose);
+				args.prg_type, args.flash_sector, args.verify, args.verbose, args.skip_load_bridge, args.skip_reset);
 		} else if (fab == "colognechip") {
 			fpga = new CologneChip(jtag, args.bit_file, args.file_type,
 				args.prg_type, args.board, args.cable, args.verify, args.verbose);
