@@ -200,8 +200,9 @@ Gowin::~Gowin()
 bool Gowin::send_command(uint8_t cmd)
 {
 	_jtag->shiftIR(&cmd, nullptr, 8);
-	_jtag->toggleClk(8);
-
+	_jtag->toggleClk(6);
+	_jtag->flush();
+	usleep(250);
 	return true;
 }
 
@@ -224,9 +225,11 @@ bool Gowin::send_command(uint8_t cmd)
 
 uint32_t Gowin::readReg32(uint8_t cmd)
 {
-	uint32_t reg = 0, tmp = 0xff;
+	uint32_t reg = 0, tmp = 0xffffffffU;
 	send_command(cmd);
 	_jtag->shiftDR((uint8_t *)&tmp, (uint8_t *)&reg, 32);
+	_jtag->flush();
+	usleep(200);
 	return le32toh(reg);
 }
 
@@ -241,15 +244,15 @@ void Gowin::programFlash()
 	const uint8_t *data = _fs->getData();
 	int length = _fs->getLength();
 
-	_jtag->setClkFreq(2500000);
+	_jtag->setClkFreq(3000000);
 
 	send_command(CONFIG_DISABLE);
-	send_command(NOOP);
+	send_command(0);
 	_jtag->go_test_logic_reset();
-	_jtag->flush();
-	usleep(500*1000);
+	//_jtag->flush();
+	//usleep(500*1000);
 
-	eraseSRAM();
+	//eraseSRAM();
 	if (!eraseFLASH())
 		return;
 	/* test status a faire */
@@ -481,6 +484,7 @@ inline uint32_t bswap_32(uint32_t x)
 bool Gowin::writeFLASH(uint32_t page, const uint8_t *data, int length)
 {
 	printInfo("Write FLASH ", false);
+	//return true;
 	uint8_t xpage[256];
 	length /= 8;
 	for (int off = 0; off < length; off += 256) {
@@ -565,6 +569,15 @@ bool Gowin::writeSRAM(const uint8_t *data, int length)
 bool Gowin::eraseFLASH()
 {
 	printInfo("Erase Flash ", false);
+	send_command(CONFIG_DISABLE);
+	send_command(0);
+	send_command(CONFIG_DISABLE);
+	send_command(0);
+	readStatusReg();
+	readStatusReg();
+	readStatusReg();
+	readReg32(0x11);
+	usleep(500);
 	send_command(CONFIG_ENABLE);
 	send_command(EFLASH_ERASE);
 	uint32_t tx = 0;
@@ -574,20 +587,20 @@ bool Gowin::eraseFLASH()
 			_jtag->shiftDR((uint8_t *)&tx, NULL, 32);
 	}
 	sendClkUs(150*1000);
-	if (_verbose)
-		displayReadReg(readStatusReg());
 	send_command(CONFIG_DISABLE);
 	send_command(NOOP);
+	send_command(0x11);
 	send_command(CONFIG_DISABLE);
 	send_command(NOOP);
 	send_command(RELOAD);
 	send_command(NOOP);
+	_jtag->flush();
+	usleep(500*1000);
+	readReg32(0x11);
+	readReg32(0x11);
 	if (_verbose)
 		displayReadReg(readStatusReg());
 	_jtag->flush();
-	usleep(500*1000);
-	if (_verbose)
-		displayReadReg(readStatusReg());
 	printSuccess("Done");
 	return true;
 }
@@ -606,6 +619,19 @@ void Gowin::sendClkUs(unsigned us)
 bool Gowin::eraseSRAM()
 {
 	printInfo("Erase SRAM ", false);
+	
+	send_command(CONFIG_DISABLE);
+	send_command(0);
+	_jtag->go_test_logic_reset();
+	readReg32(0x11);
+	readReg32(0x41);
+	_jtag->go_test_logic_reset();
+	send_command(CONFIG_DISABLE);
+	send_command(0);
+	_jtag->go_test_logic_reset();
+	readReg32(0x41);
+	readReg32(0x11);
+
 	send_command(CONFIG_ENABLE);
 	send_command(ERASE_SRAM);
 	send_command(NOOP);

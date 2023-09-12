@@ -208,6 +208,8 @@ add_executable(openFPGALoader
 	${OPENFPGALOADER_HEADERS}
 )
 
+add_executable(fsread src/fsread.cpp src/configBitstreamParser.cpp src/fsparser.cpp src/display.cpp)
+
 include_directories(
 	${LIBUSB_INCLUDE_DIRS}
 	${LIBFTDI_INCLUDE_DIRS}
@@ -300,6 +302,7 @@ endif()
 if (ZLIB_FOUND)
 	include_directories(${ZLIB_INCLUDE_DIRS})
 	target_link_libraries(openFPGALoader ${ZLIB_LIBRARIES})
+	target_link_libraries(fsread ${ZLIB_LIBRARIES})
 	add_definitions(-DHAS_ZLIB=1)
 else()
 	message("zlib library not found: can't flash intel/altera devices")

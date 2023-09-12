@@ -76,13 +76,24 @@ int FsParser::parseHeader()
 			case 0x0B: /* only present when bit_security is set */
 				_hdr["SecurityBit"] = "ON";
 				break;
-			case 0x10:
+			case 0x10: {
 				/* unknown conversion */
-				_hdr["loading_rate"] = to_string(0xff & (val >> 16));
-				_compressed = 0x01 & (val >> 13);
+				unsigned rate = (val >> 16) & 0xff;
+				if (rate) {
+					rate &= 0x7f;
+					rate ^= 0x44;
+					rate = (rate >> 2) + 1;
+					rate = 125000000/rate;
+				} else {
+					rate = 2500000; // default
+				}
+				_hdr["LoadingRate"] = to_string(rate);
+				_compressed = (val >> 13) & 1;
 				_hdr["Compress"] = (_compressed) ? "ON" : "OFF";
-				_hdr["ProgramDoneBypass"] = (0x01 & (val >> 12))?"ON":"OFF";
+				_hdr["ProgramDoneBypass"] = ((val >> 12) & 1) ? "ON" : "OFF";
+				printf("Loading Rate: %f MHz\n", rate*1e-6);
 				break;
+			}
 			case 0x12: /* unknown */
 				break;
 			case 0x51:
@@ -245,9 +256,10 @@ int FsParser::parse()
 	_checksum = 0;
 	for (uint32_t pos = 0; pos < tmp.size(); pos+=16)
 		_checksum += (uint16_t)bitToVal(&tmp[pos], 16);
-
-	if (_verbose)
+	
+	if (_verbose) {
 		printf("checksum 0x%04x\n", _checksum);
+	}
 
 	printSuccess("Done");
 
