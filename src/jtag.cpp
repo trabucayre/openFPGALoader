@@ -198,10 +198,12 @@ int Jtag::detectChain(int max_dev)
 			/* ckeck highest nibble to prevent confusion between Cologne Chip
 			 * GateMate and Efinix Trion T4/T8 devices
 			 */
-			if (tmp != 0x20000001)
-				found = search_and_insert_device_with_idcode(tmp & 0x0fffffff);
-			if (!found) /* if masked not found -> search for full */
+			if (tmp == 0x20000001)
 				found = search_and_insert_device_with_idcode(tmp);
+			if (!found) /* not specific case -> search for full */
+				found = search_and_insert_device_with_idcode(tmp);
+			if (!found) /* if full idcode not found -> search for masked */
+				found = search_and_insert_device_with_idcode(tmp & 0x0fffffff);
 
 			if (!found) {
 				uint16_t mfg = IDCODE2MANUFACTURERID(tmp);
