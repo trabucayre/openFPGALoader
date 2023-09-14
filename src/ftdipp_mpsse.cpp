@@ -346,7 +346,6 @@ int FTDIpp_MPSSE::init(unsigned char latency, unsigned char bitmask_mode,
 int FTDIpp_MPSSE::setClkFreq(uint32_t clkHZ)
 {
 	int ret;
-	bool use_divide_by_5;
 	uint8_t buffer[4] = { TCK_DIVISOR, 0x00, 0x00};
 	uint32_t base_freq;
 	float real_freq = 0;
@@ -357,43 +356,23 @@ int FTDIpp_MPSSE::setClkFreq(uint32_t clkHZ)
 	/* FT2232C has no divide by 5 instruction
 	 * and default freq is 12MHz
 	 */
-	if (_ftdi->type != TYPE_2232C) {
-		base_freq = 60000000;
-		/* use full speed only when freq > 6MHz
-		 * => more freq resolution using
-		 * 2^16 to describe 0 -> 6MHz
-		 */
-		if (clkHZ > 6000000) {
-			use_divide_by_5 = false;
-			if ((ret = mpsse_store(DIS_DIV_5)) < 0)
-				return ret;
-		} else {
-			use_divide_by_5 = true;
-			base_freq /= 5;
-			if ((ret = mpsse_store(EN_DIV_5)) < 0)
-				return ret;
-		}
-	} else {
+	if (_ftdi->type == TYPE_2232C) {
 		base_freq = 12000000;
-		use_divide_by_5 = false;
-	}
-
-	if (use_divide_by_5) {
-		if (_clkHZ > 6000000) {
-			printWarn("Jtag probe limited to 6MHz");
-			_clkHZ = 6000000;
-		}
 	} else {
-		if (_clkHZ > 30000000) {
-			printWarn("Jtag probe limited to 30MHz");
-			_clkHZ = 30000000;
-		}
+		base_freq = 60000000;
+		if ((ret = mpsse_store(DIS_DIV_5)) < 0)
+			return ret;
 	}
 
-	presc = ((base_freq /_clkHZ) -1) / 2;
-	real_freq = base_freq / ((1+presc)*2);
+	if (_clkHZ > base_freq / 2) {
+		printWarn("Jtag probe limited to %d MHz", base_freq / 2);
+		_clkHZ = base_freq / 2;
+	}
+
+	presc = ((base_freq /_clkHZ) - 1) / 2;
+	real_freq = base_freq / ((1 + presc) * 2);
 	if (real_freq > _clkHZ)
-		presc++;
+		++presc;
 	real_freq = base_freq / ((1+presc)*2);
 
 	/* just to have a better display */
