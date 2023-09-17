@@ -345,7 +345,7 @@ int Jtag::shiftDR(const uint8_t *tdi, unsigned char *tdo, int drlen, tapState_t 
 		if (bits_before > 0) {
 			int n = (bits_before + 7) / 8;
 			uint8_t tx[n];
-			memset(tx, 0xff, n);
+			memset(tx, 0x00, n);
 			read_write(tx, NULL, bits_before, 0);
 		}
 	}
@@ -363,7 +363,7 @@ int Jtag::shiftDR(const uint8_t *tdi, unsigned char *tdo, int drlen, tapState_t 
 		if (bits_after > 0) {
 			int n = (bits_after + 7) / 8;
 			uint8_t tx[n];
-			memset(tx, 0xff, n);
+			memset(tx, 0x00, n);
 			read_write(tx, NULL, bits_after, 1);  // its the last force
 												  // tms high with last bit
 		}
