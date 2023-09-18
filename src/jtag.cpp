@@ -151,7 +151,7 @@ Jtag::Jtag(const cable_t &cable, const jtag_pins_conf_t *pin_conf,
 		throw std::runtime_error("Error: memory allocation failed");
 	memset(_tms_buffer, 0, _tms_buffer_size);
 
-	detectChain(5);
+	detectChain(32);
 }
 
 Jtag::~Jtag()
@@ -159,13 +159,13 @@ Jtag::~Jtag()
 	free(_tms_buffer);
 	delete _jtag;
 }
-int Jtag::detectChain(int max_dev)
+int Jtag::detectChain(unsigned max_dev)
 {
 	char message[256];
-	unsigned char rx_buff[4];
+	uint8_t rx_buff[4];
 	/* WA for CH552/tangNano: write is always mandatory */
-	unsigned char tx_buff[4] = {0xff, 0xff, 0xff, 0xff};
-	unsigned int tmp;
+	uint8_t tx_buff[4] = {0xff, 0xff, 0xff, 0xff};
+	uint32_t tmp;
 
 	/* cleanup */
 	_devices_list.clear();
@@ -177,15 +177,26 @@ int Jtag::detectChain(int max_dev)
 	if (_verbose)
 		printInfo("Raw IDCODE:");
 
-	for (int i = 0; i < max_dev; i++) {
+	for (unsigned i = 0; i < max_dev; ++i) {
 		read_write(tx_buff, rx_buff, 32, (i == max_dev-1)?1:0);
 		tmp = 0;
-		for (int ii=0; ii < 4; ii++)
-			tmp |= (rx_buff[ii] << (8*ii));
+		for (int ii = 0; ii < 4; ++ii)
+			tmp |= (rx_buff[ii] << (8 * ii));
 
 		if (_verbose) {
 			snprintf(message, sizeof(message), "- %d -> 0x%08x", i, tmp);
 			printInfo(message);
+		}
+
+		if (tmp == 0) {
+			throw std::runtime_error("TDO is stuck at 0");
+		}
+		if (tmp == 0xffffffff) {
+			if (_verbose) {
+				snprintf(message, sizeof(message), "Fetched TDI, end-of-chain");
+				printInfo(message);
+			}
+			break;
 		}
 
 		/* search IDCODE in fpga_list and misc_dev_list
@@ -193,31 +204,29 @@ int Jtag::detectChain(int max_dev)
 		 * we start to search sub IDCODE
 		 * if IDCODE has no match: try the same with version unmasked
 		 */
-		if (tmp != 0 && tmp != 0xffffffff) {
-			bool found = false;
-			/* ckeck highest nibble to prevent confusion between Cologne Chip
-			 * GateMate and Efinix Trion T4/T8 devices
-			 */
-			if (tmp == 0x20000001)
-				found = search_and_insert_device_with_idcode(tmp);
-			if (!found) /* not specific case -> search for full */
-				found = search_and_insert_device_with_idcode(tmp);
-			if (!found) /* if full idcode not found -> search for masked */
-				found = search_and_insert_device_with_idcode(tmp & 0x0fffffff);
+		bool found = false;
+		/* ckeck highest nibble to prevent confusion between Cologne Chip
+		 * GateMate and Efinix Trion T4/T8 devices
+		 */
+		if (tmp == 0x20000001)
+			found = search_and_insert_device_with_idcode(tmp);
+		if (!found) /* not specific case -> search for full */
+			found = search_and_insert_device_with_idcode(tmp);
+		if (!found) /* if full idcode not found -> search for masked */
+			found = search_and_insert_device_with_idcode(tmp & 0x0fffffff);
 
-			if (!found) {
-				uint16_t mfg = IDCODE2MANUFACTURERID(tmp);
-				uint8_t part = IDCODE2PART(tmp);
-				uint8_t vers = IDCODE2VERS(tmp);
+		if (!found) {
+			uint16_t mfg = IDCODE2MANUFACTURERID(tmp);
+			uint8_t part = IDCODE2PART(tmp);
+			uint8_t vers = IDCODE2VERS(tmp);
 
-				char error[1024];
-				snprintf(error, sizeof(error),
-						"Unknown device with IDCODE: 0x%08x"
-						" (manufacturer: 0x%03x (%s),"
-						" part: 0x%02x vers: 0x%x", tmp,
-						mfg, list_manufacturer[mfg].c_str(), part, vers);
-				throw std::runtime_error(error);
-			}
+			char error[1024];
+			snprintf(error, sizeof(error),
+				 "Unknown device with IDCODE: 0x%08x"
+				 " (manufacturer: 0x%03x (%s),"
+				 " part: 0x%02x vers: 0x%x", tmp,
+				 mfg, list_manufacturer[mfg].c_str(), part, vers);
+			throw std::runtime_error(error);
 		}
 	}
 	go_test_logic_reset();

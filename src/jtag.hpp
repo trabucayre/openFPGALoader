@@ -34,7 +34,7 @@ class Jtag {
 	 *        vector with irlength
 	 * \return number of devices found
 	 */
-	int detectChain(int max_dev);
+	int detectChain(unsigned int max_dev);
 
 	/*!
 	 * \brief return list of devices in the chain
