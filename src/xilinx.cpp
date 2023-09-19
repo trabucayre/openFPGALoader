@@ -508,6 +508,8 @@ bool Xilinx::load_bridge()
 void Xilinx::program_spi(ConfigBitstreamParser * bit, unsigned int offset,
 		bool unprotect_flash)
 {
+	if (!bit)
+		throw std::runtime_error("called with null bitstream");
 	const uint8_t *data = bit->getData();
 	int length = bit->getLength() / 8;
 	SPIInterface::write(offset, data, length, unprotect_flash);
@@ -1034,6 +1036,7 @@ void Xilinx::xcf_flow_enable(uint8_t mode)
 void Xilinx::xcf_flow_disable()
 {
 	_jtag->shiftIR(XCF_ISC_DISABLE, 8);
+	_jtag->flush();
 	usleep(110000);
 	_jtag->shiftIR(BYPASS, 8);
 	_jtag->toggleClk(1);
@@ -1051,11 +1054,13 @@ bool Xilinx::xcf_flow_erase()
 	_jtag->toggleClk(1);
 
 	_jtag->shiftIR(XCF_ISC_ERASE, 8);
+	_jtag->flush();
 	usleep(500000);
 
 	int i;
 	for (i = 0; i < 32; i++) {
 		_jtag->shiftIR(XCF_ISCTESTSTATUS, 8);
+		_jtag->flush();
 		usleep(500000);
 		_jtag->shiftDR(NULL, xfer_buf, 8);
 		if ((xfer_buf[0] & 0x04))
@@ -1079,6 +1084,8 @@ bool Xilinx::xcf_program(ConfigBitstreamParser *bitfile)
 	uint8_t tx_buf[4096 / 8];
 	uint16_t pkt_len =
 		((_jtag->get_target_device_id() == 0x05044093) ? 2048 : 4096) / 8;
+	if (!bitfile)
+		throw std::runtime_error("called with null bitstream");
 	const uint8_t *data = bitfile->getData();
 	uint32_t data_len = bitfile->getLength() / 8;
 	uint32_t xfer_len, offset = 0;
@@ -1129,12 +1136,14 @@ bool Xilinx::xcf_program(ConfigBitstreamParser *bitfile)
 
 		/* send program instruction */
 		_jtag->shiftIR(XCF_ISC_PROGRAM, 8);
+		_jtag->flush();
 		usleep((addr == 0) ? 14000: 500);
 
 		/* wait until bit 3 != 1 */
 		int i;
 		for (i = 0; i < 29; i++) {
 			_jtag->shiftIR(XCF_ISCTESTSTATUS, 8);
+			_jtag->flush();
 			usleep(500);
 			_jtag->shiftDR(NULL, tx_buf, 8);
 			if ((tx_buf[0] & 0x04))
@@ -1222,6 +1231,7 @@ std::string Xilinx::xcf_read()
 
 		/* send data to PROM */
 		_jtag->shiftIR(XCF_ISC_READ, 8);
+		_jtag->flush();
 		usleep(50);
 		_jtag->shiftDR(NULL, rx_buf, pkt_len * 8);
 
@@ -1468,7 +1478,7 @@ bool Xilinx::xc2c_flow_program(JedParser *jed)
 	_jtag->shiftIR(XC2C_ISC_PROGRAM, 8);
 
 	uint16_t iter = 0;
-	for (auto row : listfuse) {
+	for (const auto &row : listfuse) {
 		uint16_t pos = 0;
 		uint8_t addr = _gray_code[iter] >> shift_addr;
 		uint8_t wr_buf[249] = {0};  // largest section length
@@ -1494,7 +1504,7 @@ bool Xilinx::xc2c_flow_program(JedParser *jed)
 	if (_verify) {
 		std::string rx_buffer = xc2c_flow_read();
 		iter = 0;
-		for (auto row : listfuse) {
+		for (const auto &row : listfuse) {
 			for (auto col : row) {
 				if ((rx_buffer[iter >> 3] >> (iter & 0x07)) != col) {
 					throw std::runtime_error("Program: verify failed");
