@@ -89,7 +89,8 @@ bool Ice40::program_cram(const uint8_t *data, uint32_t length)
 	progress.done();
 
 	/* send 48 to 100 dummy bits */
-	uint8_t dummy[12] = {0xff};
+	uint8_t dummy[12];
+	memset(dummy, 0xff, sizeof(dummy));
 	_spi->spi_put(dummy, NULL, 12);
 
 	/* wait CDONE */

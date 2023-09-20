@@ -1577,7 +1577,8 @@ int Xilinx::spi_wait(uint8_t cmd, uint8_t mask, uint8_t cond,
 			uint32_t timeout, bool verbose)
 {
 	uint8_t rx[2];
-	uint8_t dummy[2] = {0xff};
+	uint8_t dummy[2];
+	memset(dummy, 0xff, sizeof(dummy));
 	uint8_t tmp;
 	uint8_t tx = McsParser::reverseByte(cmd);
 	uint32_t count = 0;
