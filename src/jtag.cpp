@@ -178,7 +178,7 @@ int Jtag::detectChain(unsigned max_dev)
 		printInfo("Raw IDCODE:");
 
 	for (unsigned i = 0; i < max_dev; ++i) {
-		read_write(tx_buff, rx_buff, 32, (i == max_dev-1)?1:0);
+		read_write(tx_buff, rx_buff, 32, 0);
 		tmp = 0;
 		for (int ii = 0; ii < 4; ++ii)
 			tmp |= (rx_buff[ii] << (8 * ii));
@@ -229,7 +229,7 @@ int Jtag::detectChain(unsigned max_dev)
 			throw std::runtime_error(error);
 		}
 	}
-	go_test_logic_reset();
+	set_state(TEST_LOGIC_RESET);
 	flushTMS(true);
 	return _devices_list.size();
 }
