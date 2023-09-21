@@ -138,6 +138,7 @@ static std::map <std::string, target_board_t> board_list = {
 	JTAG_BOARD("deca",            "10M50DA", "usb-blasterII",0, 0, CABLE_DEFAULT),
 	JTAG_BOARD("ecp5_evn",        "", "ft2232",     0, 0, CABLE_DEFAULT),
 	JTAG_BOARD("ecpix5",          "", "ecpix5-debug", 0, 0, CABLE_DEFAULT),
+	JTAG_BOARD("ecpix5_r03",      "", "ft4232",       0, 0, CABLE_DEFAULT),
 	SPI_BOARD("fireant",              "efinix", "ft232",
 			DBUS4, DBUS5, 0, DBUS3, DBUS0, DBUS1, DBUS2, DBUS6, 0, CABLE_DEFAULT),
 	DFU_BOARD("fomu",             "", "dfu", 0x1209, 0x5bf0, 0),

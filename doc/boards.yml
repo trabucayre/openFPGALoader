@@ -52,6 +52,7 @@
   Description: Digilent Arty A7
   URL: https://reference.digilentinc.com/reference/programmable-logic/arty-a7/start
   FPGA: Artix xc7a35ticsg324
+  SPIFlash: (N25Q128 v1)
   Memory: OK
   Flash: OK
   Constraints: Arty-A7-35T
@@ -269,7 +270,17 @@
   Constraints: ECP5-EVN
 
 - ID: ecpix5
-  Description: LambdaConcept ECPIX-5
+  Description: LambdaConcept ECPIX-5 (FT2232)
+  URL: https://shop.lambdaconcept.com/home/46-2-ecpix-5.html#/2-ecpix_5_fpga-ecpix_5_85f
+  FPGA: ECP5 LFE5UM5G-85F
+  Memory: OK
+  Flash: OK
+  Constraints:
+    - ECPIX-5-45F
+    - ECPIX-5-85F
+
+- ID: ecpix5_r03
+  Description: LambdaConcept ECPIX-5 (FT4232)
   URL: https://shop.lambdaconcept.com/home/46-2-ecpix-5.html#/2-ecpix_5_fpga-ecpix_5_85f
   FPGA: ECP5 LFE5UM5G-85F
   Memory: OK
@@ -665,6 +676,7 @@
   Description: FairWaves XTRXPro
   URL: https://www.crowdsupply.com/fairwaves/xtrx
   FPGA: Artix xc7a50tcpg236
+  SPIFlash: N25Q256
   Memory: OK
   Flash: OK
 
