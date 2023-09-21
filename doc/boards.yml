@@ -157,7 +157,6 @@
   FPGA: Artix xc7a35tcpg236
   Memory: OK
   Flash: OK
-  Constraints: Cmod-A7-35T
 
 - ID: colorlight
   Description: Colorlight 5A-75B (version 7)
