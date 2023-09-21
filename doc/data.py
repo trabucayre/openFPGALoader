@@ -17,6 +17,7 @@ class Board:
     Memory: str = None
     Flash: str = None
     Constraints: str = None
+    SPIFlash: str = None
 
 
 def ReadBoardDataFromYAML():
