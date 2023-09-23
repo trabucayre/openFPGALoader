@@ -295,6 +295,7 @@ Xilinx:
       - xczu2cg
       - xczu9eg
       - xczu11eg
+      - xczu17eg
     URL: https://www.xilinx.com/products/silicon-devices/soc/zynq-ultrascale-mpsoc.html
     Memory: OK
     Flash: NA
