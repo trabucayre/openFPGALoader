@@ -638,6 +638,13 @@
   Memory: OK
   Flash: IF
 
+- ID: trion_t20_bga256_jtag
+  Description: Efinix Trion T20 BGA256 Dev Kit
+  URL: https://www.efinixinc.com/products-devkits-triont120bga576.html
+  FPGA: Trion T20BGA256
+  Memory: OK
+  Flash: NT
+
 - ID: trion_t120_bga576_spi
   Description: Efinix Trion T120 BGA576 Dev Kit
   URL: https://www.efinixinc.com/products-devkits-triont120bga576.html
