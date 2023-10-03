@@ -640,24 +640,38 @@
 
 - ID: trion_t20_bga256_jtag
   Description: Efinix Trion T20 BGA256 Dev Kit
-  URL: https://www.efinixinc.com/products-devkits-triont120bga576.html
+  URL: https://www.efinixinc.com/products-devkits-triont20.html
   FPGA: Trion T20BGA256
   Memory: OK
   Flash: NT
 
-- ID: trion_t120_bga576_spi
-  Description: Efinix Trion T120 BGA576 Dev Kit
+- ID: trion_t120_bga576
+  Description: Efinix Trion T120 BGA576 Dev Kit (SPI mode)
   URL: https://www.efinixinc.com/products-devkits-triont120bga576.html
   FPGA: Trion T120BGA576
   Memory: NA
   Flash: AS
 
-- ID: trion_ti60_f225_spi
-  Description: Efinix Titanium F225 Dev Kit
+- ID: trion_t120_bga576_jtag
+  Description: Efinix Trion T120 BGA576 Dev Kit (JTAG mode)
+  URL: https://www.efinixinc.com/products-devkits-triont120bga576.html
+  FPGA: Trion T120BGA576
+  Memory: OK
+  Flash: OK
+
+- ID: trion_ti60_f225
+  Description: Efinix Titanium F225 Dev Kit (SPI mode)
   URL: https://www.efinixinc.com/products-devkits-titaniumti60f225.html
   FPGA: Titanium Ti60F225
   Memory: NA
   Flash: AS
+
+- ID: trion_ti60_f225_jtag
+  Description: Efinix Titanium F225 Dev Kit (JTAG mode)
+  URL: https://www.efinixinc.com/products-devkits-titaniumti60f225.html
+  FPGA: Titanium Ti60F225
+  Memory: OK
+  Flash: OK
 
 - ID: ulx3s
   Description: Radiona ULX3S
