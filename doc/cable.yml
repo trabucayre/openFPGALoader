@@ -125,6 +125,12 @@ efinix_spi_ft2232:
     Description: efinix SPI interface (FTDI2232 interface A)
 
 
+efinix_jtag_ft2232:
+
+  - Name: efinix JTAG (ft2232)
+    Description: efinix JTAG interface (FTDI2232 interface B)
+
+
 ft2232:
 
   - Name: FT2232 C/D/H
