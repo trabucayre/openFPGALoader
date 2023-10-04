@@ -38,27 +38,30 @@ CologneChip::CologneChip(Jtag* jtag, const std::string &filename,
 	Device(jtag, filename, file_type, verify, verbose)
 {
 	_spi = nullptr;
+
 	/* check which cable/board we're using in order to select pin definitions */
-	std::string spi_board_name;
+	std::string ftdi_board_name;
 	if (board_name != "-") {
-		spi_board_name = std::regex_replace(board_name, std::regex("jtag"), "spi");
+		ftdi_board_name = std::regex_replace(board_name, std::regex("jtag"), "spi");
 	} else if (cable_name == "gatemate_pgm") {
-		spi_board_name = "gatemate_pgm_spi";
+		ftdi_board_name = "gatemate_pgm_spi";
 	}
 
-	target_board_t *spi_board = &(board_list[spi_board_name]);
+	if (ftdi_board_name != "") {
+		target_board_t *board = &(board_list[ftdi_board_name]);
 
-	/* pin configurations valid for both evaluation board and programer */
-	_rstn_pin  = spi_board->reset_pin;
-	_done_pin  = spi_board->done_pin;
-	_fail_pin = DBUS6;
-	_oen_pin   = spi_board->oe_pin;
+		/* pin configurations valid for both evaluation board and programer */
+		_rstn_pin  = board->reset_pin;
+		_done_pin  = board->done_pin;
+		_fail_pin = DBUS6;
+		_oen_pin   = board->oe_pin;
 
-	/* cast _jtag->_jtag from JtagInterface to FtdiJtagMPSSE to access GPIO */
-	_ftdi_jtag = reinterpret_cast<FtdiJtagMPSSE *>(_jtag->_jtag);
+		/* cast _jtag->_jtag from JtagInterface to FtdiJtagMPSSE to access GPIO */
+		_ftdi_jtag = reinterpret_cast<FtdiJtagMPSSE *>(_jtag->_jtag);
 
-	_ftdi_jtag->gpio_set_input(_done_pin | _fail_pin);
-	_ftdi_jtag->gpio_set_output(_rstn_pin | _oen_pin);
+		_ftdi_jtag->gpio_set_input(_done_pin | _fail_pin);
+		_ftdi_jtag->gpio_set_output(_rstn_pin | _oen_pin);
+	}
 
 	if (prg_type == Device::WR_SRAM) {
 		_mode = Device::MEM_MODE;
@@ -76,7 +79,7 @@ void CologneChip::reset()
 		_spi->gpio_clear(_rstn_pin | _oen_pin);
 		usleep(SLEEP_US);
 		_spi->gpio_set(_rstn_pin);
-	} else {
+	} else if (_ftdi_jtag) {
 		_ftdi_jtag->gpio_clear(_rstn_pin | _oen_pin);
 		usleep(SLEEP_US);
 		_ftdi_jtag->gpio_set(_rstn_pin);
@@ -92,7 +95,7 @@ bool CologneChip::cfgDone()
 	uint16_t status = 0;
 	if (_spi) {
 		status = _spi->gpio_get(true);
-	} else {
+	} else if (_ftdi_jtag) {
 		status = _ftdi_jtag->gpio_get(true);
 	}
 	bool done = (status & _done_pin) > 0;
@@ -290,9 +293,10 @@ void CologneChip::programJTAG_sram(const uint8_t *data, int length)
 	progress.done();
 	_jtag->set_state(Jtag::RUN_TEST_IDLE);
 
-	waitCfgDone();
-
-	_ftdi_jtag->gpio_set(_oen_pin);
+	if (_ftdi_jtag) {
+		waitCfgDone();
+		_ftdi_jtag->gpio_set(_oen_pin);
+	}
 }
 
 /**
@@ -317,7 +321,9 @@ void CologneChip::programJTAG_flash(unsigned int offset, const uint8_t *data,
 	if (_verify)
 		flash.verify(offset, data, length);
 
-	_ftdi_jtag->gpio_set(_oen_pin);
+	if (_ftdi_jtag) {
+		_ftdi_jtag->gpio_set(_oen_pin);
+	}
 }
 
 /**
