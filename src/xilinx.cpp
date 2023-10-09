@@ -577,7 +577,7 @@ void Xilinx::program_mem(ConfigBitstreamParser *bitfile)
 	Jtag::tapState_t tx_end;
 	int burst_len = byte_length / 100;
 
-	ProgressBar progress("Flash SRAM", byte_length, 50, _quiet);
+	ProgressBar progress("Load SRAM", byte_length, 50, _quiet);
 
 	for (int i=0; i < byte_length; i+=burst_len) {
 		if (i + burst_len > byte_length) {
@@ -733,7 +733,7 @@ bool Xilinx::xc3s_flow_program(ConfigBitstreamParser *bit)
 	const uint8_t *data = bit->getData();
 	int tx_len = burst_len * 8;
 	Jtag::tapState_t tx_end = Jtag::SHIFT_DR;
-	ProgressBar progress("Flash SRAM", byte_length, 50, _quiet);
+	ProgressBar progress("Load SRAM", byte_length, 50, _quiet);
 
 	flow_enable();
 

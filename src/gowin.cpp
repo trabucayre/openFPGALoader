@@ -636,7 +636,7 @@ bool Gowin::flashSRAM(const uint8_t *data, int length)
 	Jtag::tapState_t tx_end;
 	int byte_length = length / 8;
 
-	ProgressBar progress("Flash SRAM", byte_length, 50, _quiet);
+	ProgressBar progress("Load SRAM", byte_length, 50, _quiet);
 
 	/* UG704 3.4.3 */
 	if (is_gw5a) {

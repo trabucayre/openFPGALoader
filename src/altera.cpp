@@ -97,7 +97,7 @@ void Altera::programMem(RawParser &_bit)
 	_jtag->set_state(Jtag::RUN_TEST_IDLE);
 	_jtag->toggleClk(1000000/clk_period);
 	/* write */
-	ProgressBar progress("Flash SRAM", byte_length, 50, _quiet);
+	ProgressBar progress("Load SRAM", byte_length, 50, _quiet);
 
 	int xfer_len = 512;
 	int tx_len;
