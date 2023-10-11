@@ -73,6 +73,8 @@ class Lattice: public Device, SPIInterface {
 
 		lattice_family_t _fpga_family;
 
+		int get_statusreg_size();
+
 		bool program_intFlash(ConfigBitstreamParser *_cbp);
 		bool program_extFlash(unsigned int offset, bool unprotect_flash);
 		bool wr_rd(uint8_t cmd, uint8_t *tx, int tx_len,
@@ -100,9 +102,9 @@ class Lattice: public Device, SPIInterface {
 		bool flashErase(uint32_t mask);
 		bool flashProg(uint32_t start_addr, const std::string &name,
 				std::vector<std::string> data);
-		bool checkStatus(uint32_t val, uint32_t mask);
-		void displayReadReg(uint32_t dev);
-		uint32_t readStatusReg();
+		bool checkStatus(uint64_t val, uint64_t mask);
+		void displayReadReg(uint64_t dev);
+		uint64_t readStatusReg();
 		uint64_t readFeaturesRow();
 		bool writeFeaturesRow(uint64_t features, bool verify);
 		uint16_t readFeabits();

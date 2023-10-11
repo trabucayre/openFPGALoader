@@ -91,7 +91,7 @@ using namespace std;
 #define READ_FEABITS            		0xFB		/* LSC_READ_FEABITS */
 /* See feaParser.hpp for FEAbit definitions */
 #define PROG_DONE						0x5E		/* ISC_PROGRAM_DONE - This command is used to program the done bit */
-#define REFRESH							0x79		/* LSC_REFRESH */
+#define REFRESH							0x79		/* LSC_REFRESH - Equivalent to toggle PROGRAMN pin */
 #define READ_STATUS_REGISTER    		0x3C		/* LSC_READ_STATUS */
 #  define REG_STATUS_DONE				(1 << 8)	/* Flash or SRAM Done Flag (ISC_EN=0 -> 1 Successful Flash to SRAM transfer, ISC_EN=1 -> 1 Programmed) */
 #  define REG_STATUS_ISC_EN				(1 << 9)	/* Enable Configuration Interface (1=Enable, 0=Disable) */
@@ -103,6 +103,7 @@ using namespace std;
 #  define REG_STATUS_AUTH_DONE			(1 << 18)	/* Authentication done */
 #  define REG_STATUS_PRI_BOOT_FAIL		(1 << 21)	/* Primary boot failure (1= Fail) even though secondary boot successful */
 #  define REG_STATUS_CNF_CHK_MASK		(0x0f << 23)	/* Configuration Status Check */
+#define REG_STATUS_PRV_CNF_CHK_MASK		(0x0fUL << 33)	/* NEXUS_FAMILY: Configuration Status Check of previous bitstrem */
 #  define REG_STATUS_MACHXO3D_CNF_CHK_MASK	(0x0f << 22)	/* Configuration Status Check */
 #  define REG_STATUS_EXEC_ERR			(1 << 26)	/*** NOT specified for MachXO3D ***/
 #  define REG_STATUS_DEV_VERIFIED		(1 << 27)	/* I=0 Device verified correct, I=1 Device failed to verify */
@@ -256,9 +257,9 @@ void displayFeabits(uint16_t _featbits)
 		(((_featbits>>2)&0x01)?"Enabled" : "Disabled"));
 }
 
-bool Lattice::checkStatus(uint32_t val, uint32_t mask)
+bool Lattice::checkStatus(uint64_t val, uint64_t mask)
 {
-	uint32_t reg = readStatusReg();
+	uint64_t reg = readStatusReg();
 
 	return ((reg & mask) == val) ? true : false;
 }
@@ -306,17 +307,40 @@ bool Lattice::program_mem()
 	memset(tx_buf, 0xff, 26);
 	wr_rd(0x1C, tx_buf, 26, NULL, 0);
 
-	/* SRAM TRANSPARENT mode ISC_ENABLE_X 0x74 */
-	uint8_t tx_tmp[1] = {0x00};
-	// wr_rd(ISC_ENABLE_TRANSPARENT, tx_tmp, 1, NULL, 0);
-	// _jtag->set_state(Jtag::RUN_TEST_IDLE);
-	// _jtag->toggleClk(1000);
-
-  /* LSC_REFRESH 0x79 -- "Equivalent to toggle PROGRAMN pin" */
-  wr_rd(REFRESH, NULL, 0, NULL, 0);
-  _jtag->set_state(Jtag::RUN_TEST_IDLE);
-  _jtag->toggleClk(1000);
-  sleep(5);
+	/* LSC_REFRESH 0x79 -- "Equivalent to toggle PROGRAMN pin"
+	 * We REFRESH only if the fpga is in a status of error due to
+	 * the previous bitstream. For example, this happens if
+	 * no bitstream is present on the SPI FLASH
+	 */
+	/*flag to understand if we refreshed or not*/
+	bool was_refreshed;
+	if (_fpga_family == NEXUS_FAMILY) {
+		if (!checkStatus(0, REG_STATUS_PRV_CNF_CHK_MASK)) {
+			printInfo("Error in previous bitstream execution. REFRESH: ", false);
+			wr_rd(REFRESH, NULL, 0, NULL, 0);
+			_jtag->set_state(Jtag::RUN_TEST_IDLE);
+			_jtag->toggleClk(1000);
+			/* In Lattice FPGA-TN-02099 document in a note it's reported that there
+				 is a delay time after LSC_REFRESH where "Duration could be in
+				 seconds". Without whis waiting time, busy flag can't be cleared.*/
+			sleep(5);
+			was_refreshed = true;
+			if (!checkStatus(0, REG_STATUS_PRV_CNF_CHK_MASK)) {
+				printError("FAIL");
+				displayReadReg(readStatusReg());
+				return false;
+			} else {
+				printSuccess("DONE");
+			}
+		} else {
+			was_refreshed = false;
+			if (_verbose){
+				printInfo("No error in previous bitstream execution.", true);
+			}
+		}
+	} else {
+		was_refreshed = false;
+	}
 
 	/* ISC Enable 0xC6 */
 	printInfo("Enable configuration: ", false);
@@ -328,23 +352,27 @@ bool Lattice::program_mem()
 		printSuccess("DONE");
 	}
 
-	/* LSC_DEVICE_CONTROL 0x7D -- configuration reset */
-	tx_tmp[0] = 0x08;
-	wr_rd(LSC_DEVICE_CONTROL, tx_tmp, 1, NULL, 0);
-	_jtag->set_state(Jtag::RUN_TEST_IDLE);
-	_jtag->toggleClk(1000);
-	if(!pollBusyFlag()) {
-		printError("FAIL");
-		return false;
-	}
+	if (was_refreshed) {
+		/* LSC_DEVICE_CONTROL 0x7D -- configuration reset */
+		printInfo("Configuration Logic Reset: ", false);
+		uint8_t tx_tmp[1] = {0x08};
+		wr_rd(LSC_DEVICE_CONTROL, tx_tmp, 1, NULL, 0);
+		_jtag->set_state(Jtag::RUN_TEST_IDLE);
+		_jtag->toggleClk(1000);
+		if(!pollBusyFlag()) {
+			printError("FAIL");
+			return false;
+		}
 
-	tx_tmp[0] = 0x00;
-	wr_rd(LSC_DEVICE_CONTROL, tx_tmp, 1, NULL, 0);
-	_jtag->set_state(Jtag::RUN_TEST_IDLE);
-	_jtag->toggleClk(1000);
-	if(!pollBusyFlag()) {
-		printError("FAIL");
-		return false;
+		tx_tmp[0] = 0x00;
+		wr_rd(LSC_DEVICE_CONTROL, tx_tmp, 1, NULL, 0);
+		_jtag->set_state(Jtag::RUN_TEST_IDLE);
+		_jtag->toggleClk(1000);
+		if(!pollBusyFlag()) {
+			printError("FAIL");
+			return false;
+		}
+		printSuccess("DONE");
 	}
 
 	/* ISC ERASE */
@@ -923,20 +951,35 @@ bool Lattice::checkID()
 	return true;
 }
 
+/* returns the number of bits of the Device Status Register
+ * accordingly to _fpga_family
+ */
+int Lattice::get_statusreg_size(){
+	if (_fpga_family == NEXUS_FAMILY) {
+		return 64;
+	} else{
+		return 32;
+	}
+}
+
 /* feabits is MSB first
  * maybe this register too
  * or not
  */
-uint32_t Lattice::readStatusReg()
+uint64_t Lattice::readStatusReg()
 {
-	uint32_t reg;
-	uint8_t rx[4], tx[4];
+	uint64_t reg;
+	uint8_t rx[8], tx[8];
+
+	int reg_len = get_statusreg_size() / 8;
+
 	/* valgrind warn */
-	memset(tx, 0, 4);
-	wr_rd(READ_STATUS_REGISTER, tx, 4, rx, 4);
+	memset(tx, 0, 8);
+	memset(rx, 0, 8);
+	wr_rd(READ_STATUS_REGISTER, tx, reg_len, rx, reg_len);
 	_jtag->set_state(Jtag::RUN_TEST_IDLE);
 	_jtag->toggleClk(1000);
-	reg = rx[3] << 24 | rx[2] << 16 | rx[1] << 8 | rx[0];
+	reg = (uint64_t) rx[7] << 56 | (uint64_t) rx[6] << 48 | (uint64_t) rx[5] << 40 | (uint64_t) rx[4] << 32 | rx[3] << 24 | rx[2] << 16 | rx[1] << 8 | rx[0];
 	return reg;
 }
 
@@ -975,7 +1018,7 @@ bool Lattice::wr_rd(uint8_t cmd,
 	return true;
 }
 
-void Lattice::displayReadReg(uint32_t dev)
+void Lattice::displayReadReg(uint64_t dev)
 {
 	uint8_t err;
 	printf("displayReadReg\n");
@@ -1056,7 +1099,6 @@ void Lattice::displayReadReg(uint32_t dev)
 		if ((dev >> 31) & 0x01) printf("\tFT Mode\n");
 	}
 
-#if 0
 	if (_fpga_family == NEXUS_FAMILY) {
 		if ((dev >> 33) & 0x01) printf("\tDry Run Done\n");
 		err = (dev >> 34)&0x0f;
@@ -1124,7 +1166,7 @@ void Lattice::displayReadReg(uint32_t dev)
 		}
 		if ((dev >> 50) & 0x01) printf("\tAuthentication Done\n");
 		if ((dev >> 51) & 0x01) printf("\tDry Run Authentication Done\n");
-#endif
+  }
 }
 
 bool Lattice::pollBusyFlag(bool verbose)
