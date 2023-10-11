@@ -28,7 +28,7 @@ using namespace std;
 #define ISC_ENABLE					0xC6		/* ISC_ENABLE - Offline Mode */
 #  define ISC_ENABLE_FLASH_MODE		(1 << 3)
 #  define ISC_ENABLE_SRAM_MODE		(0 << 3)
-#define ISC_ENABLE_TRANSPARANT		0x74		/* This command is used to put the device in transparent mode */
+#define ISC_ENABLE_TRANSPARENT		0x74		/* ISC_ENABLE_X This command is used to put the device in transparent mode */
 #define ISC_DISABLE					0x26		/* ISC_DISABLE */
 #define READ_DEVICE_ID_CODE			0xE0		/* IDCODE_PUB */
 #define FLASH_ERASE					0x0E		/* ISC_ERASE */
@@ -133,6 +133,7 @@ using namespace std;
 #define PROG_ECDSA_PUBKEY3				0x63		/* This command is used to program the fourth 128 bits of the ECDSA Public Key. */
 #define READ_ECDSA_PUBKEY3				0x64		/* This command is used to read the fourth 128 bits of the ECDSA Public Key. */
 #define ISC_NOOP						0xff		/* This command is no operation command (NOOP) or null operation. */
+#define LSC_DEVICE_CONTROL  0x7D    /* Multiple commands. Bit 3: configuration reset */
 
 #define PUBKEY_LENGTH_BYTES				64			/* length of the public key (MachXO3D) in bytes */
 
@@ -203,6 +204,8 @@ Lattice::Lattice(Jtag *jtag, const string filename, const string &file_type,
 	} else if (family == "CrosslinkNX") {
 		_fpga_family = NEXUS_FAMILY;
 	} else if (family == "CertusNX") {
+		_fpga_family = NEXUS_FAMILY;
+	} else if (family == "CertusProNX") {
 		_fpga_family = NEXUS_FAMILY;
 	} else {
 		printError("Unknown device family");
@@ -303,7 +306,17 @@ bool Lattice::program_mem()
 	memset(tx_buf, 0xff, 26);
 	wr_rd(0x1C, tx_buf, 26, NULL, 0);
 
-	wr_rd(0xFf, NULL, 0, NULL, 0);
+	/* SRAM TRANSPARENT mode ISC_ENABLE_X 0x74 */
+	uint8_t tx_tmp[1] = {0x00};
+	// wr_rd(ISC_ENABLE_TRANSPARENT, tx_tmp, 1, NULL, 0);
+	// _jtag->set_state(Jtag::RUN_TEST_IDLE);
+	// _jtag->toggleClk(1000);
+
+  /* LSC_REFRESH 0x79 -- "Equivalent to toggle PROGRAMN pin" */
+  wr_rd(REFRESH, NULL, 0, NULL, 0);
+  _jtag->set_state(Jtag::RUN_TEST_IDLE);
+  _jtag->toggleClk(1000);
+  sleep(5);
 
 	/* ISC Enable 0xC6 */
 	printInfo("Enable configuration: ", false);
@@ -313,6 +326,25 @@ bool Lattice::program_mem()
 		return false;
 	} else {
 		printSuccess("DONE");
+	}
+
+	/* LSC_DEVICE_CONTROL 0x7D -- configuration reset */
+	tx_tmp[0] = 0x08;
+	wr_rd(LSC_DEVICE_CONTROL, tx_tmp, 1, NULL, 0);
+	_jtag->set_state(Jtag::RUN_TEST_IDLE);
+	_jtag->toggleClk(1000);
+	if(!pollBusyFlag()) {
+		printError("FAIL");
+		return false;
+	}
+
+	tx_tmp[0] = 0x00;
+	wr_rd(LSC_DEVICE_CONTROL, tx_tmp, 1, NULL, 0);
+	_jtag->set_state(Jtag::RUN_TEST_IDLE);
+	_jtag->toggleClk(1000);
+	if(!pollBusyFlag()) {
+		printError("FAIL");
+		return false;
 	}
 
 	/* ISC ERASE */
@@ -355,6 +387,9 @@ bool Lattice::program_mem()
 
 		_jtag->shiftDR(tmp, NULL, size*8, next_state);
 	}
+
+	_jtag->set_state(Jtag::RUN_TEST_IDLE);
+	_jtag->toggleClk(1000);
 
 	uint32_t status_mask;
 	if (_fpga_family == MACHXO3D_FAMILY)
@@ -1307,7 +1342,7 @@ uint16_t Lattice::getUFMStartPageFromJEDEC(JedParser *_jed, int id)
 	addres.
 	TODO: In any case, JEDEC files don't carry part information. Verify against
 	IDCODE read previously? */
-	
+
 	if(raw_page_offset > 9211) {
 		return raw_page_offset - 9211 - 1; // 7000
 	} else if(raw_page_offset > 5758) {
