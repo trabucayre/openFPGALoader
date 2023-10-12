@@ -96,6 +96,7 @@ if tool in ["ise", "vivado"]:
         "xc7s50csga324"    : "xc7s_csga324",
         "xcvu9p-flga2104" : "xcvu9p_flga2104",
         "xcvu37p-fsvh2892" : "xcvu37p_fsvh2892",
+        "xcku3p-ffva676" : "xcku3p_ffva676",
         "xcku5p-ffvb676" : "xcku5p_ffvb676",
         }[part]
     if tool == "ise":
@@ -141,6 +142,8 @@ if tool in ["ise", "vivado"]:
                     'paramtype': 'vlogdefine',
                     'description': 'secondary flash',
                     'default': 1}
+            elif part == "xcku3p-ffva676":
+                tool_options = {'part': part + '-2-e'}
             elif part == "xcvu37p-fsvh2892":
                 tool_options = {'part': part + '-2L-e'}
         else:
