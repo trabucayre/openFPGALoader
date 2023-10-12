@@ -1,6 +1,6 @@
 module spiOverJtag
 (
-`ifndef virtexultrascale
+`ifndef xilinxultrascale
 	output csn,
 
 `ifdef spartan6
@@ -13,7 +13,7 @@ module spiOverJtag
 	input  sdo_dq1,
 	output wpn_dq2,
 	output hldn_dq3
-`endif // virtexultrascale
+`endif // xilinxultrascale
 
 `ifdef secondaryflash
 	output sdi_sec_dq0,
@@ -60,7 +60,7 @@ module spiOverJtag
 	assign sck = drck;
 	assign runtest = tmp_up_s;
 `else // !spartan6 && !spartan3e
-`ifdef virtexultrascale
+`ifdef xilinxultrascale
 	wire [3:0] di;
 	assign sdo_dq1 = di[1];
 	wire [3:0] do = {hldn_dq3, wpn_dq2, 1'b0, sdi_dq0};
@@ -92,7 +92,7 @@ module spiOverJtag
 		.USRDONEO (1'b1), // 1-bit input: User DONE pin output control.
 		.USRDONETS(1'b1)  // 1-bit input: User DONE 3-state enable output.
 	);
-`else // !spartan6 && !spartan3e && !virtexultrascale
+`else // !spartan6 && !spartan3e && !xilinxultrascale
 	STARTUPE2 #(
 		.PROG_USR("FALSE"),  // Activate program event security feature. Requires encrypted bitstreams.
 		.SIM_CCLK_FREQ(0.0)  // Set the Configuration Clock Frequency(ns) for simulation.
