@@ -212,6 +212,9 @@ static std::map <uint32_t, fpga_model> fpga_list = {
 	{0x310F0043, {"lattice", "CertusNX", "LFD2NX-17", 8}},
 	{0x310F1043, {"lattice", "CertusNX", "LFD2NX-40", 8}},
 
+	/* Lattice CertusPro-NX */
+	{0x010F4043, {"lattice", "CertusProNX", "LFCPNX-100", 8}},
+
 	/**************************************************************************/
 	/*                             Gowin                                      */
 	/**************************************************************************/
