@@ -151,6 +151,27 @@
   Memory: OK
   Flash: OK
 
+- ID: certusnx_versa_evn
+  Description: Certus-NX Versa Evaluation Board
+  URL: https://www.latticesemi.com/products/developmentboardsandkits/certuspro-nx-versa-board
+  FPGA: Certus LFD2NX-40
+  Memory: OK
+  Flash: OK
+
+- ID: certuspronx_evn
+  Description: CertusPro-NX Evaluation Board
+  URL: https://www.latticesemi.com/products/developmentboardsandkits/certuspro-nxevaluationboard
+  FPGA: CertusPro-NX LFCPNX-100
+  Memory: OK
+  Flash: OK
+
+- ID: certuspronx_versa_evn
+  Description: CertusPro-NX Versa
+  URL: https://www.latticesemi.com/products/developmentboardsandkits/certuspro-nx-versa-board
+  FPGA: CertusPro-NX LFCPNX-100
+  Memory: OK
+  Flash: OK
+
 - ID: cmoda7_35t
   Description: Digilent CmodA7
   URL: https://digilent.com/reference/programmable-logic/cmod-a7/start

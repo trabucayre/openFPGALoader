@@ -113,6 +113,18 @@ Intel:
 
 Lattice:
 
+  - Description: Certus-NX
+    Model: LFD2NX-40
+    URL: https://www.latticesemi.com/Products/FPGAandCPLD/Certus-NX
+    Memory: OK
+    Flash: OK
+
+  - Description: CertusPro-NX
+    Model: LFCPNX-100
+    URL: https://www.latticesemi.com/Products/FPGAandCPLD/Certus-NX
+    Memory: OK
+    Flash: OK
+
   - Description: CrossLink-NX
     Model: LIFCL-40
     URL: https://www.latticesemi.com/en/Products/FPGAandCPLD/CrossLink-NX
