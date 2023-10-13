@@ -78,6 +78,7 @@ if tool in ["ise", "vivado"]:
         "xc7a35tcpg236"    : "xc7a_cpg236",
         "xc7a35tcsg324"    : "xc7a_csg324",
         "xc7a35tftg256"    : "xc7a_ftg256",
+        "xc7a35tfgg484"    : "xc7a_fgg484",
         "xc7a50tcpg236"    : "xc7a_cpg236",
         "xc7a50tcsg324"    : "xc7a_csg324",
         "xc7a50tfgg484"	   : "xc7a_fgg484",
