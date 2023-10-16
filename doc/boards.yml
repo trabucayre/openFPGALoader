@@ -324,6 +324,13 @@
   Flash: OK
   Constraints: Fomu-PVT
 
+- ID: gr740-mini
+  Description: GR740-MINI
+  URL: https://gaisler.com/index.php/products/boards/gr740-mini
+  FPGA: CertusPro-NX LFCPNX-100
+  Memory: OK
+  Flash: NA
+
 - ID: honeycomb
   Description: honeycomb
   URL: https://github.com/Disasm/honeycomb-pcb
