@@ -87,7 +87,7 @@ static std::map <uint32_t, fpga_model> fpga_list = {
 	/* Xilinx Ultrascale / Kintex */
 	{0x13822093, {"xilinx", "kintexus", "xcku040", 6}},
 	{0x13823093, {"xilinx", "kintexus", "xcku035", 6}},
- 	{0x1390d093, {"xilinx", "kintexus", "xcku115", 6}},
+	{0x1390d093, {"xilinx", "kintexus", "xcku115", 6}},
 
 	/* Xilinx Ultrascale+ / Artix */
 	{0x04A64093, {"xilinx", "artixusp", "xcau25p", 6}},
