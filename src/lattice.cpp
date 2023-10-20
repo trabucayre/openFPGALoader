@@ -103,7 +103,7 @@ using namespace std;
 #  define REG_STATUS_AUTH_DONE			(1 << 18)	/* Authentication done */
 #  define REG_STATUS_PRI_BOOT_FAIL		(1 << 21)	/* Primary boot failure (1= Fail) even though secondary boot successful */
 #  define REG_STATUS_CNF_CHK_MASK		(0x0f << 23)	/* Configuration Status Check */
-#define REG_STATUS_PRV_CNF_CHK_MASK		(0x0fUL << 34)	/* NEXUS_FAMILY: Configuration Status Check of previous bitstrem */
+#define REG_STATUS_PRV_CNF_CHK_MASK		(UINT64_C(0x0f) << 34)	/* NEXUS_FAMILY: Configuration Status Check of previous bitstrem */
 #  define REG_STATUS_MACHXO3D_CNF_CHK_MASK	(0x0f << 22)	/* Configuration Status Check */
 #  define REG_STATUS_EXEC_ERR			(1 << 26)	/*** NOT specified for MachXO3D ***/
 #  define REG_STATUS_DEV_VERIFIED		(1 << 27)	/* I=0 Device verified correct, I=1 Device failed to verify */
