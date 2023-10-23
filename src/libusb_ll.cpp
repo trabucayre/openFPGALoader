@@ -74,6 +74,8 @@ bool libusb_ll::scan()
 				snprintf(probe_type, 256, "ft232H");
 			else if (desc.idProduct == 0x6015)
 				snprintf(probe_type, 256, "ft231X");
+			else if (desc.idProduct == 0x6043)
+				snprintf(probe_type, 256, "FT4232HP");
 			else
 				snprintf(probe_type, 256, "unknown FTDI");
 			found = true;

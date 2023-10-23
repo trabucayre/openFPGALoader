@@ -139,9 +139,26 @@ static std::map <uint32_t, flash_t> flash_list = {
 		.bp_len = 4,
 		.bp_offset = {(1 << 2), (1 << 3), (1 << 4), (1 << 6)}}
 	},
-	{0x0020ba18, {
+  {0x0020bb18, {
+		/* https://www.micron.com/-/media/client/global/documents/products/data-sheet/nor-flash/serial-nor/n25q/n25q_128mb_1_8v_65nm.pdf */
+		/* MT25QU128ABA has the same JEDEC-standard signature: https://media-www.micron.com/-/media/client/global/documents/products/data-sheet/nor-flash/serial-nor/mt25q/die-rev-a/mt25q_qlhs_u_128_aba_0.pdf */
+		/* Differences: https://media-www.micron.com/-/media/client/global/documents/products/technical-note/nor-flash/tn2501_migrating_n25q_to_mt25ql.pdf */
 		.manufacturer = "micron",
-		.model = "N25Q128",
+		.model = "MT25/N25Q128_1_8V",
+		.nr_sector = 256,
+		.sector_erase = true,
+		.subsector_erase = true,
+		.has_extended = true,
+		.tb_otp = false,
+		.tb_offset = (1 << 5),
+		.tb_register = STATR,
+		.bp_len = 4,
+		.bp_offset = {(1 << 2), (1 << 3), (1 << 4), (1 << 6)}}
+	},
+	{0x0020ba18, {
+		/* https://media-www.micron.com/-/media/client/global/documents/products/data-sheet/nor-flash/serial-nor/n25q/n25q_128mb_3v_65nm.pdf */
+		.manufacturer = "micron",
+		.model = "N25Q128_3V",
 		.nr_sector = 256,
 		.sector_erase = true,
 		.subsector_erase = true,
@@ -274,6 +291,20 @@ static std::map <uint32_t, flash_t> flash_list = {
 		.manufacturer = "Macronix",
 		.model = "MX25L12833",
 		.nr_sector = 256,
+		.sector_erase = true,
+		.subsector_erase = true,
+		.has_extended = false,
+		.tb_otp = true,
+		.tb_offset = (1 << 3),
+		.tb_register = CONFR,
+		.bp_len = 5,
+		.bp_offset = {(1 << 2), (1 << 3), (1 << 4), (1 << 5)}}
+	},
+  {0xc2201a, {
+      /* https://www.macronix.com/Lists/Datasheet/Attachments/8745/MX25L51245G,%203V,%20512Mb,%20v1.7.pdf */
+		.manufacturer = "Macronix",
+		.model = "MX25L51245G",
+		.nr_sector = 1024,
 		.sector_erase = true,
 		.subsector_erase = true,
 		.has_extended = false,

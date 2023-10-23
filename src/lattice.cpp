@@ -103,7 +103,7 @@ using namespace std;
 #  define REG_STATUS_AUTH_DONE			(1 << 18)	/* Authentication done */
 #  define REG_STATUS_PRI_BOOT_FAIL		(1 << 21)	/* Primary boot failure (1= Fail) even though secondary boot successful */
 #  define REG_STATUS_CNF_CHK_MASK		(0x0f << 23)	/* Configuration Status Check */
-#define REG_STATUS_PRV_CNF_CHK_MASK		(0x0fUL << 33)	/* NEXUS_FAMILY: Configuration Status Check of previous bitstrem */
+#define REG_STATUS_PRV_CNF_CHK_MASK		(UINT64_C(0x0f) << 34)	/* NEXUS_FAMILY: Configuration Status Check of previous bitstrem */
 #  define REG_STATUS_MACHXO3D_CNF_CHK_MASK	(0x0f << 22)	/* Configuration Status Check */
 #  define REG_STATUS_EXEC_ERR			(1 << 26)	/*** NOT specified for MachXO3D ***/
 #  define REG_STATUS_DEV_VERIFIED		(1 << 27)	/* I=0 Device verified correct, I=1 Device failed to verify */
@@ -301,11 +301,20 @@ bool Lattice::program_mem()
 		displayReadReg(readStatusReg());
 	}
 
-	/* The command code 0x1C is not listed in the manual? */
-	/* preload 0x1C */
-	uint8_t tx_buf[26];
-	memset(tx_buf, 0xff, 26);
-	wr_rd(0x1C, tx_buf, 26, NULL, 0);
+	/* The command code 0x1C is not listed in the manual?
+	 * PRELOAD/SAMPLE 0x1C
+	 * For NEXUS family fpgas, the Bscan register is 362 bits long or
+	 * 45.25 bytes => 46 bytes
+	 */
+	uint8_t tx_buf[46];
+	memset(tx_buf, 0xff, 46);
+	int tx_len;
+	if(_fpga_family == NEXUS_FAMILY){
+		tx_len = 46;
+	} else {
+		tx_len = 26;
+	}
+	wr_rd(0x1C, tx_buf, tx_len, NULL, 0);
 
 	/* LSC_REFRESH 0x79 -- "Equivalent to toggle PROGRAMN pin"
 	 * We REFRESH only if the fpga is in a status of error due to
@@ -375,9 +384,15 @@ bool Lattice::program_mem()
 		printSuccess("DONE");
 	}
 
-	/* ISC ERASE */
+	/* ISC ERASE
+	 * For Nexus family (from svf file): 1 byte to tx 0x00
+	 */
 	printInfo("SRAM erase: ", false);
-	if (flashErase(FLASH_ERASE_SRAM) == false) {
+	uint32_t mask_erase[1] = {FLASH_ERASE_SRAM};
+	if (_fpga_family == NEXUS_FAMILY){
+		mask_erase[0] = 0x00;
+	}
+	if (flashErase(mask_erase[0]) == false) {
 		printError("FAIL");
 		displayReadReg(readStatusReg());
 		return false;
