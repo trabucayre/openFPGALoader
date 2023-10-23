@@ -103,7 +103,7 @@ using namespace std;
 #  define REG_STATUS_AUTH_DONE			(1 << 18)	/* Authentication done */
 #  define REG_STATUS_PRI_BOOT_FAIL		(1 << 21)	/* Primary boot failure (1= Fail) even though secondary boot successful */
 #  define REG_STATUS_CNF_CHK_MASK		(0x0f << 23)	/* Configuration Status Check */
-#define REG_STATUS_PRV_CNF_CHK_MASK		(UINT64_C(0x0f) << 34)	/* NEXUS_FAMILY: Configuration Status Check of previous bitstrem */
+# define REG_STATUS_PRV_CNF_CHK_MASK	(UINT64_C(0x0f) << 34)	/* NEXUS_FAMILY: Configuration Status Check of previous bitstrem */
 #  define REG_STATUS_MACHXO3D_CNF_CHK_MASK	(0x0f << 22)	/* Configuration Status Check */
 #  define REG_STATUS_EXEC_ERR			(1 << 26)	/*** NOT specified for MachXO3D ***/
 #  define REG_STATUS_DEV_VERIFIED		(1 << 27)	/* I=0 Device verified correct, I=1 Device failed to verify */
@@ -1038,7 +1038,7 @@ void Lattice::displayReadReg(uint64_t dev)
 	uint8_t err;
 	printf("displayReadReg\n");
 	if (dev & 1<<0) printf("\tTRAN Mode\n");
-	printf("\tConfig Target Selection : %x\n", (dev >> 1) & 0x07);
+	printf("\tConfig Target Selection : %lx\n", (dev >> 1) & 0x07);
 	if (dev & 1<<4) printf("\tJTAG Active\n");
 	if (dev & 1<<5) printf("\tPWD Protect\n");
 	if (dev & 1<<6) printf("\tOTP\n");
