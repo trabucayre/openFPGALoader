@@ -41,6 +41,13 @@
   Memory: OK
   Flash: OK
 
+- ID: alinx_ax7102
+  Description: ALINX AX/7102
+  URL: https://alinx.com/en/detail/493
+  FPGA: Artix xc7a100tfgg484
+  Memory: OK
+  Flash: OK
+
 - ID: analogMax
   Description: Trenz TEI0010 - AnalogMax
   URL: https://wiki.trenz-electronic.de/display/PD/TEI0010+-+AnalogMax
