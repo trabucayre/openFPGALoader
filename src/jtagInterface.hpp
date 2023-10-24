@@ -24,6 +24,29 @@ class JtagInterface {
 	virtual int setClkFreq(uint32_t clkHZ) = 0;
 	virtual uint32_t getClkFreq() {return _clkHZ;}
 
+	enum tck_edge_t {
+		FALLING_EDGE = 0,
+		RISING_EDGE  = 1,
+		NONE_EDGE    = 2,
+	};
+
+	/*!
+	 * Return constant to describe if read is on rising or falling TCK edge
+	 */
+	tck_edge_t getReadEdge() { return NONE_EDGE; }
+	/*!
+	 * configure TCK edge used for read
+	 */
+	void setReadEdge(tck_edge_t rd_edge) { (void) rd_edge; }
+	/*!
+	 * Return constant to describe if write is on rising or falling TCK edge
+	 */
+	tck_edge_t getWriteEdge() { return NONE_EDGE; }
+	/*!
+	 * configure TCK edge used for write
+	 */
+	void setWriteEdge(tck_edge_t wr_edge) { (void)wr_edge; }
+
 	/*!
 	 * \brief flush TMS internal buffer (ie. transmit to converter)
 	 * \param tdo: pointer for read operation. May be NULL

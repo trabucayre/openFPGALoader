@@ -29,6 +29,27 @@ class Jtag {
 	uint32_t getClkFreq() { return _jtag->getClkFreq();}
 
 	/*!
+	 * Return constant to describe if read is on rising or falling TCK edge
+	 */
+	JtagInterface::tck_edge_t getReadEdge() { return _jtag->getReadEdge();}
+	/*!
+	 * configure TCK edge used for read
+	 */
+	void setReadEdge(JtagInterface::tck_edge_t rd_edge) {
+		_jtag->setReadEdge(rd_edge);
+	}
+	/*!
+	 * Return constant to describe if write is on rising or falling TCK edge
+	 */
+	JtagInterface::tck_edge_t getWriteEdge() { return _jtag->getWriteEdge();}
+	/*!
+	 * configure TCK edge used for write
+	 */
+	void setWriteEdge(JtagInterface::tck_edge_t wr_edge) {
+		_jtag->setWriteEdge(wr_edge);
+	}
+
+	/*!
 	 * \brief scan JTAG chain to obtain IDCODE. Fill
 	 *        a vector with all idcode and another
 	 *        vector with irlength

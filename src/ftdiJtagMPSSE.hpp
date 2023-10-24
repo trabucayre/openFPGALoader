@@ -32,6 +32,31 @@ class FtdiJtagMPSSE : public JtagInterface, public FTDIpp_MPSSE {
 
 	uint32_t getClkFreq() override {return FTDIpp_MPSSE::getClkFreq();}
 
+	/*!
+	 * Return constant to describe if read is on rising or falling TCK edge
+	 */
+	tck_edge_t getReadEdge() {
+		return _read_mode == MPSSE_READ_NEG ? FALLING_EDGE : RISING_EDGE;
+	}
+	/*!
+	 * configure TCK edge used for read
+	 */
+	void setReadEdge(tck_edge_t rd_edge) {
+		_read_mode = rd_edge == FALLING_EDGE ? MPSSE_READ_NEG : 0;
+	}
+	/*!
+	 * Return constant to describe if write is on rising or falling TCK edge
+	 */
+	tck_edge_t getWriteEdge() {
+		return _write_mode == MPSSE_WRITE_NEG ? FALLING_EDGE : RISING_EDGE;
+	}
+	/*!
+	 * configure TCK edge used for write
+	 */
+	void setWriteEdge(tck_edge_t wr_edge) {
+		_write_mode = wr_edge == FALLING_EDGE ? MPSSE_WRITE_NEG : 0;
+	}
+
 	/* TMS */
 	int writeTMS(const uint8_t *tms, uint32_t len, bool flush_buffer) override;
 	/* clock */
