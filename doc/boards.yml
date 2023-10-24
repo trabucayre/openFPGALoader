@@ -666,6 +666,13 @@
   Memory: OK
   Flash: TBD
 
+- ID: tangmega138k
+  Description: Sipeed Tang Mega 138k
+  URL: https://wiki.sipeed.com/hardware/zh/tang/tang-mega-138k/mega-138k.html
+  FPGA: Gowin Arora V GW5AST-138B (GW5AST-LV138FPG676A)
+  Memory: OK
+  Flash: TBD
+
 - ID: tec0117
   Description: Trenz Gowin LittleBee (TEC0117)
   URL: https://shop.trenz-electronic.de/en/TEC0117-01-FPGA-Module-with-GOWIN-LittleBee-and-8-MByte-internal-SDRAM
