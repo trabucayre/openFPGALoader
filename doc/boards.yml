@@ -659,6 +659,13 @@
   Memory: OK
   Flash: EF
 
+- ID: tangprimer25k
+  Description: Sipeed Tang Primer 25k
+  URL: https://wiki.sipeed.com/hardware/zh/tang/tang-primer-25k/primer-25k.html
+  FPGA: Gowin Arora V GW5A-25A (GW5A-LV25MG121)
+  Memory: OK
+  Flash: TBD
+
 - ID: tec0117
   Description: Trenz Gowin LittleBee (TEC0117)
   URL: https://shop.trenz-electronic.de/en/TEC0117-01-FPGA-Module-with-GOWIN-LittleBee-and-8-MByte-internal-SDRAM
