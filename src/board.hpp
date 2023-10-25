@@ -109,6 +109,7 @@ static std::map <std::string, target_board_t> board_list = {
 	JTAG_BOARD("alchitry_au",     "xc7a35tftg256",  "ft2232",   0, 0, CABLE_DEFAULT),
 	JTAG_BOARD("alchitry_au_plus","xc7a100tftg256",  "ft2232",   0, 0, CABLE_DEFAULT),
 	JTAG_BOARD("alinx_ax516",     "xc6slx16csg324", "",         0, 0, CABLE_DEFAULT),
+	JTAG_BOARD("alinx_ax7102",    "xc7a100tfgg484", "",         0, 0, CABLE_DEFAULT),
 	/* left for backward compatibility, use right name instead */
 	JTAG_BOARD("arty",            "xc7a35tcsg324",  "digilent", 0, 0, CABLE_MHZ(10)),
 	JTAG_BOARD("arty_a7_35t",     "xc7a35tcsg324",  "digilent", 0, 0, CABLE_MHZ(10)),
