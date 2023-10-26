@@ -729,7 +729,7 @@ bool Lattice::clearSRAM()
 		printSuccess("DONE");
 	}
 
-	if (_fpga_family == MACHXO3D_FAMILY)
+	if (_fpga_family == MACHXO3D_FAMILY || _fpga_family == NEXUS_FAMILY)
 		erase_op = 0x0;
 	else
 		erase_op = FLASH_ERASE_SRAM;
