@@ -41,6 +41,13 @@
   Memory: OK
   Flash: OK
 
+- ID: alinx_ax7101
+  Description: ALINX AX/7101
+  URL: https://alinx.com/en/detail/494
+  FPGA: Artix xc7a100tfgg484
+  Memory: OK
+  Flash: OK
+
 - ID: alinx_ax7102
   Description: ALINX AX/7102
   URL: https://alinx.com/en/detail/493
