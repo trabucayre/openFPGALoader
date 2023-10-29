@@ -189,6 +189,7 @@ int FsParser::parse()
 		case 0x0000281b: /* GW2A-55    */
 			nb_line = 2038;
 			break;
+		case 0x0001281b: /* GW5A-25 */
 		case 0x0001081b: /* GW5AST-138 */
 			/*
 			 * FIXME: Lack of information,
