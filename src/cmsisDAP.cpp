@@ -313,7 +313,8 @@ int CmsisDAP::setClkFreq(uint32_t clkHZ)
  * flush the buffer
  * tms states are written only if max or if flush_buffer set
  */
-int CmsisDAP::writeTMS(const uint8_t *tms, uint32_t len, bool flush_buffer)
+int CmsisDAP::writeTMS(const uint8_t *tms, uint32_t len, bool flush_buffer,
+		__attribute__((unused)) const uint8_t tdi)
 {
 	/* nothing to send
 	 * check if the buffer must be flushed

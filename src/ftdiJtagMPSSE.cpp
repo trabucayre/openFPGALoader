@@ -107,10 +107,11 @@ void FtdiJtagMPSSE::config_edge()
 	}
 }
 
-int FtdiJtagMPSSE::writeTMS(const uint8_t *tms, uint32_t len, bool flush_buffer)
+int FtdiJtagMPSSE::writeTMS(const uint8_t *tms, uint32_t len, bool flush_buffer, const uint8_t tdi)
 {
 	(void) flush_buffer;
 	display("%s %d %d\n", __func__, len, (len/8)+1);
+	uint8_t curr_tdi = (tdi << 7);
 
 	if (len == 0)
 		return 0;
@@ -123,14 +124,17 @@ int FtdiJtagMPSSE::writeTMS(const uint8_t *tms, uint32_t len, bool flush_buffer)
 						MPSSE_BITMODE | _write_mode),
 						0, 0};
 	while (xfer > 0) {
+		uint8_t curr_tms = 0;
 		int bit_to_send = (xfer > 6) ? 6 : xfer;
 		buf[1] = bit_to_send-1;
-		buf[2] = 0x80;
+		buf[2] = curr_tdi;
 
 		for (int i = 0; i < bit_to_send; i++, offset++) {
-			buf[2] |=
-			(((tms[offset >> 3] & (1 << (offset & 0x07))) ? 1 : 0) << i);
+			curr_tms = ((tms[offset >> 3] & (1 << (offset & 0x07))) ? 1 : 0);
+
+			buf[2] |= (curr_tms << i);
 		}
+		buf[2] |= (curr_tms << bit_to_send);
 		pos+=3;
 
 		mpsse_store(buf, 3);
@@ -230,8 +234,8 @@ int FtdiJtagMPSSE::writeTDI(const uint8_t *tdi, uint8_t *tdo, uint32_t len, bool
 						static_cast<unsigned char>((xfer - 1) & 0xff),       // low
 						static_cast<unsigned char>((((xfer - 1) >> 8) & 0xff))}; // high
 
-	display("%s len : %d %d %d %d\n", __func__, len, real_len, nb_byte,
-		nb_bit);
+	display("%s len : %d %d %d %d last: %d\n", __func__, len, real_len, nb_byte,
+		nb_bit, last);
 
 	if ((nb_byte + _num + 3) > _buffer_size)
 		mpsse_write();

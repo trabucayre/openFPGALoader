@@ -53,7 +53,7 @@ class JtagInterface {
 	 * \param len: number of bit to send
 	 * \return number of bit send/received
 	 */
-	virtual int writeTMS(const uint8_t *tms, uint32_t len, bool flush_buffer) = 0;
+	virtual int writeTMS(const uint8_t *tms, uint32_t len, bool flush_buffer, const uint8_t tdi = 1) = 0;
 
 	/*!
 	 * \brief send TDI bits (mainly in shift DR/IR state)

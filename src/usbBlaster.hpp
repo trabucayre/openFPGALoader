@@ -54,7 +54,7 @@ class UsbBlaster : public JtagInterface {
 	 * \param flush_buffer force flushing the buffer
 	 * \return number of state written
 	 * */
-	int writeTMS(const uint8_t *tms, uint32_t len, bool flush_buffer) override;
+	int writeTMS(const uint8_t *tms, uint32_t len, bool flush_buffer, const uint8_t tdi = 1) override;
 
 	/* TDI */
 	int writeTDI(const uint8_t *tx, uint8_t *rx, uint32_t len, bool end) override;

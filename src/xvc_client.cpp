@@ -87,7 +87,8 @@ XVC_client::~XVC_client()
 	close(_sock);
 }
 
-int XVC_client::writeTMS(const uint8_t *tms, uint32_t len, bool flush_buffer)
+int XVC_client::writeTMS(const uint8_t *tms, uint32_t len, bool flush_buffer,
+		__attribute__((unused)) const uint8_t tdi)
 {
 	// empty buffer
 	// if asked flush

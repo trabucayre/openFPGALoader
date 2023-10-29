@@ -171,9 +171,10 @@ int DirtyJtag::setClkFreq(uint32_t clkHZ)
 	return clkHZ;
 }
 
-int DirtyJtag::writeTMS(const uint8_t *tms, uint32_t len, bool flush_buffer)
+int DirtyJtag::writeTMS(const uint8_t *tms, uint32_t len,
+		__attribute__((unused)) bool flush_buffer,
+		__attribute__((unused)) const uint8_t tdi)
 {
-	(void) flush_buffer;
 	int actual_length;
 
 	if (len == 0)

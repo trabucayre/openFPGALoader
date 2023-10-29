@@ -89,7 +89,8 @@ Jlink::~Jlink()
 	libusb_exit(jlink_ctx);
 }
 
-int Jlink::writeTMS(const uint8_t *tms, uint32_t len, bool flush_buffer)
+int Jlink::writeTMS(const uint8_t *tms, uint32_t len, bool flush_buffer,
+		__attribute__((unused)) const uint8_t tdi)
 {
 	// empty buffer
 	// if asked flush

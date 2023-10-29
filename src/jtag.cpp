@@ -81,7 +81,7 @@ Jtag::Jtag(const cable_t &cable, const jtag_pins_conf_t *pin_conf,
 			_verbose(verbose > 1),
 			_state(RUN_TEST_IDLE),
 			_tms_buffer_size(128), _num_tms(0),
-			_board_name("nope"), device_index(0)
+			_board_name("nope"), device_index(0), _curr_tdi(1)
 {
 	switch (cable.type) {
 	case MODE_ANLOGICCABLE:
@@ -319,7 +319,7 @@ int Jtag::flushTMS(bool flush_buffer)
 	if (_num_tms != 0) {
 		display("%s: %d %x\n", __func__, _num_tms, _tms_buffer[0]);
 
-		ret = _jtag->writeTMS(_tms_buffer, _num_tms, flush_buffer);
+		ret = _jtag->writeTMS(_tms_buffer, _num_tms, flush_buffer, _curr_tdi);
 
 		/* reset buffer and number of bits */
 		memset(_tms_buffer, 0, _tms_buffer_size);
@@ -433,8 +433,9 @@ int Jtag::shiftIR(unsigned char *tdi, unsigned char *tdo, int irlen, tapState_t 
 	return 0;
 }
 
-void Jtag::set_state(tapState_t newState)
+void Jtag::set_state(tapState_t newState, const uint8_t tdi)
 {
+	_curr_tdi = tdi;
 	unsigned char tms = 0;
 	while (newState != _state) {
 		display("_state : %16s(%02d) -> %s(%02d) ",

@@ -268,7 +268,8 @@ int CH347Jtag::_setClkFreq(uint32_t clkHZ)
 	return _clkHZ;
 }
 
-int CH347Jtag::writeTMS(const uint8_t *tms, uint32_t len, bool flush_buffer)
+int CH347Jtag::writeTMS(const uint8_t *tms, uint32_t len, bool flush_buffer,
+		__attribute__((unused)) const uint8_t tdi)
 {
 	if (get_obuf_length() < (int)(len * 2 + 4)) { // check if there is enough room left
 		flush();

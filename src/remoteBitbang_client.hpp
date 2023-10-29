@@ -43,7 +43,7 @@ class RemoteBitbang_client: public JtagInterface {
 		 * \param[in] flush_buffer: force buffer to be send or not
 		 * \return <= 0 if something wrong, len otherwise
 		 */
-		int writeTMS(const uint8_t *tms, uint32_t len, bool flush_buffer) override;
+		int writeTMS(const uint8_t *tms, uint32_t len, bool flush_buffer, const uint8_t tdi = 1) override;
 
 		/*!
 		 * \brief write and read len bits with optional tms set to 1 if end

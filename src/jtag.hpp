@@ -119,7 +119,7 @@ class Jtag {
 
 	void toggleClk(int nb);
 	void go_test_logic_reset();
-	void set_state(tapState_t newState);
+	void set_state(tapState_t newState, const uint8_t tdi = 1);
 	int flushTMS(bool flush_buffer = false);
 	void flush() {flushTMS(); _jtag->flush();}
 	void setTMS(unsigned char tms);
@@ -160,5 +160,6 @@ class Jtag {
 
 	std::vector<int32_t> _devices_list; /*!< ordered list of devices idcode */
 	std::vector<int16_t> _irlength_list; /*!< ordered list of irlength */
+	uint8_t _curr_tdi;
 };
 #endif

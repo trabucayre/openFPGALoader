@@ -18,7 +18,7 @@ class CH347Jtag : public JtagInterface {
 	int setClkFreq(uint32_t clkHZ) override { return _setClkFreq(clkHZ); };
 	int _setClkFreq(uint32_t clkHZ);
 	/* TMS */
-	int writeTMS(const uint8_t *tms, uint32_t len, bool flush_buffer) override;
+	int writeTMS(const uint8_t *tms, uint32_t len, bool flush_buffer, const uint8_t tdi = 1) override;
 	/* TDI */
 	int writeTDI(const uint8_t *tx, uint8_t *rx, uint32_t len, bool end) override;
 	/* clk */

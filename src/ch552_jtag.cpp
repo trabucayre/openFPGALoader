@@ -88,7 +88,8 @@ int CH552_jtag::setClkFreq(uint32_t clkHZ) {
 	return ret;
 }
 
-int CH552_jtag::writeTMS(const uint8_t *tms, uint32_t len, bool flush_buffer)
+int CH552_jtag::writeTMS(const uint8_t *tms, uint32_t len, bool flush_buffer,
+		__attribute__((unused)) const uint8_t tdi)
 {
 	(void) flush_buffer;
 	display("%s %d %d\n", __func__, len, (len/8)+1);

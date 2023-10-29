@@ -292,7 +292,8 @@ int LibgpiodJtagBitbang::setClkFreq(__attribute__((unused)) uint32_t clkHZ)
 }
 
 int LibgpiodJtagBitbang::writeTMS(const uint8_t *tms_buf, uint32_t len,
-		__attribute__((unused)) bool flush_buffer)
+		__attribute__((unused)) bool flush_buffer,
+		__attribute__((unused)) uint8_t tdi)
 {
 	int tms;
 
