@@ -3,8 +3,8 @@
  * Copyright (C) 2020 Gwenhael Goavec-Merou <gwenhael.goavec-merou@trabucayre.com>
  */
 
-#ifndef _JTAGINTERFACE_H_
-#define _JTAGINTERFACE_H_
+#ifndef SRC_JTAGINTERFACE_HPP_
+#define SRC_JTAGINTERFACE_HPP_
 
 #include <cstdint>
 #include <iostream>
@@ -33,19 +33,19 @@ class JtagInterface {
 	/*!
 	 * Return constant to describe if read is on rising or falling TCK edge
 	 */
-	tck_edge_t getReadEdge() { return NONE_EDGE; }
+	virtual tck_edge_t getReadEdge() { return NONE_EDGE; }
 	/*!
 	 * configure TCK edge used for read
 	 */
-	void setReadEdge(tck_edge_t rd_edge) { (void) rd_edge; }
+	virtual void setReadEdge(tck_edge_t rd_edge) { (void) rd_edge; }
 	/*!
 	 * Return constant to describe if write is on rising or falling TCK edge
 	 */
-	tck_edge_t getWriteEdge() { return NONE_EDGE; }
+	virtual tck_edge_t getWriteEdge() { return NONE_EDGE; }
 	/*!
 	 * configure TCK edge used for write
 	 */
-	void setWriteEdge(tck_edge_t wr_edge) { (void)wr_edge; }
+	virtual void setWriteEdge(tck_edge_t wr_edge) { (void)wr_edge; }
 
 	/*!
 	 * \brief flush TMS internal buffer (ie. transmit to converter)
@@ -102,7 +102,8 @@ class JtagInterface {
 	 * \return 1 if success, 0 if nothing to write, -1 is something wrong
 	 */
 	virtual int flush() = 0;
+
  protected:
 	uint32_t _clkHZ; /*!< current clk frequency */
 };
-#endif  // _JTAGINTERFACE_H_
+#endif  // SRC_JTAGINTERFACE_HPP_

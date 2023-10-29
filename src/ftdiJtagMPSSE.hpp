@@ -35,25 +35,25 @@ class FtdiJtagMPSSE : public JtagInterface, public FTDIpp_MPSSE {
 	/*!
 	 * Return constant to describe if read is on rising or falling TCK edge
 	 */
-	tck_edge_t getReadEdge() {
+	tck_edge_t getReadEdge() override {
 		return _read_mode == MPSSE_READ_NEG ? FALLING_EDGE : RISING_EDGE;
 	}
 	/*!
 	 * configure TCK edge used for read
 	 */
-	void setReadEdge(tck_edge_t rd_edge) {
+	void setReadEdge(tck_edge_t rd_edge) override {
 		_read_mode = rd_edge == FALLING_EDGE ? MPSSE_READ_NEG : 0;
 	}
 	/*!
 	 * Return constant to describe if write is on rising or falling TCK edge
 	 */
-	tck_edge_t getWriteEdge() {
+	tck_edge_t getWriteEdge() override {
 		return _write_mode == MPSSE_WRITE_NEG ? FALLING_EDGE : RISING_EDGE;
 	}
 	/*!
 	 * configure TCK edge used for write
 	 */
-	void setWriteEdge(tck_edge_t wr_edge) {
+	void setWriteEdge(tck_edge_t wr_edge) override {
 		_write_mode = wr_edge == FALLING_EDGE ? MPSSE_WRITE_NEG : 0;
 	}
 
@@ -72,7 +72,7 @@ class FtdiJtagMPSSE : public JtagInterface, public FTDIpp_MPSSE {
 	 * \param len: number of bit to send/receive
 	 * \return true with full buffers are sent, false otherwise
 	 */
-	virtual bool writeTMSTDI(const uint8_t *tms, const uint8_t *tdi, uint8_t *tdo,
+	bool writeTMSTDI(const uint8_t *tms, const uint8_t *tdi, uint8_t *tdo,
 		uint32_t len) override;
 	/*!
 	 * \brief return internal buffer size (in byte).
@@ -97,7 +97,7 @@ class FtdiJtagMPSSE : public JtagInterface, public FTDIpp_MPSSE {
 	 * \return < 0 if transaction fails, offset + 1 when append and 0 when flush
 	 */
 	int32_t update_tms_buff(uint8_t *buffer, uint8_t bit,
-		uint32_t offset, uint8_t tdi, uint8_t *tdo, bool end=false);
+		uint32_t offset, uint8_t tdi, uint8_t *tdo, bool end = false);
 	uint32_t update_tdo_buff(uint8_t *buffer, uint8_t *tdo, uint32_t len);
 	/*!
 	 * \brief configure read and write edge (pos or neg), with freq < 15MHz
