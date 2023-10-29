@@ -78,23 +78,27 @@ using namespace std;
 Gowin::Gowin(Jtag *jtag, const string filename, const string &file_type, std::string mcufw,
 		Device::prog_type_t prg_type, bool external_flash,
 		bool verify, int8_t verbose): Device(jtag, filename, file_type,
-		verify, verbose), is_gw1n1(false), is_gw2a(false), is_gw1n4(false), is_gw5a(false),
-		_external_flash(external_flash),
+		verify, verbose),
+		SPIInterface(filename, verbose, 0, verify, false, false),
+		_fs(NULL), _idcode(0), is_gw1n1(false), is_gw2a(false),
+		is_gw1n4(false), is_gw5a(false), _external_flash(external_flash),
 		_spi_sck(BSCAN_SPI_SCK), _spi_cs(BSCAN_SPI_CS),
 		_spi_di(BSCAN_SPI_DI), _spi_do(BSCAN_SPI_DO),
-		_spi_msk(BSCAN_SPI_MSK)
+		_spi_msk(BSCAN_SPI_MSK),
+		_mcufw(NULL)
 {
-	_fs = NULL;
-	_mcufw = NULL;
 
-	uint32_t idcode = _jtag->get_target_device_id();
+	detectFamily();
+
+	_prev_wr_edge = _jtag->getWriteEdge();
+	_prev_rd_edge = _jtag->getReadEdge();
 
 	if (prg_type == Device::WR_FLASH)
 		_mode = Device::FLASH_MODE;
 	else
 		_mode = Device::MEM_MODE;
 
-	if (!_file_extension.empty()) {
+	if (!_file_extension.empty() && prg_type != Device::RD_FLASH) {
 		if (_file_extension == "fs") {
 			try {
 				_fs = new FsParser(_filename, _mode == Device::MEM_MODE, _verbose);
@@ -103,7 +107,7 @@ Gowin::Gowin(Jtag *jtag, const string filename, const string &file_type, std::st
 			}
 		} else {
 			/* non fs file is only allowed with external flash */
-			if (!external_flash)
+			if (!_external_flash)
 				throw std::runtime_error("incompatible file format");
 			try {
 				_fs = new RawParser(_filename, false);
@@ -128,24 +132,71 @@ Gowin::Gowin(Jtag *jtag, const string filename, const string &file_type, std::st
 		if (_file_extension == "fs") {
 			string idcode_str = _fs->getHeaderVal("idcode");
 			uint32_t fs_idcode = std::stoul(idcode_str.c_str(), NULL, 16);
-			if ((fs_idcode & 0x0fffffff) != idcode) {
+			if ((fs_idcode & 0x0fffffff) != _idcode) {
 				char mess[256];
 				snprintf(mess, 256, "mismatch between target's idcode and bitstream idcode\n"
-					"\tbitstream has 0x%08X hardware requires 0x%08x", fs_idcode, idcode);
+					"\tbitstream has 0x%08X hardware requires 0x%08x", fs_idcode, _idcode);
 				throw std::runtime_error(mess);
 			}
 		}
 	}
 
+	if (mcufw.size() > 0) {
+		if (_idcode != 0x0100981b)
+			throw std::runtime_error("Microcontroller firmware flashing only supported on GW1NSR-4C");
+
+		_mcufw = new RawParser(mcufw, false);
+
+		if (_mcufw->parse() == EXIT_FAILURE) {
+			printError("FAIL");
+			delete _mcufw;
+			throw std::runtime_error("can't parse file");
+		} else {
+			printSuccess("DONE");
+		}
+	}
+
+	if (is_gw5a) {
+		_jtag->setClkFreq(2500000);
+		disableCfg();
+		send_command(0x00); // BYPASS ?
+		_jtag->set_state(Jtag::TEST_LOGIC_RESET);
+		uint32_t tmp = readStatusReg();
+		printf("%08x %08x\n", tmp, tmp & (1 << 17));
+		displayReadReg("plop", tmp);
+		if (1) {
+		//if (readStatusReg() & (1 << 17)) {
+			printf("try to reboot FPGA\n");
+			disableCfg();
+			send_command(0);
+			_jtag->set_state(Jtag::TEST_LOGIC_RESET);
+			gw5a_disable_spi();
+		}
+	}
+
+}
+
+Gowin::~Gowin()
+{
+	if (_fs)
+		delete _fs;
+	if (_mcufw)
+		delete _mcufw;
+}
+
+bool Gowin::detectFamily()
+{
+	_idcode = _jtag->get_target_device_id();
+
 	/* erase and program flash differ for GW1N1 */
-	if (idcode == 0x0900281B)
+	if (_idcode == 0x0900281B)
 		is_gw1n1 = true;
 	/* erase and program flash differ for GW1N4, GW1N1Z-1 */
-	if (idcode == 0x0100381B || idcode == 0x100681b)
+	if (_idcode == 0x0100381B || _idcode == 0x100681b)
 		is_gw1n4 = true;
 
 	/* bscan spi external flash differ for GW1NSR-4C */
-	if (idcode == 0x0100981b) {
+	if (_idcode == 0x0100981b) {
 		_spi_sck = BSCAN_GW1NSR_4C_SPI_SCK;
 		_spi_cs  = BSCAN_GW1NSR_4C_SPI_CS;
 		_spi_di  = BSCAN_GW1NSR_4C_SPI_DI;
@@ -157,7 +208,7 @@ Gowin::Gowin(Jtag *jtag, const string filename, const string &file_type, std::st
 	 * GW2 series has no internal flash and uses new bitstream checksum
 	 * algorithm that is not yet supported.
 	 */
-	switch (idcode) {
+	switch (_idcode) {
 		case 0x0000081b: /* GW2A(R)-18(C) */
 		case 0x0000281b: /* GW2A(R)-55(C) */
 			_external_flash = true;
@@ -175,28 +226,7 @@ Gowin::Gowin(Jtag *jtag, const string filename, const string &file_type, std::st
 			break;
 	}
 
-	if (mcufw.size() > 0) {
-		if (idcode != 0x0100981b)
-			throw std::runtime_error("Microcontroller firmware flashing only supported on GW1NSR-4C");
-
-		_mcufw = new RawParser(mcufw, false);
-
-		if (_mcufw->parse() == EXIT_FAILURE) {
-			printError("FAIL");
-			delete _mcufw;
-			throw std::runtime_error("can't parse file");
-		} else {
-			printSuccess("DONE");
-		}
-	}
-}
-
-Gowin::~Gowin()
-{
-	if (_fs)
-		delete _fs;
-	if (_mcufw)
-		delete _mcufw;
+	return true;
 }
 
 bool Gowin::send_command(uint8_t cmd)
@@ -279,18 +309,20 @@ void Gowin::programExtFlash(unsigned int offset, bool unprotect_flash)
 {
 	_jtag->setClkFreq(10000000);
 
-	if (!enableCfg())
-		throw std::runtime_error("Error: fail to enable configuration");
+	displayReadReg("after program flash", readStatusReg());
 
-	eraseSRAM();
-	send_command(XFER_DONE);
-	send_command(NOOP);
-
-	if (!is_gw2a) {
-		send_command(0x3D);
+	if (is_gw5a) {
+		if (!prepare_flash_access()) {
+			throw std::runtime_error("Error: fail to switch GW5A to SPI mode");
+			return;
+		}
 	} else {
-		disableCfg();
-		send_command(NOOP);
+		if (!eraseSRAM())
+			throw std::runtime_error("Error: fail to erase SRAM");
+
+		if (!is_gw2a) {
+			send_command(0x3D);
+		}
 	}
 
 	SPIFlash spiFlash(this, unprotect_flash,
@@ -301,17 +333,42 @@ void Gowin::programExtFlash(unsigned int offset, bool unprotect_flash)
 	const uint8_t *data = _fs->getData();
 	int length = _fs->getLength();
 
-	if (spiFlash.erase_and_prog(offset, data, length / 8) != 0)
-		throw std::runtime_error("Error: write to flash failed");
-	if (_verify)
-		if (!spiFlash.verify(offset, data, length / 8, 256))
-			throw std::runtime_error("Error: flash vefication failed");
-	if (!is_gw2a) {
-		if (!disableCfg())
-			throw std::runtime_error("Error: fail to disable configuration");
+	char mess[256];
+	bool ret = true;
+
+	if (spiFlash.erase_and_prog(offset, data, length / 8) != 0) {
+		snprintf(mess, 256, "Error: write to flash failed");
+		printError(mess);
+		ret = false;
+	}
+	if (ret && _verify)
+		if (!spiFlash.verify(offset, data, length / 8, 256)) {
+			snprintf(mess, 256, "Error: flash vefication failed");
+			printError(mess);
+			ret = false;
+		}
+
+	if (is_gw5a) {
+		if (!post_flash_access()) {
+			snprintf(mess, 256, "Error: fail to disable SPI mode");
+			printError(mess);
+			ret = false;
+		}
+
+	} else if (!is_gw2a) {
+		if (!disableCfg()) {
+			snprintf(mess, 256, "Error: fail to disable configuration");
+			printError(mess);
+			ret = false;
+		}
 	}
 
-	reset();
+	if (!is_gw5a)
+		reset();
+
+	if (!ret) {
+		throw std::runtime_error(mess);
+	}
 }
 
 void Gowin::programSRAM()
@@ -346,8 +403,6 @@ void Gowin::program(unsigned int offset, bool unprotect_flash)
 		return;
 
 	if (_mode == FLASH_MODE) {
-		if (is_gw5a)
-			throw std::runtime_error("Error: write to flash on GW5A is not yet supported");
 		if (_external_flash)
 			programExtFlash(offset, unprotect_flash);
 		else
@@ -424,10 +479,62 @@ void Gowin::displayReadReg(const char *prefix, uint32_t reg)
 	    "Gowin VLD", "Done Final", "Security Final", "Ready",
 	    "POR", "FLASH lock", "FLASH2 lock",
 	};
+
+	static const char *gw5a_desc[32] = {
+	    "CRC Error", "Bad Command", "ID Verify Failed", "Timeout",
+	    "auto_boot_2nd_fail", "Memory Erase", "Preamble", "System Edit Mode",
+	    "Program SPI FLASH directly", "auto_boot_1st_fail",
+		"Non-JTAG configuration is active", "Bypass", "i2c_sram_f",
+	    "Done Final", "Security Final", "encrypted_format",
+	    "key_right", "sspi_mode", "CRC Comparison Done", "CRC Error",
+		"ECC Error", "ECC Error Uncorrectable", "CMSER IDLE",
+		"CPU Bus Width", "", "Retry time sync pattern detect", "",
+		"Decompression Failed", "OTP Reading Done", "Init Done",
+		"Wakeup Done", "Auto Erase",
+	};
+
+	/* Bits 26:25 */
+	static const char *gw5a_sync_det_retry[4] = {
+		"no retry",
+		"retry one time",
+		"retry two times",
+		"no \"sync pattern\" is found after three times detection",
+	};
+
+	/* Bits 24:23 */
+	static const char *gw5a_cpu_bus_width[4] = {
+		"no BWD pattern is detected",
+		"8-bit mode",
+		"16-bit mode",
+		"32-bit mode",
+	};
+
 	printf("%s: displayReadReg %08x\n", prefix, reg);
-	for (unsigned i = 0, bm = 1; i < 19; ++i, bm <<= 1) {
-		if (reg & bm) {
-			printf("\t%s\n", desc[i]);
+
+	if (_idcode == 0x0001281b) {
+		for (unsigned i = 0, bm = 1; i < 32; ++i, bm <<= 1) {
+			switch (i) {
+				case 23:
+					printf("\t[%d:%d] %s: %s\n", i + 1, i, gw5a_desc[i],
+						gw5a_cpu_bus_width[(reg >> i)&0x3]);
+					bm <<= 1;
+					i++;
+					break;
+				case 25:
+					printf("\t[%d:%d] %s: %s\n", i + 1, i, gw5a_desc[i],
+						gw5a_sync_det_retry[(reg >> i)&0x3]);
+					bm <<= 1;
+					i++;
+					break;
+				default:
+					if (reg & bm)
+						printf("\t   [%2d] %s\n", i, gw5a_desc[i]);
+			}
+		}
+	} else {
+		for (unsigned i = 0, bm = 1; i < 19; ++i, bm <<= 1) {
+			if (reg & bm)
+				printf("\t%s\n", desc[i]);
 		}
 	}
 }
@@ -728,6 +835,9 @@ inline void Gowin::spi_gowin_write(const uint8_t *wr, uint8_t *rd, unsigned len)
 
 int Gowin::spi_put(uint8_t cmd, const uint8_t *tx, uint8_t *rx, uint32_t len)
 {
+	if (is_gw5a)
+		return spi_put_gw5a(cmd, tx, rx, len);
+
 	uint8_t jrx[len+1], jtx[len+1];
 	jtx[0] = cmd;
 	if (tx)
@@ -736,12 +846,25 @@ int Gowin::spi_put(uint8_t cmd, const uint8_t *tx, uint8_t *rx, uint32_t len)
 		memset(jtx+1, 0, len);
 	int ret = spi_put(jtx, (rx)? jrx : NULL, len+1);
 	if (rx)
-		memcpy(rx, jrx+1, len);
+		memcpy(rx, jrx + 1, len);
 	return ret;
 }
 
 int Gowin::spi_put(const uint8_t *tx, uint8_t *rx, uint32_t len)
 {
+	if (is_gw5a) {
+		uint8_t jrx[len];
+		int ret = spi_put_gw5a(tx[0], &tx[1], (rx) ? jrx : NULL, len - 1);
+		/* FIXME: first byte is never read (but in most
+		 * call it's not an issue
+		 */
+		if (rx) {
+			rx[0] = 0;
+			memcpy(&rx[1], jrx, len - 1);
+		}
+		return ret;
+	}
+
 	if (is_gw2a) {
 		uint8_t jtx[len];
 		uint8_t jrx[len];
@@ -796,9 +919,60 @@ int Gowin::spi_put(const uint8_t *tx, uint8_t *rx, uint32_t len)
 	return 0;
 }
 
+/*
+ * Specific implementation for Arora V GW5A FPGAs
+ * interface mode is already configured to mimic SPI (mode 0).
+ * JTAG is LSB, SPI is MSB -> all byte must be reversed.
+ */
+int Gowin::spi_put_gw5a(const uint8_t cmd, const uint8_t *tx, uint8_t *rx, uint32_t len)
+{
+		uint32_t kLen = len + (rx ? 1 : 0);  // cppcheck/lint happy
+		uint32_t bit_len = len * 8 + (rx ? 3 : 0);  // 3bits delay when read
+		uint8_t jtx[kLen], jrx[kLen];
+		uint8_t _cmd = FsParser::reverseByte(cmd);  // reverse cmd.
+		uint8_t curr_tdi = cmd & 0x01;
+
+		if (tx != NULL) {  // SPI: MSB, JTAG: LSB -> reverse Bytes
+			for (uint32_t i = 0; i < len; i++)
+				jtx[i] = FsParser::reverseByte(tx[i]);
+			curr_tdi = tx[len-1] & 0x01;
+		} else {
+			memset(jtx, curr_tdi, kLen);
+		}
+
+		// set TMS/CS low by moving to a state where TMS == 0,
+		// first cmd bit is also sent here (ie before next TCK rise).
+		_jtag->set_state(Jtag::RUN_TEST_IDLE, _cmd & 0x01);
+		_cmd >>= 1;
+
+		// complete with 7 remaining cmd bits
+		if (0 != _jtag->read_write(&_cmd, NULL, 7, 0))
+			return -1;
+
+		// write/read the sequence. Force set to 0 to manage state here
+		// (with jtag last bit is sent with tms rise)
+		if (0 != _jtag->read_write(jtx, (rx) ? jrx : NULL, bit_len, 0))
+			return -1;
+		// set TMS/CS high by moving to a state where TMS == 1
+		_jtag->set_state(Jtag::TEST_LOGIC_RESET, curr_tdi);
+		_jtag->toggleClk(5);  // Required ?
+		_jtag->flushTMS(true);
+		if (rx) {  // Reconstruct read sequence and drop first 3bits.
+			for (int i = 0; i < len; i++)
+				rx[i] = FsParser::reverseByte((jrx[i] >> 3) |
+					(((jrx[i+1]) & 0x07) << 5));
+
+		}
+
+		return 0;
+}
+
 int Gowin::spi_wait(uint8_t cmd, uint8_t mask, uint8_t cond,
 		uint32_t timeout, bool verbose)
 {
+	if (is_gw5a)
+		return spi_wait_gw5a(cmd, mask, cond, timeout, verbose);
+
 	uint8_t tmp;
 	uint32_t count = 0;
 
@@ -880,4 +1054,131 @@ int Gowin::spi_wait(uint8_t cmd, uint8_t mask, uint8_t cond,
 	}
 
 	return 0;
+}
+
+int Gowin::spi_wait_gw5a(uint8_t cmd, uint8_t mask, uint8_t cond,
+		uint32_t timeout, bool verbose)
+{
+	uint8_t tmp;
+	int ret;
+	uint32_t count = 0;
+
+	do {
+		// sent command and read flash answer
+		if (0 != spi_put_gw5a(cmd, NULL, &tmp, 1)) {
+			printError("Error: cant write/read status");
+			return -1;
+		}
+
+		count ++;
+		if (count == timeout) {
+			printf("timeout: %x\n", tmp);
+			break;
+		}
+		if (verbose) {
+			printf("%x %x %x %u\n", tmp, mask, cond, count);
+		}
+	} while ((tmp & mask) != cond);
+
+	return (count == timeout) ? -1 : 0;
+}
+
+bool Gowin::dumpFlash(uint32_t base_addr, uint32_t len)
+{
+	bool ret = true;
+	/* enable SPI flash access */
+	if (!prepare_flash_access())
+		return false;
+
+	try {
+		SPIFlash flash(this, false, _verbose);
+		ret = flash.dump(_filename, base_addr, len, 256);
+	} catch (std::exception &e) {
+		printError(e.what());
+		ret = false;
+	}
+
+	/* reload bitstream */
+	return post_flash_access() && ret;
+}
+
+bool Gowin::prepare_flash_access()
+{
+	if (!is_gw5a)
+		return false;
+
+	eraseSRAM();
+	
+	enableCfg();
+	send_command(0x3F);
+	disableCfg();
+	displayReadReg("toto", readStatusReg());
+	printf("%08x\n", idCode());
+
+	/* UG704 3.4.3 'ExtFlash Programming -> Program External Flash via JTAG-SPI' */
+	send_command(NOOP);
+	_jtag->set_state(Jtag::RUN_TEST_IDLE);
+	_jtag->toggleClk(126*8);
+	_jtag->set_state(Jtag::RUN_TEST_IDLE);
+	send_command(0x16);
+	send_command(0x00);
+	_jtag->set_state(Jtag::RUN_TEST_IDLE);
+	_jtag->toggleClk(625*8);
+	_jtag->set_state(Jtag::TEST_LOGIC_RESET);
+	/* save current read/write edge cfg before switching to SPI mode0
+	 * (rising edge: read / falling edge: write)
+	 */
+	_prev_wr_edge = _jtag->getWriteEdge();
+	_prev_rd_edge = _jtag->getReadEdge();
+	_jtag->setWriteEdge(JtagInterface::FALLING_EDGE);
+	_jtag->setReadEdge(JtagInterface::RISING_EDGE);
+
+	return true;
+}
+
+bool Gowin::gw5a_disable_spi()
+{
+
+	/* reconfigure WR/RD edge and sent sequence to
+	 * disable SPI mode
+	 */
+	_jtag->setWriteEdge(_prev_wr_edge);
+	_jtag->setReadEdge(_prev_rd_edge);
+	_jtag->flushTMS(true);
+	_jtag->flush();
+	// 1. sent 15 TMS pulse
+	// TEST_LOGIC_RESET to SELECT_DR_SCAN: 01
+	_jtag->set_state(Jtag::SELECT_DR_SCAN);
+	// SELECT_DR_SCAN to CAPTURE_DR: 0
+	_jtag->set_state(Jtag::CAPTURE_DR);
+	// CAPTURE_DR to EXIT1_DR: 1
+	_jtag->set_state(Jtag::EXIT1_DR);
+	// EXIT1_DR to EXIT2_DR: 01
+	_jtag->set_state(Jtag::EXIT2_DR);
+	// Now we have 3 pulses
+	for (int i = 0; i < 6; i++) { // 2 each loop: 12 pulses + 3 before
+		_jtag->set_state(Jtag::PAUSE_DR); // 010
+		_jtag->set_state(Jtag::EXIT2_DR); // 1
+	}
+	_jtag->set_state(Jtag::EXIT1_DR); // 01 : 16
+	_jtag->set_state(Jtag::PAUSE_DR); // 0 
+
+	_jtag->flushTMS(true);
+	_jtag->flush();
+	// 2. 8 TCK clock cycle with TMS=1
+	_jtag->set_state(Jtag::TEST_LOGIC_RESET); // 5 cycles
+	_jtag->toggleClk(5);
+	return true;
+}
+
+bool Gowin::post_flash_access()
+{
+	if (!is_gw5a)
+		return false;
+	if (!gw5a_disable_spi())
+		return false;
+
+	reset();
+
+	return true;
 }

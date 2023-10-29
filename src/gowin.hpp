@@ -14,6 +14,7 @@
 #include "configBitstreamParser.hpp"
 #include "device.hpp"
 #include "jtag.hpp"
+#include "jtagInterface.hpp"
 #include "spiInterface.hpp"
 
 class Gowin: public Device, SPIInterface {
@@ -32,16 +33,38 @@ class Gowin: public Device, SPIInterface {
 			(void) len;
 			printError("protect flash not supported"); return false;}
 		bool unprotect_flash() override {
+			if (is_gw5a)
+				return SPIInterface::unprotect_flash();
 			printError("unprotect flash not supported"); return false;}
 		bool bulk_erase_flash() override {
+			if (is_gw5a)
+				return SPIInterface::bulk_erase_flash();
 			printError("bulk erase flash not supported"); return false;}
+		virtual bool dumpFlash(uint32_t base_addr, uint32_t len) override;
 		int spi_put(uint8_t cmd, const uint8_t *tx, uint8_t *rx,
 			uint32_t len) override;
 		int spi_put(const uint8_t *tx, uint8_t *rx, uint32_t len) override;
+		/* Specific implementation for Arora V GW5A FPGAs. */
+		int spi_put_gw5a(const uint8_t cmd, const uint8_t *tx, uint8_t *rx,
+			uint32_t len);
 		int spi_wait(uint8_t cmd, uint8_t mask, uint8_t cond,
 			uint32_t timeout, bool verbose) override;
+		/* Specific implementation for Arora V GW5A FPGAs. */
+		int spi_wait_gw5a(uint8_t cmd, uint8_t mask, uint8_t cond,
+			uint32_t timeout, bool verbose);
+
+	protected:
+	/*!
+	 * \brief prepare SPI flash access
+	 */
+	virtual bool prepare_flash_access() override;
+	/*!
+	 * \brief end of SPI flash access
+	 */
+	virtual bool post_flash_access() override;
 
 	private:
+		bool detectFamily();
 		bool send_command(uint8_t cmd);
 		void spi_gowin_write(const uint8_t *wr, uint8_t *rd, unsigned len);
 		uint32_t readReg32(uint8_t cmd);
@@ -64,7 +87,10 @@ class Gowin: public Device, SPIInterface {
 		 *        .fs usercode field
 		 */
 		void checkCRC();
+		bool gw5a_disable_spi();
+
 		ConfigBitstreamParser *_fs;
+		uint32_t _idcode;
 		bool is_gw1n1;
 		bool is_gw2a;
 		bool is_gw1n4;
@@ -77,5 +103,7 @@ class Gowin: public Device, SPIInterface {
 		uint8_t _spi_do;      /**< do signal (miso) offset in bscan SPI */
 		uint8_t _spi_msk;     /** default spi msk with only do out */
 		ConfigBitstreamParser *_mcufw;
+		JtagInterface::tck_edge_t _prev_rd_edge; /**< default probe rd edge cfg */
+		JtagInterface::tck_edge_t _prev_wr_edge; /**< default probe wr edge cfg */
 };
 #endif  // SRC_GOWIN_HPP_
