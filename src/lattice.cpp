@@ -135,6 +135,7 @@ using namespace std;
 #define READ_ECDSA_PUBKEY3				0x64		/* This command is used to read the fourth 128 bits of the ECDSA Public Key. */
 #define ISC_NOOP						0xff		/* This command is no operation command (NOOP) or null operation. */
 #define LSC_DEVICE_CONTROL  0x7D    /* Multiple commands. Bit 3: configuration reset */
+#define PRELOAD_SAMPLE      0x1C    /* PRELOAD/SAMPLE jtag opcode. Nexus family has Bscan register 362 bits-long => 45.25 => 46 bytes */
 
 #define PUBKEY_LENGTH_BYTES				64			/* length of the public key (MachXO3D) in bytes */
 
@@ -314,7 +315,7 @@ bool Lattice::program_mem()
 	} else {
 		tx_len = 26;
 	}
-	wr_rd(0x1C, tx_buf, tx_len, NULL, 0);
+	wr_rd(PRELOAD_SAMPLE, tx_buf, tx_len, NULL, 0);
 
 	/* LSC_REFRESH 0x79 -- "Equivalent to toggle PROGRAMN pin"
 	 * We REFRESH only if the fpga is in a status of error due to
@@ -704,12 +705,21 @@ bool Lattice::clearSRAM()
 {
 	uint32_t erase_op;
 
-	/* preload 0x1C */
-	uint8_t tx_buf[26];
-	memset(tx_buf, 0xff, 26);
-	wr_rd(0x1C, tx_buf, 26, NULL, 0);
+	/* PRELOAD/SAMPLE 0x1C
+	 * For NEXUS family fpgas, the Bscan register is 362 bits long or
+	 * 45.25 bytes => 46 bytes
+	 */
+	uint8_t tx_buf[46];
+	memset(tx_buf, 0xff, 46);
+	int tx_len;
+	if(_fpga_family == NEXUS_FAMILY){
+		tx_len = 46;
+	} else {
+		tx_len = 26;
+	}
+	wr_rd(PRELOAD_SAMPLE, tx_buf, tx_len, NULL, 0);
 
-	wr_rd(0xFf, NULL, 0, NULL, 0);
+	wr_rd(0xFF, NULL, 0, NULL, 0);
 
 	/* ISC Enable 0xC6 */
 	printInfo("Enable configuration: ", false);
@@ -721,7 +731,7 @@ bool Lattice::clearSRAM()
 		printSuccess("DONE");
 	}
 
-	if (_fpga_family == MACHXO3D_FAMILY)
+	if (_fpga_family == MACHXO3D_FAMILY || _fpga_family == NEXUS_FAMILY)
 		erase_op = 0x0;
 	else
 		erase_op = FLASH_ERASE_SRAM;
