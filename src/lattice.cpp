@@ -719,6 +719,8 @@ bool Lattice::clearSRAM()
 	}
 	wr_rd(PRELOAD_SAMPLE, tx_buf, tx_len, NULL, 0);
 
+	wr_rd(0xFF, NULL, 0, NULL, 0);
+
 	/* ISC Enable 0xC6 */
 	printInfo("Enable configuration: ", false);
 	if (!EnableISC(0x00)) {
