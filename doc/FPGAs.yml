@@ -209,6 +209,7 @@ Xilinx:
 
   - Description: Kintex 7
     Model:
+      - xc7k70t
       - xc7k160t
       - xc7k325t
       - xc7k410t
