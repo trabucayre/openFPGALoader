@@ -91,6 +91,7 @@ struct arguments {
 	string interface;
 	string mcufw;
 	bool conmcu;
+	std::map<uint32_t, misc_device> user_misc_devs;
 };
 
 int run_xvc_server(const struct arguments &args, const cable_t &cable,
@@ -119,7 +120,7 @@ int main(int argc, char **argv)
 			"127.0.0.1", 0, false, false, "", false, false,
 			/* xvc server */
 			false, 3721, "-",
-			"", false,  // mcufw conmcu
+			"", false, {}  // mcufw conmcu, user_misc_dev_list
 	};
 	/* parse arguments */
 	try {
@@ -446,7 +447,8 @@ int main(int argc, char **argv)
 	try {
 		jtag = new Jtag(cable, &pins_config, args.device, args.ftdi_serial,
 				args.freq, args.verbose, args.ip_adr, args.port,
-				args.invert_read_edge, args.probe_firmware);
+				args.invert_read_edge, args.probe_firmware,
+				args.user_misc_devs);
 	} catch (std::exception &e) {
 		printError("JTAG init failed with: " + string(e.what()));
 		return EXIT_FAILURE;
@@ -479,6 +481,11 @@ int main(int argc, char **argv)
 				t,
 				misc_dev_list[t].name.c_str(),
 				misc_dev_list[t].irlength);
+			} else if (args.user_misc_devs.find(t) != args.user_misc_devs.end()) {
+				printf("\tidcode   0x%x\n\ttype     %s\n\tirlength %d\n",
+				t,
+				args.user_misc_devs[t].name.c_str(),
+				args.user_misc_devs[t].irlength);
 			}
 		}
 		if (args.detect == true) {
@@ -765,6 +772,8 @@ int parse_opt(int argc, char **argv, struct arguments *args,
 				"write bitstream in flash (default: false)")
 			("index-chain",  "device index in JTAG-chain",
 				cxxopts::value<int>(args->index_chain))
+			("misc-device",  "add JTAG non-FPGA devices <idcode,irlen,name>",
+				cxxopts::value<vector<string>>())
 			("ip", "IP address (XVC and remote bitbang client)",
 				cxxopts::value<string>(args->ip_adr))
 			("list-boards", "list all supported boards",
@@ -844,6 +853,32 @@ int parse_opt(int argc, char **argv, struct arguments *args,
 		if (result.count("Version")) {
 			cout << "openFPGALoader " << VERSION << endl;
 			return 1;
+		}
+
+		if (result.count("misc-device")) {
+			auto misc_devices = result["misc-device"].as<std::vector<std::string>>();
+			for (auto &dev : misc_devices) {
+				uint32_t idcode;
+				int irlen;
+				std:string name;
+				std::stringstream ss(dev);
+				std::string item;
+				std::vector<std::string> tokens;
+
+				while (std::getline(ss, item, ',')) {
+					tokens.push_back(item);
+				}
+
+				if (tokens.size() != 3) {
+					printError("Error: invalid format for misc-device.");
+					throw std::exception();
+				}
+
+				idcode = std::stoul(tokens[0], nullptr, 16);
+				irlen = std::stoi(tokens[1]);
+				name = tokens[2];
+				args->user_misc_devs[idcode] = {name, irlen};
+			}
 		}
 
 		if (result.count("write-flash") && result.count("write-sram") &&

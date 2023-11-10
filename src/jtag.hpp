@@ -12,6 +12,7 @@
 
 #include "board.hpp"
 #include "cable.hpp"
+#include "part.hpp"
 #include "jtagInterface.hpp"
 
 class Jtag {
@@ -21,7 +22,8 @@ class Jtag {
 		const std::string &serial, uint32_t clkHZ, int8_t verbose,
 		const std::string &ip_adr, int port,
 		const bool invert_read_edge = false,
-		const std::string &firmware_path = "");
+		const std::string &firmware_path = "",
+		const std::map<uint32_t, misc_device> &user_misc_devs = {});
 	~Jtag();
 
 	/* maybe to update */
@@ -146,6 +148,7 @@ class Jtag {
 	int _num_tms;
 	unsigned char *_tms_buffer;
 	std::string _board_name;
+	const std::map<uint32_t, misc_device>& _user_misc_devs;
 
 	int device_index; /*!< index for targeted FPGA */
 
