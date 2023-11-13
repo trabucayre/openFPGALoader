@@ -193,12 +193,12 @@ class Xilinx: public Device, SPIInterface {
 		};
 
 		/* XADC */
-               unsigned int xadc_read(unsigned short addr);
-               void xadc_write(unsigned short addr, unsigned short data);
-               unsigned int xadc_single(unsigned short ch);
+		unsigned int xadc_read(unsigned short addr);
+		void xadc_write(unsigned short addr, unsigned short data);
+		unsigned int xadc_single(unsigned short ch);
 
 		/* DNA */
-               unsigned long long fuse_dna_read(void);
+		unsigned long long fuse_dna_read(void);
 
 		/*!
 		 * \brief Starting from UltraScale, Xilinx devices can support dual

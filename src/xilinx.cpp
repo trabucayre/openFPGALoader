@@ -54,72 +54,72 @@
 #define XC95_ISC_READ        0xee
 
 /* DRP instructions set */
-#define XADC_DRP 0x37 //110111
+#define XADC_DRP 0x37
 
 /* XADC Addresses */
-#define XADC_TEMP 0x00
-#define XADC_LOCK 0x00
-#define XADC_VCCINT 0x01
-#define XADC_VCCAUX 0x02
-#define XADC_VAUXEN 0x02
-#define XADC_VPVN 0x03
-#define XADC_RESET 0x03
-#define XADC_VREFP 0x04
-#define XADC_VREFN 0x05
-#define XADC_VCCBRAM 0x06
+#define XADC_TEMP     0x00
+#define XADC_LOCK     0x00
+#define XADC_VCCINT   0x01
+#define XADC_VCCAUX   0x02
+#define XADC_VAUXEN   0x02
+#define XADC_VPVN     0x03
+#define XADC_RESET    0x03
+#define XADC_VREFP    0x04
+#define XADC_VREFN    0x05
+#define XADC_VCCBRAM  0x06
 #define XADC_SUPAOFFS 0x08
 #define XADC_ADCAOFFS 0x09
 #define XADC_ADCAGAIN 0x0a
-#define XADC_VCCPINT 0x0d
-#define XADC_VCCPAUX 0x0e
-#define XADC_VCCODDR 0x0f
-#define XADC_VAUX0 0x10
-#define XADC_VAUX1 0x11
-#define XADC_VAUX2 0x12
-#define XADC_VAUX3 0x13
-#define XADC_VAUX4 0x14
-#define XADC_VAUX5 0x15
-#define XADC_VAUX6 0x16
-#define XADC_VAUX7 0x17
-#define XADC_VAUX8 0x18
-#define XADC_VAUX9 0x19
-#define XADC_VAUX10 0x1a
-#define XADC_VAUX11 0x1b
-#define XADC_VAUX12 0x1c
-#define XADC_VAUX13 0x1d
-#define XADC_VAUX14 0x1e
-#define XADC_VAUX15 0x1f
+#define XADC_VCCPINT  0x0d
+#define XADC_VCCPAUX  0x0e
+#define XADC_VCCODDR  0x0f
+#define XADC_VAUX0    0x10
+#define XADC_VAUX1    0x11
+#define XADC_VAUX2    0x12
+#define XADC_VAUX3    0x13
+#define XADC_VAUX4    0x14
+#define XADC_VAUX5    0x15
+#define XADC_VAUX6    0x16
+#define XADC_VAUX7    0x17
+#define XADC_VAUX8    0x18
+#define XADC_VAUX9    0x19
+#define XADC_VAUX10   0x1a
+#define XADC_VAUX11   0x1b
+#define XADC_VAUX12   0x1c
+#define XADC_VAUX13   0x1d
+#define XADC_VAUX14   0x1e
+#define XADC_VAUX15   0x1f
 #define XADC_SUPBOFFS 0x30
 #define XADC_ADCBOFFS 0x31
 #define XADC_ADCBGAIN 0x32
-#define XADC_FLAG 0x3f
-#define XADC_CFG0 0x40
-#define XADC_CFG1 0x41
-#define XADC_CFG2 0x42
-#define XADC_SEQ0 0x48
-#define XADC_SEQ1 0x49
-#define XADC_SEQ2 0x4a
-#define XADC_SEQ3 0x4b
-#define XADC_SEQ4 0x4c
-#define XADC_SEQ5 0x4d
-#define XADC_SEQ6 0x4e
-#define XADC_SEQ7 0x4f
-#define XADC_ALARM0 0x50
-#define XADC_ALARM1 0x51
-#define XADC_ALARM2 0x52
-#define XADC_ALARM3 0x53
-#define XADC_ALARM4 0x54
-#define XADC_ALARM5 0x55
-#define XADC_ALARM6 0x56
-#define XADC_ALARM7 0x57
-#define XADC_ALARM8 0x58
-#define XADC_ALARM9 0x59
-#define XADC_ALARM10 0x5a
-#define XADC_ALARM11 0x5b
-#define XADC_ALARM12 0x5c
-#define XADC_ALARM13 0x5d
-#define XADC_ALARM14 0x5e
-#define XADC_ALARM15 0x5f
+#define XADC_FLAG     0x3f
+#define XADC_CFG0     0x40
+#define XADC_CFG1     0x41
+#define XADC_CFG2     0x42
+#define XADC_SEQ0     0x48
+#define XADC_SEQ1     0x49
+#define XADC_SEQ2     0x4a
+#define XADC_SEQ3     0x4b
+#define XADC_SEQ4     0x4c
+#define XADC_SEQ5     0x4d
+#define XADC_SEQ6     0x4e
+#define XADC_SEQ7     0x4f
+#define XADC_ALARM0   0x50
+#define XADC_ALARM1   0x51
+#define XADC_ALARM2   0x52
+#define XADC_ALARM3   0x53
+#define XADC_ALARM4   0x54
+#define XADC_ALARM5   0x55
+#define XADC_ALARM6   0x56
+#define XADC_ALARM7   0x57
+#define XADC_ALARM8   0x58
+#define XADC_ALARM9   0x59
+#define XADC_ALARM10  0x5a
+#define XADC_ALARM11  0x5b
+#define XADC_ALARM12  0x5c
+#define XADC_ALARM13  0x5d
+#define XADC_ALARM14  0x5e
+#define XADC_ALARM15  0x5f
 
 /* Boundary-scan instruction set based on the FPGA model */
 static std::map<std::string, std::map<std::string, std::vector<uint8_t>>>
@@ -193,71 +193,67 @@ static void open_bitfile(
 	printSuccess("DONE");
 }
 
-#define FUSE_DNA   0x32 //110010
+#define FUSE_DNA	0x32
 
 unsigned long long Xilinx::fuse_dna_read(void)
 {
-       unsigned char tx_data[8] = {0,0,0,0,0,0,0,0};
-       unsigned char rx_data[8];
+	unsigned char tx_data[8] = {0,0,0,0,0,0,0,0};
+	unsigned char rx_data[8];
 
-       //tx_data = htonl(tx_data);
+	_jtag->go_test_logic_reset();
+	_jtag->shiftIR(FUSE_DNA, 6);
+	_jtag->shiftDR((unsigned char *)&tx_data, (unsigned char *)&rx_data, 64);
 
-       _jtag->go_test_logic_reset();
-       _jtag->shiftIR(FUSE_DNA, 6);
-       _jtag->shiftDR((unsigned char *)&tx_data, (unsigned char *)&rx_data, 64);
+	unsigned long long dna = 0;
 
-       unsigned long long dna = 0;
+	for(int i = 0; i < 8; i++) {
+		unsigned char rev = 0;
+		for (int j = 0; j < 8; j++) {
+			rev |= ((rx_data[i]>>j)&1)<<(7-j);
+		}
+		dna = (dna << 8ULL) | rev;
+	}
 
-       for(int i = 0; i < 8; i++) {
-               unsigned char rev = 0;
-               for (int j = 0; j < 8; j++) {
-                       rev |= ((rx_data[i]>>j)&1)<<(7-j);
-               }
-               dna = (dna << 8ULL) | rev;
-       }
-       return dna & 0x1ffffffffffffff;
+	return dna & 0x1ffffffffffffff;
 }
 
 unsigned int Xilinx::xadc_read(unsigned short addr)
 {
-       unsigned int tx_data = (1 << 26) | (addr << 16);
-       unsigned int rx_data = 0;
+	unsigned int tx_data = (1 << 26) | (addr << 16);
+	unsigned int rx_data = 0;
 
+	_jtag->go_test_logic_reset();
+	_jtag->shiftIR(XADC_DRP, 6);
+	_jtag->shiftDR((unsigned char *)&tx_data, (unsigned char *)&rx_data, 32);
+	usleep(1000);
+	_jtag->shiftIR(XADC_DRP, 6);
+	_jtag->shiftDR((unsigned char *)&tx_data, (unsigned char *)&rx_data, 32);
 
-       _jtag->go_test_logic_reset();
-       _jtag->shiftIR(XADC_DRP, 6);
-       _jtag->shiftDR((unsigned char *)&tx_data, (unsigned char *)&rx_data, 32);
-       usleep(1000);
-       _jtag->shiftIR(XADC_DRP, 6);
-       _jtag->shiftDR((unsigned char *)&tx_data, (unsigned char *)&rx_data, 32);
-
-
-       return rx_data;
+	return rx_data;
 }
 
 void Xilinx::xadc_write(unsigned short addr, unsigned short data)
 {
-       unsigned int tx_data = (1 << 26) | (addr << 16) | data;
-       unsigned int rx_data = 0;
+	unsigned int tx_data = (1 << 26) | (addr << 16) | data;
+	unsigned int rx_data = 0;
 
-
-       _jtag->go_test_logic_reset();
-       _jtag->shiftIR(XADC_DRP, 6);
-       _jtag->shiftDR((unsigned char *)&tx_data, (unsigned char *)&rx_data, 32);
+	_jtag->go_test_logic_reset();
+	_jtag->shiftIR(XADC_DRP, 6);
+	_jtag->shiftDR((unsigned char *)&tx_data, (unsigned char *)&rx_data, 32);
 }
 
 unsigned int Xilinx::xadc_single(unsigned short ch)
 {
-       _jtag->go_test_logic_reset();
-       // single channel, disable the sequencer
-       xadc_write(XADC_CFG1,0x3000);
-       // set channel, no averaging, additional settling time
-       xadc_write(XADC_CFG0,(1<<15) | (1<<8) | ch);
-       // leave some time (1ms) for the conversion
-       usleep(1000);
-       unsigned int ret = xadc_read(ch);
+	_jtag->go_test_logic_reset();
+	// single channel, disable the sequencer
+	xadc_write(XADC_CFG1,0x3000);
+	// set channel, no averaging, additional settling time
+	xadc_write(XADC_CFG0,(1<<15) | (1<<8) | ch);
+	// leave some time (1ms) for the conversion
+	usleep(1000);
+	unsigned int ret = xadc_read(ch);
 
-       return ret;
+	return ret;
 }
 
 Xilinx::Xilinx(Jtag *jtag, const std::string &filename,
@@ -388,56 +384,55 @@ Xilinx::Xilinx(Jtag *jtag, const std::string &filename,
 	}
 
 	if (read_dna) {
-               if (_fpga_family == ARTIX_FAMILY || _fpga_family == KINTEXUS_FAMILY) {
-                       unsigned long long dna = Xilinx::fuse_dna_read();
-                       printf("{\"dna\": \"0x%016lx\"}\n", dna);
-               } else {
-                       throw std::runtime_error("Error: read_xadc only supported for Artix 7");
-               }
-       }
+		if (_fpga_family == ARTIX_FAMILY || _fpga_family == KINTEXUS_FAMILY) {
+			unsigned long long dna = Xilinx::fuse_dna_read();
+			printf("{\"dna\": \"0x%016lx\"}\n", dna);
+		} else {
+			throw std::runtime_error("Error: read_xadc only supported for Artix 7");
+		}
+	}
 
-       if (read_xadc) {
-               if (_fpga_family == ARTIX_FAMILY || _fpga_family == KINTEXUS_FAMILY) {
+	if (read_xadc) {
+		if (_fpga_family == ARTIX_FAMILY || _fpga_family == KINTEXUS_FAMILY) {
+			// calibrate XADC
+			Xilinx::xadc_single(8);
 
-                       // calibrate XADC
-                       Xilinx::xadc_single(8);
+			const int MAX_CHANNEL = 8;
+			const int TEMP_MEAS   = 4;
 
-                       const int MAX_CHANNEL = 8;
-                       const int TEMP_MEAS   = 4;
+			unsigned int v = 0;
+			for (int i = 0; i < TEMP_MEAS; i++) {
+				v += Xilinx::xadc_single(0);
+			}
+			double temp = ((v/(double)TEMP_MEAS) * 503.975)/(1 << 16) - 273.15;
 
-                       unsigned int v = 0;
-                       for (int i = 0; i < TEMP_MEAS; i++) {
-                               v += Xilinx::xadc_single(0);
-                       }
-                       double temp    = ((v/(double)TEMP_MEAS) * 503.975)/(1 << 16) - 273.15;
+			unsigned int channel_values[32];
+			for (int ch = 0; ch < MAX_CHANNEL; ch++) {
+				if (ch < 7 || ch > 12) {
+					v = Xilinx::xadc_single(ch);
+				} else {
+					// 7 = Invalid channel selection
+					// 8 = Carry out XADC calibration
+					// 9...12 = Invalid channel selection
+					v = 0;
+				}
+				channel_values[ch] = v;
+			}
 
-                       unsigned int channel_values[32];
-                       for (int ch = 0; ch < MAX_CHANNEL; ch++) {
-                               if (ch < 7 || ch > 12) {
-                                       v = Xilinx::xadc_single(ch);
-                               } else {
-                                       // 7 = Invalid channel selection
-                                       // 8 = Carry out XADC calibration
-                                       // 9...12 = Invalid channel selection
-                                       v = 0;
-                               }
-                               channel_values[ch] = v;
-                       }
-
-                       /* output as JSON dict */
-
-                       std::cout << "{";
-                       std::cout << "\"temp\": " << temp << ", ";
-                       std::cout << "\"raw\":  {";
-                       for (int ch = 0; ch < MAX_CHANNEL; ch++) {
-                               std::cout << "\"" << ch << "\": " << channel_values[ch] << ((ch==MAX_CHANNEL-1)? "}" : ", ");
-                       }
-                       std::cout << "}" << std::endl;
-
-               } else {
-                       throw std::runtime_error("Error: read_xadc only supported for Artix 7");
-               }
-       }
+			/* output as JSON dict */
+			std::cout << "{";
+			std::cout << "\"temp\": " << temp << ", ";
+			std::cout << "\"raw\":  {";
+			for (int ch = 0; ch < MAX_CHANNEL; ch++) {
+				std::cout << "\"" << ch << "\": " << channel_values[ch]
+					 << ((ch==MAX_CHANNEL-1)? "}" : ", ");
+			}
+			std::cout << "}" << std::endl;
+	
+		} else {
+			throw std::runtime_error("Error: read_xadc only supported for Artix 7");
+		}
+	}
 }
 Xilinx::~Xilinx() {}
 
