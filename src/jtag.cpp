@@ -77,11 +77,13 @@ Jtag::Jtag(const cable_t &cable, const jtag_pins_conf_t *pin_conf,
 			const string &dev,
 			const string &serial, uint32_t clkHZ, int8_t verbose,
 			const string &ip_adr, int port,
-			const bool invert_read_edge, const string &firmware_path):
+			const bool invert_read_edge, const string &firmware_path,
+			const std::map<uint32_t, misc_device> &user_misc_devs):
 			_verbose(verbose > 1),
 			_state(RUN_TEST_IDLE),
 			_tms_buffer_size(128), _num_tms(0),
-			_board_name("nope"), device_index(0), _curr_tdi(1)
+			_board_name("nope"), device_index(0), _curr_tdi(1),
+			_user_misc_devs(user_misc_devs)
 {
 	switch (cable.type) {
 	case MODE_ANLOGICCABLE:
@@ -244,6 +246,11 @@ bool Jtag::search_and_insert_device_with_idcode(uint32_t idcode)
 	if (irlength == -1) {
 		auto misc = misc_dev_list.find(idcode);
 		if (misc != misc_dev_list.end())
+			irlength = misc->second.irlength;
+	}
+	if (irlength == -1) {
+		auto misc = this->_user_misc_devs.find(idcode);
+		if (misc != this->_user_misc_devs.end())
 			irlength = misc->second.irlength;
 	}
 	if (irlength == -1)
