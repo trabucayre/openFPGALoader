@@ -860,7 +860,7 @@ int parse_opt(int argc, char **argv, struct arguments *args,
 			for (auto &dev : misc_devices) {
 				uint32_t idcode;
 				int irlen;
-				std:string name;
+				std::string name;
 				std::stringstream ss(dev);
 				std::string item;
 				std::vector<std::string> tokens;

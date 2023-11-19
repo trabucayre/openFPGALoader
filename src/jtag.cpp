@@ -82,8 +82,9 @@ Jtag::Jtag(const cable_t &cable, const jtag_pins_conf_t *pin_conf,
 			_verbose(verbose > 1),
 			_state(RUN_TEST_IDLE),
 			_tms_buffer_size(128), _num_tms(0),
-			_board_name("nope"), device_index(0), _curr_tdi(1),
-			_user_misc_devs(user_misc_devs)
+			_board_name("nope"), _user_misc_devs(user_misc_devs),
+			device_index(0), _dr_bits_before(0), _dr_bits_after(0),
+			_ir_bits_before(0), _ir_bits_after(0), _curr_tdi(1)
 {
 	switch (cable.type) {
 	case MODE_ANLOGICCABLE:
