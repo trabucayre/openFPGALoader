@@ -42,6 +42,7 @@ class Gowin: public Device, SPIInterface {
 			uint32_t timeout, bool verbose) override;
 
 	private:
+		bool detectFamily();
 		bool send_command(uint8_t cmd);
 		void spi_gowin_write(const uint8_t *wr, uint8_t *rd, unsigned len);
 		uint32_t readReg32(uint8_t cmd);
@@ -65,6 +66,7 @@ class Gowin: public Device, SPIInterface {
 		 */
 		void checkCRC();
 		ConfigBitstreamParser *_fs;
+		uint32_t _idcode;
 		bool is_gw1n1;
 		bool is_gw2a;
 		bool is_gw1n4;

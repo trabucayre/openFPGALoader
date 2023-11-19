@@ -78,23 +78,23 @@ using namespace std;
 Gowin::Gowin(Jtag *jtag, const string filename, const string &file_type, std::string mcufw,
 		Device::prog_type_t prg_type, bool external_flash,
 		bool verify, int8_t verbose): Device(jtag, filename, file_type,
-		verify, verbose), is_gw1n1(false), is_gw2a(false), is_gw1n4(false), is_gw5a(false),
-		_external_flash(external_flash),
+		verify, verbose),
+		_fs(NULL), _idcode(0), is_gw1n1(false), is_gw2a(false),
+		is_gw1n4(false), is_gw5a(false), _external_flash(external_flash),
 		_spi_sck(BSCAN_SPI_SCK), _spi_cs(BSCAN_SPI_CS),
 		_spi_di(BSCAN_SPI_DI), _spi_do(BSCAN_SPI_DO),
-		_spi_msk(BSCAN_SPI_MSK)
+		_spi_msk(BSCAN_SPI_MSK),
+		_mcufw(NULL)
 {
-	_fs = NULL;
-	_mcufw = NULL;
 
-	uint32_t idcode = _jtag->get_target_device_id();
+	detectFamily();
 
 	if (prg_type == Device::WR_FLASH)
 		_mode = Device::FLASH_MODE;
 	else
 		_mode = Device::MEM_MODE;
 
-	if (!_file_extension.empty()) {
+	if (!_file_extension.empty() && prg_type != Device::RD_FLASH) {
 		if (_file_extension == "fs") {
 			try {
 				_fs = new FsParser(_filename, _mode == Device::MEM_MODE, _verbose);
@@ -103,7 +103,7 @@ Gowin::Gowin(Jtag *jtag, const string filename, const string &file_type, std::st
 			}
 		} else {
 			/* non fs file is only allowed with external flash */
-			if (!external_flash)
+			if (!_external_flash)
 				throw std::runtime_error("incompatible file format");
 			try {
 				_fs = new RawParser(_filename, false);
@@ -128,55 +128,17 @@ Gowin::Gowin(Jtag *jtag, const string filename, const string &file_type, std::st
 		if (_file_extension == "fs") {
 			string idcode_str = _fs->getHeaderVal("idcode");
 			uint32_t fs_idcode = std::stoul(idcode_str.c_str(), NULL, 16);
-			if ((fs_idcode & 0x0fffffff) != idcode) {
+			if ((fs_idcode & 0x0fffffff) != _idcode) {
 				char mess[256];
 				snprintf(mess, 256, "mismatch between target's idcode and bitstream idcode\n"
-					"\tbitstream has 0x%08X hardware requires 0x%08x", fs_idcode, idcode);
+					"\tbitstream has 0x%08X hardware requires 0x%08x", fs_idcode, _idcode);
 				throw std::runtime_error(mess);
 			}
 		}
 	}
 
-	/* erase and program flash differ for GW1N1 */
-	if (idcode == 0x0900281B)
-		is_gw1n1 = true;
-	/* erase and program flash differ for GW1N4, GW1N1Z-1 */
-	if (idcode == 0x0100381B || idcode == 0x100681b)
-		is_gw1n4 = true;
-
-	/* bscan spi external flash differ for GW1NSR-4C */
-	if (idcode == 0x0100981b) {
-		_spi_sck = BSCAN_GW1NSR_4C_SPI_SCK;
-		_spi_cs  = BSCAN_GW1NSR_4C_SPI_CS;
-		_spi_di  = BSCAN_GW1NSR_4C_SPI_DI;
-		_spi_do  = BSCAN_GW1NSR_4C_SPI_DO;
-		_spi_msk = BSCAN_GW1NSR_4C_SPI_MSK;
-	}
-
-	/*
-	 * GW2 series has no internal flash and uses new bitstream checksum
-	 * algorithm that is not yet supported.
-	 */
-	switch (idcode) {
-		case 0x0000081b: /* GW2A(R)-18(C) */
-		case 0x0000281b: /* GW2A(R)-55(C) */
-			_external_flash = true;
-			/* FIXME: implement GW2 checksum calculation */
-			skip_checksum = true;
-			is_gw2a = true;
-			break;
-		case 0x0001081b: /* GW5AST-138 */
-		case 0x0001181b: /* GW5AT-138 */
-		case 0x0001281b: /* GW5A-25 */
-			_external_flash = true;
-			/* FIXME: implement GW5 checksum calculation */
-			skip_checksum = true;
-			is_gw5a = true;
-			break;
-	}
-
 	if (mcufw.size() > 0) {
-		if (idcode != 0x0100981b)
+		if (_idcode != 0x0100981b)
 			throw std::runtime_error("Microcontroller firmware flashing only supported on GW1NSR-4C");
 
 		_mcufw = new RawParser(mcufw, false);
@@ -197,6 +159,51 @@ Gowin::~Gowin()
 		delete _fs;
 	if (_mcufw)
 		delete _mcufw;
+}
+
+bool Gowin::detectFamily()
+{
+	_idcode = _jtag->get_target_device_id();
+
+	/* erase and program flash differ for GW1N1 */
+	if (_idcode == 0x0900281B)
+		is_gw1n1 = true;
+	/* erase and program flash differ for GW1N4, GW1N1Z-1 */
+	if (_idcode == 0x0100381B || _idcode == 0x100681b)
+		is_gw1n4 = true;
+
+	/* bscan spi external flash differ for GW1NSR-4C */
+	if (_idcode == 0x0100981b) {
+		_spi_sck = BSCAN_GW1NSR_4C_SPI_SCK;
+		_spi_cs  = BSCAN_GW1NSR_4C_SPI_CS;
+		_spi_di  = BSCAN_GW1NSR_4C_SPI_DI;
+		_spi_do  = BSCAN_GW1NSR_4C_SPI_DO;
+		_spi_msk = BSCAN_GW1NSR_4C_SPI_MSK;
+	}
+
+	/*
+	 * GW2 series has no internal flash and uses new bitstream checksum
+	 * algorithm that is not yet supported.
+	 */
+	switch (_idcode) {
+		case 0x0000081b: /* GW2A(R)-18(C) */
+		case 0x0000281b: /* GW2A(R)-55(C) */
+			_external_flash = true;
+			/* FIXME: implement GW2 checksum calculation */
+			skip_checksum = true;
+			is_gw2a = true;
+			break;
+		case 0x0001081b: /* GW5AST-138 */
+		case 0x0001181b: /* GW5AT-138 */
+		case 0x0001281b: /* GW5A-25 */
+			_external_flash = true;
+			/* FIXME: implement GW5 checksum calculation */
+			skip_checksum = true;
+			is_gw5a = true;
+			break;
+	}
+
+	return true;
 }
 
 bool Gowin::send_command(uint8_t cmd)
@@ -736,7 +743,7 @@ int Gowin::spi_put(uint8_t cmd, const uint8_t *tx, uint8_t *rx, uint32_t len)
 		memset(jtx+1, 0, len);
 	int ret = spi_put(jtx, (rx)? jrx : NULL, len+1);
 	if (rx)
-		memcpy(rx, jrx+1, len);
+		memcpy(rx, jrx + 1, len);
 	return ret;
 }
 
