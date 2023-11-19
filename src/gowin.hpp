@@ -14,6 +14,7 @@
 #include "configBitstreamParser.hpp"
 #include "device.hpp"
 #include "jtag.hpp"
+#include "jtagInterface.hpp"
 #include "spiInterface.hpp"
 
 class Gowin: public Device, SPIInterface {
@@ -32,14 +33,57 @@ class Gowin: public Device, SPIInterface {
 			(void) len;
 			printError("protect flash not supported"); return false;}
 		bool unprotect_flash() override {
+			if (is_gw5a)
+				return SPIInterface::unprotect_flash();
 			printError("unprotect flash not supported"); return false;}
 		bool bulk_erase_flash() override {
+			if (is_gw5a)
+				return SPIInterface::bulk_erase_flash();
 			printError("bulk erase flash not supported"); return false;}
+		bool dumpFlash(uint32_t base_addr, uint32_t len) override;
 		int spi_put(uint8_t cmd, const uint8_t *tx, uint8_t *rx,
 			uint32_t len) override;
 		int spi_put(const uint8_t *tx, uint8_t *rx, uint32_t len) override;
 		int spi_wait(uint8_t cmd, uint8_t mask, uint8_t cond,
 			uint32_t timeout, bool verbose) override;
+
+		/* ---------------- */
+		/* Arora V specific */
+		/* ---------------- */
+
+		/*!
+		 * \brief Send cmd, followed by (optional) tx sequence and fill
+		 * rx if not null
+		 * \param[in] cmd: SPI command
+		 * \param[in] rx: Byte sequence to write (may be null)
+		 * \param[out] tx: Byte buffer when read is requested
+		 * \param[in] len: number of Byte to read/write (0 when no read/write)
+		 * \return 0 on success, -1 otherwise
+		 */
+		int spi_put_gw5a(const uint8_t cmd, const uint8_t *tx, uint8_t *rx,
+			uint32_t len);
+		/*!
+		 * \brief poll on cmd register until timeout or SPI reg content match
+		 * cond with mask
+		 * \param[in] cmd: SPI command
+		 * \param[in] mask: mask to apply on SPI rx
+		 * \param[in] cond: SPI rx value value
+		 * \param[in] timeout: number of try before fail
+		 * \param[in] verbose: display try
+		 * \return 0 on success, -1 otherwise
+		 */
+		int spi_wait_gw5a(uint8_t cmd, uint8_t mask, uint8_t cond,
+			uint32_t timeout, bool verbose);
+
+	protected:
+	/*!
+	 * \brief prepare SPI flash access
+	 */
+	bool prepare_flash_access() override;
+	/*!
+	 * \brief end of SPI flash access
+	 */
+	bool post_flash_access() override;
 
 	private:
 		bool detectFamily();
@@ -65,6 +109,21 @@ class Gowin: public Device, SPIInterface {
 		 *        .fs usercode field
 		 */
 		void checkCRC();
+
+		/* ---------------- */
+		/* Arora V specific */
+		/* ---------------- */
+		/*!
+		 * \brief Send the sequence to pass GW5A to SPI mode.
+		 * \return true on success, false otherwise
+		 */
+		bool gw5a_disable_spi();
+		/*!
+		 * \brief Send the sequence to disable SPI mode for GW5A.
+		 * \return true on success, false otherwise
+		 */
+		bool gw5a_enable_spi();
+
 		ConfigBitstreamParser *_fs;
 		uint32_t _idcode;
 		bool is_gw1n1;
@@ -79,5 +138,7 @@ class Gowin: public Device, SPIInterface {
 		uint8_t _spi_do;      /**< do signal (miso) offset in bscan SPI */
 		uint8_t _spi_msk;     /** default spi msk with only do out */
 		ConfigBitstreamParser *_mcufw;
+		JtagInterface::tck_edge_t _prev_rd_edge; /**< default probe rd edge cfg */
+		JtagInterface::tck_edge_t _prev_wr_edge; /**< default probe wr edge cfg */
 };
 #endif  // SRC_GOWIN_HPP_
