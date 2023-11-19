@@ -86,7 +86,6 @@ Gowin::Gowin(Jtag *jtag, const string filename, const string &file_type, std::st
 		_spi_msk(BSCAN_SPI_MSK),
 		_mcufw(NULL)
 {
-
 	detectFamily();
 
 	if (prg_type == Device::WR_FLASH)
@@ -427,14 +426,67 @@ void Gowin::displayReadReg(const char *prefix, uint32_t reg)
 	static const char *desc[19] = {
 	    "CRC Error", "Bad Command", "ID Verify Failed", "Timeout",
 	    "Reserved4", "Memory Erase", "Preamble", "System Edit Mode",
-	    "Program SPI FLASH directly", "Reserved9", "Non-JTAG configuration is active", "Bypass",
+	    "Program SPI FLASH directly", "Reserved9",
+		"Non-JTAG configuration is active", "Bypass",
 	    "Gowin VLD", "Done Final", "Security Final", "Ready",
 	    "POR", "FLASH lock", "FLASH2 lock",
 	};
+
+	static const char *gw5a_desc[32] = {
+	    "CRC Error", "Bad Command", "ID Verify Failed", "Timeout",
+	    "auto_boot_2nd_fail", "Memory Erase", "Preamble", "System Edit Mode",
+	    "Program SPI FLASH directly", "auto_boot_1st_fail",
+		"Non-JTAG configuration is active", "Bypass", "i2c_sram_f",
+	    "Done Final", "Security Final", "encrypted_format",
+	    "key_right", "sspi_mode", "CRC Comparison Done", "CRC Error",
+		"ECC Error", "ECC Error Uncorrectable", "CMSER IDLE",
+		"CPU Bus Width", "", "Retry time sync pattern detect", "",
+		"Decompression Failed", "OTP Reading Done", "Init Done",
+		"Wakeup Done", "Auto Erase",
+	};
+
+	/* Bits 26:25 */
+	static const char *gw5a_sync_det_retry[4] = {
+		"no retry",
+		"retry one time",
+		"retry two times",
+		"no \"sync pattern\" is found after three times detection",
+	};
+
+	/* Bits 24:23 */
+	static const char *gw5a_cpu_bus_width[4] = {
+		"no BWD pattern is detected",
+		"8-bit mode",
+		"16-bit mode",
+		"32-bit mode",
+	};
+
 	printf("%s: displayReadReg %08x\n", prefix, reg);
-	for (unsigned i = 0, bm = 1; i < 19; ++i, bm <<= 1) {
-		if (reg & bm) {
-			printf("\t%s\n", desc[i]);
+
+	if (_idcode == 0x0001281b) {
+		for (unsigned i = 0, bm = 1; i < 32; ++i, bm <<= 1) {
+			switch (i) {
+				case 23:
+					printf("\t[%d:%d] %s: %s\n", i + 1, i, gw5a_desc[i],
+						gw5a_cpu_bus_width[(reg >> i)&0x3]);
+					bm <<= 1;
+					i++;
+					break;
+				case 25:
+					printf("\t[%d:%d] %s: %s\n", i + 1, i, gw5a_desc[i],
+						gw5a_sync_det_retry[(reg >> i)&0x3]);
+					bm <<= 1;
+					i++;
+					break;
+				default:
+					if (reg & bm)
+						printf("\t   [%2d] %s\n", i, gw5a_desc[i]);
+			}
+		}
+	} else {
+		for (unsigned i = 0, bm = 1; i < 19; ++i, bm <<= 1) {
+			if (reg & bm)
+				printf("\t%s\n", desc[i]);
 		}
 	}
 }
