@@ -92,6 +92,8 @@ struct arguments {
 	string mcufw;
 	bool conmcu;
 	std::map<uint32_t, misc_device> user_misc_devs;
+	bool read_dna;
+	bool read_xadc;
 };
 
 int run_xvc_server(const struct arguments &args, const cable_t &cable,
@@ -120,7 +122,8 @@ int main(int argc, char **argv)
 			"127.0.0.1", 0, false, false, "", false, false,
 			/* xvc server */
 			false, 3721, "-",
-			"", false, {}  // mcufw conmcu, user_misc_dev_list
+			"", false, {},  // mcufw conmcu, user_misc_dev_list
+			false, false // read_dna, read_xadc
 	};
 	/* parse arguments */
 	try {
@@ -557,7 +560,8 @@ int main(int argc, char **argv)
 		if (fab == "xilinx") {
 			fpga = new Xilinx(jtag, args.bit_file, args.secondary_bit_file,
 				args.file_type, args.prg_type, args.fpga_part, args.bridge_path,
-				args.target_flash, args.verify, args.verbose, args.skip_load_bridge, args.skip_reset);
+				args.target_flash, args.verify, args.verbose, args.skip_load_bridge, args.skip_reset,
+				args.read_dna, args.read_xadc);
 		} else if (fab == "altera") {
 			fpga = new Altera(jtag, args.bit_file, args.file_type,
 				args.prg_type, args.fpga_part, args.bridge_path, args.verify,
@@ -822,6 +826,10 @@ int parse_opt(int argc, char **argv, struct arguments *args,
 				cxxopts::value<std::string>(args->mcufw))
 			("conmcu", "Connect JTAG to MCU",
 				cxxopts::value<bool>(args->conmcu))
+			("D,read_dna", "Read DNA (Xilinx FPGA only)",
+				cxxopts::value<bool>(args->read_dna))
+			("X,read_xadc", "Read XADC (Xilinx FPGA only)",
+				cxxopts::value<bool>(args->read_xadc))
 			("V,Version", "Print program version");
 
 		options.parse_positional({"bitstream"});
@@ -1012,7 +1020,9 @@ int parse_opt(int argc, char **argv, struct arguments *args,
 			!args->bulk_erase_flash &&
 			!args->xvc &&
 			!args->reset &&
-			!args->conmcu) {
+			!args->conmcu &&
+			!args->read_dna &&
+			!args->read_xadc) {
 			printError("Error: bitfile not specified");
 			cout << options.help() << endl;
 			throw std::exception();
