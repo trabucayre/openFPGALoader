@@ -3,16 +3,18 @@
  * Copyright (C) 2019 Gwenhael Goavec-Merou <gwenhael.goavec-merou@trabucayre.com>
  */
 
-#ifndef XILINX_HPP
-#define XILINX_HPP
+#ifndef SRC_XILINX_HPP_
+#define SRC_XILINX_HPP_
 
+#include <map>
 #include <string>
+#include <vector>
 
 #include "configBitstreamParser.hpp"
 #include "device.hpp"
+#include "jedParser.hpp"
 #include "jtag.hpp"
 #include "spiInterface.hpp"
-#include "jedParser.hpp"
 
 class Xilinx: public Device, SPIInterface {
 	public:
@@ -145,11 +147,11 @@ class Xilinx: public Device, SPIInterface {
 		/*!
 		 * \brief prepare SPI flash access (need to have bridge in RAM)
 		 */
-		virtual bool prepare_flash_access() override;
+		bool prepare_flash_access() override;
 		/*!
 		 * \brief end of SPI flash access
 		 */
-		virtual bool post_flash_access() override;
+		bool post_flash_access() override;
 
 	private:
 		/* list of xilinx family devices */
@@ -193,12 +195,12 @@ class Xilinx: public Device, SPIInterface {
 		};
 
 		/* XADC */
-		unsigned int xadc_read(unsigned short addr);
-		void xadc_write(unsigned short addr, unsigned short data);
-		unsigned int xadc_single(unsigned short ch);
+		unsigned int xadc_read(uint16_t addr);
+		void xadc_write(uint16_t addr, uint16_t data);
+		unsigned int xadc_single(uint16_t ch);
 
 		/* DNA */
-		unsigned long long fuse_dna_read(void);
+		uint64_t fuse_dna_read(void);
 
 		/*!
 		 * \brief Starting from UltraScale, Xilinx devices can support dual
@@ -223,4 +225,4 @@ class Xilinx: public Device, SPIInterface {
 		std::string _user_instruction; /* which USER bscan instruction to interface with SPI */
 };
 
-#endif
+#endif  // SRC_XILINX_HPP_

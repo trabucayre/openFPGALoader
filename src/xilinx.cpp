@@ -7,29 +7,28 @@
 
 #include <cstring>
 #include <iostream>
+#include <memory>
 #include <stdexcept>
 #include <string>
 #include <vector>
-#include <memory>
 
-#include "jtag.hpp"
 #include "bitparser.hpp"
 #include "common.hpp"
 #include "configBitstreamParser.hpp"
-#include "jedParser.hpp"
-#include "mcsParser.hpp"
-#include "spiFlash.hpp"
-#include "rawParser.hpp"
-
 #include "display.hpp"
-#include "spiInterface.hpp"
-#include "xilinx.hpp"
-#include "xilinxMapParser.hpp"
+#include "jedParser.hpp"
+#include "jtag.hpp"
+#include "mcsParser.hpp"
 #include "part.hpp"
 #include "progressBar.hpp"
 #if defined (_WIN64) || defined (_WIN32)
 #include "pathHelper.hpp"
 #endif
+#include "rawParser.hpp"
+#include "spiFlash.hpp"
+#include "spiInterface.hpp"
+#include "xilinx.hpp"
+#include "xilinxMapParser.hpp"
 
 /* Used for xc3s */
 #define USER1       0x02
@@ -149,7 +148,7 @@ static std::map<std::string, std::map<std::string, std::vector<uint8_t>>>
 			{
 				{ "USER1",       {0b00100100, 0b00101001, 0b00} },
 				{ "USER2",       {0b00100100, 0b00111001, 0b00} },
-				{ "CFG_IN",      {0b00100100, 0b01011001, 0b00} }, // CFG_IN_SLR1
+				{ "CFG_IN",      {0b00100100, 0b01011001, 0b00} },  // CFG_IN_SLR1
 				{ "USERCODE",    {0b00100100, 0b10001001, 0b00} },
 				{ "IDCODE",      {0b01001001, 0b10010010, 0b00} },
 				{ "ISC_ENABLE",  {0b00010000, 0b00000100, 0b01} },
@@ -195,21 +194,21 @@ static void open_bitfile(
 
 #define FUSE_DNA	0x32
 
-unsigned long long Xilinx::fuse_dna_read(void)
+uint64_t Xilinx::fuse_dna_read(void)
 {
-	unsigned char tx_data[8] = {0,0,0,0,0,0,0,0};
+	unsigned char tx_data[8] = {0, 0, 0, 0, 0, 0, 0, 0};
 	unsigned char rx_data[8];
 
 	_jtag->go_test_logic_reset();
 	_jtag->shiftIR(FUSE_DNA, 6);
 	_jtag->shiftDR((unsigned char *)&tx_data, (unsigned char *)&rx_data, 64);
 
-	unsigned long long dna = 0;
+	uint64_t dna = 0;
 
 	for(int i = 0; i < 8; i++) {
 		unsigned char rev = 0;
 		for (int j = 0; j < 8; j++) {
-			rev |= ((rx_data[i]>>j)&1)<<(7-j);
+			rev |= ((rx_data[i] >> j) & 1) << (7 - j);
 		}
 		dna = (dna << 8ULL) | rev;
 	}
@@ -217,7 +216,7 @@ unsigned long long Xilinx::fuse_dna_read(void)
 	return dna & 0x1ffffffffffffff;
 }
 
-unsigned int Xilinx::xadc_read(unsigned short addr)
+unsigned int Xilinx::xadc_read(uint16_t addr)
 {
 	unsigned int tx_data = (1 << 26) | (addr << 16);
 	unsigned int rx_data = 0;
@@ -232,7 +231,7 @@ unsigned int Xilinx::xadc_read(unsigned short addr)
 	return rx_data;
 }
 
-void Xilinx::xadc_write(unsigned short addr, unsigned short data)
+void Xilinx::xadc_write(uint16_t addr, uint16_t data)
 {
 	unsigned int tx_data = (1 << 26) | (addr << 16) | data;
 	unsigned int rx_data = 0;
@@ -242,13 +241,13 @@ void Xilinx::xadc_write(unsigned short addr, unsigned short data)
 	_jtag->shiftDR((unsigned char *)&tx_data, (unsigned char *)&rx_data, 32);
 }
 
-unsigned int Xilinx::xadc_single(unsigned short ch)
+unsigned int Xilinx::xadc_single(uint16_t ch)
 {
 	_jtag->go_test_logic_reset();
 	// single channel, disable the sequencer
-	xadc_write(XADC_CFG1,0x3000);
+	xadc_write(XADC_CFG1, 0x3000);
 	// set channel, no averaging, additional settling time
-	xadc_write(XADC_CFG0,(1<<15) | (1<<8) | ch);
+	xadc_write(XADC_CFG0, (1 << 15) | (1 << 8) | ch);
 	// leave some time (1ms) for the conversion
 	usleep(1000);
 	unsigned int ret = xadc_read(ch);
@@ -385,7 +384,7 @@ Xilinx::Xilinx(Jtag *jtag, const std::string &filename,
 
 	if (read_dna) {
 		if (_fpga_family == ARTIX_FAMILY || _fpga_family == KINTEXUS_FAMILY) {
-			unsigned long long dna = Xilinx::fuse_dna_read();
+			uint64_t dna = Xilinx::fuse_dna_read();
 			printf("{\"dna\": \"0x%016lx\"}\n", dna);
 		} else {
 			throw std::runtime_error("Error: read_xadc only supported for Artix 7");
@@ -425,10 +424,10 @@ Xilinx::Xilinx(Jtag *jtag, const std::string &filename,
 			std::cout << "\"raw\":  {";
 			for (int ch = 0; ch < MAX_CHANNEL; ch++) {
 				std::cout << "\"" << ch << "\": " << channel_values[ch]
-					 << ((ch==MAX_CHANNEL-1)? "}" : ", ");
+					 << ((ch == MAX_CHANNEL - 1)? "}" : ", ");
 			}
 			std::cout << "}" << std::endl;
-	
+
 		} else {
 			throw std::runtime_error("Error: read_xadc only supported for Artix 7");
 		}
@@ -557,7 +556,7 @@ void Xilinx::program(unsigned int offset, bool unprotect_flash)
 		if (_fpga_family != XC95_FAMILY && _fpga_family != XC2C_FAMILY)
 			throw std::runtime_error("Error: jed only supported for xc95 and xc2c");
 		printInfo("Open file ", false);
-		
+
 		std::unique_ptr<JedParser> jed(new JedParser(_filename, _verbose));
 		if (jed->parse() == EXIT_FAILURE) {
 			printError("FAIL");
@@ -927,7 +926,7 @@ bool Xilinx::xc3s_flow_program(ConfigBitstreamParser *bit)
 	do {
 		if (_jtag->shiftIR(&tx_buf, &rx_buf, _irlen) < 0)
 			return false;
-	} while (!(rx_buf & 0x10)); // wait until INIT
+	} while (!(rx_buf & 0x10));  // wait until INIT
 
 	if (_jtag->shiftIR(JSHUTDOWN, _irlen) < 0)
 		return false;
@@ -935,7 +934,7 @@ bool Xilinx::xc3s_flow_program(ConfigBitstreamParser *bit)
 	if (_jtag->shiftIR(CFG_IN, _irlen) < 0)
 		return false;
 
-	for (int i = 0;byte_length > 0; byte_length-=burst_len, data+=burst_len) {
+	for (int i = 0; byte_length > 0; byte_length-=burst_len, data+=burst_len) {
 		if (burst_len > byte_length) {
 			tx_len = byte_length * 8;
 			tx_end = Jtag::RUN_TEST_IDLE;
@@ -955,17 +954,16 @@ bool Xilinx::xc3s_flow_program(ConfigBitstreamParser *bit)
 	_jtag->toggleClk(32);
 	if (_jtag->shiftIR(BYPASS, _irlen) < 0)
 		return false;
-	//data[0] = 0x00;
 	uint8_t d = 0;
 	if (_jtag->shiftDR(&d, NULL, 1) < 0)
 		return false;
 	_jtag->toggleClk(1);
 
 	flow_disable();
-	uint8_t mask = 0x20; // Done bit
+	uint8_t mask = 0x20;  // Done bit
 	uint32_t idcode = _jtag->get_target_device_id();
 	if (fpga_list[idcode].family == "spartan3e") {
-		mask = 0x10; // ISC done dit
+		mask = 0x10;  // ISC done dit
 	}
 	int retry = 100;
 	do {
@@ -973,7 +971,7 @@ bool Xilinx::xc3s_flow_program(ConfigBitstreamParser *bit)
 			return false;
 		if (_jtag->shiftDR(data, NULL, 1) < 0)
 			return false;
-	} while (!(rx_buf & mask) && (retry-- > 0)); // wait until mask
+	} while (!(rx_buf & mask) && (retry-- > 0));  // wait until mask
 
 	return true;
 }
