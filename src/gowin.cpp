@@ -657,9 +657,10 @@ bool Gowin::writeSRAM(const uint8_t *data, int length)
 	send_command(CONFIG_DISABLE); // config disable
 	send_command(NOOP); // noop
 
+	uint32_t status_reg = readStatusReg();
 	if (_verbose)
-		displayReadReg("after write sram", readStatusReg());
-	if (readStatusReg() & STATUS_DONE_FINAL) {
+		displayReadReg("after write sram", status_reg);
+	if (status_reg & STATUS_DONE_FINAL) {
 		printSuccess("DONE");
 		return true;
 	} else {
@@ -780,9 +781,11 @@ bool Gowin::eraseSRAM()
 		printError("FAIL");
 		return false;
 	}
+
+	uint32_t status_reg = readStatusReg();
 	if (_verbose)
-		displayReadReg("after erase sram", readStatusReg());
-	if (readStatusReg() & STATUS_DONE_FINAL) {
+		displayReadReg("after erase sram", status_reg);
+	if (status_reg & STATUS_DONE_FINAL) {
 		printError("FAIL");
 		return false;
 	} else {
