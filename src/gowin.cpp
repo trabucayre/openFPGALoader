@@ -460,6 +460,10 @@ void Gowin::displayReadReg(const char *prefix, uint32_t reg)
 		"Decompression Failed", "OTP Reading Done", "Init Done",
 		"Wakeup Done", "Auto Erase",
 	};
+	/* 20-22 differ */
+	static const char *gw5ast_desc[3] = {
+		"Ser_Ecc_Corr", "Ser_Ecc_Uncorr", "Ser_Ecc_Runing",
+	};
 
 	/* Bits 26:25 */
 	static const char *gw5a_sync_det_retry[4] = {
@@ -479,8 +483,9 @@ void Gowin::displayReadReg(const char *prefix, uint32_t reg)
 
 	printf("%s: displayReadReg %08x\n", prefix, reg);
 
-	if (_idcode == 0x0001281b) {
-		for (unsigned i = 0, bm = 1; i < 32; ++i, bm <<= 1) {
+	if (is_gw5a) {
+		uint8_t max_shift = (_idcode == 0x1081b) ? 24 : 32;
+		for (unsigned i = 0, bm = 1; i < max_shift; ++i, bm <<= 1) {
 			switch (i) {
 				case 23:
 					printf("\t[%d:%d] %s: %s\n", i + 1, i, gw5a_desc[i],
@@ -495,8 +500,12 @@ void Gowin::displayReadReg(const char *prefix, uint32_t reg)
 					i++;
 					break;
 				default:
-					if (reg & bm)
-						printf("\t   [%2d] %s\n", i, gw5a_desc[i]);
+					if (reg & bm) {
+						if (_idcode == 0x1081b && i >= 20)
+							printf("\t   [%2d] %s\n", i, gw5ast_desc[i-20]);
+						else
+							printf("\t   [%2d] %s\n", i, gw5a_desc[i]);
+					}
 			}
 		}
 	} else {
