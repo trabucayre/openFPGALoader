@@ -223,7 +223,7 @@ bool Gowin::detectFamily()
 bool Gowin::send_command(uint8_t cmd)
 {
 	_jtag->shiftIR(&cmd, nullptr, 8);
-	_jtag->toggleClk(5);
+	_jtag->toggleClk(6);
 	return true;
 }
 
@@ -782,16 +782,18 @@ bool Gowin::eraseSRAM()
 		return false;
 	}
 
-	uint32_t status_reg = readStatusReg();
-	if (_verbose)
-		displayReadReg("after erase sram", status_reg);
-	if (status_reg & STATUS_DONE_FINAL) {
-		printError("FAIL");
-		return false;
-	} else {
-		printSuccess("DONE");
-		return true;
+	if (_mode == Device::FLASH_MODE) {
+		uint32_t status_reg = readStatusReg();
+		if (_verbose)
+			displayReadReg("after erase sram", status_reg);
+		if (status_reg & STATUS_DONE_FINAL) {
+			printError("FAIL");
+			return false;
+		} else {
+			printSuccess("DONE");
+		}
 	}
+	return true;
 }
 
 inline void Gowin::spi_gowin_write(const uint8_t *wr, uint8_t *rd, unsigned len) {
