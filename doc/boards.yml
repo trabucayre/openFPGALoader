@@ -555,6 +555,13 @@
   Memory: OK
   Flash: OK
 
+- ID: pynq_z1
+  Description: PYNQ-Z1
+  URL: https://digilent.com/reference/programmable-logic/pynq-z1/start
+  FPGA: Zynq7000 xc7z020clg400
+  Memory: OK
+  Flash: NA
+
 - ID: pynq_z2
   Description: PYNQ-Z2
   URL: https://www.tulembedded.com/FPGA/ProductsPYNQ-Z2.html
