@@ -103,6 +103,7 @@ int LatticeBitParser::parse()
 		return EXIT_FAILURE;
 	}
 
+	printf("%08x\n", preamble);
 	if (preamble == 0xb3bdffff) {
 		/* extract idcode from configuration data (area starting with 0xE2)
 		 * and check compression when machXO2
@@ -161,6 +162,9 @@ int LatticeBitParser::parse()
 #define VERIFY_ID          0xE2
 #define BYPASS             0xFF
 
+/* ECP3 has a bit reversable (ie same values but 7-0 -> 0-7) */
+#define ECP3_VERIFY_ID     0x47
+
 bool LatticeBitParser::parseCfgData()
 {
 	uint8_t *ptr;
@@ -173,6 +177,18 @@ bool LatticeBitParser::parseCfgData()
 			break;
 		case LSC_RESET_CRC:
 			pos += 3;
+			break;
+		case ECP3_VERIFY_ID:
+			ptr = (uint8_t*)&_raw_data[pos];
+			idcode = (((uint32_t)reverseByte(ptr[6])) << 24) |
+					 (((uint32_t)reverseByte(ptr[5])) << 16) |
+					 (((uint32_t)reverseByte(ptr[4])) <<  8) |
+					 (((uint32_t)reverseByte(ptr[3])) <<  0);
+			_hdr["idcode"] = string(8, ' ');
+			snprintf(&_hdr["idcode"][0], 9, "%08x", idcode);
+			pos += 7;
+			if (!_is_machXO2)
+				return true;
 			break;
 		case VERIFY_ID:
 			ptr = (uint8_t*)&_raw_data[pos];
