@@ -433,6 +433,20 @@
   Flash: NT
   Constraints: KC705
 
+- ID: kcu105
+  Description: Xilinx KCU105
+  URL: https://www.xilinx.com/products/boards-and-kits/kcu105.html
+  FPGA: Kintex UltraScale xcku040-ffva1156
+  Memory: OK
+  Flash: OK
+
+- ID: kcu116
+  Description: Xilinx KCU116
+  URL: https://www.xilinx.com/products/boards-and-kits/kcu116.html
+  FPGA: Kintex UltraScale+ xcku5p-ffvb676
+  Memory: OK
+  Flash: OK
+
 - ID: LD-KONFEKT
   Description: Lone Dynamics Corporation - Machdyne Konfekt computer
   URL: https://machdyne.com/product/konfekt-computer/
@@ -846,12 +860,5 @@
   Description: Xilinx VCU128
   URL: https://www.xilinx.com/products/boards-and-kits/vcu128.html
   FPGA: Virtex UltraScale+ xcvu37p-fsvh2892
-  Memory: OK
-  Flash: OK
-
-- ID: kcu116
-  Description: Xilinx KCU116
-  URL: https://www.xilinx.com/products/boards-and-kits/kcu116.html
-  FPGA: Kintex UltraScale+ xcku5p-ffvb676
   Memory: OK
   Flash: OK
