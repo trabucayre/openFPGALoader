@@ -353,6 +353,13 @@ void Gowin::programSRAM()
 	if (!eraseSRAM())
 		return;
 
+	/* GW5AST-138k WA. Temporary until found correct solution/sequence */
+	if (is_gw5a && _idcode == 0x0001081b) {
+		printf("double eraseSRAM\n");
+		if (!eraseSRAM())
+			return;
+	}
+
 	/* load bitstream in SRAM */
 	if (!writeSRAM(_fs->getData(), _fs->getLength()))
 		return;
