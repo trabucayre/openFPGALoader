@@ -769,6 +769,27 @@
   Memory: NA
   Flash: OK
 
+- ID: vcu118
+  Description: Xilinx VCU118
+  URL: https://www.xilinx.com/products/boards-and-kits/vcu118.html
+  FPGA: Virtex UltraScale+ xcvu9p-flga2104
+  Memory: OK
+  Flash: OK
+
+- ID: vcu128
+  Description: Xilinx VCU128
+  URL: https://www.xilinx.com/products/boards-and-kits/vcu128.html
+  FPGA: Virtex UltraScale+ xcvu37p-fsvh2892
+  Memory: OK
+  Flash: OK
+
+- ID: vcu1525
+  Description: AMD Virtex UltraScale+ FPGA VCU1525 Acceleration Development Kit
+  URL: https://www.xilinx.com/products/boards-and-kits/vcu1525-a.html
+  FPGA: Virtex UltraScale+ xcvu9p-fsgd2104
+  Memory: OK
+  Flash: NT
+
 - ID: xtrx
   Description: FairWaves XTRXPro
   URL: https://www.crowdsupply.com/fairwaves/xtrx
@@ -855,17 +876,3 @@
   FPGA: zynq7000 xc7z020clg400
   Memory: OK
   Flash: NA
-
-- ID: vcu118
-  Description: Xilinx VCU118
-  URL: https://www.xilinx.com/products/boards-and-kits/vcu118.html
-  FPGA: Virtex UltraScale+ xcvu9p-flga2104
-  Memory: OK
-  Flash: OK
-
-- ID: vcu128
-  Description: Xilinx VCU128
-  URL: https://www.xilinx.com/products/boards-and-kits/vcu128.html
-  FPGA: Virtex UltraScale+ xcvu37p-fsvh2892
-  Memory: OK
-  Flash: OK
