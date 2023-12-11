@@ -344,7 +344,7 @@ void Gowin::programSRAM()
 		displayReadReg("before program sram", readStatusReg());
 	}
 	/* Work around FPGA stuck in Bad Command status */
-	if (is_gw5a) {
+	if (is_gw5a) {  // 20231112: no more required but left
 		reset();
 		_jtag->set_state(Jtag::RUN_TEST_IDLE);
 		_jtag->toggleClk(1000000);
@@ -774,6 +774,8 @@ bool Gowin::eraseSRAM()
 	 * is send and goes high after erase
 	 * this check seems enough
 	 */
+	if (_idcode == 0x0001081b) // seems required for GW5AST...
+		sendClkUs(10000);
 	if (pollFlag(STATUS_MEMORY_ERASE, STATUS_MEMORY_ERASE)) {
 		if (_verbose)
 			displayReadReg("after erase sram", readStatusReg());
