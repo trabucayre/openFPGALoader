@@ -66,6 +66,12 @@ class Jtag {
 	std::vector<int> get_devices_list() {return _devices_list;}
 
 	/*!
+	 * \brief return device index in list
+	 * \return device index
+	 */
+	int get_device_index() {return device_index;}
+
+	/*!
 	 * \brief return current selected device idcode
 	 * \return device idcode
 	 */
