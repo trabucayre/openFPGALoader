@@ -595,7 +595,7 @@ int main(int argc, char **argv)
 
 	if ((!args.bit_file.empty() ||
 		 !args.secondary_bit_file.empty() ||
-		 !args.file_type.empty())
+		 !args.file_type.empty() || !args.mcufw.empty())
 			&& args.prg_type != Device::RD_FLASH) {
 		try {
 			fpga->program(args.offset, args.unprotect_flash);
@@ -1010,9 +1010,16 @@ int parse_opt(int argc, char **argv, struct arguments *args,
 			args->scan_usb)
 			args->is_list_command = true;
 
+		if (args->mcufw.empty()) {
+			printf("empty\n");
+		} else {
+			printf("pas empty\n");
+		}
+
 		if (args->bit_file.empty() &&
 			args->secondary_bit_file.empty() &&
 			args->file_type.empty() &&
+			args->mcufw.empty() &&
 			!args->is_list_command &&
 			!args->detect &&
 			!args->protect_flash &&
