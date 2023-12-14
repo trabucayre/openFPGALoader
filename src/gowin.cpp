@@ -274,7 +274,11 @@ void Gowin::programFlash()
 		return;
 	}
 
+	if (!enableCfg())
+		return;
 	if (!eraseFLASH())
+		return;
+	if (!disableCfg())
 		return;
 	/* test status a faire */
 	if (!writeFLASH(0, data, length))
@@ -287,6 +291,14 @@ void Gowin::programFlash()
 	}
 	if (_verify)
 		printWarn("writing verification not supported");
+
+	if (!disableCfg())
+		return;
+	send_command(RELOAD);
+	send_command(NOOP);
+
+	/* wait for reload */
+	usleep(2*150*1000);
 
 	/* check if file checksum == checksum in FPGA */
 	if (!skip_checksum)
@@ -552,9 +564,115 @@ inline uint32_t bswap_32(uint32_t x)
 /* TN653 p. 17-21 */
 bool Gowin::writeFLASH(uint32_t page, const uint8_t *data, int length)
 {
+
+#if 1
+ uint8_t tx[4] = {0x4E, 0x31, 0x57, 0x47};
+    uint8_t tmp[4];
+    uint32_t addr;
+    int nb_iter;
+    int byte_length = length / 8;
+    int buffer_length;
+    uint8_t *buffer;
+    int nb_xpage;
+    uint8_t tt[39];
+    memset(tt, 0, 39);
+
+    _jtag->go_test_logic_reset();
+
+    if (page == 0) {
+        /* we have to send
+         * bootcode a X=0, Y=0 (4Bytes)
+         * 5 x 32 dummy bits
+         * full bitstream
+         */
+        buffer_length = byte_length+(6*4);
+        unsigned char bufvalues[]={
+                                        0x47, 0x57, 0x31, 0x4E,
+                                        0xff, 0xff , 0xff, 0xff,
+                                        0xff, 0xff , 0xff, 0xff,
+                                        0xff, 0xff , 0xff, 0xff,
+                                        0xff, 0xff , 0xff, 0xff,
+                                        0xff, 0xff , 0xff, 0xff};
+        nb_xpage = buffer_length/256;
+        if (nb_xpage * 256 != buffer_length) {
+            nb_xpage++;
+            buffer_length = nb_xpage * 256;
+        }
+
+        buffer = new uint8_t[buffer_length];
+        /* fill theorical size with 0xff */
+        memset(buffer, 0xff, buffer_length);
+        /* fill first page with code */
+        memcpy(buffer, bufvalues, 6*4);
+        /* bitstream just after opcode */
+        memcpy(buffer+6*4, data, byte_length);
+    } else {
+        buffer_length = byte_length;
+        nb_xpage = buffer_length/256;
+        if (nb_xpage * 256 != buffer_length) {
+            nb_xpage++;
+            buffer_length = nb_xpage * 256;
+        }
+        buffer = new uint8_t[buffer_length];
+        memset(buffer, 0xff, buffer_length);
+        memcpy(buffer, data, byte_length);
+    }
+
+ ProgressBar progress("write Flash", buffer_length, 50, _quiet);
+
+    for (int i=0, xpage = 0; xpage < nb_xpage; i += (nb_iter * 4), xpage++) {
+        send_command(CONFIG_ENABLE);
+        send_command(EF_PROGRAM);
+        if ((page + xpage) != 0)
+            _jtag->toggleClk(312);
+        addr = (page + xpage) << 6;
+        tmp[3] = 0xff&(addr >> 24);
+        tmp[2] = 0xff&(addr >> 16);
+        tmp[1] = 0xff&(addr >> 8);
+        tmp[0] = addr&0xff;
+        _jtag->shiftDR(tmp, NULL, 32);
+        _jtag->toggleClk(312);
+
+        int xoffset = xpage * 256;  // each page containt 256Bytes
+        if (xoffset + 256 > buffer_length)
+            nb_iter = (buffer_length-xoffset) / 4;
+        else
+            nb_iter = 64;
+
+        for (int ypage = 0; ypage < nb_iter; ypage++) {
+            unsigned char *t = buffer+xoffset + 4*ypage;
+            for (int x=0; x < 4; x++) {
+                if (page == 0)
+                    tx[3-x] = t[x];
+                else
+                    tx[x] = t[x];
+            }
+            _jtag->shiftDR(tx, NULL, 32);
+
+            if (!is_gw1n1)
+                _jtag->toggleClk(40);
+        }
+        if (is_gw1n1) {
+            //usleep(10*2400*2);
+            uint8_t tt2[6008/8];
+            memset(tt2, 0, 6008/8);
+            _jtag->toggleClk(6008);
+        }
+        progress.display(i);
+    }
+    /* 2.2.6.6 */
+    _jtag->set_state(Jtag::RUN_TEST_IDLE);
+
+    progress.done();
+    delete[] buffer;
+    return true;
+
+#else
 	printInfo("Write FLASH ", false);
 	if (_verbose)
 		displayReadReg("before write flash", readStatusReg());
+
+	_jtag->go_test_logic_reset();
 
 	uint8_t xpage[256];
 	length /= 8;
@@ -592,7 +710,7 @@ bool Gowin::writeFLASH(uint32_t page, const uint8_t *data, int length)
 		progress.display(off);
 	}
 
-	if (!disableCfg()) {
+	/*if (!disableCfg()) {
 		printError("FAIL");
 		return false;
 	}
@@ -604,9 +722,9 @@ bool Gowin::writeFLASH(uint32_t page, const uint8_t *data, int length)
 		displayReadReg("after write flash #2", readStatusReg());
 	_jtag->flush();
 	usleep(500*1000);
-
+*/
 	progress.done();
-	if (_verbose)
+	/*if (_verbose)
 		displayReadReg("after write flash", readStatusReg());
 	if (readStatusReg() & STATUS_DONE_FINAL) {
 		printSuccess("DONE");
@@ -614,7 +732,9 @@ bool Gowin::writeFLASH(uint32_t page, const uint8_t *data, int length)
 	} else {
 		printSuccess("FAIL");
 		return false;
-	}
+	}*/
+	return true;
+#endif
 }
 
 bool Gowin::connectJtagToMCU()
