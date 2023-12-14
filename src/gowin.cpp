@@ -260,8 +260,12 @@ void Gowin::reset()
 
 void Gowin::programFlash()
 {
-	const uint8_t *data = _fs->getData();
-	int length = _fs->getLength();
+	const uint8_t *data = NULL;
+	int length = 0;
+	if (_fs) {
+		data = _fs->getData();
+		length = _fs->getLength();
+	}
 
 	_jtag->setClkFreq(2500000);  // default for GOWIN, should use LoadingRate from file header
 
@@ -281,14 +285,18 @@ void Gowin::programFlash()
 	if (!disableCfg())
 		return;
 	/* test status a faire */
-	if (!writeFLASH(0, data, length))
-		return;
+	if (data) {
+		if (!writeFLASH(0, data, length))
+			return;
+	}
+
 	if (_mcufw) {
 		const uint8_t *mcu_data = _mcufw->getData();
 		int mcu_length = _mcufw->getLength();
 		if (!writeFLASH(0x380, mcu_data, mcu_length))
 			return;
 	}
+
 	if (_verify)
 		printWarn("writing verification not supported");
 
@@ -301,7 +309,8 @@ void Gowin::programFlash()
 	usleep(2*150*1000);
 
 	/* check if file checksum == checksum in FPGA */
-	if (!skip_checksum)
+	/* don't try to read checksum in mcufw mode only */
+	if (!skip_checksum && data)
 		checkCRC();
 
 	if (_verbose)
@@ -385,7 +394,7 @@ void Gowin::programSRAM()
 
 void Gowin::program(unsigned int offset, bool unprotect_flash)
 {
-	if (!_fs)
+	if (!_fs && !_mcufw)
 		return;
 
 	if (_mode == FLASH_MODE) {
