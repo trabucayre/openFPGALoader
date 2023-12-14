@@ -1152,6 +1152,9 @@ bool Gowin::prepare_flash_access()
 			return false;
 		}
 	} else if (!is_gw2a) {
+		if (!enableCfg()) {
+			return false;
+		}
 		send_command(0x3D);
 	}
 
