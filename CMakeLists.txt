@@ -1,4 +1,4 @@
-cmake_minimum_required(VERSION 3.0)
+cmake_minimum_required(VERSION 3.5)
 
 # set the project name
 project(openFPGALoader VERSION "0.11.0" LANGUAGES CXX)
