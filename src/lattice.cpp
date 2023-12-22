@@ -1048,7 +1048,7 @@ void Lattice::displayReadReg(uint64_t dev)
 	uint8_t err;
 	printf("displayReadReg\n");
 	if (dev & 1<<0) printf("\tTRAN Mode\n");
-	printf("\tConfig Target Selection : %lx\n", (dev >> 1) & 0x07);
+	printf("\tConfig Target Selection : %llx\n", (dev >> 1) & 0x07);
 	if (dev & 1<<4) printf("\tJTAG Active\n");
 	if (dev & 1<<5) printf("\tPWD Protect\n");
 	if (dev & 1<<6) printf("\tOTP\n");
