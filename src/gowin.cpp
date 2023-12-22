@@ -160,10 +160,12 @@ Gowin::Gowin(Jtag *jtag, const string filename, const string &file_type, std::st
 		_jtag->set_state(Jtag::TEST_LOGIC_RESET);
 		if (_verbose)
 			displayReadReg("Before disable SPI mode", readStatusReg());
-		disableCfg();
+		//disableCfg();
+		send_command(CONFIG_DISABLE);  // BYPASS ?
 		send_command(0);  // BYPASS ?
 		_jtag->set_state(Jtag::TEST_LOGIC_RESET);
 		gw5a_disable_spi();
+		idCode();
 	}
 }
 
@@ -224,6 +226,7 @@ bool Gowin::send_command(uint8_t cmd)
 {
 	_jtag->shiftIR(&cmd, nullptr, 8);
 	_jtag->toggleClk(6);
+	_jtag->flush();
 	return true;
 }
 
@@ -249,6 +252,7 @@ uint32_t Gowin::readReg32(uint8_t cmd)
 	uint32_t reg = 0, tmp = 0xffffffffU;
 	send_command(cmd);
 	_jtag->shiftDR((uint8_t *)&tmp, (uint8_t *)&reg, 32);
+	_jtag->toggleClk(1);
 	return le32toh(reg);
 }
 
@@ -769,6 +773,7 @@ bool Gowin::writeSRAM(const uint8_t *data, int length)
 	int remains = length;
 	const uint8_t *ptr = data;
 	static const unsigned pstep = 524288; // 0x80000, about 0.2 sec of bitstream at 2.5MHz
+	printf("length : %d\n", length);
 	while (remains) {
 		int chunk = pstep;
 		/* 2.2.6.5 */
@@ -876,9 +881,18 @@ bool Gowin::eraseFLASH()
 void Gowin::sendClkUs(unsigned us)
 {
 	uint64_t clocks = _jtag->getClkFreq();
+	printf("%d %d ", clocks, us);
 	clocks *= us;
+	printf("%lu ", clocks);
 	clocks /= 1000000;
-	_jtag->toggleClk(clocks);
+	uint32_t kLen = (clocks + 7 ) / 8;
+	uint8_t dummy[kLen];
+	printf("%d %d\n", clocks, kLen);
+	memset(dummy, 0, kLen);
+	_jtag->read_write(dummy, NULL, clocks & 0xffffffff, 0);
+	if ((clocks > 0xffffffff))
+		_jtag->read_write(dummy, NULL, clocks - 0xffffffff, 0);
+	//_jtag->toggleClk(clocks);
 }
 
 /* Erase SRAM:
@@ -890,10 +904,12 @@ bool Gowin::eraseSRAM()
 	if (_verbose)
 		displayReadReg("before erase sram", readStatusReg());
 
-	if (!enableCfg()) {
+	/*if (!enableCfg()) {
 		printError("FAIL");
 		return false;
-	}
+	}*/
+	send_command(0x11);
+	send_command(CONFIG_ENABLE);
 	send_command(ERASE_SRAM);
 	send_command(NOOP);
 
@@ -904,23 +920,27 @@ bool Gowin::eraseSRAM()
 	 * this check seems enough
 	 */
 	if (_idcode == 0x0001081b) // seems required for GW5AST...
-		sendClkUs(10000);
-	if (pollFlag(STATUS_MEMORY_ERASE, STATUS_MEMORY_ERASE)) {
-		if (_verbose)
-			displayReadReg("after erase sram", readStatusReg());
-	} else {
-		printError("FAIL");
-		return false;
+		sendClkUs(750*9);
+	else {
+		if (pollFlag(STATUS_MEMORY_ERASE, STATUS_MEMORY_ERASE)) {
+			if (_verbose)
+				displayReadReg("after erase sram", readStatusReg());
+		} else {
+			printError("FAIL");
+			return false;
+		}
 	}
 
 	send_command(XFER_DONE);
 	send_command(NOOP);
-	if (!disableCfg()) {
+	send_command(CONFIG_DISABLE);
+	send_command(NOOP);
+	/*if (!disableCfg()) {
 		printError("FAIL");
 		return false;
-	}
+	}*/
 
-	if (_mode == Device::FLASH_MODE) {
+	/*if (_mode == Device::FLASH_MODE) {
 		uint32_t status_reg = readStatusReg();
 		if (_verbose)
 			displayReadReg("after erase sram", status_reg);
@@ -930,7 +950,7 @@ bool Gowin::eraseSRAM()
 		} else {
 			printSuccess("DONE");
 		}
-	}
+	}*/
 	return true;
 }
 
@@ -1149,6 +1169,7 @@ bool Gowin::dumpFlash(uint32_t base_addr, uint32_t len)
 bool Gowin::prepare_flash_access()
 {
 	_jtag->setClkFreq(10000000);
+	//_jtag->setClkFreq(2500000);
 
 	if (!eraseSRAM()) {
 		printError("Error: fail to erase SRAM");
@@ -1156,6 +1177,11 @@ bool Gowin::prepare_flash_access()
 	}
 
 	if (is_gw5a) {
+		if (!eraseSRAM()) {
+			printError("Error: fail to erase SRAM");
+			return false;
+		}
+		displayReadReg("toto", readStatusReg());
 		if (!gw5a_enable_spi()) {
 			printError("Error: fail to switch GW5A to SPI mode");
 			return false;
@@ -1229,9 +1255,14 @@ int Gowin::spi_put_gw5a(const uint8_t cmd, const uint8_t *tx, uint8_t *rx,
 		if (0 != _jtag->read_write(jtx, (rx) ? jrx : NULL, bit_len, 0))
 			return -1;
 		// set TMS/CS high by moving to a state where TMS == 1
-		_jtag->set_state(Jtag::TEST_LOGIC_RESET, curr_tdi);
-		_jtag->toggleClk(5);  // Required ?
-		_jtag->flushTMS(true);
+		//_jtag->set_state(Jtag::TEST_LOGIC_RESET, 0/*curr_tdi*/);
+		_jtag->set_state(Jtag::SELECT_DR_SCAN, 0/*curr_tdi*/);
+		_jtag->flush();
+		_jtag->set_state(Jtag::TEST_LOGIC_RESET, 0/*curr_tdi*/);
+		const uint8_t dummy = 0;
+		_jtag->read_write(&dummy, NULL, 5, 0);
+		//_jtag->toggleClk(5);  // Required ?
+		//_jtag->flush();
 		if (rx) {  // Reconstruct read sequence and drop first 3bits.
 			for (uint32_t i = 0; i < len; i++)
 				rx[i] = FsParser::reverseByte((jrx[i] >> 3) |
@@ -1255,6 +1286,7 @@ int Gowin::spi_wait_gw5a(uint8_t cmd, uint8_t mask, uint8_t cond,
 		}
 
 		count++;
+		//printf("%x %x %x %u\n", tmp, mask, cond, count);
 		if (count == timeout) {
 			printf("timeout: %x\n", tmp);
 			break;
@@ -1269,21 +1301,31 @@ int Gowin::spi_wait_gw5a(uint8_t cmd, uint8_t mask, uint8_t cond,
 
 bool Gowin::gw5a_enable_spi()
 {
-	enableCfg();
+	uint8_t dummy[625];
+	memset(dummy, 0, 625);
+	//enableCfg();
+	send_command(0x15);
 	send_command(0x3F);
-	disableCfg();
+	send_command(0x3A);
+	//disableCfg();
 	if (_verbose)
 		displayReadReg("toto", readStatusReg());
 
 	/* UG704 3.4.3 'ExtFlash Programming -> Program External Flash via JTAG-SPI' */
 	send_command(NOOP);
+	send_command(0x11);
+	send_command(0x02);
 	_jtag->set_state(Jtag::RUN_TEST_IDLE);
-	_jtag->toggleClk(126*8);
+	//_jtag->toggleClk(126*8);
+	_jtag->read_write(dummy, NULL, 126 * 8, 0);
+	//sendClkUs(51);
 	_jtag->set_state(Jtag::RUN_TEST_IDLE);
 	send_command(0x16);
 	send_command(0x00);
 	_jtag->set_state(Jtag::RUN_TEST_IDLE);
-	_jtag->toggleClk(625*8);
+	//_jtag->toggleClk(625*8);
+	//_jtag->read_write(dummy, NULL, 625 * 8, 0);
+	sendClkUs(250*9);
 	_jtag->set_state(Jtag::TEST_LOGIC_RESET);
 	/* save current read/write edge cfg before switching to SPI mode0
 	 * (rising edge: read / falling edge: write)
@@ -1327,5 +1369,6 @@ bool Gowin::gw5a_disable_spi()
 	// 2. 8 TCK clock cycle with TMS=1
 	_jtag->set_state(Jtag::TEST_LOGIC_RESET);  // 5 cycles
 	_jtag->toggleClk(5);
+	idCode();
 	return true;
 }

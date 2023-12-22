@@ -80,6 +80,7 @@ class SPIFlash {
 				const int &len, int rd_burst = 0);
 		/* combo flash + erase */
 		int erase_and_prog(int base_addr, const uint8_t *data, int len);
+		int erase_and_prog2(int base_addr, const uint8_t *data, int len);
 		/*!
 		 * \brief check if area base_addr to base_addr + len match
 		 *        data content

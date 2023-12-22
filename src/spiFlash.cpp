@@ -457,6 +457,57 @@ int SPIFlash::erase_and_prog(int base_addr, const uint8_t *data, int len)
 	return 0;
 }
 
+int SPIFlash::erase_and_prog2(int base_addr, const uint8_t *data, int len)
+{
+	printf("len: %d base_addr %08x\n", len, base_addr);
+	/* Now we can erase sector and write new data */
+	ProgressBar progress("Writing", len, 50, _verbose < 0);
+	const uint8_t *ptr = data;
+	int size = 0;
+	uint8_t buffer[0x100];
+	for (int sect_addr = 0; sect_addr < len; sect_addr += 0x1000) {
+		bool must_erase = true;
+		bool must_write = true;
+		bool all_same   = true;
+		size = (sect_addr + 0x1000 > len)?(len-sect_addr) : 0x1000;
+		uint8_t first_c = ptr[0];
+		for (int p = 1; p < size; p++) {
+			if (first_c != ptr[p]) {
+				all_same = false;
+				break;
+			}
+		}
+		if (all_same) {
+			must_erase = first_c == 0xff;
+			must_write = first_c == 0x00;
+		}
+		if (must_erase) {
+			/* erase 4K (ie 256B * 16 pages) */
+			sector_erase(sect_addr); // erase 4K
+		}
+		for (int page_addr = 0; page_addr < 0x1000; page_addr += 0x100) {
+
+			uint32_t addr = sect_addr + page_addr;
+			size = (addr + 256 > len)?(len-addr) : 256;
+			memset(buffer, 0xff, 0x100);
+			if (addr > len) {
+				memcpy(buffer, ptr, size);
+				ptr += size;
+			}
+
+			printf("sect_addr %08x page_addr %08x addr %08x\n", sect_addr, page_addr, addr+base_addr);
+			if (must_write) {
+				if (write_page(addr + base_addr, buffer, 0x100) == -1)
+					return -1;
+			}
+		}
+		progress.display(sect_addr);
+	}
+	progress.done();
+
+	return 0;
+}
+
 bool SPIFlash::verify(const int &base_addr, const uint8_t *data,
 		const int &len, int rd_burst)
 {

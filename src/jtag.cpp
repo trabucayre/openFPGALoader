@@ -84,7 +84,7 @@ Jtag::Jtag(const cable_t &cable, const jtag_pins_conf_t *pin_conf,
 			_tms_buffer_size(128), _num_tms(0),
 			_board_name("nope"), _user_misc_devs(user_misc_devs),
 			device_index(0), _dr_bits_before(0), _dr_bits_after(0),
-			_ir_bits_before(0), _ir_bits_after(0), _curr_tdi(1)
+			_ir_bits_before(0), _ir_bits_after(0), _curr_tdi(0)
 {
 	switch (cable.type) {
 	case MODE_ANLOGICCABLE:
@@ -347,7 +347,7 @@ void Jtag::go_test_logic_reset()
 	_state = TEST_LOGIC_RESET;
 }
 
-int Jtag::read_write(const uint8_t *tdi, unsigned char *tdo, int len, char last)
+int Jtag::read_write(const uint8_t *tdi, unsigned char *tdo, uint32_t len, char last)
 {
 	flushTMS(false);
 	_jtag->writeTDI(tdi, tdo, len, last);
