@@ -7,6 +7,7 @@
 #include "colognechip.hpp"
 
 #include <memory>
+#include <string.h>
 
 #define JTAG_CONFIGURE  0x06
 #define JTAG_SPI_BYPASS 0x05
@@ -279,19 +280,42 @@ void CologneChip::programJTAG_sram(const uint8_t *data, int length)
 
 	ProgressBar progress("Load SRAM via JTAG", length, 50, _quiet);
 
+	/* make sure to only send multiples of 8 bits */
+	int bits_before = _jtag->get_devices_list().size() - _jtag->get_device_index() - 1;
+	if (bits_before > 0) {
+		int n = 8 - (bits_before % 8);
+		uint8_t tx[n];
+		memset(tx, 0x00, n);
+		_jtag->shiftDR(tx, NULL, n, Jtag::SHIFT_DR);
+	}
+
+	/* the bypass register defaults to '0'.
+	 * in order to generate a proper 'nop' command (0x00, 0xFF), send a
+	 * sequence of zeros instead of ones.
+	 */
+	int bits_after = _jtag->get_device_index();
+	if (bits_after > 0) {
+		int n = (bits_after + 7) / 8;
+		uint8_t tx[n];
+		memset(tx, 0x00, n);
+		_jtag->shiftDR(tx, NULL, 8-bits_after, Jtag::SHIFT_DR);
+	}
+
+	Jtag::tapState_t next_state = Jtag::SHIFT_DR;
 	for (int i = 0; i < length; i += size) {
-		if (length < i + size)
+		if (length < i + size) {
 			size = length-i;
+			next_state = Jtag::RUN_TEST_IDLE;
+		}
 
 		for (int ii = 0; ii < size; ii++)
 			tmp[ii] = data[i+ii];
 
-		_jtag->shiftDR(tmp, NULL, size*8, Jtag::SHIFT_DR);
+		_jtag->shiftDR(tmp, NULL, size*8, next_state);
 		progress.display(i);
 	}
 
 	progress.done();
-	_jtag->set_state(Jtag::RUN_TEST_IDLE);
 
 	if (_ftdi_jtag) {
 		waitCfgDone();
