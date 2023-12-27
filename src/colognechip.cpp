@@ -284,7 +284,9 @@ void CologneChip::programJTAG_sram(const uint8_t *data, int length)
 	int bits_before = _jtag->get_devices_list().size() - _jtag->get_device_index() - 1;
 	if (bits_before > 0) {
 		int n = 8 - (bits_before % 8);
-		_jtag->toggleClk(n);
+		uint8_t tx[n];
+		memset(tx, 0x00, n);
+		_jtag->shiftDR(tx, NULL, n, Jtag::SHIFT_DR);
 	}
 
 	/* the bypass register defaults to '0'.
@@ -299,19 +301,21 @@ void CologneChip::programJTAG_sram(const uint8_t *data, int length)
 		_jtag->shiftDR(tx, NULL, 8-bits_after, Jtag::SHIFT_DR);
 	}
 
+	Jtag::tapState_t next_state = Jtag::SHIFT_DR;
 	for (int i = 0; i < length; i += size) {
-		if (length < i + size)
+		if (length < i + size) {
 			size = length-i;
+			next_state = Jtag::RUN_TEST_IDLE;
+		}
 
 		for (int ii = 0; ii < size; ii++)
 			tmp[ii] = data[i+ii];
 
-		_jtag->shiftDR(tmp, NULL, size*8, Jtag::SHIFT_DR);
+		_jtag->shiftDR(tmp, NULL, size*8, next_state);
 		progress.display(i);
 	}
 
 	progress.done();
-	_jtag->set_state(Jtag::RUN_TEST_IDLE);
 
 	if (_ftdi_jtag) {
 		waitCfgDone();
