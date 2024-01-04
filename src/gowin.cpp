@@ -278,6 +278,9 @@ void Gowin::programFlash()
 		return;
 	}
 
+	if (!eraseSRAM())
+		return;
+
 	if (!enableCfg())
 		return;
 	if (!eraseFLASH())
@@ -811,12 +814,6 @@ bool Gowin::writeSRAM(const uint8_t *data, int length)
  */
 bool Gowin::eraseFLASH()
 {
-	if (readStatusReg() & STATUS_GOWIN_VLD) {
-		if (!eraseSRAM()) {
-			return false;
-		}
-	}
-
 	printInfo("Erase FLASH ", false);
 	ProgressBar progress("Erasing FLASH", 100, 50, _quiet);
 
@@ -835,11 +832,10 @@ bool Gowin::eraseFLASH()
 		 * others 1 x 32bits
 		 */
 		int nb_iter = (is_gw1n1)?65:1;
+		uint8_t dummy[4] = {0, 0, 0, 0};
 		for (int i = 0; i < nb_iter; ++i) {
 			// keep following sequence as-is. it is _not_ _jtag->shiftDR().
-			_jtag->set_state(Jtag::SHIFT_DR);
-			_jtag->toggleClk(32);
-			_jtag->set_state(Jtag::RUN_TEST_IDLE);
+			_jtag->shiftDR(dummy, NULL, 32);
 		}
 
 		/* TN653 specifies to wait for 160ms with
