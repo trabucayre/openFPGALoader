@@ -1144,24 +1144,30 @@ bool Gowin::dumpFlash(uint32_t base_addr, uint32_t len)
 
 bool Gowin::prepare_flash_access()
 {
-	_jtag->setClkFreq(10000000);
-
 	if (!eraseSRAM()) {
 		printError("Error: fail to erase SRAM");
 		return false;
 	}
 
 	if (is_gw5a) {
+		if (!eraseSRAM()) {
+			printError("Error: fail to erase SRAM");
+			return false;
+		}
+		usleep(100000);
 		if (!gw5a_enable_spi()) {
 			printError("Error: fail to switch GW5A to SPI mode");
 			return false;
 		}
+		usleep(100000);
 	} else if (!is_gw2a) {
 		if (!enableCfg()) {
 			return false;
 		}
 		send_command(0x3D);
 	}
+
+	_jtag->setClkFreq(10000000);
 
 	return true;
 }
