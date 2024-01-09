@@ -309,7 +309,7 @@ void Gowin::programFlash()
 	send_command(NOOP);
 
 	/* wait for reload */
-	usleep(2*150*1000);
+	usleep(4*150*1000); // FIXME: adapt delay for each family/model
 
 	/* check if file checksum == checksum in FPGA */
 	/* don't try to read checksum in mcufw mode only */
