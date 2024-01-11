@@ -178,6 +178,7 @@ static std::map <uint32_t, fpga_model> fpga_list = {
 	{0x012b8043, {"lattice", "MachXO2",   "LCMXO2-256HC",  8}},
 	{0x012b9043, {"lattice", "MachXO2",   "LCMXO2-640HC",  8}},
 	{0x012ba043, {"lattice", "MachXO2",   "LCMXO2-1200HC", 8}},
+	{0x012bc043, {"lattice", "MachXO2",   "LCMXO2-4000HC", 8}},
 	{0x012bd043, {"lattice", "MachXO2",   "LCMXO2-7000HC", 8}},
 	{0x012b5043, {"lattice", "MachXO2",   "LCMXO2-7000HE", 8}},
 
@@ -186,7 +187,7 @@ static std::map <uint32_t, fpga_model> fpga_list = {
 	{0x012B2043, {"lattice", "MachXO3LF", "LCMX03LF-1300E", 8}},
 	{0x612BB043, {"lattice", "MachXO3LF", "LCMX03LF-2100C", 8}},
 	{0x012B3043, {"lattice", "MachXO3LF", "LCMX03LF-2100E", 8}},
-	{0x012BC043, {"lattice", "MachXO3LF", "LCMX03LF-4300C", 8}},
+	{0x612BC043, {"lattice", "MachXO3LF", "LCMX03LF-4300C", 8}},
 	{0x012B4043, {"lattice", "MachXO3LF", "LCMX03LF-4300E", 8}},
 	{0x612BD043, {"lattice", "MachXO3LF", "LCMX03LF-6900C", 8}},
 	{0x612B5043, {"lattice", "MachXO3LF", "LCMX03LF-6900E", 8}},
