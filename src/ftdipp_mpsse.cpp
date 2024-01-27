@@ -91,6 +91,32 @@ FTDIpp_MPSSE::FTDIpp_MPSSE(const cable_t &cable, const string &dev,
 		printWarn(err);
 		memset(_iproduct,'\0', 200);
 	}
+
+	ret = (libusb_error)libusb_get_string_descriptor_ascii(_ftdi->usb_dev,
+		usb_desc.iManufacturer, _imanufacturer, 200);
+	/* when FTDI device has no iManufacturer, libusb returns an error
+	 * but there is no distinction between real error and empty field
+	 */
+	if (ret < 0) {
+		snprintf(err, sizeof(err),
+			"Can't read iManufacturer field from FTDI: "
+			"considered as empty string");
+		printWarn(err);
+		memset(_imanufacturer,'\0', 200);
+	}
+
+	ret = (libusb_error)libusb_get_string_descriptor_ascii(_ftdi->usb_dev,
+		usb_desc.iSerialNumber, _iserialnumber, 200);
+	/* when FTDI device has no iSerialNumber, libusb returns an error
+	 * but there is no distinction between real error and empty field
+	 */
+	if (ret < 0) {
+		snprintf(err, sizeof(err),
+			"Can't read iSerialNumber field from FTDI: "
+			"considered as empty string");
+		printWarn(err);
+		memset(_iserialnumber,'\0', 200);
+	}
 }
 
 FTDIpp_MPSSE::~FTDIpp_MPSSE()

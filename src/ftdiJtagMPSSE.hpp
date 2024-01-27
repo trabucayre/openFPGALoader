@@ -106,6 +106,7 @@ class FtdiJtagMPSSE : public JtagInterface, public FTDIpp_MPSSE {
 	 */
 	void config_edge();
 	bool _ch552WA; /* avoid errors with SiPeed tangNano */
+	bool _cmd8EWA; /* avoid errors with Sipeed FT2232H emulation */
 	uint8_t _write_mode; /**< write edge configuration */
 	uint8_t _read_mode; /**< read edge configuration */
 	bool _invert_read_edge; /**< read edge selection (false: pos, true: neg) */

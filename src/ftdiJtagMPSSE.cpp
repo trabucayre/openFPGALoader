@@ -34,6 +34,7 @@ FtdiJtagMPSSE::FtdiJtagMPSSE(const cable_t &cable,
 			const string &dev, const string &serial, uint32_t clkHZ,
 			bool invert_read_edge, int8_t verbose):
 			FTDIpp_MPSSE(cable, dev, serial, clkHZ, verbose), _ch552WA(false),
+			_cmd8EWA(false),
 			_write_mode(MPSSE_WRITE_NEG),  // always write on neg edge
 			_read_mode(0),
 			_invert_read_edge(invert_read_edge), // false: pos, true: neg
@@ -71,6 +72,12 @@ void FtdiJtagMPSSE::init_internal(const mpsse_bit_config &cable)
 
 	if (!strncmp((const char *)_iproduct, "Sipeed-Debug", 12)) {
 		_ch552WA = true;
+	}
+
+	// This Sipeed firmware does not support MPSEE 0x8E, 0x8F commands properly
+	if ( (!strncmp((const char *)_imanufacturer, "SIPEED", 6)) 
+			&& (!strncmp((const char *)_iserialnumber, "2023112818", 10)) ) {
+		_cmd8EWA = true;
 	}
 
 	display("%x\n", cable.bit_low_val);
@@ -174,8 +181,8 @@ int FtdiJtagMPSSE::toggleClk(uint8_t tms, uint8_t tdi, uint32_t clk_len)
 	 * with 2232H, 4242H & 232H
 	 */
 
-	if (_ftdi->type == TYPE_2232H || _ftdi->type == TYPE_4232H ||
-				_ftdi->type == TYPE_232H) {
+	if ((_ftdi->type == TYPE_2232H || _ftdi->type == TYPE_4232H ||
+				_ftdi->type == TYPE_232H) && !_cmd8EWA) {
 		uint8_t buf[] = {static_cast<uint8_t>(0x8f), 0, 0};
 		while (len) {
 			unsigned int chunk = len;
