@@ -81,6 +81,8 @@ class FTDIpp_MPSSE {
 		int _num;
 		unsigned char *_buffer;
 		uint8_t _iproduct[200];
+		uint8_t _imanufacturer[200];
+		uint8_t _iserialnumber[200];
 };
 
 #endif
