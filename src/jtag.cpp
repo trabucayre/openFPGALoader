@@ -103,7 +103,7 @@ Jtag::Jtag(const cable_t &cable, const jtag_pins_conf_t *pin_conf,
 		_jtag = new CH552_jtag(cable, dev, serial, clkHZ, verbose);
 		break;
 	case MODE_CH347:
-		_jtag = new CH347Jtag(clkHZ, verbose);
+		_jtag = new CH347Jtag(clkHZ, verbose, cable.vid, cable.pid, cable.bus_addr, cable.device_addr);
 		break;
 	case MODE_DIRTYJTAG:
 		_jtag = new DirtyJtag(clkHZ, verbose);

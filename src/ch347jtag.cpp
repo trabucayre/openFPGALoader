@@ -22,14 +22,20 @@
 using namespace std;
 
 #define CH347JTAG_VID 0x1a86
-#define CH347JTAG_PID 0x55dd
+#define CH347JTAG_PID 0x55dd    //ch347T
+//#define CH347JTAG_PID 0x55de    //ch347F
+
+#define KHZ(n) (uint32_t)((n)*UINT32_C(1000))
+#define MHZ(n) (uint32_t)((n)*UINT32_C(1000000))
+#define GHZ(n) (uint32_t)((n)*UINT32_C(1000000000))
 
 #define CH347JTAG_INTF        2
 #define CH347JTAG_WRITE_EP    0x06
 #define CH347JTAG_READ_EP     0x86
 
 #define CH347JTAG_TIMEOUT     200
-
+unsigned short CH347_VID = CH347JTAG_VID;
+unsigned short CH347_PID = CH347JTAG_PID;
 enum CH347JtagCmd {
 	CMD_BYTES_WO = 0xd3,
 	CMD_BYTES_WR = 0xd4,
@@ -51,16 +57,16 @@ static void LIBUSB_CALL sync_cb(struct libusb_transfer *transfer) {
 
 // defer should only be used with rlen == 0
 
-int CH347Jtag::usb_xfer(unsigned wlen, unsigned rlen, unsigned *ract, bool defer) {
+int CH347Jtag::usb_xfer(unsigned wlen, unsigned rlen, unsigned *ract, bool defer) 
+{
+	int actual_length = 0;
 	if (_verbose) {
 		fprintf(stderr, "usb_xfer: deferred: %ld\n", obuf - _obuf);
 	}
-	if (defer && !rlen && obuf - _obuf + wlen < MAX_BUFFER - 12) {
+	if (defer && !rlen && obuf - _obuf > (wlen + 12)) {
 		obuf += wlen;
 		return 0;
 	}
-
-	// write out whole buffer
 
 	if (obuf - _obuf > MAX_BUFFER) {
 		throw runtime_error("buffer overflow");
@@ -84,66 +90,39 @@ int CH347Jtag::usb_xfer(unsigned wlen, unsigned rlen, unsigned *ract, bool defer
 		fprintf(stderr, "}\n\n");
 	}
 
-	int wcomplete = 0, rcomplete = 0;
-	libusb_fill_bulk_transfer(wtrans, dev_handle, CH347JTAG_WRITE_EP, obuf,
-		wlen, sync_cb, &wcomplete, CH347JTAG_TIMEOUT);
-	int r = libusb_submit_transfer(wtrans);
-	if (r < 0)
-		return r;
-	if (rlen) {
-		rcomplete = 0;
-		libusb_fill_bulk_transfer(rtrans, dev_handle, CH347JTAG_READ_EP, ibuf,
-			rlen, sync_cb, &rcomplete, CH347JTAG_TIMEOUT);
-		r = libusb_submit_transfer(rtrans);
-		if (r < 0)
+	int r = 0;
+	if (wlen) {
+		if ((r = libusb_bulk_transfer(dev_handle, CH347JTAG_WRITE_EP, obuf, wlen, &actual_length, CH347JTAG_TIMEOUT)) < 0 ) {
 			return r;
-	} else {
-		rcomplete = 1;
+		}
 	}
-	while (!wcomplete) {
-		r = libusb_handle_events_completed(usb_ctx, &wcomplete);
-		if (r < 0) {
-			if (r != LIBUSB_ERROR_INTERRUPTED) {
-				libusb_cancel_transfer(wtrans);
-				if (rlen) libusb_cancel_transfer(rtrans);
+	if (_verbose) {
+		fprintf(stderr, "obuf[%d] = {", wlen);
+		for (unsigned i = 0; i < wlen; ++i) {
+			fprintf(stderr, "%02x ", obuf[i]);
+		}
+		fprintf(stderr, "}\n\n");
+	}
+	obuf = _obuf;
+	int rlen_total = 0;
+	uint8_t *pibuf = ibuf;
+	if (rlen){
+		while (rlen) {
+			if ((r = libusb_bulk_transfer(dev_handle, CH347JTAG_READ_EP, pibuf, rlen, &actual_length, CH347JTAG_TIMEOUT)) < 0 ) {
+				return r;
 			}
-			continue;
-		}
-		if (!wtrans->dev_handle) {
-			wtrans->status = LIBUSB_TRANSFER_NO_DEVICE;
-			wcomplete = 1;
-		}
-	}
-	while (!rcomplete) {
-		r = libusb_handle_events_completed(usb_ctx, &rcomplete);
-		if (r < 0) {
-			if (r != LIBUSB_ERROR_INTERRUPTED)
-				libusb_cancel_transfer(rtrans);
-			continue;
-		}
-		if (!rtrans->dev_handle) {
-			rtrans->status = LIBUSB_TRANSFER_NO_DEVICE;
-			rcomplete = 1;
-		}
-	}
-	if (wtrans->status != LIBUSB_TRANSFER_COMPLETED) {
-		return LIBUSB_ERROR_IO;
-	}
-	if (rlen) {
-		if (rtrans->status != LIBUSB_TRANSFER_COMPLETED) {
-			return LIBUSB_ERROR_IO;
-		}
-		if ((int)rlen > rtrans->actual_length) {
-			throw runtime_error("input buffer underflow");
-		}
-		if (ract) *ract = rtrans->actual_length;
-		if (_verbose) {
-			fprintf(stderr, "ibuf[%d] = {", rtrans->actual_length);
-			for (int i = 0; i < rtrans->actual_length; ++i) {
-				fprintf(stderr, "%02x ", ibuf[i]);
+			if (_verbose) {
+				fprintf(stderr, "ibuf[%d] = {", actual_length);
+				for (int i = rlen_total; i < rlen_total + actual_length; ++i) {
+					fprintf(stderr, "%02x ", ibuf[i]);
+				}
+				fprintf(stderr, "}\n\n");
 			}
-			fprintf(stderr, "}\n\n");
+			rlen -= actual_length;
+			pibuf += actual_length;
+			rlen_total += actual_length;
 		}
+		*ract = rlen_total;
 	}
 	return 0;
 }
@@ -164,19 +143,41 @@ int CH347Jtag::setClk(const uint8_t &factor) {
 	return 0;
 }
 
-CH347Jtag::CH347Jtag(uint32_t clkHZ, int8_t verbose):
+CH347Jtag::CH347Jtag(uint32_t clkHZ, int8_t verbose, int vid, int pid, uint8_t bus_addr, uint8_t dev_addr):
       _verbose(verbose>1), dev_handle(NULL), usb_ctx(NULL), obuf(_obuf)
 {
+	libusb_device** devs;
 	int actual_length = 0;
+	int i = 0;
+	ssize_t cnt;
 	struct libusb_device_descriptor desc;
 	struct libusb_device *dev;
 	int rv;
+    CH347_VID = vid;
+	CH347_PID = pid;
 	if (libusb_init(&usb_ctx) < 0) {
 		printError("libusb init failed");
 		goto err_exit;
 	}
-	dev_handle = libusb_open_device_with_vid_pid(usb_ctx, CH347JTAG_VID,
-		CH347JTAG_PID);
+	if (bus_addr != 0 && dev_addr != 0) {
+		cnt = libusb_get_device_list(NULL, &devs);
+		if (cnt < 0) goto err_exit;
+		while ((dev = devs[i++]) != NULL)  {
+			if (libusb_get_device_descriptor(dev, &desc) < 0){
+				continue;
+			}
+			if (desc.idVendor == CH347_VID && desc.idProduct == CH347_PID && libusb_get_bus_number(dev) == bus_addr && \
+				libusb_get_device_address(dev) == dev_addr){
+				if (libusb_open(dev, &dev_handle) < 0){
+					printError("libusb init failed");
+					goto err_exit;
+				}
+			}
+		}
+	}else {
+		dev_handle = libusb_open_device_with_vid_pid(usb_ctx, CH347_VID,
+			CH347_PID);
+	}
 	if (!dev_handle) {
 		printError("fails to open device");
 		goto usb_exit;
@@ -243,27 +244,22 @@ CH347Jtag::~CH347Jtag()
 
 int CH347Jtag::_setClkFreq(uint32_t clkHZ)
 {
-#if 1
-	unsigned i = 0, sl = 60000000 >> 5;
-	for (; i < 6; ++i, sl <<= 1) {
-		if (clkHZ < sl)
-			break;
+    int setClk_index = 0;
+	uint32_t speed_clock[8] = {
+		KHZ(468.75), KHZ(937.5), MHZ(1.875), MHZ(3.75),
+		MHZ(7.5), MHZ(15), MHZ(30), MHZ(60)
+	};
+    for (int i = 0; i < sizeof(speed_clock) / sizeof(uint32_t); ++i) {
+		if (clkHZ > speed_clock[i] && clkHZ <= speed_clock[i+1]){
+			setClk_index = i + 1;
+		}
 	}
-#else
-	int i = 6;
-	unsigned sl = 60000000;
-	for (; i > 1; --i, sl >>= 1) {
-		if (clkHZ > sl)
-			break;
-	}
-#endif
-	_clkHZ = sl;
-	if (setClk(i)) {
+	if (setClk(setClk_index)) {
 		printError("failed to set clock rate");
 		return 0;
 	}
 	char mess[256];
-	snprintf(mess, 256, "JTAG TCK frequency set to %.3f MHz\n\n", _clkHZ/1e6);
+	snprintf(mess, 256, "JTAG TCK frequency set to %.3f MHz\n\n", (double)speed_clock[setClk_index] / MHZ(1));
 	printInfo(mess);
 	return _clkHZ;
 }
@@ -271,9 +267,10 @@ int CH347Jtag::_setClkFreq(uint32_t clkHZ)
 int CH347Jtag::writeTMS(const uint8_t *tms, uint32_t len, bool flush_buffer,
 		__attribute__((unused)) const uint8_t tdi)
 {
-	if (get_obuf_length() < (int)(len * 2 + 4)) { // check if there is enough room left
-		flush();
-	}
+	// if (get_obuf_length() < (int)(len * 2 + 4)) { // check if there is enough room left
+	// 	flush();
+	// }
+ 	flush();
 	uint8_t *ptr = obuf;
 	for (uint32_t i = 0; i < len; ++i) {
 		if (ptr == obuf) {
@@ -424,12 +421,12 @@ int CH347Jtag::writeTDI(const uint8_t *tx, uint8_t *rx, uint32_t len, bool end)
 		cerr << "writeTDI: invalid read data: " << endl;
 		return -EXIT_FAILURE;
 	}
-	for (unsigned i = 0; i < size / 8; ++i) {
-		uint8_t b = 0;
-		uint8_t *xb = &ibuf[3 + i * 8];
-		for (unsigned j = 0; j < 8; ++j)
-			b |= (xb[j] & 1) << j;
-		*rptr++ = b;
+	for (unsigned i = 0; i < size; ++i) {
+		if (ibuf[3 + i] == 0x01) {
+			*rptr |= (0x01 << i);
+		}else{
+			*rptr &= ~(0x01 << i);
+		}	
 	}
 	return EXIT_SUCCESS;
 }
