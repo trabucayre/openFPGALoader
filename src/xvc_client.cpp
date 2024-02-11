@@ -242,6 +242,23 @@ bool XVC_client::open_connection(const string &ip_addr)
 	return true;
 }
 
+static
+int sendall(int sock, const void* raw, size_t cnt, int flags)
+{
+	const char *buf = (const char*)raw;
+	size_t remaining = cnt;
+	while (remaining) {
+		ssize_t ret = send(sock, buf, remaining, flags);
+		if (ret==0) // should not happen on Linux for a TCP socket
+			throw std::logic_error("platform TCP send() returns zero?!?");
+		if (ret < 0)
+			return ret;
+		buf += ret;
+		remaining -= ret;
+	}
+	return cnt; // success
+}
+
 ssize_t XVC_client::xfer_pkt(const string &instr,
 		const uint8_t *tx, uint32_t tx_size,
 		uint8_t *rx, uint32_t rx_size)
@@ -249,13 +266,13 @@ ssize_t XVC_client::xfer_pkt(const string &instr,
 	ssize_t len = tx_size;
 
 	/* 1. instruction */
-	if (send(_sock, instr.c_str(), instr.size(), 0) == -1) {
+	if (sendall(_sock, instr.c_str(), instr.size(), 0) == -1) {
 		printError("Send instruction failed");
 		return -1;
 	}
 
 	if (tx) {
-		if (send(_sock, tx, tx_size, 0) == -1) {
+		if (sendall(_sock, tx, tx_size, 0) == -1) {
 			printError("Send error");
 			return -1;
 		}
