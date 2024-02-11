@@ -99,7 +99,8 @@ int XVC_client::writeTMS(const uint8_t *tms, uint32_t len, bool flush_buffer,
 		// buffer full -> write
 		if (_num_bits == _buffer_size * 8) {
 			// write
-			ll_write(NULL);
+			if(!ll_write(NULL))
+				throw std::runtime_error("xvc ll_write fails");
 			_num_bits = 0;
 		}
 
@@ -147,7 +148,8 @@ int XVC_client::writeTDI(const uint8_t *tx, uint8_t *rx, uint32_t len, bool end)
 			uint16_t idx = _num_bits - 1;
 			_tms[(idx >> 3)] |= (1 << (idx & 0x07));
 		}
-		ll_write((rx) ? rx_ptr : NULL);  // write
+		if(!ll_write((rx) ? rx_ptr : NULL))  // write
+			throw std::runtime_error("xvc ll_write fails");
 
 		tx_ptr += tt;
 		if (rx)
@@ -184,7 +186,8 @@ int XVC_client::toggleClk(uint8_t tms, uint8_t tdi, uint32_t clk_len)
 		if (len < _num_bits)
 			_num_bits = len;
 		len -= _num_bits;
-		ll_write(NULL);
+		if(!ll_write(NULL))
+			throw std::runtime_error("xvc ll_write fails");
 	} while (len > 0);
 
 	return clk_len;
