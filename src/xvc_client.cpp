@@ -99,7 +99,8 @@ int XVC_client::writeTMS(const uint8_t *tms, uint32_t len, bool flush_buffer,
 		// buffer full -> write
 		if (_num_bits == _buffer_size * 8) {
 			// write
-			ll_write(NULL);
+			if(!ll_write(NULL))
+				throw std::runtime_error("xvc ll_write fails");
 			_num_bits = 0;
 		}
 
@@ -147,7 +148,8 @@ int XVC_client::writeTDI(const uint8_t *tx, uint8_t *rx, uint32_t len, bool end)
 			uint16_t idx = _num_bits - 1;
 			_tms[(idx >> 3)] |= (1 << (idx & 0x07));
 		}
-		ll_write((rx) ? rx_ptr : NULL);  // write
+		if(!ll_write((rx) ? rx_ptr : NULL))  // write
+			throw std::runtime_error("xvc ll_write fails");
 
 		tx_ptr += tt;
 		if (rx)
@@ -184,7 +186,8 @@ int XVC_client::toggleClk(uint8_t tms, uint8_t tdi, uint32_t clk_len)
 		if (len < _num_bits)
 			_num_bits = len;
 		len -= _num_bits;
-		ll_write(NULL);
+		if(!ll_write(NULL))
+			throw std::runtime_error("xvc ll_write fails");
 	} while (len > 0);
 
 	return clk_len;
@@ -242,6 +245,23 @@ bool XVC_client::open_connection(const string &ip_addr)
 	return true;
 }
 
+static
+int sendall(int sock, const void* raw, size_t cnt, int flags)
+{
+	const char *buf = (const char*)raw;
+	size_t remaining = cnt;
+	while (remaining) {
+		ssize_t ret = send(sock, buf, remaining, flags);
+		if (ret==0) // should not happen on Linux for a TCP socket
+			throw std::logic_error("platform TCP send() returns zero?!?");
+		if (ret < 0)
+			return ret;
+		buf += ret;
+		remaining -= ret;
+	}
+	return cnt; // success
+}
+
 ssize_t XVC_client::xfer_pkt(const string &instr,
 		const uint8_t *tx, uint32_t tx_size,
 		uint8_t *rx, uint32_t rx_size)
@@ -249,13 +269,13 @@ ssize_t XVC_client::xfer_pkt(const string &instr,
 	ssize_t len = tx_size;
 
 	/* 1. instruction */
-	if (send(_sock, instr.c_str(), instr.size(), 0) == -1) {
+	if (sendall(_sock, instr.c_str(), instr.size(), 0) == -1) {
 		printError("Send instruction failed");
 		return -1;
 	}
 
 	if (tx) {
-		if (send(_sock, tx, tx_size, 0) == -1) {
+		if (sendall(_sock, tx, tx_size, 0) == -1) {
 			printError("Send error");
 			return -1;
 		}
