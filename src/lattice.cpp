@@ -1080,7 +1080,8 @@ void Lattice::displayReadReg(uint64_t dev)
 		err = (dev >> 23)&0x07;
 	}
 
-	printf("\t");
+	printf("\tBSE Error Code\n");
+	printf("\t\t");
 	switch (err) {
 		case 0:
 			printf("No err\n");
@@ -1106,8 +1107,17 @@ void Lattice::displayReadReg(uint64_t dev)
 		case 7:
 			printf("SDM EOF\n");
 			break;
+		case 8:
+			printf("Authentication ERR\n");
+			break;
+		case 9:
+			printf("Authentication Setup ERR\n");
+			break;
+		case 10:
+			printf("Bitstream Engine Timeout ERR\n");
+			break;
 		default:
-			printf("unknown %x\n", err);
+			printf("unknown error: %x\n", err);
 	}
 
 	if (_fpga_family == NEXUS_FAMILY) {
@@ -1164,7 +1174,7 @@ void Lattice::displayReadReg(uint64_t dev)
 				printf("Bitstream Engine Timeout ERR\n");
 				break;
 			default:
-				printf("unknown %x\n", err);
+				printf("unknown error: %x\n", err);
 		}
 		if ((dev >> 38) & 0x01) printf("\tBypass Mode\n");
 		if ((dev >> 39) & 0x01) printf("\tFlow Through Mode\n");
