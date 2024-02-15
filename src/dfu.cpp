@@ -358,23 +358,35 @@ int DFU::searchIfDFU(struct libusb_device_handle *handle,
 		/* configuration interface iteration */
 		for (int if_idx=0; if_idx < cfg->bNumInterfaces; if_idx++) {
 			const struct libusb_interface *uif = &cfg->interface[if_idx];
+			std::vector<struct dfu_dev> dfu_dev_tmp;
+			struct dfu_desc *dfu_desc;
+			bool dfu_found = false;
 
 			/* altsettings interation */
 			for (int intf_idx = 0; intf_idx < uif->num_altsetting; intf_idx++) {
 				const struct libusb_interface_descriptor *intf = &uif->altsetting[intf_idx];
 				uint8_t intfClass = intf->bInterfaceClass;
 				uint8_t intfSubClass = intf->bInterfaceSubClass;
-				if (_altsetting != -1 && _altsetting != intf_idx)
-					continue;
 				if (intfClass == 0xfe && intfSubClass == 0x01) {
 					struct dfu_dev my_dev;
 					if (_verbose)
 						printInfo("DFU found");
 
 					/* dfu functional descriptor */
+					/* not all DFU implementations provides a descriptor per altsettings
+					 * so don't stop directly.
+					 */
 					if (parseDFUDescriptor(intf, reinterpret_cast<uint8_t *>(&my_dev.dfu_desc),
-								sizeof(my_dev.dfu_desc)) != 0)
-						continue;  // not compatible
+								sizeof(my_dev.dfu_desc))) {
+						dfu_desc = &my_dev.dfu_desc;
+						dfu_found = true;
+					}
+					/* this altsetting is a DFU interface:
+					 * - if user has selected one altsetting current is only stored if it match
+					 * - otherwise all are stored
+					 */
+					if (_altsetting != -1 && _altsetting != intf_idx)
+						continue;
 					my_dev.vid = desc->idVendor;
 					my_dev.pid = desc->idProduct;
 					my_dev.altsettings = intf_idx;
@@ -397,8 +409,21 @@ int DFU::searchIfDFU(struct libusb_device_handle *handle,
 
 					int r = libusb_get_port_numbers(dev, my_dev.path, sizeof(my_dev.path));
 					my_dev.path[r] = '\0';
-					dfu_dev.push_back(my_dev);
+					dfu_dev_tmp.push_back(my_dev);
 				}
+			}
+
+			/* At least one altsetting has a DFU descriptor */
+			if (dfu_found) {
+				/* with tinyDFU only one (the first) altsetting contains a descriptor
+				 * fill others with this information
+				 */
+				for (struct dfu_dev &d: dfu_dev_tmp) {
+					if (d.dfu_desc.bDescriptorType == 0)
+						memcpy(&d.dfu_desc, dfu_desc, sizeof(struct dfu_desc));
+				}
+				std::move(dfu_dev_tmp.begin(), dfu_dev_tmp.end(), std::back_inserter(dfu_dev));
+
 			}
 		}
 
@@ -413,24 +438,29 @@ int DFU::searchIfDFU(struct libusb_device_handle *handle,
  * Since libusb has no support for those structure
  * fill a custom structure
  */
-int DFU::parseDFUDescriptor(const struct libusb_interface_descriptor *intf,
+bool DFU::parseDFUDescriptor(const struct libusb_interface_descriptor *intf,
 		uint8_t *dfu_desc, int dfu_desc_size)
 {
 	const uint8_t *extra = intf->extra;
 	int extra_len = intf->extra_length;
 
+	/* not all altsettings for a DFU device have a DFU descriptor
+	 * set to 0 to be able to detect a missing descriptor
+	 */
+	memset(dfu_desc, 0, 9);
+
 	if (extra_len < 9)
-		return -1;
+		return false;
 
 	/* map memory to structure */
 	for (int j = 0; j + 1  < extra_len; j++) {
 		if (extra[j+1] == 0x21) {
 			memcpy(dfu_desc, (const void *)&extra[j], dfu_desc_size);
-			break;
+			return true;
 		}
 	}
 
-	return 0;
+	return false;
 }
 
 /* abstraction to send/receive to control */
