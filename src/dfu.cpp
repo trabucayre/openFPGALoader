@@ -326,7 +326,7 @@ int DFU::searchDFUDevices()
 			}
 		} else if (_debug) {
 			char mess[256];
-			sprintf(mess,"Unable to open device: "
+			snprintf(mess, 256, "Unable to open device: "
 				"%04x:%04x (bus %d, device %2d) Error: %s -> skip\n",
 				desc.idVendor, desc.idProduct,
 				libusb_get_bus_number(usb_dev),
