@@ -68,7 +68,8 @@ int LatticeBitParser::parseHeader()
 		printError("Preamble key not found");
 		return EXIT_FAILURE;
 	}
-	if ((uint8_t)_raw_data[pos-1] != 0xbd && (uint8_t)_raw_data[pos-1] != 0xbf) {
+	//0xbe is the key for encrypted bitstreams in Nexus fpgas
+	if ((uint8_t)_raw_data[pos-1] != 0xbd && (uint8_t)_raw_data[pos-1] != 0xbf && (uint8_t)_raw_data[pos-1] != 0xbe) {
 		printError("Wrong preamble key");
 		return EXIT_FAILURE;
 	}
@@ -98,7 +99,8 @@ int LatticeBitParser::parse()
 
 	/* check preamble */
 	uint32_t preamble = (*(uint32_t *)&_raw_data[_endHeader+1]);
-	if ((preamble != 0xb3bdffff) && (preamble != 0xb3bfffff)) {
+	//0xb3beffff is the preamble for encrypted bitstreams in Nexus fpgas
+	if ((preamble != 0xb3bdffff) && (preamble != 0xb3bfffff) && (preamble != 0xb3beffff)) {
 		printError("Error: missing preamble\n");
 		return EXIT_FAILURE;
 	}
