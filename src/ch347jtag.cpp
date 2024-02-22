@@ -34,8 +34,7 @@ using namespace std;
 #define CH347JTAG_READ_EP     0x86
 
 #define CH347JTAG_TIMEOUT     200
-unsigned short CH347_VID = CH347JTAG_VID;
-unsigned short CH347_PID = CH347JTAG_PID;
+
 enum CH347JtagCmd {
 	CMD_BYTES_WO = 0xd3,
 	CMD_BYTES_WR = 0xd4,
@@ -63,7 +62,7 @@ int CH347Jtag::usb_xfer(unsigned wlen, unsigned rlen, unsigned *ract, bool defer
 	if (_verbose) {
 		fprintf(stderr, "usb_xfer: deferred: %ld\n", obuf - _obuf);
 	}
-	if (defer && !rlen && obuf - _obuf > (wlen + 12)) {
+	if (defer && !rlen && obuf - _obuf + wlen < (MAX_BUFFER - 12)) {
 		obuf += wlen;
 		return 0;
 	}
@@ -153,8 +152,6 @@ CH347Jtag::CH347Jtag(uint32_t clkHZ, int8_t verbose, int vid, int pid, uint8_t b
 	struct libusb_device_descriptor desc;
 	struct libusb_device *dev;
 	int rv;
-    CH347_VID = vid;
-	CH347_PID = pid;
 	if (libusb_init(&usb_ctx) < 0) {
 		printError("libusb init failed");
 		goto err_exit;
@@ -163,20 +160,13 @@ CH347Jtag::CH347Jtag(uint32_t clkHZ, int8_t verbose, int vid, int pid, uint8_t b
 		cnt = libusb_get_device_list(NULL, &devs);
 		if (cnt < 0) goto err_exit;
 		while ((dev = devs[i++]) != NULL)  {
-			if (libusb_get_device_descriptor(dev, &desc) < 0){
-				continue;
-			}
-			if (desc.idVendor == CH347_VID && desc.idProduct == CH347_PID && libusb_get_bus_number(dev) == bus_addr && \
-				libusb_get_device_address(dev) == dev_addr){
-				if (libusb_open(dev, &dev_handle) < 0){
-					printError("libusb init failed");
-					goto err_exit;
-				}
-			}
+			if (desc.idVendor != vid || desc.idProduct != pid)
+    			continue;
+			if (bus_addr != 0 && dev_addr != 0 && (libusb_get_bus_number(dev) != bus_addr || libusb_get_device_address(dev) != dev_addr))
+    			continue;
 		}
 	}else {
-		dev_handle = libusb_open_device_with_vid_pid(usb_ctx, CH347_VID,
-			CH347_PID);
+		dev_handle = libusb_open_device_with_vid_pid(usb_ctx, vid, pid);
 	}
 	if (!dev_handle) {
 		printError("fails to open device");
