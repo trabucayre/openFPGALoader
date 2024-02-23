@@ -883,8 +883,19 @@ void Gowin::sendClkUs(unsigned us)
 bool Gowin::eraseSRAM()
 {
 	printInfo("Erase SRAM ", false);
+	uint32_t status = readStatusReg();
 	if (_verbose)
-		displayReadReg("before erase sram", readStatusReg());
+		displayReadReg("before erase sram", status);
+
+	// If flash is invalid, send extra cmd 0x3F before SRAM erase
+	// This is required on GW5A-25
+	bool auto_boot_2nd_fail = (status & 0x8) >> 3;
+	if ((_idcode == 0x0001281B) && auto_boot_2nd_fail)
+	{
+		disableCfg();
+		send_command(0x3F);
+		send_command(NOOP);
+	}
 
 	if (!enableCfg()) {
 		printError("FAIL");

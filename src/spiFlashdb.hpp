@@ -286,6 +286,20 @@ static std::map <uint32_t, flash_t> flash_list = {
 		.bp_len = 4,
 		.bp_offset = {(1 << 2), (1 << 3), (1 << 4), (1 << 5)}}
 	},
+	{0xc22016, {
+	/* https://www.macronix.com/Lists/Datasheet/Attachments/8933/MX25L3233F,%203V,%2032Mb,%20v1.7.pdf */
+		.manufacturer = "Macronix",
+		.model = "MX25L3233F",
+		.nr_sector = 256,
+		.sector_erase = true,
+		.subsector_erase = true,
+		.has_extended = false,
+		.tb_otp = true,
+		.tb_offset = (1 << 3),
+		.tb_register = CONFR,
+		.bp_len = 5,
+		.bp_offset = {(1 << 2), (1 << 3), (1 << 4), (1 << 5)}}
+	},
 	{0xc22018, {
 	/* https://www.macronix.com/Lists/Datasheet/Attachments/8934/MX25L12833F,%203V,%20128Mb,%20v1.0.pdf */
 		.manufacturer = "Macronix",

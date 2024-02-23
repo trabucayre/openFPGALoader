@@ -206,9 +206,9 @@ class DFU {
 		 * \param[in] intf: interface descriptor with extra area
 		 * \param[out] dfu_desc: DFU descriptor
 		 * \param[in] dfu_desc_size: DFU descriptor structure size
-		 * \return -1 if extra len is too small, 0 otherwise
+		 * \return false if extra len is too small, true otherwise
 		 * */
-		int parseDFUDescriptor(const struct libusb_interface_descriptor *intf,
+		bool parseDFUDescriptor(const struct libusb_interface_descriptor *intf,
 				uint8_t *dfu_desc, int dfu_desc_size);
 		/*!
 		 * \brief try to open device specified by vid and pid. If found

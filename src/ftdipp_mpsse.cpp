@@ -878,7 +878,7 @@ bool FTDIpp_MPSSE::search_with_dev(const string &device)
 				usbdeviceparent, "busnum"), 10));
 	_addr = static_cast<uint8_t>(udevstufftoint(udev_device_get_sysattr_value(
 				usbdeviceparent, "devnum"), 10));
-	sprintf(_product, "%s", udev_device_get_sysattr_value(usbdeviceparent, "product"));
+	snprintf(_product, 64, "%s", udev_device_get_sysattr_value(usbdeviceparent, "product"));
 	_vid = udevstufftoint(
 		udev_device_get_sysattr_value(usbdeviceparent, "idVendor"), 16);
 	_pid = udevstufftoint(udev_device_get_sysattr_value(
