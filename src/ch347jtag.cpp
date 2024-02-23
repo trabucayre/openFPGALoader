@@ -164,6 +164,8 @@ CH347Jtag::CH347Jtag(uint32_t clkHZ, int8_t verbose, int vid, int pid, uint8_t b
     			continue;
 			if (bus_addr != 0 && dev_addr != 0 && (libusb_get_bus_number(dev) != bus_addr || libusb_get_device_address(dev) != dev_addr))
     			continue;
+			libusb_open(dev, &dev_handle);
+			break;
 		}
 	}else {
 		dev_handle = libusb_open_device_with_vid_pid(usb_ctx, vid, pid);
