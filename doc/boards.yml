@@ -207,6 +207,13 @@
   Memory: OK
   Flash: OK
 
+- ID: cmoda7_15t
+  Description: Digilent CmodA7
+  URL: https://digilent.com/reference/programmable-logic/cmod-a7/start
+  FPGA: Artix xc7a15tcpg236
+  Memory: OK
+  Flash: OK
+
 - ID: cmoda7_35t
   Description: Digilent CmodA7
   URL: https://digilent.com/reference/programmable-logic/cmod-a7/start
