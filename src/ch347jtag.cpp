@@ -156,20 +156,19 @@ CH347Jtag::CH347Jtag(uint32_t clkHZ, int8_t verbose, int vid, int pid, uint8_t b
 		printError("libusb init failed");
 		goto err_exit;
 	}
-	if (bus_addr != 0 && dev_addr != 0) {
-		cnt = libusb_get_device_list(NULL, &devs);
-		if (cnt < 0) goto err_exit;
-		while ((dev = devs[i++]) != NULL)  {
-			if (desc.idVendor != vid || desc.idProduct != pid)
-    			continue;
-			if (bus_addr != 0 && dev_addr != 0 && (libusb_get_bus_number(dev) != bus_addr || libusb_get_device_address(dev) != dev_addr))
-    			continue;
-			libusb_open(dev, &dev_handle);
-			break;
-		}
-	}else {
-		dev_handle = libusb_open_device_with_vid_pid(usb_ctx, vid, pid);
+	cnt = libusb_get_device_list(NULL, &devs);
+	if (cnt < 0) goto err_exit;
+	while ((dev = devs[i++]) != NULL)  {
+		if (libusb_get_device_descriptor(dev, &desc) < 0)
+			continue;
+		if (desc.idVendor != vid || desc.idProduct != pid)
+    		continue;
+		if (bus_addr != 0 && dev_addr != 0 && (libusb_get_bus_number(dev) != bus_addr || libusb_get_device_address(dev) != dev_addr))
+    		continue;
+		libusb_open(dev, &dev_handle);
+		break;
 	}
+	libusb_free_device_list(devs, 1);
 	if (!dev_handle) {
 		printError("fails to open device");
 		goto usb_exit;
