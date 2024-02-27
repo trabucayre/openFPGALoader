@@ -1,19 +1,28 @@
 module spiOverJtag
 (
-`ifndef xilinxultrascale
-	output csn,
-
 `ifdef spartan6
 	output sck,
-`endif
-`ifdef spartan3e
-	output sck,
-`endif
+	output csn,
 	output sdi_dq0,
 	input  sdo_dq1,
 	output wpn_dq2,
 	output hldn_dq3
-`endif // xilinxultrascale
+`define QSPI
+`elsif spartan3e
+	output sck,
+	output csn,
+	output sdi_dq0,
+	input  sdo_dq1
+`elsif xilinxultrascale
+`else
+ // Xilinx 7 but not ultrascale
+	output csn,
+	output sdi_dq0,
+	input  sdo_dq1,
+	output wpn_dq2,
+	output hldn_dq3
+`define QSPI
+`endif
 
 `ifdef secondaryflash
 	output sdi_sec_dq0,
@@ -29,8 +38,10 @@ module spiOverJtag
 	wire tdi;
 	reg fsm_csn;
 
-	assign wpn_dq2  = 1'b1;
-	assign hldn_dq3 = 1'b1;
+`ifdef QSPI
+        assign wpn_dq2  = 1'b1;
+        assign hldn_dq3 = 1'b1;
+`endif
 	// jtag -> spi flash
 	assign sdi_dq0 = tdi;
 	wire tdo = (sel) ? sdo_dq1 : tdi;
@@ -53,23 +64,13 @@ module spiOverJtag
 		end
 	end
 
-`ifdef spartan6
-	assign sck = drck;
-`else // !spartan6
-`ifdef spartan3e
-	assign sck = drck;
-	assign runtest = tmp_up_s;
-`else // !spartan6 && !spartan3e
 `ifdef xilinxultrascale
 	wire [3:0] di;
+	assign wpn_dq2  = 1'b1;
+	assign hldn_dq3 = 1'b1;
 	assign sdo_dq1 = di[1];
 	wire [3:0] do = {hldn_dq3, wpn_dq2, 1'b0, sdi_dq0};
 	wire [3:0] dts = 4'b0010;
-	// secondary BSCANE3 signals
-	wire sel_sec, drck_sec;
-
-	wire sck = (sel_sec) ? drck_sec : drck;
-
 	STARTUPE3 #(
 		.PROG_USR("FALSE"),  // Activate program event security feature. Requires encrypted bitstreams.
 		.SIM_CCLK_FREQ(0.0)  // Set the Configuration Clock Frequency (ns) for simulation.
@@ -92,7 +93,12 @@ module spiOverJtag
 		.USRDONEO (1'b1), // 1-bit input: User DONE pin output control.
 		.USRDONETS(1'b1)  // 1-bit input: User DONE 3-state enable output.
 	);
-`else // !spartan6 && !spartan3e && !xilinxultrascale
+`elsif  spartan3e
+	assign sck = drck;
+	assign runtest = tmp_up_s;
+`elsif spartan6
+	assign sck = drck;
+`else
 	STARTUPE2 #(
 		.PROG_USR("FALSE"),  // Activate program event security feature. Requires encrypted bitstreams.
 		.SIM_CCLK_FREQ(0.0)  // Set the Configuration Clock Frequency(ns) for simulation.
@@ -111,8 +117,6 @@ module spiOverJtag
 		.USRDONEO (1'b1), // 1-bit input: User DONE pin output control
 		.USRDONETS(1'b1)  // 1-bit input: User DONE 3-state enable output
 	);
-`endif
-`endif
 `endif
 
 `ifdef spartan3e
@@ -165,6 +169,10 @@ module spiOverJtag
 `ifdef secondaryflash
 	reg fsm_csn_sec;
 	wire tdo_sec;
+	// secondary BSCANE3 signals
+	wire sel_sec, drck_sec;
+
+	wire sck = (sel_sec) ? drck_sec : drck;
 
 	assign wpn_sec_dq2  = 1'b1;
 	assign hldn_sec_dq3 = 1'b1;
@@ -211,9 +219,6 @@ module spiOverJtag
 		.TDO     (tdo_sec)     // 1-bit input: Test Data Output (TDO) input
 		                   //              for USER function.
 	);
-`else // secondaryflash
-	assign sel_sec = 1'b0;
-	assign drck_sec = 1'b0;
 `endif // secondaryflash
 
 endmodule
