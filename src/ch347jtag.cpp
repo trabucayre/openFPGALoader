@@ -187,10 +187,10 @@ CH347Jtag::CH347Jtag(uint32_t clkHZ, int8_t verbose, int vid, int pid, uint8_t b
 	}
 
 	if (desc.bcdDevice < 0x241 && pid == CH347T_JTAG_PID) {
-		_isLargerPack = false;
+		_is_largerPack = false;
 		printWarn("Old version of the chip, JTAG might not work");
 	}else{
-		_isLargerPack = true;
+		_is_largerPack = true;
 	}
 
 	if (libusb_set_auto_detach_kernel_driver(dev_handle, true)) {
@@ -248,8 +248,8 @@ int CH347Jtag::_setClkFreq(uint32_t clkHZ)
 		MHZ(1.875), MHZ(3.75),
 		MHZ(7.5), MHZ(15), MHZ(30), MHZ(60)
 	};
-	uint32_t *ptr = _isLargerPack ? speed_clock_larger_pack : speed_clock_standard_pack;
-	int size = (_isLargerPack?sizeof(speed_clock_larger_pack):sizeof(speed_clock_standard_pack)) / sizeof(uint32_t);
+	uint32_t *ptr = _is_largerPack ? speed_clock_larger_pack : speed_clock_standard_pack;
+	int size = (_is_largerPack?sizeof(speed_clock_larger_pack):sizeof(speed_clock_standard_pack)) / sizeof(uint32_t);
     for (int i = 0; i < size; ++i) {
 		if (clkHZ > ptr[i] && clkHZ <= ptr[i+1]){
 			setClk_index = i + 1;
