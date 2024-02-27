@@ -32,6 +32,7 @@ class CH347Jtag : public JtagInterface {
 
  private:
 	bool _verbose;
+	bool _is_largerPack;
 	int setClk(const uint8_t &factor);
 
 	libusb_device_handle *dev_handle;

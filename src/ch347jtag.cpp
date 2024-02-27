@@ -22,8 +22,8 @@
 using namespace std;
 
 #define CH347JTAG_VID 0x1a86
-#define CH347JTAG_PID 0x55dd    //ch347T
-//#define CH347JTAG_PID 0x55de    //ch347F
+#define CH347T_JTAG_PID 0x55dd    //ch347T
+#define CH347F_JTAG_PID 0x55de    //ch347F
 
 #define KHZ(n) (uint32_t)((n)*UINT32_C(1000))
 #define MHZ(n) (uint32_t)((n)*UINT32_C(1000000))
@@ -186,8 +186,11 @@ CH347Jtag::CH347Jtag(uint32_t clkHZ, int8_t verbose, int vid, int pid, uint8_t b
 		goto usb_exit;
 	}
 
-	if (desc.bcdDevice < 0x241) {
+	if (desc.bcdDevice < 0x241 && pid == CH347T_JTAG_PID) {
+		_isLargerPack = false;
 		printWarn("Old version of the chip, JTAG might not work");
+	}else{
+		_isLargerPack = true;
 	}
 
 	if (libusb_set_auto_detach_kernel_driver(dev_handle, true)) {
@@ -237,12 +240,18 @@ CH347Jtag::~CH347Jtag()
 int CH347Jtag::_setClkFreq(uint32_t clkHZ)
 {
     int setClk_index = 0;
-	uint32_t speed_clock[8] = {
+	uint32_t speed_clock_larger_pack[8] = {
 		KHZ(468.75), KHZ(937.5), MHZ(1.875), MHZ(3.75),
 		MHZ(7.5), MHZ(15), MHZ(30), MHZ(60)
 	};
-    for (int i = 0; i < sizeof(speed_clock) / sizeof(uint32_t); ++i) {
-		if (clkHZ > speed_clock[i] && clkHZ <= speed_clock[i+1]){
+	uint32_t speed_clock_standard_pack[6] = {
+		MHZ(1.875), MHZ(3.75),
+		MHZ(7.5), MHZ(15), MHZ(30), MHZ(60)
+	};
+	uint32_t *ptr = _isLargerPack ? speed_clock_larger_pack : speed_clock_standard_pack;
+	int size = (_isLargerPack?sizeof(speed_clock_larger_pack):sizeof(speed_clock_standard_pack)) / sizeof(uint32_t);
+    for (int i = 0; i < size; ++i) {
+		if (clkHZ > ptr[i] && clkHZ <= ptr[i+1]){
 			setClk_index = i + 1;
 		}
 	}
@@ -251,7 +260,7 @@ int CH347Jtag::_setClkFreq(uint32_t clkHZ)
 		return 0;
 	}
 	char mess[256];
-	snprintf(mess, 256, "JTAG TCK frequency set to %.3f MHz\n\n", (double)speed_clock[setClk_index] / MHZ(1));
+	snprintf(mess, 256, "JTAG TCK frequency set to %.3f MHz\n\n", (double)ptr[setClk_index] / MHZ(1));
 	printInfo(mess);
 	return _clkHZ;
 }
