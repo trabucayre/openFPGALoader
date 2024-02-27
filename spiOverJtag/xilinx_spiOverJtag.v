@@ -13,6 +13,9 @@ module spiOverJtag
 	output csn,
 	output sdi_dq0,
 	input  sdo_dq1
+`elsif virtex6
+	output csn,
+	output sdi_dq0
 `elsif xilinxultrascale
 `else
  // Xilinx 7 but not ultrascale
@@ -44,7 +47,12 @@ module spiOverJtag
 `endif
 	// jtag -> spi flash
 	assign sdi_dq0 = tdi;
+`ifdef virtex6
+	wire di;
+	wire tdo = (sel) ? di : tdi;
+`else
 	wire tdo = (sel) ? sdo_dq1 : tdi;
+`endif
 	assign  csn = fsm_csn;
 
 	wire tmp_cap_s = capture && sel;
@@ -98,6 +106,26 @@ module spiOverJtag
 	assign runtest = tmp_up_s;
 `elsif spartan6
 	assign sck = drck;
+`elsif virtex6
+	STARTUP_VIRTEX6 #(
+		.PROG_USR("FALSE")
+	) startup_virtex6_inst (
+		.CFGCLK(),        // unused
+		.CFGMCLK(),       // unused
+		.CLK(1'b0),       // unused
+		.DINSPI(di),      // data from SPI flash
+		.EOS(),
+		.GSR(1'b0),       // unused
+		.GTS(1'b0),       // unused
+		.KEYCLEARB(1'b0),  // not used
+		.PACK(1'b1),      // tied low for 'safe' operations
+		.PREQ(),          // unused
+		.TCKSPI(),        // echo of CCLK from TCK pin
+		.USRCCLKO (drck), // user FPGA -> CCLK pin
+		.USRCCLKTS(1'b0), // drive CCLK not in high-Z
+		.USRDONEO (1'b1), // why both USRDONE are high?
+		.USRDONETS(1'b1)  // ??
+	);
 `else
 	STARTUPE2 #(
 		.PROG_USR("FALSE"),  // Activate program event security feature. Requires encrypted bitstreams.
@@ -138,7 +166,9 @@ module spiOverJtag
 		.TDO2   ()         // 1-bit input: USER2 function
 	);
 `else
-`ifdef spartan6
+`ifdef virtex6
+	BSCAN_VIRTEX6 #(
+`elsif spartan6
 	BSCAN_SPARTAN6 #(
 `else
 	BSCANE2 #(

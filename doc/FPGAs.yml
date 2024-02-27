@@ -235,6 +235,13 @@ Xilinx:
     Memory: OK
     Flash: NA
 
+  - Description: Virtex 6
+    Model:
+      - xc6vlx130t
+    URL: https://www.xilinx.com/products/silicon-devices/fpga/virtex-6.html
+    Memory: OK
+    Flash: OK
+
   - Description: Virtex UltraScale+
     Model:
       - xcvu9p
