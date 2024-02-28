@@ -797,6 +797,13 @@
   Memory: NA
   Flash: OK
 
+- ID: vec_v6
+  Description: Xilinx VCU118
+  URL: https://vmm-srs.docs.cern.ch/
+  FPGA: xc6vlx130tff784
+  Memory: OK
+  Flash: OK
+
 - ID: vcu118
   Description: Xilinx VCU118
   URL: https://www.xilinx.com/products/boards-and-kits/vcu118.html
@@ -904,3 +911,10 @@
   FPGA: zynq7000 xc7z020clg400
   Memory: OK
   Flash: NA
+
+- ID: VMM3
+  Description: CERN board with VMM3
+  URL: https://vmm-srs.docs.cern.ch/
+  FPGA: xc7s50csga324?
+  Memory: OK
+  Flash: OK
