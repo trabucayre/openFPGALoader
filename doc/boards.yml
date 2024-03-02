@@ -735,9 +735,10 @@
   FPGA: Gowin Arora V GW5AST-138B (GW5AST-LV138FPG676A)
   Memory: OK
   Flash: TBD
+
 - ID: te0712_8
   Description: Trenz Electronic TE0712 FPGA-Module mit AMD Artix™ 7(TE0712)
-  URL: https://shop.trenz-electronic.de/en/TEC0117-01-FPGA-Module-with-GOWIN-LittleBee-and-8-MByte-internal-SDRAM
+  URL: https://shop.trenz-electronic.de/en/TE0712-03-81I36-A-FPGA-Module-with-AMD-Artix-7-XC7A200T-1FBG484I-1-GByte-DDR3-4-x-5-cm
   FPGA: XC7A200TFBG484
   Memory: OK
   Flash: OK
