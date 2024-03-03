@@ -554,6 +554,13 @@
   Memory: OK
   Flash: TBD
 
+- ID: olimex_gatemateevb
+  Description: Olimex CCGMA1 Cologne Chip GateMate FPGA Evaluation Board
+  URL: https://www.olimex.com/Products/FPGA/GateMate/GateMateA1-EVB/open-source-hardware
+  FPGA: Cologne Chip GateMate Series (GM1A1)
+  Memory: OK
+  Flash: NT
+
 - ID: orbtrace_dfu
   Description: ORBTrace mini (dfu mode)
   URL: https://store.zyp.no/product/orbtrace-mini
