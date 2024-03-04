@@ -805,6 +805,8 @@ void Xilinx::program_mem(ConfigBitstreamParser *bitfile)
 	 * now functional.                                    X     1   3
 	 */
 	_jtag->go_test_logic_reset();
+        /* Some xc7s50 does not detect correct connected flash w/o this shift*/
+        _jtag->shiftIR(tx_buf, rx_buf, _irlen);
 }
 
 bool Xilinx::dumpFlash(uint32_t base_addr, uint32_t len)
