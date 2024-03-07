@@ -49,11 +49,6 @@ enum CH347JtagSig {
 	SIG_TDI =   0b10000,
 };
 
-static void LIBUSB_CALL sync_cb(struct libusb_transfer *transfer) {
-	int *complete = (int *)transfer->user_data;
-	*complete = 1;
-}
-
 // defer should only be used with rlen == 0
 
 int CH347Jtag::usb_xfer(unsigned wlen, unsigned rlen, unsigned *ract, bool defer) 
