@@ -3,16 +3,19 @@
  * Copyright (C) 2020 Gwenhael Goavec-Merou <gwenhael.goavec-merou@trabucayre.com>
  */
 
-#ifndef FTDIJTAGMPSSE_H
-#define FTDIJTAGMPSSE_H
+#ifndef SRC_FTDIJTAGMPSSE_HPP_
+#define SRC_FTDIJTAGMPSSE_HPP_
+
 #include <ftdi.h>
+
+#include <cstdint>
 #include <iostream>
 #include <string>
 #include <vector>
 
 #include "cable.hpp"
-#include "jtagInterface.hpp"
 #include "ftdipp_mpsse.hpp"
+#include "jtagInterface.hpp"
 
 /*!
  * \file FtdiJtagMPSSE.hpp
@@ -115,4 +118,4 @@ class FtdiJtagMPSSE : public JtagInterface, public FTDIpp_MPSSE {
 	uint8_t _curr_tdi;
 	uint8_t _curr_tms;
 };
-#endif
+#endif  // SRC_FTDIJTAGMPSSE_HPP_

@@ -3,9 +3,10 @@
  * Copyright (C) 2019 Gwenhael Goavec-Merou <gwenhael.goavec-merou@trabucayre.com>
  */
 
-#ifndef DEVICE_HPP
-#define DEVICE_HPP
+#ifndef SRC_DEVICE_HPP_
+#define SRC_DEVICE_HPP_
 
+#include <cstdint>
 #include <iostream>
 #include <string>
 
@@ -65,4 +66,4 @@ class Device {
 		bool _quiet;
 };
 
-#endif
+#endif  // SRC_DEVICE_HPP_

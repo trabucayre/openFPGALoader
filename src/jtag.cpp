@@ -168,7 +168,7 @@ int Jtag::detectChain(unsigned max_dev)
 	char message[256];
 	uint8_t rx_buff[4];
 	/* WA for CH552/tangNano: write is always mandatory */
-	uint8_t tx_buff[4] = {0xff, 0xff, 0xff, 0xff};
+	const uint8_t tx_buff[4] = {0xff, 0xff, 0xff, 0xff};
 	uint32_t tmp;
 
 	/* cleanup */

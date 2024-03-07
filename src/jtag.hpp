@@ -6,14 +6,16 @@
 #ifndef JTAG_H
 #define JTAG_H
 
+#include <cstdint>
 #include <iostream>
+#include <map>
 #include <string>
 #include <vector>
 
 #include "board.hpp"
 #include "cable.hpp"
-#include "part.hpp"
 #include "jtagInterface.hpp"
+#include "part.hpp"
 
 class Jtag {
  public:

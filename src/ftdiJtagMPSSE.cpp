@@ -9,9 +9,9 @@
 
 #include <iostream>
 #include <map>
-#include <vector>
 #include <stdexcept>
 #include <string>
+#include <vector>
 
 #include "display.hpp"
 #include "ftdiJtagMPSSE.hpp"
@@ -37,7 +37,7 @@ FtdiJtagMPSSE::FtdiJtagMPSSE(const cable_t &cable,
 			_cmd8EWA(false),
 			_write_mode(MPSSE_WRITE_NEG),  // always write on neg edge
 			_read_mode(0),
-			_invert_read_edge(invert_read_edge), // false: pos, true: neg
+			_invert_read_edge(invert_read_edge),  // false: pos, true: neg
 			_tdo_pos(0)
 {
 	init_internal(cable.config);
@@ -75,7 +75,7 @@ void FtdiJtagMPSSE::init_internal(const mpsse_bit_config &cable)
 	}
 
 	// This Sipeed firmware does not support MPSEE 0x8E, 0x8F commands properly
-	if ( (!strncmp((const char *)_imanufacturer, "SIPEED", 6)) 
+	if ( (!strncmp((const char *)_imanufacturer, "SIPEED", 6))
 			&& (!strncmp((const char *)_iserialnumber, "2023112818", 10)) ) {
 		_cmd8EWA = true;
 	}
@@ -93,8 +93,8 @@ void FtdiJtagMPSSE::init_internal(const mpsse_bit_config &cable)
 	_curr_tdi = (cable.bit_low_val >> 1) & 0x01;
 }
 
-int FtdiJtagMPSSE::setClkFreq(uint32_t clkHZ) {
-
+int FtdiJtagMPSSE::setClkFreq(uint32_t clkHZ)
+{
 	int ret = FTDIpp_MPSSE::setClkFreq(clkHZ);
 	config_edge();
 	return ret;
@@ -117,7 +117,7 @@ void FtdiJtagMPSSE::config_edge()
 int FtdiJtagMPSSE::writeTMS(const uint8_t *tms, uint32_t len, bool flush_buffer, const uint8_t tdi)
 {
 	(void) flush_buffer;
-	display("%s %d %d\n", __func__, len, (len/8)+1);
+	display("%s %u %u\n", __func__, len, (len/8)+1);
 	uint8_t curr_tdi = (tdi << 7);
 
 	if (len == 0)
@@ -191,7 +191,7 @@ int FtdiJtagMPSSE::toggleClk(uint8_t tms, uint8_t tdi, uint32_t clk_len)
 			if (chunk  > 8) {
 				unsigned cycles8 = chunk / 8;
 				len -= cycles8 * 8;
-				cycles8 --;
+				cycles8--;
 				buf[1] = ((cycles8)		) & 0xff;
 				buf[2] = ((cycles8) >> 8) & 0xff;
 				mpsse_store(buf, 3);
@@ -229,8 +229,8 @@ int FtdiJtagMPSSE::writeTDI(const uint8_t *tdi, uint8_t *tdo, uint32_t len, bool
 	int tx_buff_size = mpsse_get_buffer_size();
 	int real_len = (last) ? len - 1 : len;  // if its a buffer in a big send send len
 						// else suppress last bit -> with TMS
-	int nb_byte = real_len >> 3;    // number of byte to send
-	int nb_bit = (real_len & 0x07); // residual bits
+	int nb_byte = real_len >> 3;     // number of byte to send
+	int nb_bit = (real_len & 0x07);  // residual bits
 	int xfer = tx_buff_size - 3;
 	unsigned char c[xfer];
 	unsigned char *rx_ptr = (unsigned char *)tdo;
@@ -238,10 +238,10 @@ int FtdiJtagMPSSE::writeTDI(const uint8_t *tdi, uint8_t *tdo, uint32_t len, bool
 	unsigned char tx_buf[3] = {(unsigned char)(MPSSE_LSB |
 						((tdi) ? (MPSSE_DO_WRITE | _write_mode) : 0) |
 						((tdo) ? (MPSSE_DO_READ | _read_mode) : 0)),
-						static_cast<unsigned char>((xfer - 1) & 0xff),       // low
-						static_cast<unsigned char>((((xfer - 1) >> 8) & 0xff))}; // high
+						static_cast<unsigned char>((xfer - 1) & 0xff),            // low
+						static_cast<unsigned char>((((xfer - 1) >> 8) & 0xff))};  // high
 
-	display("%s len : %d %d %d %d last: %d\n", __func__, len, real_len, nb_byte,
+	display("%s len : %u %d %d %d last: %d\n", __func__, len, real_len, nb_byte,
 		nb_bit, last);
 
 	if ((nb_byte + _num + 3) > _buffer_size)
@@ -362,7 +362,7 @@ int32_t FtdiJtagMPSSE::update_tms_buff(uint8_t *buffer, uint8_t bit,
 {
 	int32_t ret;
 	if (_verbose)
-		printf("%s %d %02x %d\n", __func__, offset, buffer[0], end);
+		printf("%s %u %02x %d\n", __func__, offset, buffer[0], end);
 	if (!end) {
 		uint8_t bit_shift = (1 << (offset));
 		if (bit)
@@ -379,8 +379,7 @@ int32_t FtdiJtagMPSSE::update_tms_buff(uint8_t *buffer, uint8_t bit,
 		uint8_t mp[3] = {
 			static_cast<unsigned char>(MPSSE_WRITE_TMS | MPSSE_LSB |
 										MPSSE_BITMODE | _write_mode |
-										MPSSE_DO_READ | _read_mode
-										),
+										MPSSE_DO_READ | _read_mode),
 			static_cast<uint8_t>(offset - 1),
 			buffer[0]
 		};
@@ -425,14 +424,14 @@ bool FtdiJtagMPSSE::writeTMSTDI(const uint8_t *tms, const uint8_t *tdi,
 {
 	int32_t ret;
 	uint32_t max_len = 1024;
-	uint8_t mode = 0;         // current state: 0 none, 1 TDI, 2 TMS
-	uint8_t tdi_buf[max_len]; // buffer to store TDI sequence
-	uint8_t tms_tmp = 0;      // buffer to store TMS sequence (limited to 6bits per cmd)
-	uint8_t tdo_tmp[max_len]; // local TDO sequence
-	uint32_t buff_len = 0;    // current bits stored
+	uint8_t mode = 0;          // current state: 0 none, 1 TDI, 2 TMS
+	uint8_t tdi_buf[max_len];  // buffer to store TDI sequence
+	uint8_t tms_tmp = 0;       // buffer to store TMS sequence (limited to 6bits per cmd)
+	uint8_t tdo_tmp[max_len];  // local TDO sequence
+	uint32_t buff_len = 0;     // current bits stored
 	memset(tdi_buf, 0, max_len);
 	memset(tdo_tmp, 0, max_len);
-	_tdo_pos = 0; // current bits read
+	_tdo_pos = 0;  // current bits read
 
 	if (_verbose)
 		printSuccess("begin: " + std::to_string(len));
@@ -444,7 +443,7 @@ bool FtdiJtagMPSSE::writeTMSTDI(const uint8_t *tms, const uint8_t *tdi,
 
 		if (_verbose) {
 			char mess[256];
-			snprintf(mess, 256, "tms %d -> %d tdi %d -> %d mode %d %d/%d (%d)",
+			snprintf(mess, 256, "tms %d -> %d tdi %d -> %u mode %u %u/%u (%u)",
 					_curr_tms, tms_bit, _curr_tdi, tdi_bit, mode, buf_pos, len, buff_len);
 			printInfo(mess);
 		}
