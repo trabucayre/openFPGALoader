@@ -161,7 +161,6 @@ jobs:
       uses: msys2/setup-msys2/matrix@main
       with:
         systems: >-
-          mingw32
           mingw64
           ucrt64
           clang64
