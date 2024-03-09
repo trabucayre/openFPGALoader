@@ -458,9 +458,10 @@ int main(int argc, char **argv)
 	}
 
 	/* chain detection */
-	vector<int> listDev = jtag->get_devices_list();
-	int found = listDev.size();
-	int idcode = -1, index = 0;
+	vector<uint32_t> listDev = jtag->get_devices_list();
+	size_t found = listDev.size();
+	int idcode = -1;
+	size_t index = 0;
 
 	if (args.verbose > 0)
 		cout << "found " << std::to_string(found) << " devices" << endl;
@@ -469,9 +470,9 @@ int main(int argc, char **argv)
 	 * display full chain with details
 	 */
 	if (args.verbose > 0 || args.detect) {
-		for (int i = 0; i < found; i++) {
-			int t = listDev[i];
-			printf("index %d:\n", i);
+		for (size_t i = 0; i < found; i++) {
+			uint32_t t = listDev[i];
+			printf("index %zu:\n", i);
 			if (fpga_list.find(t) != fpga_list.end()) {
 				printf("\tidcode 0x%x\n\tmanufacturer %s\n\tfamily %s\n\tmodel  %s\n",
 				t,
@@ -499,13 +500,13 @@ int main(int argc, char **argv)
 
 	if (found != 0) {
 		if (args.index_chain == -1) {
-			for (int i = 0; i < found; i++) {
+			for (size_t i = 0; i < found; i++) {
 				if (fpga_list.find(listDev[i]) != fpga_list.end()) {
 					index = i;
 					if (idcode != -1) {
 						printError("Error: more than one FPGA found");
 						printError("Use --index-chain to force selection");
-						for (int i = 0; i < found; i++)
+						for (size_t i = 0; i < found; i++)
 							printf("0x%08x\n", listDev[i]);
 						delete(jtag);
 						return EXIT_FAILURE;

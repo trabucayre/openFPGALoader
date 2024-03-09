@@ -465,7 +465,7 @@ bool Xilinx::zynqmp_init(const std::string &family)
 	 * ARM at position 1
 	 */
 	char mess[256];
-	std::vector<int> listDev = _jtag->get_devices_list();
+	std::vector<uint32_t> listDev = _jtag->get_devices_list();
 	if (listDev.size() != 2) {
 		snprintf(mess, sizeof(mess), "ZynqMP error: wrong"
 				" JTAG length: %zu instead of 2\n",

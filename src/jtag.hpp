@@ -3,8 +3,8 @@
  * Copyright (C) 2020 Gwenhael Goavec-Merou <gwenhael.goavec-merou@trabucayre.com>
  */
 
-#ifndef JTAG_H
-#define JTAG_H
+#ifndef SRC_JTAG_HPP_
+#define SRC_JTAG_HPP_
 
 #include <cstdint>
 #include <iostream>
@@ -65,7 +65,7 @@ class Jtag {
 	 * \brief return list of devices in the chain
 	 * \return list of devices
 	 */
-	std::vector<int> get_devices_list() {return _devices_list;}
+	std::vector<uint32_t> get_devices_list() {return _devices_list;}
 
 	/*!
 	 * \brief return device index in list
@@ -169,8 +169,8 @@ class Jtag {
 	unsigned _ir_bits_before, _ir_bits_after;
 	std::vector<uint8_t> _ir_bits;
 
-	std::vector<int32_t> _devices_list; /*!< ordered list of devices idcode */
+	std::vector<uint32_t> _devices_list; /*!< ordered list of devices idcode */
 	std::vector<int16_t> _irlength_list; /*!< ordered list of irlength */
 	uint8_t _curr_tdi;
 };
-#endif
+#endif  // SRC_JTAG_HPP_
