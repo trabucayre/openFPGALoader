@@ -210,7 +210,7 @@ void CologneChip::program(unsigned int offset, bool unprotect_flash)
 
 /**
  * Write configuration into FPGA latches via SPI after active reset.
- * CFG_MD[3:0] must be set to 0x40 (SPI passive).
+ * CFG_MD[3:0] must be set to 0x4 (SPI passive).
  */
 void CologneChip::programSPI_sram(const uint8_t *data, int length)
 {
@@ -230,7 +230,7 @@ void CologneChip::programSPI_sram(const uint8_t *data, int length)
 /**
  * Write configuration to flash via SPI while FPGA is in active reset. When
  * done, release reset to start FPGA in active SPI mode (load from flash).
- * CFG_MD[3:0] must be set to 0x00 (SPI active).
+ * CFG_MD[3:0] must be set to 0x0 (SPI active).
  */
 void CologneChip::programSPI_flash(unsigned int offset, const uint8_t *data,
 		int length, bool unprotect_flash)
@@ -257,7 +257,7 @@ void CologneChip::programSPI_flash(unsigned int offset, const uint8_t *data,
 
 /**
  * Write configuration into FPGA latches via JTAG after active reset.
- * CFG_MD[3:0] must be set to 0xF0 (JTAG).
+ * CFG_MD[3:0] must be set to 0xC (JTAG).
  */
 void CologneChip::programJTAG_sram(const uint8_t *data, int length)
 {
@@ -318,7 +318,7 @@ void CologneChip::programJTAG_sram(const uint8_t *data, int length)
 
 /**
  * Write configuration to flash via JTAG-SPI-bypass. The FPGA will not start
- * as it is in JTAG mode with CFG_MD[3:0] set to 0xF0 (JTAG).
+ * as it is in JTAG mode with CFG_MD[3:0] set to 0xC (JTAG).
  */
 void CologneChip::programJTAG_flash(unsigned int offset, const uint8_t *data,
 		int length, bool unprotect_flash)
