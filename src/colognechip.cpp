@@ -217,14 +217,14 @@ void CologneChip::programSPI_sram(const uint8_t *data, int length)
 	/* hold device in reset for a moment */
 	reset();
 
-	uint8_t *recv = new uint8_t[length];
+	ProgressBar progress("Loading SRAM via SPI", length, 50, _verbose);
 	_spi->gpio_set(_rstn_pin);
-	_spi->spi_put(data, recv, length); // TODO _spi->spi_put(data, null, length) does not work?
+	_spi->spi_put(data, NULL, length);
+	progress.done();
 
 	waitCfgDone();
 
 	_spi->gpio_set(_oen_pin);
-	delete [] recv;
 }
 
 /**
