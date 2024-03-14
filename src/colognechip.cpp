@@ -143,8 +143,6 @@ bool CologneChip::dumpFlash(uint32_t base_addr, uint32_t len)
 		std::unique_ptr<SPIFlash> flash(_spi ?
 				new SPIFlash(reinterpret_cast<SPIInterface *>(_spi), false, _verbose):
 				new SPIFlash(this, false, _verbose));
-		flash->reset();
-		flash->power_up();
 		flash->dump(_filename, base_addr, len);
 	} catch (std::exception &e) {
 		printError("Fail");
@@ -243,11 +241,6 @@ void CologneChip::programSPI_flash(unsigned int offset, const uint8_t *data,
 
 	SPIFlash flash(reinterpret_cast<SPIInterface *>(_spi), unprotect_flash,
 			_verbose);
-	flash.reset();
-	flash.power_up();
-
-	printf("%02x\n", flash.read_status_reg());
-	flash.read_id();
 	flash.erase_and_prog(offset, data, length);
 
 	/* verify write if required */
@@ -334,11 +327,6 @@ void CologneChip::programJTAG_flash(unsigned int offset, const uint8_t *data,
 	reset();
 
 	SPIFlash flash(this, unprotect_flash, _verbose);
-	flash.reset();
-	flash.power_up();
-
-	printf("%02x\n", flash.read_status_reg());
-	flash.read_id();
 	flash.erase_and_prog(offset, data, length);
 
 	/* verify write if required */
