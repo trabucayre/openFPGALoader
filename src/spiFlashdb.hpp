@@ -354,6 +354,20 @@ static std::map <uint32_t, flash_t> flash_list = {
 		.bp_len = 5,
 		.bp_offset = {(1 << 2), (1 << 3), (1 << 4), (1 << 5)}}
 	},
+	{0xc22817, {
+	/* https://www.macronix.com/Lists/Datasheet/Attachments/8868/MX25R6435F,%20Wide%20Range,%2064Mb,%20v1.6.pdf */
+		.manufacturer = "Macronix",
+		.model = "MX25R6435F",
+		.nr_sector = 128,
+		.sector_erase = true,
+		.subsector_erase = true,
+		.has_extended = false,
+		.tb_otp = true,
+		.tb_offset = (1 << 3),
+		.tb_register = CONFR,
+		.bp_len = 4,
+		.bp_offset = {(1 << 2), (1 << 3), (1 << 4), 0}}
+	},
 	{0xef4014, {
 	/* https://cdn-shop.adafruit.com/datasheets/W25Q80BV.pdf */
 		.manufacturer = "Winbond",

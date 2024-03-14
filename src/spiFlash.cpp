@@ -895,6 +895,9 @@ std::map<std::string, uint32_t> SPIFlash::bp_to_len(uint8_t bp, uint8_t tb)
 	for (int i = 0; i < 4; i++)
 		if ((bp & _flash_model->bp_offset[i]))
 			tmp |= (1 << i);
+	/* 0 -> no block protected */
+	if (tmp == 0)
+		return protect_area;
 	/* bp code is 2^(bp-1) blocks */
 	uint16_t nr_sectors = (1 << (tmp-1));
 	printf("nr_sectors : %d\n", nr_sectors);
