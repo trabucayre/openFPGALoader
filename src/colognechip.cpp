@@ -42,7 +42,7 @@ CologneChip::CologneChip(Jtag* jtag, const std::string &filename,
 
 	/* check which cable/board we're using in order to select pin definitions */
 	std::string ftdi_board_name;
-	if (board_name != "-") {
+	if ((board_name != "-") && (cable_name != "dirtyJtag")) {
 		ftdi_board_name = std::regex_replace(board_name, std::regex("jtag"), "spi");
 	} else if (cable_name == "gatemate_pgm") {
 		ftdi_board_name = "gatemate_pgm_spi";
@@ -51,7 +51,7 @@ CologneChip::CologneChip(Jtag* jtag, const std::string &filename,
 	if (ftdi_board_name != "") {
 		target_board_t *board = &(board_list[ftdi_board_name]);
 
-		/* pin configurations valid for both evaluation board and programer */
+		/* pin configurations valid for both evaluation board and programmer */
 		_rstn_pin  = board->reset_pin;
 		_done_pin  = board->done_pin;
 		_fail_pin = DBUS6;
