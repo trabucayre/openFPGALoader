@@ -397,7 +397,7 @@ int CologneChip::spi_put(const uint8_t *tx, uint8_t *rx, uint32_t len)
 }
 
 /**
- * Overrides spi_put() to access SPI components via JTAG-SPI-bypass.
+ * Overrides spi_wait() to access SPI components via JTAG-SPI-bypass.
  */
 int CologneChip::spi_wait(uint8_t cmd, uint8_t mask, uint8_t cond,
 						  uint32_t timeout, bool verbose)
@@ -413,7 +413,7 @@ int CologneChip::spi_wait(uint8_t cmd, uint8_t mask, uint8_t cond,
 
 	do {
 		if (count == 0) {
-			_jtag->read_write(dummy, rx, 9, 0);
+			_jtag->read_write(dummy, rx, 16, 0);
 			uint8_t b0 = ConfigBitstreamParser::reverseByte(rx[0]);
 			uint8_t b1 = ConfigBitstreamParser::reverseByte(rx[1]);
 			tmp = (b0 << 1) | ((b1 >> 7) & 0x01);
