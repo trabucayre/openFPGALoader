@@ -366,7 +366,7 @@ static std::map <uint32_t, flash_t> flash_list = {
 		.tb_offset = (1 << 3),
 		.tb_register = CONFR,
 		.bp_len = 4,
-		.bp_offset = {(1 << 2), (1 << 3), (1 << 4), 0}}
+		.bp_offset = {(1 << 2), (1 << 3), (1 << 4), (1 << 5)}}
 	},
 	{0xef4014, {
 	/* https://cdn-shop.adafruit.com/datasheets/W25Q80BV.pdf */
