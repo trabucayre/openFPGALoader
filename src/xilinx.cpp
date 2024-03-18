@@ -3,6 +3,8 @@
  * Copyright (C) 2019 Gwenhael Goavec-Merou <gwenhael.goavec-merou@trabucayre.com>
  */
 
+#define __STDC_FORMAT_MACROS
+#include <inttypes.h>
 #include <unistd.h>
 
 #include <cstring>
@@ -385,7 +387,7 @@ Xilinx::Xilinx(Jtag *jtag, const std::string &filename,
 	if (read_dna) {
 		if (_fpga_family == ARTIX_FAMILY || _fpga_family == KINTEXUS_FAMILY) {
 			uint64_t dna = Xilinx::fuse_dna_read();
-			printf("{\"dna\": \"0x%016llx\"}\n", dna);
+			printf("{\"dna\": \"0x%016" PRIx64 "\"}\n", dna);
 		} else {
 			throw std::runtime_error("Error: read_xadc only supported for Artix 7");
 		}
