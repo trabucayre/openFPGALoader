@@ -126,6 +126,20 @@ static std::map <uint32_t, flash_t> flash_list = {
 		.bp_len = 3,
 		.bp_offset = {(1 << 2), (1 << 3), (1 << 4), 0}}
 	},
+	/* https://pdf1.alldatasheet.com/datasheet-pdf/download/104949/STMICROELECTRONICS/M25P32.html */
+	{0x00202016, {
+		.manufacturer = "ST",
+		.model = "M25P32",
+		.nr_sector = 64,
+		.sector_erase = true,
+		.subsector_erase = false,
+		.has_extended = false,
+		.tb_otp = true,
+		.tb_offset = 0, // unused
+		.tb_register = STATR,
+		.bp_len = 3,
+		.bp_offset = {(1 << 2), (1 << 3), (1 << 4), 0}}
+	},
 	{0x0020ba16, {
 		.manufacturer = "micron",
 		.model = "N25Q32",
