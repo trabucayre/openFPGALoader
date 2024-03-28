@@ -280,6 +280,7 @@ Xilinx:
       - xc6slx16
       - xc6slx25
       - xc6slx45
+      - xc6slx45T
       - xc6slx150T
     URL: https://www.xilinx.com/products/silicon-devices/fpga/spartan-6.html
     Memory: OK
