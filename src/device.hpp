@@ -41,6 +41,8 @@ class Device {
 		virtual void program(unsigned int offset,
 				bool unprotect_flash) = 0;
 
+		virtual bool read_register(const std::string reg_name) { return false;}
+
 		/**********************/
 		/*    flash access    */
 		/**********************/

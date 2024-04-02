@@ -8,7 +8,10 @@
 #include <unistd.h>
 
 #include <cstring>
+#include <fstream>
+#include <iomanip>
 #include <iostream>
+#include <list>
 #include <memory>
 #include <stdexcept>
 #include <string>
@@ -131,6 +134,7 @@ static std::map<std::string, std::map<std::string, std::vector<uint8_t>>>
 			{
 				{ "USER1",       {0x02} },
 				{ "USER2",       {0x03} },
+				{ "CFG_OUT",     {0x04} },
 				{ "CFG_IN",      {0x05} },
 				{ "USERCODE",    {0x08} },
 				{ "IDCODE",      {0x09} },
@@ -807,8 +811,222 @@ void Xilinx::program_mem(ConfigBitstreamParser *bitfile)
 	 * now functional.                                    X     1   3
 	 */
 	_jtag->go_test_logic_reset();
-        /* Some xc7s50 does not detect correct connected flash w/o this shift*/
-        _jtag->shiftIR(tx_buf, rx_buf, _irlen);
+	/* Some xc7s50 does not detect correct connected flash w/o this shift*/
+	_jtag->shiftIR(tx_buf, rx_buf, _irlen);
+	uint8_t ir_c = rx_buf[0] & 0x03;
+	uint8_t isc_done = ((rx_buf[0] >> 2) & 0x01);
+	uint8_t isc_ena  = ((rx_buf[0] >> 3) & 0x01);
+	uint8_t init     = ((rx_buf[0] >> 4) & 0x01);
+	uint8_t done     = ((rx_buf[0] >> 5) & 0x01);
+	printf("Shift IR %02x\n", rx_buf[0]);
+	printf("ir: %x isc_done %x isc_ena %x init %x done %x\n", ir_c, isc_done, isc_ena,
+		init, done);
+
+	if (!done) {
+		read_register("STAT");
+	}
+}
+
+static const uint32_t reverseByte(uint32_t in) {
+	uint8_t out [4];
+	for (int i = 0; i < 4; i++) {
+		uint8_t tmp = (in >> (i*8)) & 0xff;
+		out[i] = BitParser::reverseByte(tmp);
+	}
+	return ((((uint32_t)out[0]) << 24) |
+		(((uint32_t)out[1]) << 16) |
+		(((uint32_t)out[2]) <<  8) |
+		(((uint32_t)out[3]) <<  0));
+}
+
+static const uint32_t reverseWord(uint32_t in) {
+	uint32_t out = 0;
+	for (int i = 0; i < 32; i++) {
+		out <<= 1;
+		out |= (in >> i) & 0x01;
+	}
+	return out;
+}
+
+static const uint32_t char_array_to_word(uint8_t *in)
+{
+	return (((uint32_t)in[3] << 24) |
+		((uint32_t)in[2] << 16) |
+		((uint32_t)in[1] <<  8) |
+		((uint32_t)in[0] <<  0));
+}
+
+typedef struct {
+	std::string description;
+	uint8_t offset;
+	uint8_t size;
+	std::map<int, std::string> reg_cnt;
+} reg_struct_t;
+
+#define REG_ENTRY(_description, _offset, _size, ...) \
+	{_description, _offset, _size, {__VA_ARGS__}}
+
+static const std::map<std::string, std::list<reg_struct_t>> reg_content = {
+	{"CTRL0", std::list<reg_struct_t>{
+		REG_ENTRY("GTS USR B",       0, 1,
+			{0, "I/Os 3-stated"}, {1, "I/Os active"}),
+		REG_ENTRY("Reserved",        1, 2),
+		REG_ENTRY("PERSIST",         3, 1,
+			{0, "No"}, {1, "Yes"}),
+		REG_ENTRY("SBITS",           4, 2,
+			{0, "Read/Write OK"}, {1, "Readback disabled"},
+			{2, "Both Writes and Reads disabled"},
+			{3, "Both Writes and Reads disabled"}),
+		REG_ENTRY("DEC",             6, 1,
+			{0, "Disable"}, {1, "Enable"}),
+		REG_ENTRY("FARSRC",          7, 1),
+		REG_ENTRY("GLUMASK B",       8, 1),
+		REG_ENTRY("Reserved",        9, 1),
+		REG_ENTRY("ConfigFallback", 10, 1,
+			{0, "Disable"}, {1, "Enable"}),
+		REG_ENTRY("Reserved",       11, 1),
+		REG_ENTRY("OverTempPwrDown",12, 1,
+			{0, "Disable"}, {1, "Enable"}),
+		REG_ENTRY("Reserved",       13, 17),
+		REG_ENTRY("ICAP Select",    30, 1,
+			{0, "Top ICAPE2 Port Enabled"},
+			{1, "Bottom ICAPE2 Port Enabled"}),
+		REG_ENTRY("EFUSE key",      31, 1,
+			{0, "Battery backed RAM"}, {1, "eFUSE"}),
+	}},
+	{"STAT", std::list<reg_struct_t>{
+		REG_ENTRY("CRC Error",       0, 1,
+			{0, "No CRC error"}, {1, "CRC error"}),
+		REG_ENTRY("Part Secured",    1, 1),
+		REG_ENTRY("MMCM lock",       2, 1),
+		REG_ENTRY("DCI match",       3, 1),
+		REG_ENTRY("EOS",             4, 1),
+		REG_ENTRY("GTS CFG B",       5, 1),
+		REG_ENTRY("GWE",             6, 1),
+		REG_ENTRY("GHIGH B",         7, 1),
+		REG_ENTRY("MODE",            8, 3),
+		REG_ENTRY("INIT Complete",  11, 1),
+		REG_ENTRY("INIT B",         12, 1),
+		REG_ENTRY("Release Done",   13, 1),
+		REG_ENTRY("Done",           14, 1),
+		REG_ENTRY("ID Error",       15, 1,
+			{0, "No ID error"}, {1, "ID error"}),
+		REG_ENTRY("DEC Error",      16, 1),
+		REG_ENTRY("XADC Over temp", 17, 1),
+		REG_ENTRY("STARTUP State",  18, 3),
+		REG_ENTRY("Reserved",       21, 4),
+		REG_ENTRY("BUS Width",      25, 2,
+			{0, "x1"}, {1, "x8"}, {2, "x16"}, {3, "x32"}),
+		REG_ENTRY("Reserved",       27, 5)
+	}},
+};
+
+/* UG470 table 5-23 */
+static const std::map<std::string, uint8_t> reg_code = {
+	{"CTRL0",  0x05},  // Control register 0
+	{"STAT",   0x07},  // Status register
+	{"CONF0",  0x09},  // Configuration Option 0
+	{"CONF1",  0x0e},  // Configuration Option 1
+	{"BHSTAT", 0x16},  // Boot history status register
+	{"CTRL1",  0x18},  // Control register 1
+};
+
+uint32_t Xilinx::dumpRegister(std::string reg_name)
+{
+	uint8_t reg[4];
+	const uint8_t dummy[] = {0x00, 0x00, 0x00, 0x04};
+	/* opcode:
+	 * 0x0: NOP
+	 * 0x1: read
+	 * 0x2: write
+	 * 0x3: Reserved
+	 */
+	/* register code
+	 * 0x05: Control register 0
+	 * 0x07: Status register
+	 * 0x09: Configuration Option 0
+	 * 0x0e: Configuration Option 1
+	 * 0x18: Control Register 1
+	 * 0x16: Boot history Status register
+	 */
+	auto code = reg_code.find(reg_name);
+	if (code == reg_code.end()) {
+		printError("Unknown register " + reg_name);
+		printError("Known Register are:");
+		for (auto reg :reg_code)
+			printError("\t" + reg.first);
+		return 0xdeadbeef;
+	}
+
+	/* packet type 1 */
+	const uint32_t regcode = static_cast<uint32_t>(code->second);
+	uint32_t cfg_packets[] = {
+		0xAA995566,  // Sync Word
+		0x20000000,  // NOOP
+		((0x01    & 0x0007) << 29) |  // [31:29]: Header type
+		((0x01    & 0x0003) << 27) |  // [28:27]: opcode
+		((regcode & 0x3fff) << 13) |  // [26:13]: register code
+		((0x00    & 0x0003) << 11) |  // [12:11]: Reserved must be set to 0
+		((0x01    & 0x07ff) <<  0),   // [10:0 ]: word count
+		0x20000000,  // NOOP
+		0x20000000,  // NOOP
+	};
+
+	_jtag->go_test_logic_reset();
+	_jtag->set_state(Jtag::RUN_TEST_IDLE);
+	_jtag->shiftIR(get_ircode(_ircode_map, "CFG_IN"), NULL, _irlen, Jtag::SELECT_DR_SCAN);
+
+	Jtag::tapState_t next_state = Jtag::SHIFT_DR;
+	for (int i = 0; i < 5; i++) {
+		if (i == 4)
+			next_state = Jtag::SELECT_IR_SCAN;
+		const uint32_t tmp = reverseWord(cfg_packets[i]);
+		const uint8_t cfg[] = {
+			static_cast<uint8_t>((tmp >>  0) & 0xff),
+			static_cast<uint8_t>((tmp >>  8) & 0xff),
+			static_cast<uint8_t>((tmp >> 16) & 0xff),
+			static_cast<uint8_t>((tmp >> 24) & 0xff)
+		};
+
+		_jtag->shiftDR(cfg, NULL, 32, next_state);
+	}
+
+	_jtag->shiftIR(get_ircode(_ircode_map, "CFG_OUT"), NULL, _irlen, Jtag::SELECT_DR_SCAN);
+	_jtag->shiftDR(dummy, reg, 32);
+	_jtag->go_test_logic_reset();
+
+	uint32_t reg_word = char_array_to_word(reg);
+	reg_word = reverseWord(reg_word);
+	return reg_word;
+}
+
+void Xilinx::displayRegister(const std::string reg_name, const uint32_t reg_val) {
+	auto reg = reg_content.find(reg_name);
+	if (reg == reg_content.end()) {
+		printError("Unknown register " + reg_name);
+		return;
+	}
+
+	std::stringstream raw_val;
+	raw_val << "0x" << std::hex << std::to_string(reg_val);
+	printSuccess("Register raw value: " + raw_val.str());
+
+	const std::list<reg_struct_t> regs = reg->second;
+	for (reg_struct_t r: regs) {
+		uint8_t offset = r.offset;
+		uint8_t size = r.size;
+		uint32_t mask = (1 << size) - 1;
+		uint32_t val = (reg_val >> offset) & mask;
+		std::stringstream ss, desc;
+		desc << r.description;
+		ss << std::setw(15) << std::left << r.description;
+		if (r.reg_cnt.size() != 0)
+			ss << r.reg_cnt[val];
+		else
+			ss << std::to_string(val);
+
+		printInfo(ss.str());
+	}
 }
 
 bool Xilinx::dumpFlash(uint32_t base_addr, uint32_t len)

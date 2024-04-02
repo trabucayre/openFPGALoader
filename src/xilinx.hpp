@@ -36,6 +36,23 @@ class Xilinx: public Device, SPIInterface {
 		void program_mem(ConfigBitstreamParser *bitfile);
 		bool dumpFlash(uint32_t base_addr, uint32_t len) override;
 
+		bool read_register(const std::string reg_name) override {
+			displayRegister(reg_name, dumpRegister(reg_name));
+			return true;
+		}
+		/*!
+		 * \brief display register content (bits/slices)
+		 * \in reg_name: register name
+		 * \in reg_val: register value
+		 */
+		void displayRegister(const std::string reg_name, const uint32_t reg_val);
+		/*!
+		 * \brief read register value from the devices
+		 * \in reg_name: register name
+		 * \return register value
+		 */
+		uint32_t dumpRegister(const std::string reg_name);
+
 		/*!
 		 * \brief protect SPI flash blocks
 		 */
