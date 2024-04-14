@@ -133,7 +133,7 @@ jobs:
         sudo apt update -qq
         sudo apt install -y \
           libftdi1-2 \
-          libhidapi-hidraw0 \
+          libhidapi-libusb0 \
           udev \
           zlib1g
 
