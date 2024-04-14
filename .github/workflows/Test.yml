@@ -55,7 +55,7 @@ jobs:
           gzip \
           libftdi1-2 \
           libftdi1-dev \
-          libhidapi-hidraw0 \
+          libhidapi-libusb0 \
           libhidapi-dev \
           libudev-dev \
           pkg-config \
