@@ -94,6 +94,7 @@ struct arguments {
 	std::map<uint32_t, misc_device> user_misc_devs;
 	bool read_dna;
 	bool read_xadc;
+	string read_register;
 };
 
 int run_xvc_server(const struct arguments &args, const cable_t &cable,
@@ -123,7 +124,7 @@ int main(int argc, char **argv)
 			/* xvc server */
 			false, 3721, "-",
 			"", false, {},  // mcufw conmcu, user_misc_dev_list
-			false, false // read_dna, read_xadc
+			false, false, "" // read_dna, read_xadc, read_register
 	};
 	/* parse arguments */
 	try {
@@ -612,6 +613,11 @@ int main(int argc, char **argv)
 		fpga->connectJtagToMCU();
 	}
 
+	/* read internal register */
+	if (!args.read_register.empty()) {
+		fpga->read_register(args.read_register);
+	}
+
 	/* unprotect SPI flash */
 	if (args.unprotect_flash && args.bit_file.empty()) {
 		fpga->unprotect_flash();
@@ -701,7 +707,7 @@ static int parse_eng(string arg, double *dst) {
 int parse_opt(int argc, char **argv, struct arguments *args,
 	jtag_pins_conf_t *pins_config)
 {
-	string freqo;
+	string freqo, rd_reg;
 	vector<string> pins, bus_dev_num;
 	bool verbose, quiet;
 	int8_t verbose_level = -2;
@@ -831,6 +837,8 @@ int parse_opt(int argc, char **argv, struct arguments *args,
 				cxxopts::value<bool>(args->read_dna))
 			("X,read_xadc", "Read XADC (Xilinx FPGA only)",
 				cxxopts::value<bool>(args->read_xadc))
+			("read-register", "Read Status Register(Xilinx FPGA only)",
+				cxxopts::value<string>(rd_reg))
 			("V,Version", "Print program version");
 
 		options.parse_positional({"bitstream"});
@@ -1017,6 +1025,12 @@ int parse_opt(int argc, char **argv, struct arguments *args,
 			printf("pas empty\n");
 		}
 
+		if (result.count("read-register")) {
+			args->read_register = rd_reg;
+			printf("read_register");
+			std::cout << args->read_register << std::endl;
+		}
+
 		if (args->bit_file.empty() &&
 			args->secondary_bit_file.empty() &&
 			args->file_type.empty() &&
@@ -1030,7 +1044,8 @@ int parse_opt(int argc, char **argv, struct arguments *args,
 			!args->reset &&
 			!args->conmcu &&
 			!args->read_dna &&
-			!args->read_xadc) {
+			!args->read_xadc &&
+			args->read_register.empty()) {
 			printError("Error: bitfile not specified");
 			cout << options.help() << endl;
 			throw std::exception();
