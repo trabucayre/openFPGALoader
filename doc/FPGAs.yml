@@ -237,6 +237,7 @@ Xilinx:
 
   - Description: Artix UltraScale+
     Model:
+      - xcau15p
       - xcau25p
     URL: https://www.xilinx.com/products/silicon-devices/fpga/artix-ultrascale-plus.html
     Memory: OK
