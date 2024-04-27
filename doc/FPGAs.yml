@@ -79,6 +79,13 @@ Intel:
     Memory: OK
     Flash: OK
 
+  - Description: Cyclone IV GX
+    Model:
+      - EP4CGX150
+    URL: https://www.intel.com/content/www/us/en/products/details/fpga/cyclone/iv/gx/products.html
+    Memory: OK
+    Flash: OK
+
   - Description: Cyclone V E
     Model:
       - 5CEA2

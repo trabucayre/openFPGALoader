@@ -172,18 +172,19 @@ if tool in ["ise", "vivado"]:
     files.append({'name': cst_file, 'file_type': cst_type})
 else:
     full_part = {
-        "10cl016484": "10CL016YU484C8G",
-        "10cl025256": "10CL025YU256C8G",
-        "10cl055484": "10CL055YU484C8G",
-        "ep4ce11523": "EP4CE115F23C7",
-        "ep4ce2217" : "EP4CE22F17C6",
-        "ep4ce1523" : "EP4CE15F23C8",
-        "5ce223"    : "5CEFA2F23I7",
-        "5ce523"    : "5CEFA5F23I7",
-        "5ce423"    : "5CEBA4F23C8",
-        "5ce927"    : "5CEBA9F27C7",
-        "5cse423"   : "5CSEMA4U23C6",
-        "5cse623"   : "5CSEBA6U23I7"}[part]
+        "10cl016484" : "10CL016YU484C8G",
+        "10cl025256" : "10CL025YU256C8G",
+        "10cl055484" : "10CL055YU484C8G",
+        "ep4cgx15027": "EP4CGX150DF27I7",
+        "ep4ce11523" : "EP4CE115F23C7",
+        "ep4ce2217"  : "EP4CE22F17C6",
+        "ep4ce1523"  : "EP4CE15F23C8",
+        "5ce223"     : "5CEFA2F23I7",
+        "5ce523"     : "5CEFA5F23I7",
+        "5ce423"     : "5CEBA4F23C8",
+        "5ce927"     : "5CEBA9F27C7",
+        "5cse423"    : "5CSEMA4U23C6",
+        "5cse623"    : "5CSEBA6U23I7"}[part]
     files.append({'name': currDir + 'altera_spiOverJtag.v',
                   'file_type': 'verilogSource'})
     files.append({'name': currDir + 'altera_spiOverJtag.sdc',
