@@ -194,6 +194,7 @@ static std::map <std::string, target_board_t> board_list = {
 	JTAG_BOARD("pynq_z1",         "xc7z020clg400",  "ft2232", 0, 0, CABLE_DEFAULT),
 	JTAG_BOARD("pynq_z2",         "xc7z020clg400",  "ft2232", 0, 0, CABLE_DEFAULT),
 	JTAG_BOARD("qmtechCyclone10", "10cl016484", "",  0, 0, CABLE_DEFAULT),
+	JTAG_BOARD("qmtechCycloneIVGX", "ep4cgx15027", "",  0, 0, CABLE_DEFAULT),
 	JTAG_BOARD("qmtechCycloneIV", "ep4ce1523", "",  0, 0, CABLE_DEFAULT),
 	JTAG_BOARD("qmtechCycloneV",  "5ce223", "",     0, 0, CABLE_DEFAULT),
 	JTAG_BOARD("qmtechCycloneV_5ce523",  "5ce523", "",	0,0, CABLE_DEFAULT),
