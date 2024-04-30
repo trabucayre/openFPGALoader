@@ -179,6 +179,8 @@ else:
         "ep4ce11523" : "EP4CE115F23C7",
         "ep4ce2217"  : "EP4CE22F17C6",
         "ep4ce1523"  : "EP4CE15F23C8",
+        "ep4ce1017"  : "EP4CE10F17C8",
+        "ep4ce622"   : "EP4CE6E22C8",
         "5ce223"     : "5CEFA2F23I7",
         "5ce523"     : "5CEFA5F23I7",
         "5ce423"     : "5CEBA4F23C8",
