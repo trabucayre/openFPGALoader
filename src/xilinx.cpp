@@ -1708,7 +1708,6 @@ void Xilinx::xc2c_init(uint32_t idcode)
 	std::string model = fpga_list[idcode].model;
 	int underscore_pos = model.find_first_of('_', 0);
 	if (underscore_pos == model.npos) {
-		// not underscore
 		underscore_pos = model.length();
 	}
 	snprintf(_cpld_base_name, underscore_pos,
