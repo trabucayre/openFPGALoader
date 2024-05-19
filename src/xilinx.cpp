@@ -1707,6 +1707,9 @@ void Xilinx::xc2c_init(uint32_t idcode)
 	_fpga_family = XC2C_FAMILY;
 	std::string model = fpga_list[idcode].model;
 	int underscore_pos = model.find_first_of('_', 0);
+	if (underscore_pos == model.npos) {
+		underscore_pos = model.length();
+	}
 	snprintf(_cpld_base_name, underscore_pos,
 			"%s", model.substr(0, underscore_pos).c_str());
 	switch ((idcode >> 16) & 0x3f) {
