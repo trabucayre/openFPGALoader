@@ -1107,7 +1107,7 @@ void displaySupported(const struct arguments &args)
 	}
 
 	if (args.scan_usb) {
-		libusb_ll usb(0, 0);
+		libusb_ll usb(0, 0, args.verbose);
 		usb.scan();
 	}
 }
