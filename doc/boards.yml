@@ -496,6 +496,13 @@
   Memory: OK
   Flash: OK
 
+- ID: lilygo-t-fpga
+  Description: Lilygo T-FPGA
+  URL: https://www.lilygo.cc/products/t-fpga
+  FPGA: Gowin GW1NSR-LV4CQN48PC6/15
+  Memory: OK
+  Flash: OK
+
 - ID: machXO2EVN
   Description: Lattice MachXO2 Breakout Board Evaluation Kit
   URL: https://www.latticesemi.com/products/developmentboardsandkits/machxo2breakoutboard
