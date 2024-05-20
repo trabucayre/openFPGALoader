@@ -18,6 +18,9 @@
 #include "jtag.hpp"
 #include "ftdiJtagBitbang.hpp"
 #include "ftdiJtagMPSSE.hpp"
+#ifdef ENABLE_GOWIN_GWU2X
+#include "gwu2x_jtag.hpp"
+#endif
 #ifdef ENABLE_LIBGPIOD
 #include "libgpiodJtagBitbang.hpp"
 #endif
@@ -108,6 +111,14 @@ Jtag::Jtag(const cable_t &cable, const jtag_pins_conf_t *pin_conf,
 	case MODE_DIRTYJTAG:
 		_jtag = new DirtyJtag(clkHZ, verbose);
 		break;
+#ifdef ENABLE_GOWIN_GWU2X
+	case MODE_GWU2X:
+		_jtag = new GowinGWU2x((cable_t *)&cable, clkHZ, verbose);
+		break;
+#else
+		std::cerr << "Jtag: support for Gowin GWU2X was not enabled at compile time" << std::endl;
+		throw std::exception();
+#endif
 	case MODE_JLINK:
 		_jtag = new Jlink(clkHZ, verbose, cable.vid, cable.pid);
 		break;

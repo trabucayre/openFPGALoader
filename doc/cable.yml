@@ -67,6 +67,13 @@ gatemate_evb_spi:
     URL: https://colognechip.com/programmable-logic/gatemate/
 
 
+gwu2x:
+
+  - Name: gwu2x
+    Description: Gowin GWUX2X
+    URL: https://www.gowinsemi.com/en/product/detail/55/
+
+
 dfu:
 
   - Name: DFU interface

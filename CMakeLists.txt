@@ -12,6 +12,7 @@ else()
 	option(ENABLE_UDEV "use udev to search JTAG adapter from /dev/xx" ON)
 endif()
 option(ENABLE_CMSISDAP "enable cmsis DAP interface (requires hidapi)" ON)
+option(ENABLE_GOWIN_GWU2X "enable Gowin GWU2X interface" ON)
 if (${CMAKE_SYSTEM_NAME} MATCHES "Linux")
 	option(ENABLE_LIBGPIOD "enable libgpiod bitbang driver (requires libgpiod)" ON)
 	option(ENABLE_REMOTEBITBANG "enable remote bitbang driver" ON)
@@ -217,6 +218,16 @@ target_link_libraries(openFPGALoader
 	${LIBUSB_LIBRARIES}
 	${LIBFTDI_LIBRARIES}
 )
+
+# Gowin GWU2X JTAG interface
+if(ENABLE_GOWIN_GWU2X)
+	target_sources(openFPGALoader PRIVATE src/gwu2x_jtag.cpp)
+	list (APPEND OPENFPGALOADER_HEADERS src/gwu2x_jtag.hpp)
+	add_definitions(-DENABLE_GOWIN_GWU2X=1)
+	message("Gowin GWU2X support enabled")
+else()
+	message("Gowin GWU2X support disabled")
+endif()
 
 if (${CMAKE_SYSTEM_NAME} MATCHES "Windows")
 	# winsock provides ntohs
