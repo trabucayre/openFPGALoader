@@ -242,7 +242,7 @@ int GowinGWU2x::toggleClk(uint8_t tms, uint8_t tdi, uint32_t clk_len)
 	 * 0: 1 clk cycle, 0xffff: 65535 clk cycles
 	 */
 	/* No need to check/flush buffer will be done by store_seq */
-	uint16_t len = 0;
+	uint32_t len = 0;
 	if (_verbose)
 		printf("toggleClk : %02x %02x %u\n", tms, tdi, clk_len);
 	
