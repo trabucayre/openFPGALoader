@@ -93,6 +93,8 @@
 #define XADC_VAUX13   0x1d
 #define XADC_VAUX14   0x1e
 #define XADC_VAUX15   0x1f
+#define XADC_TEMP_MAX 0x20
+#define XADC_TEMP_MIN 0x24
 #define XADC_SUPBOFFS 0x30
 #define XADC_ADCBOFFS 0x31
 #define XADC_ADCBGAIN 0x32
@@ -124,6 +126,9 @@
 #define XADC_ALARM13  0x5d
 #define XADC_ALARM14  0x5e
 #define XADC_ALARM15  0x5f
+
+#define XADC_VCC_MINOFFSET 0x24
+#define XADC_VCC_MAXOFFSET 0x20
 
 /* Boundary-scan instruction set based on the FPGA model */
 static std::map<std::string, std::map<std::string, std::vector<uint8_t>>>
@@ -407,9 +412,11 @@ Xilinx::Xilinx(Jtag *jtag, const std::string &filename,
 
 			unsigned int v = 0;
 			for (int i = 0; i < TEMP_MEAS; i++) {
-				v += Xilinx::xadc_single(0);
+				v += Xilinx::xadc_single(XADC_TEMP);
 			}
 			double temp = ((v/(double)TEMP_MEAS) * 503.975)/(1 << 16) - 273.15;
+			double max_temp = (Xilinx::xadc_single(XADC_TEMP_MAX) * 503.975)/(1 << 16) - 273.15;
+			double min_temp = (Xilinx::xadc_single(XADC_TEMP_MIN) * 503.975)/(1 << 16) - 273.15;
 
 			unsigned int channel_values[32];
 			for (int ch = 0; ch < MAX_CHANNEL; ch++) {
@@ -424,16 +431,32 @@ Xilinx::Xilinx(Jtag *jtag, const std::string &filename,
 				channel_values[ch] = v;
 			}
 
+			double vccint = (Xilinx::xadc_single(XADC_VCCINT)>>4)/4096.0 * 3.0; // ref: UG480
+			double vccintmax = (Xilinx::xadc_single(XADC_VCCINT + XADC_VCC_MAXOFFSET)>>4)/4096.0 * 3.0; // ref: UG480
+			double vccintmin = (Xilinx::xadc_single(XADC_VCCINT + XADC_VCC_MINOFFSET)>>4)/4096.0 * 3.0; // ref: UG480
+
+			double vccaux = (Xilinx::xadc_single(XADC_VCCAUX)>>4)/4096.0 * 3.0; // ref: UG480
+			double vccauxmax = (Xilinx::xadc_single(XADC_VCCAUX + XADC_VCC_MAXOFFSET)>>4)/4096.0 * 3.0; // ref: UG480
+			double vccauxmin = (Xilinx::xadc_single(XADC_VCCAUX + XADC_VCC_MINOFFSET)>>4)/4096.0 * 3.0; // ref: UG480
+
 			/* output as JSON dict */
 			std::cout << "{";
-			std::cout << "\"temp\": " << temp << ", ";
+			std::cout << "\"temp\": " << temp << ", " << std::endl;;
+			std::cout << "    \"maxtemp\": " << max_temp << ", " << std::endl;;
+			std::cout << "    \"mintemp\": " << min_temp << ", " << std::endl;;
 			std::cout << "\"raw\":  {";
 			for (int ch = 0; ch < MAX_CHANNEL; ch++) {
 				std::cout << "\"" << ch << "\": " << channel_values[ch]
 					 << ((ch == MAX_CHANNEL - 1)? "}" : ", ");
 			}
+			std::cout << "," << std::endl;
+			std::cout << "\"vccint\": " << vccint << ", " << std::endl;
+			std::cout << "   \"maxvccint\": " << vccintmax << ", " << std::endl;
+			std::cout << "   \"minvccint\": " << vccintmin << ", " << std::endl;
+			std::cout << "\"vccaux\": " << vccaux << ", " << std::endl;
+			std::cout << "   \"maxvccaux\": " << vccauxmax << ", " << std::endl;
+			std::cout << "   \"minvccaux\": " << vccauxmin << ", " << std::endl;
 			std::cout << "}" << std::endl;
-
 		} else {
 			throw std::runtime_error("Error: read_xadc only supported for Artix 7");
 		}
