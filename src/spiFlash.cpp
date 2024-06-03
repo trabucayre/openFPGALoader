@@ -695,11 +695,18 @@ int SPIFlash::disable_protection()
 	// nothing to do
 	if (_flash_model && _flash_model->bp_len == 0)
 		return 0;
-	uint8_t data = 0x00;
+	uint8_t data = read_status_reg();
+
+	/* only set to 0 bp bits */
+	uint8_t mask = 0;
+	for (int i = 0; i < _flash_model->bp_len; i++)
+		mask |= _flash_model->bp_offset[i];
+	data &= ~mask;
+
 	if (write_enable() == -1)
 		return -1;
 	_spi->spi_put(FLASH_WRSR, &data, NULL, 1);
-	if (_spi->spi_wait(FLASH_RDSR, 0xff, 0, 1000) < 0)
+	if (_spi->spi_wait(FLASH_RDSR, 0xff, data, 1000) < 0)
 		return -1;
 
 	/* read status */
@@ -761,8 +768,17 @@ int SPIFlash::enable_protection(uint32_t length)
 		return -1;
 	}
 
+	/* keep existing STATR by reading register
+	 * and applying mask
+	 */
+	uint8_t mask = 0;
+	for (int i = 0; i < _flash_model->bp_len; i++)
+		mask |= _flash_model->bp_offset[i];
+	uint8_t tmp = read_status_reg();
+	tmp &= ~mask;
+
 	/* convert number of sectors to bp[3:0] mask */
-	uint8_t bp = len_to_bp(length);
+	uint8_t bp = tmp | len_to_bp(length);
 
 	/* TB bit is OTP: this modification can't be revert!
 	 * check if tb is already set and if not warn
