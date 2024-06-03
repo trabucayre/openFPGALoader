@@ -326,6 +326,20 @@ static std::map <uint32_t, flash_t> flash_list = {
 		.bp_len = 4,
 		.bp_offset = {(1 << 2), (1 << 3), (1 << 4), (1 << 5)}}
 	},
+	/* https://www.issi.com/WW/pdf/IS25LP(WP)256D.pdf */
+	{0x9d6019, {
+		.manufacturer = "ISSI",
+		.model = "IS25LP256",
+		.nr_sector = 512,
+		.sector_erase = true,
+		.subsector_erase = true,
+		.has_extended = false,
+		.tb_otp = true,
+		.tb_offset = (1 << 1),
+		.tb_register = FUNCR,
+		.bp_len = 4,
+		.bp_offset = {(1 << 2), (1 << 3), (1 << 4), (1 << 5)}}
+	},
 	{0xc22016, {
 	/* https://www.macronix.com/Lists/Datasheet/Attachments/8933/MX25L3233F,%203V,%2032Mb,%20v1.7.pdf */
 		.manufacturer = "Macronix",
