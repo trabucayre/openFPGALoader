@@ -202,6 +202,8 @@ int SPIFlash::sectors_erase(int base_addr, int size)
 	if (!sector_rdy)
 		step = 0x1000;
 
+	printf("start addr: %08x, end_addr: %08x\n", base_addr, (base_addr + size + 0xffff) & ~0xffff);
+
 	for (int addr = start_addr; addr < end_addr; addr += step) {
 		if (write_enable() == -1) {
 			ret = -1;
@@ -770,8 +772,13 @@ int SPIFlash::enable_protection(uint32_t length)
 		uint8_t tb = get_tb();
 		/* check if TB is set */
 		if (tb == 0) {
-			printError("TOP/BOTTOM bit is OTP: can't write this bit");
-			return -1;
+			std::string confirm{};
+			printError("TOP/BOTTOM bit is OTP: changing this bit is irreversible");
+			printError("Please confirm modification y/n");
+			std::cin >> confirm;
+
+			if (confirm != "y")
+				return -1;
 		}
 	}
 
@@ -823,6 +830,10 @@ int SPIFlash::enable_protection(uint32_t length)
 		}
 
 		/* write status register and wait until Flash idle */
+		if (write_enable() != 0) {
+			printError("Error: failed to enable write");
+			return -1;
+		}
 		_spi->spi_put(reg_wr, &val, NULL, 1);
 		if (_spi->spi_wait(FLASH_RDSR, 0x03, 0, 1000) < 0) {
 			printError("Error: enable protection failed\n");
@@ -830,7 +841,7 @@ int SPIFlash::enable_protection(uint32_t length)
 		}
 		uint8_t rd_val;
 		_spi->spi_put(reg_rd, NULL, &rd_val, 1);
-		if (rd_val != val) {
+		if ((rd_val & val) == 0) {
 			printError("failed to update TB bit");
 			return -1;
 		}
