@@ -942,16 +942,62 @@ static const std::map<std::string, std::list<reg_struct_t>> reg_content = {
 			{0, "x1"}, {1, "x8"}, {2, "x16"}, {3, "x32"}),
 		REG_ENTRY("Reserved",       27, 5)
 	}},
+	// UG470 Table 5-34
+	{"WBSTAR", std::list<reg_struct_t>{
+		// Next bitstream start address. The default start address
+		//   is address zero.
+		REG_ENTRY("START ADDR",  0, 29),
+		REG_ENTRY("RS TS B",    29, 1,
+			{0, "3-state enabled (RS[1:0] disabled) (default)"},
+			{1, "3-state disabled (RS[1:0] enabled)"},
+		),
+		// RS[1:0] pin value on next warm boot. The default is 00.
+		REG_ENTRY("RS[1:0]",    30, 2),
+	}},
+	// UG470 Table 5-39
+	{"BOOTSTS", std::list<reg_struct_t>{
+		// Status 0 is valid
+		REG_ENTRY("VALID 0",       0, 1),
+		REG_ENTRY("FALLBACK 0",    1, 1,
+			{0, "Normal configuration"},
+			{1, "Fallback to default reconfiguration, RS[1:0] actively drives 2'b00"}
+		),
+		// Internal PROG triggered configuration
+		REG_ENTRY("IPROG 0",       2, 1),
+		// Watchdog time-out error
+		REG_ENTRY("WTO Error 0",   3, 1),
+		// ID_CODE error
+		REG_ENTRY("ID Error 0",    4, 1),
+		// CRC error
+		REG_ENTRY("CRC Error 0",   5, 1),
+		// BPI address counter wraparound error, supported in
+		//   asynchronous read mode
+		REG_ENTRY("WRAP Error 0",  6, 1),
+		// HMAC error
+		REG_ENTRY("HMAC Error 0",  7, 1),
+		REG_ENTRY("VALID 1",       8, 1),
+		REG_ENTRY("FALLBACK 1",    9, 1,
+			{0, "Normal configuration"},
+			{1, "Fallback to default reconfiguration, RS[1:0] actively drives 2'b00"}
+		),
+		REG_ENTRY("IPROG 1",      10, 1),
+		REG_ENTRY("WTO Error 1",  11, 1),
+		REG_ENTRY("ID Error 1",   12, 1),
+		REG_ENTRY("CRC Error 1",  13, 1),
+		REG_ENTRY("WRAP Error 1", 14, 1),
+		REG_ENTRY("HMAC Error 1", 15, 1),
+	}},
 };
 
 /* UG470 table 5-23 */
 static const std::map<std::string, uint8_t> reg_code = {
-	{"CTRL0",  0x05},  // Control register 0
-	{"STAT",   0x07},  // Status register
-	{"CONF0",  0x09},  // Configuration Option 0
-	{"CONF1",  0x0e},  // Configuration Option 1
-	{"BHSTAT", 0x16},  // Boot history status register
-	{"CTRL1",  0x18},  // Control register 1
+	{"CTRL0",   0x05},  // Control register 0
+	{"STAT",    0x07},  // Status register
+	{"CONF0",   0x09},  // Configuration Option 0
+	{"CONF1",   0x0e},  // Configuration Option 1
+	{"WBSTAR",  0x10},  // Warm Boot Start Address Register
+	{"BOOTSTS", 0x16},  // Boot history status register
+	{"CTRL1",   0x18},  // Control register 1
 };
 
 uint32_t Xilinx::dumpRegister(std::string reg_name)
@@ -1031,7 +1077,7 @@ void Xilinx::displayRegister(const std::string reg_name, const uint32_t reg_val)
 	}
 
 	std::stringstream raw_val;
-	raw_val << "0x" << std::hex << std::to_string(reg_val);
+	raw_val << "0x" << std::hex << reg_val;
 	printSuccess("Register raw value: " + raw_val.str());
 
 	const std::list<reg_struct_t> regs = reg->second;
@@ -1042,11 +1088,14 @@ void Xilinx::displayRegister(const std::string reg_name, const uint32_t reg_val)
 		uint32_t val = (reg_val >> offset) & mask;
 		std::stringstream ss, desc;
 		desc << r.description;
-		ss << std::setw(15) << std::left << r.description;
-		if (r.reg_cnt.size() != 0)
+		ss << std::setw(16) << std::left << r.description;
+		if (r.reg_cnt.size() != 0) {
 			ss << r.reg_cnt[val];
-		else
-			ss << std::to_string(val);
+		} else {
+			std::stringstream hex_val;
+			hex_val << "0x" << std::hex << val;
+			ss << hex_val.str();
+		}
 
 		printInfo(ss.str());
 	}
