@@ -534,6 +534,8 @@ void SPIFlash::read_id()
 	if (t != flash_list.end()) {
 		_flash_model = &(*t).second;
 		char content[256];
+		snprintf(content, 256, "JEDEC ID: 0x%06x", _jedec_id >> 8);
+		printInfo(content);
 		snprintf(content, 256, "Detected: %s %s %u sectors size: %uMb",
 				_flash_model->manufacturer.c_str(), _flash_model->model.c_str(),
 				_flash_model->nr_sector, _flash_model->nr_sector * 0x80000 / 1048576);
@@ -569,6 +571,7 @@ void SPIFlash::read_id()
 
 void SPIFlash::display_status_reg(uint8_t reg)
 {
+	const uint32_t jedec_id = (_jedec_id >> 8) & 0xffffff;
 	uint8_t tb, bp;
 	if (!_flash_model) {
 		tb = (reg >> 5) & 0x01;
@@ -585,12 +588,12 @@ void SPIFlash::display_status_reg(uint8_t reg)
 	}
 
 	// status register
-	printf("RDSR : %02x\n", reg);
-	if ((_jedec_id >> 8) != 0xBF2642) {
+	printf("RDSR : 0x%02x\n", reg);
+	if (jedec_id != 0xBF2642) {
 		printf("WIP  : %d\n", reg&0x01);
 		printf("WEL  : %d\n", (reg>>1)&0x01);
 		printf("BP   : %x\n", bp);
-		if ((_jedec_id >> 8) != 0x9d60) {
+		if (jedec_id != 0x9d60 && (jedec_id >> 8) != 0xc220) {
 			printf("TB   : %d\n", tb);
 		} else {  // ISSI IS25LP
 			printf("QE   : %d\n", ((reg >> 6) & 0x01));
@@ -607,7 +610,7 @@ void SPIFlash::display_status_reg(uint8_t reg)
 	}
 
 	/* function register */
-	switch (_jedec_id >> 8) {
+	switch (jedec_id >> 8) {
 		case 0x9d60:
 			_spi->spi_put(FLASH_RDFR, NULL, &reg, 1);
 			printf("\nFunction Register\n");
