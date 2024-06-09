@@ -571,7 +571,7 @@ void SPIFlash::read_id()
 
 void SPIFlash::display_status_reg(uint8_t reg)
 {
-	const uint32_t jedec_id = (_jedec_id >> 8) & 0xffffff;
+	const uint16_t dev_id = (_jedec_id >> 16) & 0xffff;
 	uint8_t tb, bp;
 	if (!_flash_model) {
 		tb = (reg >> 5) & 0x01;
@@ -589,11 +589,11 @@ void SPIFlash::display_status_reg(uint8_t reg)
 
 	// status register
 	printf("RDSR : 0x%02x\n", reg);
-	if (jedec_id != 0xBF2642) {
+	if ((_jedec_id >> 8) != 0xBF26) {
 		printf("WIP  : %d\n", reg&0x01);
 		printf("WEL  : %d\n", (reg>>1)&0x01);
 		printf("BP   : %x\n", bp);
-		if (jedec_id != 0x9d60 && (jedec_id >> 8) != 0xc220) {
+		if (dev_id != 0x9d60 && dev_id != 0xc220) {
 			printf("TB   : %d\n", tb);
 		} else {  // ISSI IS25LP
 			printf("QE   : %d\n", ((reg >> 6) & 0x01));
@@ -610,7 +610,7 @@ void SPIFlash::display_status_reg(uint8_t reg)
 	}
 
 	/* function register */
-	switch (jedec_id >> 8) {
+	switch (dev_id) {
 		case 0x9d60:
 			_spi->spi_put(FLASH_RDFR, NULL, &reg, 1);
 			printf("\nFunction Register\n");
@@ -621,7 +621,7 @@ void SPIFlash::display_status_reg(uint8_t reg)
 			printf("ESUS : %d\n", ((reg >> 3) & 0x01));
 			printf("IRL  : %x\n", ((reg >> 4) & 0x0f));
 			break;
-		case 0x010216:
+		case 0x0102:
 			_spi->spi_put(FLASH_RDCR, NULL, &reg, 1);
 			printf("\nConfiguration Register\n");
 			printf("RDCR   : %02x\n", reg);
