@@ -1152,6 +1152,21 @@ bool Xilinx::dumpFlash(uint32_t base_addr, uint32_t len)
 	return true;
 }
 
+bool Xilinx::detect_flash()
+{
+	if (_flash_chips & PRIMARY_FLASH) {
+		select_flash_chip(PRIMARY_FLASH);
+		if (!SPIInterface::detect_flash())
+			return false;
+	}
+	if (_flash_chips & SECONDARY_FLASH) {
+		select_flash_chip(SECONDARY_FLASH);
+		if (!SPIInterface::detect_flash())
+			return false;
+	}
+	return true;
+}
+
 bool Xilinx::protect_flash(uint32_t len)
 {
 	if (_flash_chips & PRIMARY_FLASH) {

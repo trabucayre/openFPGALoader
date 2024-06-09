@@ -47,6 +47,12 @@ class Altera: public Device, SPIInterface {
 		/*************************/
 
 		/*!
+		 * \brief display SPI flash ID and status register
+		 */
+		bool detect_flash() override {
+			return SPIInterface::detect_flash();
+		}
+		/*!
 		 * \brief protect SPI flash blocks
 		 */
 		bool protect_flash(uint32_t len) override {

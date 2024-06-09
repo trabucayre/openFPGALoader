@@ -26,6 +26,7 @@ class SPIInterface {
 			bool skip_reset = false);
 	virtual ~SPIInterface() {}
 
+	bool detect_flash();
 	bool protect_flash(uint32_t len);
 	bool unprotect_flash();
 	bool bulk_erase_flash();

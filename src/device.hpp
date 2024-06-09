@@ -46,6 +46,8 @@ class Device {
 		/**********************/
 		/*    flash access    */
 		/**********************/
+		virtual bool detect_flash() {
+			printError("detect flash not supported"); return false;}
 		virtual bool dumpFlash(uint32_t base_addr, uint32_t len) {
 			(void) base_addr; (void) len;
 			printError("dump flash not supported"); return false;}

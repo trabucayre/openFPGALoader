@@ -23,6 +23,35 @@ SPIInterface::SPIInterface(const std::string &filename, int8_t verbose,
 {}
 
 /* spiFlash generic acces */
+bool SPIInterface::detect_flash()
+{
+	bool ret = true;
+	printInfo("protect_flash: ", false);
+
+	/* move device to spi access */
+	if (!prepare_flash_access()) {
+		printError("Fail");
+		return false;
+	}
+
+	/* spi flash access */
+	try {
+		// instanciate call (display flash ID is automatic)
+		SPIFlash flash(this, false, _spif_verbose);
+		// display status register
+		flash.display_status_reg();
+
+		printSuccess("Done");
+	} catch (std::exception &e) {
+		printError("Fail");
+		printError(e.what());
+		ret = false;
+	}
+
+	/* reload bitstream */
+	return post_flash_access() && ret;
+}
+
 bool SPIInterface::protect_flash(uint32_t len)
 {
 	bool ret = true;

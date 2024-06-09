@@ -44,7 +44,7 @@ using namespace std;
 
 struct arguments {
 	int8_t verbose;
-	bool reset, detect, verify, scan_usb;
+	bool reset, detect, detect_flash, verify, scan_usb;
 	unsigned int offset;
 	string bit_file;
 	string secondary_bit_file;
@@ -112,7 +112,10 @@ int main(int argc, char **argv)
 	jtag_pins_conf_t pins_config = {0, 0, 0, 0};
 
 	/* command line args. */
-	struct arguments args = {0, false, false, false, false, 0, "", "", "", "-", "", -1,
+	struct arguments args = {0,
+			//reset, detect, detect_flash, verify, scan_usb
+			false,   false,  false,        false,  false,
+			0, "", "", "", "-", "", -1,
 			-1, 0, false, "-", false, false, false, false, Device::PRG_NONE, false,
 			/* spi dfu    file_type fpga_part bridge_path probe_firmware */
 			false, false, "",       "",       "",         "",
@@ -633,6 +636,11 @@ int main(int argc, char **argv)
 		fpga->protect_flash(args.protect_flash);
 	}
 
+	/* detect/display flash */
+	if (args.detect_flash != 0) {
+		fpga->detect_flash();
+	}
+
 	if (args.prg_type == Device::RD_FLASH) {
 		if (args.file_size == 0) {
 			printError("Error: 0 size for dump");
@@ -1049,6 +1057,14 @@ int parse_opt(int argc, char **argv, struct arguments *args,
 			printError("Error: bitfile not specified");
 			cout << options.help() << endl;
 			throw std::exception();
+		}
+
+		// user ask detect with flash set
+		// detect/display flash CHIP informations instead
+		// of FPGA details
+		if (args->detect && args->prg_type == Device::WR_FLASH) {
+			args->detect = false;
+			args->detect_flash = true;
 		}
 	} catch (const cxxopts::OptionException& e) {
 		cerr << "Error parsing options: " << e.what() << endl;

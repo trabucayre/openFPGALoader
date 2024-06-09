@@ -29,6 +29,10 @@ class Gowin: public Device, SPIInterface {
 		bool connectJtagToMCU() override;
 
 		/* spi interface */
+		bool detect_flash() override {
+			if (is_gw5a)
+				return SPIInterface::detect_flash();
+			printError("protect flash not supported"); return false;}
 		bool protect_flash(uint32_t len) override {
 			(void) len;
 			printError("protect flash not supported"); return false;}

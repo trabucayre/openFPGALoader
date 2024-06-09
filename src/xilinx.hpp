@@ -54,6 +54,10 @@ class Xilinx: public Device, SPIInterface {
 		uint32_t dumpRegister(const std::string reg_name);
 
 		/*!
+		 * \brief display SPI flash ID and status register
+		 */
+		bool detect_flash() override;
+		/*!
 		 * \brief protect SPI flash blocks
 		 */
 		bool protect_flash(uint32_t len) override;

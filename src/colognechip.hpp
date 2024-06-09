@@ -34,6 +34,7 @@ class CologneChip: public Device, SPIInterface {
 
 		bool cfgDone();
 		void waitCfgDone();
+		bool detect_flash() override;
 		bool dumpFlash(uint32_t base_addr, uint32_t len) override;
 		virtual bool protect_flash(uint32_t len) override {
 			(void) len;
