@@ -71,7 +71,7 @@ openFPGALoader -- a program to flash FPGA
       --ftdi-serial arg         FTDI chip serial number
       --ftdi-channel arg        FTDI chip channel number (channels 0-3 map to
                                 A-D)
-      --detect                  detect FPGA
+      --detect                  detect FPGA, add -f to show connected flash
       --dfu                     DFU mode
       --dump-flash              Dump flash mode
       --bulk-erase              Bulk erase flash
