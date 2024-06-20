@@ -763,7 +763,7 @@ int parse_opt(int argc, char **argv, struct arguments *args,
 			("d,device",  "device to use (/dev/ttyUSBx)",
 				cxxopts::value<string>(args->device))
 #endif
-			("detect",      "detect FPGA",
+			("detect",      "detect FPGA, add -f to show connected flash",
 				cxxopts::value<bool>(args->detect))
 			("dfu",   "DFU mode", cxxopts::value<bool>(args->dfu))
 			("dump-flash",  "Dump flash mode")
