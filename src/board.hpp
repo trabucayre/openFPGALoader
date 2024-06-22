@@ -183,6 +183,7 @@ static std::map <std::string, target_board_t> board_list = {
 	JTAG_BOARD("machXO2EVN",      "", "ft2232",     0, 0, CABLE_DEFAULT),
 	JTAG_BOARD("machXO3SK",       "", "ft2232",     0, 0, CABLE_DEFAULT),
 	JTAG_BOARD("machXO3EVN",      "", "ft2232",     0, 0, CABLE_DEFAULT),
+	JTAG_BOARD("mimas_a7",		  "xc7a50tfgg484",	"numato", 0, 0, CABLE_MHZ(30)),
 	JTAG_BOARD("minispartan6",    "", "ft2232",    0, 0, CABLE_DEFAULT),
 	JTAG_BOARD("nexys_a7_50",     "xc7a50tcsg324",  "digilent", 0, 0, CABLE_DEFAULT),
 	JTAG_BOARD("nexys_a7_100",    "xc7a100tcsg324", "digilent", 0, 0, CABLE_DEFAULT),

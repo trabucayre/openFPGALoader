@@ -235,6 +235,11 @@ lpc-link2:
     URL: https://www.nxp.com/design/microcontrollers-developer-resources/lpc-link2:OM13054
 
 
+numato:
+
+  - Name: numato
+    Description: Embedded cable for Numato Systems Mimas-A7 board
+    
 orbtrace:
 
   - Name: orbtrace interface
