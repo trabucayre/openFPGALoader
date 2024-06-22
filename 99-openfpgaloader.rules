@@ -50,6 +50,9 @@ ATTRS{idVendor}=="0d28", ATTRS{idProduct}=="0204", MODE="664", GROUP="plugdev", 
 # icebreaker bitsy
 ATTRS{idVendor}=="1d50", ATTRS{idProduct}=="6146", MODE="664", GROUP="plugdev", TAG+="uaccess"
 
+# numato systems
+ATTRS{idVendor}=="2a19", ATTRS{idProduct}=="1009", MODE="644", GROUP="plugdev", TAG+="uaccess"
+
 # orbtrace-mini dfu
 ATTRS{idVendor}=="1209", ATTRS{idProduct}=="3442", MODE="664", GROUP="plugdev", TAG+="uaccess"
 

@@ -531,6 +531,13 @@
   Memory: OK
   Flash: NA
 
+- ID: mimas_a7
+  Description: Numato Systems Mimas A7
+  URL: https://numato.com/product/mimas-a7-artix-7-fpga-development-board/
+  FPGA: Artix xc7a50tfgg484
+  Memory: OK
+  Flash: OK
+
 - ID: nexys_a7_50
   Description: Digilent Nexys A7(Nexys 4 DDR)
   URL: https://digilent.com/reference/programmable-logic/nexys-a7/start

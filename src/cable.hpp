@@ -120,6 +120,7 @@ static std::map <std::string, cable_t> cable_list = {
 	{"jtrace_pro",         CABLE_DEF(MODE_JLINK, 0x1366, 0x1020                        )},
 	{"jtag-smt2-nc",       FTDI_SER(0x0403, 0x6014, FTDI_INTF_A, 0xe8, 0xeb, 0x00, 0x60)},
 	{"lpc-link2",          CMSIS_CL(0x1fc9, 0x0090                                     )},
+	{"numato",			   FTDI_SER(0x2a19, 0x1009, FTDI_INTF_B, 0x08, 0x4b, 0x00, 0x00)},
 	{"orbtrace",           CMSIS_CL(0x1209, 0x3443                                     )},
 	{"papilio",            FTDI_SER(0x0403, 0x6010, FTDI_INTF_A, 0x08, 0x0B, 0x09, 0x0B)},
 	{"steppenprobe",       FTDI_SER(0x0403, 0x6010, FTDI_INTF_A, 0x58, 0xFB, 0x00, 0x99)},
