@@ -415,7 +415,7 @@ int SPIFlash::erase_and_prog(int base_addr, const uint8_t *data, int len)
 		}
 	} else {  // unknown chip: basic test
 		printWarn("flash chip unknown: use basic protection detection");
-		if ((status & 0x1c) != 0)
+		if (get_bp() != 0)
 			must_relock = true;
 	}
 
@@ -701,9 +701,7 @@ int SPIFlash::disable_protection()
 	uint8_t data = read_status_reg();
 
 	/* only set to 0 bp bits */
-	uint8_t mask = 0;
-	for (int i = 0; i < _flash_model->bp_len; i++)
-		mask |= _flash_model->bp_offset[i];
+	uint8_t mask = get_bp_mask();
 	data &= ~mask;
 
 	if (write_enable() == -1)
@@ -774,9 +772,7 @@ int SPIFlash::enable_protection(uint32_t length)
 	/* keep existing STATR by reading register
 	 * and applying mask
 	 */
-	uint8_t mask = 0;
-	for (int i = 0; i < _flash_model->bp_len; i++)
-		mask |= _flash_model->bp_offset[i];
+	uint8_t mask = get_bp_mask();
 	uint8_t tmp = read_status_reg();
 	tmp &= ~mask;
 
@@ -900,14 +896,7 @@ uint8_t SPIFlash::get_bp()
 {
 	uint8_t mask = 0;
 	uint8_t status = read_status_reg();
-	if (!_flash_model) {
-		mask = 0x1C;
-	} else {
-		for (int i = 0; i < _flash_model->bp_len; i++)
-			mask |= _flash_model->bp_offset[i];
-	}
-
-	return (status & mask);
+	return (status & get_bp_mask());
 }
 
 /* convert bp area (status register) to len in byte */
@@ -962,6 +951,20 @@ uint8_t SPIFlash::len_to_bp(uint32_t len)
 			tmp |= _flash_model->bp_offset[i];
 
 	return tmp;
+}
+
+/* return bitmask (default for unknown device)
+ * or based on bp_offset (see spiFlashdb)
+ */
+uint8_t SPIFlash::get_bp_mask()
+{
+	if (!_flash_model)
+		return 0x1C;
+
+	uint8_t mask = 0;
+	for (int i = 0; i < _flash_model->bp_len; i++)
+		mask |= _flash_model->bp_offset[i];
+	return mask;
 }
 
 /* microchip SST26VF032B has a dedicated register

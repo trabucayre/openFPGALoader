@@ -114,6 +114,12 @@ class SPIFlash {
 		 */
 		uint8_t get_bp();
 
+		/* \brief convert bp_offset (see spiFlashdb) to a mask
+		 * \return bitmask (0x1c (default) for unknown device)
+		 *         or based on bp_offset (see spiFlashdb)
+		 */
+		uint8_t get_bp_mask();
+
 	public:
 		/*!
 		 * \brief convert block protect to len in byte
