@@ -894,7 +894,6 @@ int8_t SPIFlash::get_tb()
 /* read status register and extract bp area */
 uint8_t SPIFlash::get_bp()
 {
-	uint8_t mask = 0;
 	uint8_t status = read_status_reg();
 	return (status & get_bp_mask());
 }
