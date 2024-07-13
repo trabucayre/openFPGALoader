@@ -846,6 +846,13 @@
   Memory: OK
   Flash: OK
 
+- ID: vc709
+  Description: AMD Virtex-7 FPGA VC709 Connectivity Kit
+  URL: https://www.xilinx.com/products/boards-and-kits/dk-v7-vc709-g.html
+  FPGA: Virtex7 xc7vx690tffg1761
+  Memory: OK
+  Flash: NA
+
 - ID: vcu118
   Description: Xilinx VCU118
   URL: https://www.xilinx.com/products/boards-and-kits/vcu118.html
