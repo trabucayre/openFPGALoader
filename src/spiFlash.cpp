@@ -525,7 +525,7 @@ void SPIFlash::read_id()
 	}
 
 	/* something wrong with read */
-	if ((_jedec_id >> 8) == 0xffff)
+	if ((_jedec_id >> 8) == 0xffff || (_jedec_id >> 8) == 0x0000)
 		throw std::runtime_error("Read ID failed");
 
 	if (_verbose > 0)
