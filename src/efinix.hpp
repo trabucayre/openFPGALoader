@@ -57,7 +57,7 @@ class Efinix: public Device, SPIInterface {
 		void init_common(const Device::prog_type_t &prg_type);
 		bool programSPI(unsigned int offset, const uint8_t *data,
 				const int length, const bool unprotect_flash);
-		void programJTAG(const uint8_t *data, const int length);
+		bool programJTAG(const uint8_t *data, const int length);
 		bool post_flash_access() override;
 		bool prepare_flash_access() override;
 		FtdiSpi *_spi;

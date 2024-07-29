@@ -292,7 +292,7 @@ bool Efinix::programSPI(unsigned int offset, const uint8_t *data,
 #define ENTERUSER      0x07
 #define USER1          0x08
 
-void Efinix::programJTAG(const uint8_t *data, const int length)
+bool Efinix::programJTAG(const uint8_t *data, const int length)
 {
 	int xfer_len = 512;
 	Jtag::tapState_t tx_end;
@@ -352,6 +352,7 @@ void Efinix::programJTAG(const uint8_t *data, const int length)
 	_jtag->shiftDR(NULL, idc, 4);
 	printf("%02x%02x%02x%02x\n",
 			idc[0], idc[1], idc[2], idc[3]);
+	return true;
 }
 
 bool Efinix::post_flash_access()
