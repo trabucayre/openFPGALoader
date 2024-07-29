@@ -166,6 +166,7 @@ void Efinix::reset()
 
 void Efinix::program(unsigned int offset, bool unprotect_flash)
 {
+	bool ret;
 	if (_file_extension.empty())
 		return;
 	if (_mode == Device::NONE_MODE)
@@ -184,7 +185,7 @@ void Efinix::program(unsigned int offset, bool unprotect_flash)
 		}
 	} catch (std::exception &e) {
 		printError("FAIL: " + std::string(e.what()));
-		return;
+		throw std::runtime_error(e.what());
 	}
 
 	printInfo("Parse file ", false);
@@ -193,7 +194,7 @@ void Efinix::program(unsigned int offset, bool unprotect_flash)
 	} else {
 		printError("FAIL");
 		delete bit;
-		return;
+		throw std::runtime_error("Efinix: Failed to parse file: " + _filename);
 	}
 
 	const uint8_t *data = bit->getData();
@@ -204,14 +205,21 @@ void Efinix::program(unsigned int offset, bool unprotect_flash)
 
 	switch (_mode) {
 		case MEM_MODE:
-			programJTAG(data, length);
+			if (!programJTAG(data, length)) {
+				delete bit;
+				throw std::runtime_error("Efinix: Failed to load bitstream");
+			}
 			break;
 		case FLASH_MODE:
 			if (_jtag)
-				SPIInterface::write(offset, const_cast<uint8_t *>(data),
+				ret = SPIInterface::write(offset, const_cast<uint8_t *>(data),
 					length, unprotect_flash);
 			else
-				programSPI(offset, data, length, unprotect_flash);
+				ret = programSPI(offset, data, length, unprotect_flash);
+			if (!ret) {
+				delete bit;
+				throw std::runtime_error("Efinix: Failed to write bitstream in flash");
+			}
 			break;
 		default:
 			return;
@@ -398,7 +406,8 @@ bool Efinix::prepare_flash_access()
 		bridge.parse();
 		const uint8_t *data = bridge.getData();
 		const int length = bridge.getLength() / 8;
-		programJTAG(data, length);
+		if (!programJTAG(data, length))
+			return false;
 	} catch (std::exception &e) {
 		printError(e.what());
 		return false;
