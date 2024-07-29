@@ -55,7 +55,7 @@ class Efinix: public Device, SPIInterface {
 			UNKNOWN_FAMILY  = 999
 		};
 		void init_common(const Device::prog_type_t &prg_type);
-		void programSPI(unsigned int offset, const uint8_t *data,
+		bool programSPI(unsigned int offset, const uint8_t *data,
 				const int length, const bool unprotect_flash);
 		void programJTAG(const uint8_t *data, const int length);
 		bool post_flash_access() override;

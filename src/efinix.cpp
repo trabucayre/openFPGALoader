@@ -260,9 +260,10 @@ bool Efinix::dumpFlash(uint32_t base_addr, uint32_t len)
 	return false;
 }
 
-void Efinix::programSPI(unsigned int offset, const uint8_t *data,
+bool Efinix::programSPI(unsigned int offset, const uint8_t *data,
 		const int length, const bool unprotect_flash)
 {
+	bool ret = true;
 	_spi->gpio_clear(_rst_pin | _oe_pin);
 
 	SPIFlash flash(reinterpret_cast<SPIInterface *>(_spi), unprotect_flash,
@@ -272,13 +273,15 @@ void Efinix::programSPI(unsigned int offset, const uint8_t *data,
 
 	printf("%02x\n", flash.read_status_reg());
 	flash.read_id();
-	flash.erase_and_prog(offset, const_cast<uint8_t *>(data), length);
+	if (0 != flash.erase_and_prog(offset, const_cast<uint8_t *>(data), length))
+		ret = false;
 
 	/* verify write if required */
 	if (_verify)
-		flash.verify(offset, data, length);
+		ret = flash.verify(offset, data, length);
 
 	reset();
+	return ret;
 }
 
 #define SAMPLE_PRELOAD 0x02
