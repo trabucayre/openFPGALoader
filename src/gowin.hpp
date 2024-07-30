@@ -30,9 +30,9 @@ class Gowin: public Device, SPIInterface {
 
 		/* spi interface */
 		bool detect_flash() override {
-			if (is_gw5a)
+			if (is_gw5a || is_gw2a)
 				return SPIInterface::detect_flash();
-			printError("protect flash not supported"); return false;}
+			printError("detect flash not supported"); return false;}
 		bool protect_flash(uint32_t len) override {
 			(void) len;
 			printError("protect flash not supported"); return false;}
@@ -41,7 +41,7 @@ class Gowin: public Device, SPIInterface {
 				return SPIInterface::unprotect_flash();
 			printError("unprotect flash not supported"); return false;}
 		bool bulk_erase_flash() override {
-			if (is_gw5a)
+			if (is_gw5a || is_gw2a)
 				return SPIInterface::bulk_erase_flash();
 			printError("bulk erase flash not supported"); return false;}
 		bool dumpFlash(uint32_t base_addr, uint32_t len) override;
