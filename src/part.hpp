@@ -58,6 +58,7 @@ static std::map <uint32_t, fpga_model> fpga_list = {
 	{0x04001093, {"xilinx", "spartan6", "xc6slx9",         6}},
 	{0x04002093, {"xilinx", "spartan6", "xc6slx16",        6}},
 	{0x04004093, {"xilinx", "spartan6", "xc6slx25",        6}},
+	{0x24024093, {"xilinx", "spartan6", "xc6slx25T",       6}},
 	{0x04008093, {"xilinx", "spartan6", "xc6slx45",        6}},
 	{0x04028093, {"xilinx", "spartan6", "xc6slx45T",       6}},
 	{0x04011093, {"xilinx", "spartan6", "xc6slx100",       6}},
