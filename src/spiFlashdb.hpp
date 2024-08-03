@@ -112,6 +112,20 @@ static std::map <uint32_t, flash_t> flash_list = {
 		.bp_len = 4,
 		.bp_offset = {(1 << 2), (1 << 3), (1 << 4), (1 << 5)}}
 	},
+	/* https://pdf1.alldatasheet.com/datasheet-pdf/download/22807/STMICROELECTRONICS/M25P80.html */
+	{0x00202014, {
+		.manufacturer = "ST",
+		.model = "M25P80",
+		.nr_sector = 16,
+		.sector_erase = true,
+		.subsector_erase = false,
+		.has_extended = false,
+		.tb_otp = true,
+		.tb_offset = 0, // unused
+		.tb_register = STATR,
+		.bp_len = 3,
+		.bp_offset = {(1 << 2), (1 << 3), (1 << 4), 0}}
+	},
 	/* https://datasheet.octopart.com/M25P16-VME6G-STMicroelectronics-datasheet-7623188.pdf */
 	{0x00202015, {
 		.manufacturer = "ST",
