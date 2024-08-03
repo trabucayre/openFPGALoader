@@ -323,6 +323,13 @@
   FPGA: MAX 10 10M50DAF484C6GES
   Memory: OK
 
+- ID: dragonL
+  Description: KNJN Dragon-L PCI Express & HDMI FPGA board
+  URL: https://www.knjn.com/FPGA-Dragon-L.html
+  FPGA: Spartan6 xc6slx25Tcsg324
+  Memory: OK
+  Flash: OK
+
 - ID: ecp5_evn
   Description: Lattice ECP5 5G Evaluation Board
   URL: https://www.latticesemi.com/en/Products/DevelopmentBoardsAndKits/ECP5EvaluationBoard
