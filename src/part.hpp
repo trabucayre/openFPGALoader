@@ -218,6 +218,7 @@ static std::map <uint32_t, fpga_model> fpga_list = {
 	{0x00660a79, {"efinix", "Titanium", "Ti60",             5}},
 	{0x00360a79, {"efinix", "Titanium", "Ti60ES",           5}},
 	{0x00661a79, {"efinix", "Titanium", "Ti35",             5}},
+	{0x00690a79, {"efinix", "Titanium", "Ti180",            5}},
 
 	/**************************************************************************/
 	/*                             Lattice                                    */
