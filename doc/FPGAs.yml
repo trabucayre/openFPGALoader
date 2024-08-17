@@ -31,7 +31,9 @@ Cologne Chip:
 Efinix:
 
   - Description: Trion
-    Model: T8
+    Model:
+      - T8
+      - T13
     URL: https://www.efinixinc.com/products-trion.html
     Memory: NA
     Flash: OK
