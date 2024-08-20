@@ -48,6 +48,17 @@ efinix_pinout = {
             "ss_n": "K3", "cclk": "K2", "cdi0": "J1", "cdi1": "J2", "cdi2": "F1", "cdi3": "G2",
         },
     },
+    "Titanium": {
+        "J484": { # ti180, ...
+            "ss_n": "E2", "cclk": "J2", "cdi0": "G2", "cdi1": "H2", "cdi2": "F3", "cdi3": "G3",
+        },
+    },
+}
+
+timing_models = {
+    "T8F81": "C2",
+    "T13F256": "C3",
+    "TI180J484": "C3",
 }
 
 def gen_isf_constr(gateware_name, build_path, device_name, family, pkg):
@@ -110,7 +121,7 @@ if __name__ == "__main__":
     device        = args.device.upper()
     build_name    = "efinix_spiOverJtag"
     build_dir     = os.path.join(curr_path, f"tmp_efinix_{device.lower()}")
-    timing_model  = "C2" # FIXME: always usable (trion / titanium) ?
+    timing_model  = timing_models.get(device, "C3")
     sources       = [
         {
             'name': os.path.join(curr_path, "efinix_spiOverJtag.v"),
