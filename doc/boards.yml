@@ -974,3 +974,10 @@
   FPGA: xc7s50csga324?
   Memory: OK
   Flash: OK
+
+- ID: efinix_jtag_ft2232
+  Description: Efinix FT2232 development boards with JTAG on port 2 (Ti180J484 EVK, etc)
+  URL: https://www.efinixinc.com/products-devkits-titaniumti180j484.html
+  FPGA: Titanium Ti180J484 (and others)
+  Memory: OK
+  Flash: NA
