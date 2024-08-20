@@ -228,11 +228,23 @@ void Efinix::program(unsigned int offset, bool unprotect_flash)
 	delete bit;
 }
 
+bool Efinix::detect_flash()
+{
+	if (_jtag) {
+		return SPIInterface::detect_flash();
+	}
+
+	uint32_t timeout = 1000;
+	_spi->gpio_clear(_rst_pin);
+
+	return reinterpret_cast<SPIInterface *>(_spi)->detect_flash();
+}
+
 bool Efinix::dumpFlash(uint32_t base_addr, uint32_t len)
 {
-	if (!_spi) {
-		printError("jtag: dumpFlash not supported");
-		return false;
+	if (_jtag) {
+		SPIInterface::set_filename(_filename);
+		return SPIInterface::dump(base_addr, len);
 	}
 
 	uint32_t timeout = 1000;

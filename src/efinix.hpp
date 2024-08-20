@@ -28,6 +28,7 @@ class Efinix: public Device, SPIInterface {
 		~Efinix();
 
 		void program(unsigned int offset, bool unprotect_flash) override;
+		bool detect_flash() override;
 		bool dumpFlash(uint32_t base_addr, uint32_t len) override;
 		bool protect_flash(uint32_t len) override {
 			(void) len;
