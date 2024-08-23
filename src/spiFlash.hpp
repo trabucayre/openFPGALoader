@@ -99,6 +99,7 @@ class SPIFlash {
 		virtual void read_id();
 		uint16_t readNonVolatileCfgReg();
 		uint16_t readVolatileCfgReg();
+		bool set_quad_bit(bool set_quad);
 
 	protected:
 		/*!

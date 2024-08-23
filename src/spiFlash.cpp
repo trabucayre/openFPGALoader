@@ -889,6 +889,73 @@ int SPIFlash::enable_protection(uint32_t length)
 	return ret;
 }
 
+bool SPIFlash::set_quad_bit(bool set_quad)
+{
+	uint8_t reg_wr, reg_rd, reg_val, reg_val_verif;
+
+	if (!_flash_model) {
+		printError("spiFlash Error: can't configure Quad mode on unknown SPI Flash");
+		return false;
+	}
+
+	if (_flash_model->quad_offset == 0 || _flash_model->quad_register == NONER) {
+		printError("spiFlash Error: SPI Flash has no Quad bit (or spiFlashdb must be updated)");
+		return false;
+	}
+
+	switch (_flash_model->quad_register) {
+		case STATR:
+			reg_wr = FLASH_WRSR;
+			reg_rd = FLASH_RDSR;
+			break;
+		case CONFR:
+			reg_wr = FLASH_WRSR;
+			reg_rd = FLASH_RDCR;
+			break;
+		default:
+			printError("spiFlash Error: Unsupported register for Quad Enable bit configuration");
+			return false;
+	}
+
+	/* Read current register value */
+	_spi->spi_put(reg_rd, NULL, &reg_val, 1);
+	/* Only update Quad bit */
+	if (set_quad)
+		reg_val |= _flash_model->quad_offset;
+	else
+		reg_val &= ~_flash_model->quad_offset;
+
+	/* enable write access */
+	if (write_enable() != 0) {
+		printError("SPIFlash Error: failed to enable write");
+		return false;
+	}
+
+	/* Write register with the updated value */
+	if (_flash_model->quad_register == CONFR) {
+		uint8_t status = read_status_reg();
+		uint8_t write_val[2] = {status, reg_val};
+		_spi->spi_put(reg_wr, write_val, NULL, 2);
+	} else {
+		_spi->spi_put(reg_wr, &reg_val, NULL, 1);
+	}
+
+	/* disable write access (wait for completion) */
+	if (write_enable() != 0) {
+		printError("SPIFlash Error: failed to enable write");
+		return false;
+	}
+
+	/* Check if current value match written value */
+	_spi->spi_put(reg_rd, NULL, &reg_val_verif, 1);
+
+	if ((reg_val_verif & _flash_model->quad_offset) == (reg_val & _flash_model->quad_offset)) {
+		printError("SPIFlash Error: failed to update Quad bit");
+		return false;
+	}
+	return true;
+}
+
 /* retrieve TB (Top/Bottom) bit from register */
 int8_t SPIFlash::get_tb()
 {
