@@ -1197,6 +1197,21 @@ bool Xilinx::unprotect_flash()
 	return true;
 }
 
+bool Xilinx::set_quad_bit(bool set_quad)
+{
+	if (_flash_chips & PRIMARY_FLASH) {
+		select_flash_chip(PRIMARY_FLASH);
+		if (!SPIInterface::set_quad_bit(set_quad))
+			return false;
+	}
+	if (_flash_chips & SECONDARY_FLASH) {
+		select_flash_chip(SECONDARY_FLASH);
+		if (!SPIInterface::set_quad_bit(set_quad))
+			return false;
+	}
+	return true;
+}
+
 bool Xilinx::bulk_erase_flash()
 {
 	if (_flash_chips & PRIMARY_FLASH) {

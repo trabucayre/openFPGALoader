@@ -66,6 +66,10 @@ class Xilinx: public Device, SPIInterface {
 		 */
 		bool unprotect_flash() override;
 		/*!
+		 * \brief configure Quad mode for SPI Flash
+		 */
+		bool set_quad_bit(bool set_quad) override;
+		/*!
 		 * \brief erase SPI flash blocks
 		 */
 		bool bulk_erase_flash() override;
