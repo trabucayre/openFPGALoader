@@ -81,6 +81,8 @@ struct arguments {
 	string ip_adr;
 	uint32_t protect_flash;
 	bool unprotect_flash;
+	bool enable_quad;
+	bool disable_quad;
 	bool bulk_erase_flash;
 	string flash_sector;
 	bool skip_load_bridge;
@@ -123,7 +125,7 @@ int main(int argc, char **argv)
 			-1,            0,        "primary",   false,         -1,
 			/* vid, pid, index bus_addr, device_addr */
 				0,   0,   -1,     0,         0,
-			"127.0.0.1", 0, false, false, "", false, false,
+			"127.0.0.1", 0, false, false, false, false, "", false, false,
 			/* xvc server */
 			false, 3721, "-",
 			"", false, {},  // mcufw conmcu, user_misc_dev_list
@@ -636,6 +638,24 @@ int main(int argc, char **argv)
 		fpga->protect_flash(args.protect_flash);
 	}
 
+	/* Enable/disable SPI Flash quad mode */
+	if (args.enable_quad || args.disable_quad) {
+		bool ret = true;
+		if (args.enable_quad && args.disable_quad) {
+			printError("Error: can't set enable and disable Quad mode at same time");
+			ret = false;
+		} else  if (!fpga->set_quad_bit(args.enable_quad)) {
+			printError("Error: Failed to enable/disable Quad mode");
+			ret = false;
+		}
+
+		if (!ret) {
+			delete(fpga);
+			delete(jtag);
+			return EXIT_FAILURE;
+		}
+	}
+
 	/* detect/display flash */
 	if (args.detect_flash != 0) {
 		fpga->detect_flash();
@@ -769,6 +789,10 @@ int parse_opt(int argc, char **argv, struct arguments *args,
 			("dump-flash",  "Dump flash mode")
 			("bulk-erase",   "Bulk erase flash",
 				cxxopts::value<bool>(args->bulk_erase_flash))
+			("enable-quad",   "Enable quad mode for SPI Flash",
+				cxxopts::value<bool>(args->enable_quad))
+			("disable-quad",   "Disable quad mode for SPI Flash",
+				cxxopts::value<bool>(args->disable_quad))
 			("target-flash",
 				"for boards with multiple flash chips (some Xilinx UltraScale"
 				" boards), select the target flash: primary (default), secondary or both",
@@ -1047,6 +1071,8 @@ int parse_opt(int argc, char **argv, struct arguments *args,
 			!args->detect &&
 			!args->protect_flash &&
 			!args->unprotect_flash &&
+			!args->enable_quad &&
+			!args->disable_quad &&
 			!args->bulk_erase_flash &&
 			!args->xvc &&
 			!args->reset &&

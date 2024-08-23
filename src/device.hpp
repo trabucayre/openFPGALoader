@@ -53,6 +53,9 @@ class Device {
 			printError("dump flash not supported"); return false;}
 		virtual bool protect_flash(uint32_t len) = 0;
 		virtual bool unprotect_flash() = 0;
+		virtual bool set_quad_bit(bool set_quad) {
+			(void)set_quad;
+			printError("Error: SPI Flash Quad mode configuration unsupported"); return false;}
 		virtual bool bulk_erase_flash() = 0;
 
 		virtual uint32_t idCode() = 0;
