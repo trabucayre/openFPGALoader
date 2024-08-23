@@ -48,6 +48,7 @@ static std::map <uint32_t, flash_t> flash_list = {
 		.bp_offset = {(1 << 2), (1 << 3), (1 << 4), 0}}
 	},
 	{0x010219, {
+		/* https://www.mouser.fr/datasheet/2/196/Infineon_S25FL128SS25FL256S_128_Mb__16_MB_256_Mb__-3363490.pdf */
 		.manufacturer = "spansion",
 		.model = "S25FL256S",
 		.nr_sector = 512,
@@ -112,8 +113,8 @@ static std::map <uint32_t, flash_t> flash_list = {
 		.bp_len = 4,
 		.bp_offset = {(1 << 2), (1 << 3), (1 << 4), (1 << 5)}}
 	},
-	/* https://pdf1.alldatasheet.com/datasheet-pdf/download/22807/STMICROELECTRONICS/M25P80.html */
-	{0x00202014, {
+	{0x202014, {
+		/* https://pdf1.alldatasheet.com/datasheet-pdf/download/22807/STMICROELECTRONICS/M25P80.html */
 		.manufacturer = "ST",
 		.model = "M25P80",
 		.nr_sector = 16,
@@ -126,8 +127,8 @@ static std::map <uint32_t, flash_t> flash_list = {
 		.bp_len = 3,
 		.bp_offset = {(1 << 2), (1 << 3), (1 << 4), 0}}
 	},
-	/* https://datasheet.octopart.com/M25P16-VME6G-STMicroelectronics-datasheet-7623188.pdf */
-	{0x00202015, {
+	{0x202015, {
+		/* https://datasheet.octopart.com/M25P16-VME6G-STMicroelectronics-datasheet-7623188.pdf */
 		.manufacturer = "ST",
 		.model = "M25P16",
 		.nr_sector = 32,
@@ -140,8 +141,8 @@ static std::map <uint32_t, flash_t> flash_list = {
 		.bp_len = 3,
 		.bp_offset = {(1 << 2), (1 << 3), (1 << 4), 0}}
 	},
-	/* https://pdf1.alldatasheet.com/datasheet-pdf/download/104949/STMICROELECTRONICS/M25P32.html */
-	{0x00202016, {
+	{0x202016, {
+		/* https://pdf1.alldatasheet.com/datasheet-pdf/download/104949/STMICROELECTRONICS/M25P32.html */
 		.manufacturer = "ST",
 		.model = "M25P32",
 		.nr_sector = 64,
@@ -154,7 +155,8 @@ static std::map <uint32_t, flash_t> flash_list = {
 		.bp_len = 3,
 		.bp_offset = {(1 << 2), (1 << 3), (1 << 4), 0}}
 	},
-	{0x0020ba16, {
+	{0x20ba16, {
+		/* https://www.digikey.co.uk/htmldatasheets/production/1283198/0/0/1/N25Q032A-32Mb-1-8V.pdf */
 		.manufacturer = "micron",
 		.model = "N25Q32",
 		.nr_sector = 64,
@@ -167,7 +169,7 @@ static std::map <uint32_t, flash_t> flash_list = {
 		.bp_len = 3,
 		.bp_offset = {(1 << 2), (1 << 3), (1 << 4), 0}}
 	},
-	{0x0020ba17, {
+	{0x20ba17, {
 		.manufacturer = "micron",
 		.model = "N25Q64",
 		.nr_sector = 128,
@@ -180,7 +182,34 @@ static std::map <uint32_t, flash_t> flash_list = {
 		.bp_len = 4,
 		.bp_offset = {(1 << 2), (1 << 3), (1 << 4), (1 << 6)}}
 	},
-  {0x0020bb18, {
+	{0x20ba18, {
+		/* https://media-www.micron.com/-/media/client/global/documents/products/data-sheet/nor-flash/serial-nor/n25q/n25q_128mb_3v_65nm.pdf */
+		.manufacturer = "micron",
+		.model = "N25Q128_3V",
+		.nr_sector = 256,
+		.sector_erase = true,
+		.subsector_erase = true,
+		.has_extended = true,
+		.tb_otp = false,
+		.tb_offset = (1 << 5),
+		.tb_register = STATR,
+		.bp_len = 4,
+		.bp_offset = {(1 << 2), (1 << 3), (1 << 4), (1 << 6)}}
+	},
+	{0x20ba19, {
+		.manufacturer = "micron",
+		.model = "N25Q256",
+		.nr_sector = 512,
+		.sector_erase = true,
+		.subsector_erase = true,
+		.has_extended = true,
+		.tb_otp = false,
+		.tb_offset = (1 << 5),
+		.tb_register = STATR,
+		.bp_len = 4,
+		.bp_offset = {(1 << 2), (1 << 3), (1 << 4), (1 << 6)}}
+	},
+	{0x20bb18, {
 		/* https://www.micron.com/-/media/client/global/documents/products/data-sheet/nor-flash/serial-nor/n25q/n25q_128mb_1_8v_65nm.pdf */
 		/* MT25QU128ABA has the same JEDEC-standard signature: https://media-www.micron.com/-/media/client/global/documents/products/data-sheet/nor-flash/serial-nor/mt25q/die-rev-a/mt25q_qlhs_u_128_aba_0.pdf */
 		/* Differences: https://media-www.micron.com/-/media/client/global/documents/products/technical-note/nor-flash/tn2501_migrating_n25q_to_mt25ql.pdf */
@@ -196,34 +225,7 @@ static std::map <uint32_t, flash_t> flash_list = {
 		.bp_len = 4,
 		.bp_offset = {(1 << 2), (1 << 3), (1 << 4), (1 << 6)}}
 	},
-	{0x0020ba18, {
-		/* https://media-www.micron.com/-/media/client/global/documents/products/data-sheet/nor-flash/serial-nor/n25q/n25q_128mb_3v_65nm.pdf */
-		.manufacturer = "micron",
-		.model = "N25Q128_3V",
-		.nr_sector = 256,
-		.sector_erase = true,
-		.subsector_erase = true,
-		.has_extended = true,
-		.tb_otp = false,
-		.tb_offset = (1 << 5),
-		.tb_register = STATR,
-		.bp_len = 4,
-		.bp_offset = {(1 << 2), (1 << 3), (1 << 4), (1 << 6)}}
-	},
-	{0x0020ba19, {
-		.manufacturer = "micron",
-		.model = "N25Q256",
-		.nr_sector = 512,
-		.sector_erase = true,
-		.subsector_erase = true,
-		.has_extended = true,
-		.tb_otp = false,
-		.tb_offset = (1 << 5),
-		.tb_register = STATR,
-		.bp_len = 4,
-		.bp_offset = {(1 << 2), (1 << 3), (1 << 4), (1 << 6)}}
-	},
-	{0x0020bb19, {
+	{0x20bb19, {
 		.manufacturer = "micron",
 		.model = "N25Q256A",
 		.nr_sector = 512,
@@ -236,7 +238,7 @@ static std::map <uint32_t, flash_t> flash_list = {
 		.bp_len = 4,
 		.bp_offset = {(1 << 2), (1 << 3), (1 << 4), (1 << 6)}}
 	},
-	{0x0020bb21, {
+	{0x20bb21, {
 		.manufacturer = "micron",
 		.model = "MT25QU01G",
 		.nr_sector = 2048,
@@ -249,7 +251,7 @@ static std::map <uint32_t, flash_t> flash_list = {
 		.bp_len = 4,
 		.bp_offset = {(1 << 2), (1 << 3), (1 << 4), (1 << 6)}}
 	},
-	{0x0020bb22, {
+	{0x20bb22, {
 		.manufacturer = "micron",
 		.model = "MT25QU02G",
 		.nr_sector = 4096,
@@ -261,45 +263,6 @@ static std::map <uint32_t, flash_t> flash_list = {
 		.tb_register = STATR,
 		.bp_len = 4,
 		.bp_offset = {(1 << 2), (1 << 3), (1 << 4), (1 << 6)}}
-	},
-	{0xbf258d, {
-		.manufacturer = "microchip",
-		.model = "SST25VF040B",
-		.nr_sector = 8,
-		.sector_erase = true,
-		.subsector_erase = true,
-		.has_extended = false,
-		.tb_otp = false,
-		.tb_offset = 0,
-		.tb_register = NONER,
-		.bp_len = 4,
-		.bp_offset = {(1 << 2), (1 << 3), (1 << 4), (1 << 5)}}
-	},
-	{0xBF2642, {
-		.manufacturer = "microchip",
-		.model = "SST26VF032B",
-		.nr_sector = 64,
-		.sector_erase = false,
-		.subsector_erase = true,
-		.has_extended = false,
-		.tb_otp = false,
-		.tb_offset = 0,
-		.tb_register = NONER,
-		.bp_len = 0,
-		.bp_offset = {0, 0, 0, 0}}
-	},
-	{0xBF2643, {
-		.manufacturer = "microchip",
-		.model = "SST26VF064B",
-		.nr_sector = 128,
-		.sector_erase = true,
-		.subsector_erase = true,
-		.has_extended = false,
-		.tb_otp = false,
-		.tb_offset = 0,
-		.tb_register = NONER,
-		.bp_len = 0,
-		.bp_offset = {0, 0, 0, 0}}
 	},
 	{0x9d6016, {
 		.manufacturer = "ISSI",
@@ -340,8 +303,8 @@ static std::map <uint32_t, flash_t> flash_list = {
 		.bp_len = 4,
 		.bp_offset = {(1 << 2), (1 << 3), (1 << 4), (1 << 5)}}
 	},
-	/* https://www.issi.com/WW/pdf/IS25LP(WP)256D.pdf */
 	{0x9d6019, {
+		/* https://www.issi.com/WW/pdf/IS25LP(WP)256D.pdf */
 		.manufacturer = "ISSI",
 		.model = "IS25LP256",
 		.nr_sector = 512,
@@ -354,8 +317,60 @@ static std::map <uint32_t, flash_t> flash_list = {
 		.bp_len = 4,
 		.bp_offset = {(1 << 2), (1 << 3), (1 << 4), (1 << 5)}}
 	},
+	{0xba6015, {
+		.manufacturer = "Zetta",
+		.model = "ZD25WQ16CSIGT",
+		.nr_sector = 32,
+		.sector_erase = true,
+		.subsector_erase = true,
+		.has_extended = false,
+		.tb_otp = false,
+		.tb_offset = (1 << 5),
+		.tb_register = STATR,
+		.bp_len = 3,
+		.bp_offset = {(1 << 2), (1 << 3), (1 << 4), 0}}
+	},
+	{0xbf258d, {
+		.manufacturer = "microchip",
+		.model = "SST25VF040B",
+		.nr_sector = 8,
+		.sector_erase = true,
+		.subsector_erase = true,
+		.has_extended = false,
+		.tb_otp = false,
+		.tb_offset = 0, // unused
+		.tb_register = NONER,
+		.bp_len = 4,
+		.bp_offset = {(1 << 2), (1 << 3), (1 << 4), (1 << 5)}}
+	},
+	{0xbf2642, {
+		.manufacturer = "microchip",
+		.model = "SST26VF032B",
+		.nr_sector = 64,
+		.sector_erase = false,
+		.subsector_erase = true,
+		.has_extended = false,
+		.tb_otp = false,
+		.tb_offset = 0, // unused
+		.tb_register = NONER,
+		.bp_len = 0,
+		.bp_offset = {0, 0, 0, 0}}
+	},
+	{0xbf2643, {
+		.manufacturer = "microchip",
+		.model = "SST26VF064B",
+		.nr_sector = 128,
+		.sector_erase = true,
+		.subsector_erase = true,
+		.has_extended = false,
+		.tb_otp = false,
+		.tb_offset = 0, // unused
+		.tb_register = NONER,
+		.bp_len = 0,
+		.bp_offset = {0, 0, 0, 0}}
+	},
 	{0xc22016, {
-	/* https://www.macronix.com/Lists/Datasheet/Attachments/8933/MX25L3233F,%203V,%2032Mb,%20v1.7.pdf */
+		/* https://www.macronix.com/Lists/Datasheet/Attachments/8933/MX25L3233F,%203V,%2032Mb,%20v1.7.pdf */
 		.manufacturer = "Macronix",
 		.model = "MX25L3233F",
 		.nr_sector = 256,
@@ -369,7 +384,7 @@ static std::map <uint32_t, flash_t> flash_list = {
 		.bp_offset = {(1 << 2), (1 << 3), (1 << 4), (1 << 5)}}
 	},
 	{0xc22018, {
-	/* https://www.macronix.com/Lists/Datasheet/Attachments/8934/MX25L12833F,%203V,%20128Mb,%20v1.0.pdf */
+		/* https://www.macronix.com/Lists/Datasheet/Attachments/8934/MX25L12833F,%203V,%20128Mb,%20v1.0.pdf */
 		.manufacturer = "Macronix",
 		.model = "MX25L12833",
 		.nr_sector = 256,
@@ -382,8 +397,8 @@ static std::map <uint32_t, flash_t> flash_list = {
 		.bp_len = 5,
 		.bp_offset = {(1 << 2), (1 << 3), (1 << 4), (1 << 5)}}
 	},
-  {0xc2201a, {
-      /* https://www.macronix.com/Lists/Datasheet/Attachments/8745/MX25L51245G,%203V,%20512Mb,%20v1.7.pdf */
+	{0xc2201a, {
+		/* https://www.macronix.com/Lists/Datasheet/Attachments/8745/MX25L51245G,%203V,%20512Mb,%20v1.7.pdf */
 		.manufacturer = "Macronix",
 		.model = "MX25L51245G",
 		.nr_sector = 1024,
@@ -397,7 +412,7 @@ static std::map <uint32_t, flash_t> flash_list = {
 		.bp_offset = {(1 << 2), (1 << 3), (1 << 4), (1 << 5)}}
 	},
 	{0xc22817, {
-	/* https://www.macronix.com/Lists/Datasheet/Attachments/8868/MX25R6435F,%20Wide%20Range,%2064Mb,%20v1.6.pdf */
+		/* https://www.macronix.com/Lists/Datasheet/Attachments/8868/MX25R6435F,%20Wide%20Range,%2064Mb,%20v1.6.pdf */
 		.manufacturer = "Macronix",
 		.model = "MX25R6435F",
 		.nr_sector = 128,
@@ -411,7 +426,7 @@ static std::map <uint32_t, flash_t> flash_list = {
 		.bp_offset = {(1 << 2), (1 << 3), (1 << 4), (1 << 5)}}
 	},
 	{0xef4014, {
-	/* https://cdn-shop.adafruit.com/datasheets/W25Q80BV.pdf */
+		/* https://cdn-shop.adafruit.com/datasheets/W25Q80BV.pdf */
 		.manufacturer = "Winbond",
 		.model = "W25Q80BV",
 		.nr_sector = 16,
@@ -476,19 +491,6 @@ static std::map <uint32_t, flash_t> flash_list = {
 		.bp_len = 3,
 		.bp_offset = {(1 << 2), (1 << 3), (1 << 4), 0}}
 	},
-        {0xba6015, {
-                .manufacturer = "Zetta",
-                .model = "ZD25WQ16CSIGT",
-                .nr_sector = 32,
-                .sector_erase = true,
-                .subsector_erase = true,
-                .has_extended = false,
-                .tb_otp = false,
-                .tb_offset = (1 << 5),
-                .tb_register = STATR,
-                .bp_len = 3,
-                .bp_offset = {(1 << 2), (1 << 3), (1 << 4), 0}}
-        },
 
 };
 
