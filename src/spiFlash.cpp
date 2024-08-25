@@ -609,7 +609,7 @@ void SPIFlash::display_status_reg(uint8_t reg)
 		printf("BUSY : %d\n", (reg >> 7) & 0x01);
 	}
 
-	/* function register */
+	/* function and/or configuration register */
 	switch (dev_id) {
 		case 0x9d60:
 			_spi->spi_put(FLASH_RDFR, NULL, &reg, 1);
@@ -630,6 +630,30 @@ void SPIFlash::display_status_reg(uint8_t reg)
 			printf("TBPARM : %d\n", ((reg >> 2) & 0x01));
 			printf("BPNV   : %d\n", ((reg >> 3) & 0x01));
 			printf("TBPROT : %d\n", ((reg >> 5) & 0x01));
+			break;
+		case 0x0160:
+			_spi->spi_put(FLASH_RDCR, NULL, &reg, 1);
+			printf("\nConfiguration Register\n");
+			printf("RDCR    : %02x\n", reg);
+			printf("SUS_D   : %d\n", ((reg >> 7) & 0x01));
+			printf("CMP_NV  : %d\n", ((reg >> 6) & 0x01));
+			printf("LB      : %d\n", ((reg >> 2) & 0x0f));
+			printf("QUAD_NV : %d\n", ((reg >> 1) & 0x01));
+			printf("SRP1_D  : %d\n", ((reg >> 0) & 0x01));
+			break;
+		case 0x20BA:
+			uint16_t nv_reg;
+			_spi->spi_put(FLASH_RDNVCR, NULL, (uint8_t*)&nv_reg, 2);
+			printf("\nNonvolatile Configuration Register\n");
+			printf("RDNVCR                   : %02x\n", nv_reg);
+			printf("Dummy Clock Cycles       : %d\n", ((nv_reg >> 12) & 0x0f));
+			printf("XIP mode at power-on/rst : %d\n", ((nv_reg >>  9) & 0x07));
+			printf("Output Driver strength   : %d\n", ((nv_reg >>  6) & 0x07));
+			/* 5: reserved */
+			printf("RST/HLD                  : %d\n", ((nv_reg >> 4) & 0x01));
+			printf("QUAD                     : %d\n", ((nv_reg >> 3) & 0x01));
+			printf("DUAL                     : %d\n", ((nv_reg >> 2) & 0x01));
+			/* 1:0: reserved */
 			break;
 	}
 }
