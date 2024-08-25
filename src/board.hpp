@@ -137,6 +137,7 @@ static std::map <std::string, target_board_t> board_list = {
 	JTAG_BOARD("certuspronx_evn",       "", "ft2232", 0, 0, CABLE_MHZ(1)),
 	JTAG_BOARD("certuspronx_versa_evn", "", "ft2232", 0, 0, CABLE_MHZ(1)),
 	JTAG_BOARD("cyc1000",         "10cl025256", "ft2232",     0, 0, CABLE_DEFAULT),
+	JTAG_BOARD("cyc5000",         "5ce215", "ft2232",     0, 0, CABLE_DEFAULT),
 	JTAG_BOARD("c10lp-refkit",    "10cl055484", "ft2232",     0, 0, CABLE_DEFAULT),
 	JTAG_BOARD("de0",             "", "usb-blaster",0, 0, CABLE_DEFAULT),
 	JTAG_BOARD("de0nano",         "ep4ce2217", "usb-blaster",0, 0, CABLE_DEFAULT),

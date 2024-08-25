@@ -34,6 +34,14 @@ SVF and RBF files are supported.
   As mentioned in ``cyclone`` handbooks, real-time decompression is not supported by FPGA in JTAG mode.
   Keep in mind to disable this option.
 
+You can have Quartus automatically generate SVF and RBF files by adding these lines to the ``qsf`` file, or include them in a ``tcl`` file in FuseSoC
+
+.. code-block:: 
+
+    set_global_assignment -name ON_CHIP_BITSTREAM_DECOMPRESSION OFF
+    set_global_assignment -name GENERATE_RBF_FILE ON
+    set_global_assignment -name GENERATE_SVF_FILE ON
+
 file load:
 
 .. code-block:: bash
@@ -48,6 +56,12 @@ SPI flash
 ---------
 
 RPD and RBF are supported.
+
+``pof`` to ``rpd``:
+
+.. code-block:: bash
+
+    quartus_cpf -c project_name.pof project_name.rpd
 
 ``sof`` to ``rpd``:
 
