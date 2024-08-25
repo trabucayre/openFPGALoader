@@ -88,6 +88,7 @@ static std::map <uint32_t, flash_t> flash_list = {
 		.bp_offset = {(1 << 2), (1 << 3), (1 << 4), 0}}
 	},
 	{0x016018, {
+		/* https://www.infineon.com/dgdl/Infineon-S25FL128L_S25FL256L_128_Mb_16_MB_256_Mb_32_MB_FL-L_flash_SPI_multi-I_O_3-DataSheet-v13_00-EN.pdf?fileId=8ac78c8c7d0d8da4017d0ed40e335224 */
 		.manufacturer = "spansion",
 		.model = "S25FL128L",
 		.nr_sector = 256,
@@ -197,6 +198,7 @@ static std::map <uint32_t, flash_t> flash_list = {
 		.bp_offset = {(1 << 2), (1 << 3), (1 << 4), (1 << 6)}}
 	},
 	{0x20ba19, {
+		/* https://datasheet.octopart.com/N25Q256A13E1241F-Micron-datasheet-11552757.pdf */
 		.manufacturer = "micron",
 		.model = "N25Q256",
 		.nr_sector = 512,
