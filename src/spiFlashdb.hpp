@@ -12,10 +12,11 @@
 #include <string>
 
 typedef enum {
-	STATR = 0,  /* status register */
-	FUNCR = 1,  /* function register */
-	CONFR = 2,  /* configuration register */
-	NONER = 99, /* "none" register */
+	STATR   = 0,  /* status register */
+	FUNCR   = 1,  /* function register */
+	CONFR   = 2,  /* configuration register */
+	NVCONFR = 3,  /* Nonvolatile configuration register */
+	NONER   = 99, /* "none" register */
 } tb_loc_t;
 
 typedef struct {
@@ -31,6 +32,8 @@ typedef struct {
 	tb_loc_t tb_register;     /**< TOP/BOTTOM location (register) */
 	uint8_t bp_len;           /**< BPx length */
 	uint8_t bp_offset[4];     /**< BP[0:3] bit offset */
+	tb_loc_t quad_register;   /**< TOP/BOTTOM bit offset */
+	uint16_t quad_mask;       /** Quad Enable bit offset */
 } flash_t;
 
 static std::map <uint32_t, flash_t> flash_list = {
@@ -45,8 +48,10 @@ static std::map <uint32_t, flash_t> flash_list = {
 		.tb_offset = (1 << 5),
 		.tb_register = CONFR,
 		.bp_len = 3,
-		.bp_offset = {(1 << 2), (1 << 3), (1 << 4), 0}}
-	},
+		.bp_offset = {(1 << 2), (1 << 3), (1 << 4), 0},
+		.quad_register = NONER,
+		.quad_mask = 0,
+	}},
 	{0x010219, {
 		/* https://www.mouser.fr/datasheet/2/196/Infineon_S25FL128SS25FL256S_128_Mb__16_MB_256_Mb__-3363490.pdf */
 		.manufacturer = "spansion",
@@ -59,8 +64,10 @@ static std::map <uint32_t, flash_t> flash_list = {
 		.tb_offset = (1 << 5),
 		.tb_register = CONFR,
 		.bp_len = 3,
-		.bp_offset = {(1 << 2), (1 << 3), (1 << 4), 0}}
-	},
+		.bp_offset = {(1 << 2), (1 << 3), (1 << 4), 0},
+		.quad_register = CONFR,
+		.quad_mask = (1 << 1),
+	}},
 	{0x010220, {
 		.manufacturer = "spansion",
 		.model = "S25FL512S",
@@ -72,8 +79,10 @@ static std::map <uint32_t, flash_t> flash_list = {
 		.tb_offset = (1 << 5),
 		.tb_register = CONFR,
 		.bp_len = 3,
-		.bp_offset = {(1 << 2), (1 << 3), (1 << 4), 0}}
-	},
+		.bp_offset = {(1 << 2), (1 << 3), (1 << 4), 0},
+		.quad_register = NONER,
+		.quad_mask = 0,
+	}},
 	{0x012018, {
 		.manufacturer = "spansion",
 		.model = "S25FL128S",
@@ -85,8 +94,10 @@ static std::map <uint32_t, flash_t> flash_list = {
 		.tb_offset = (1 << 5),
 		.tb_register = CONFR,
 		.bp_len = 3,
-		.bp_offset = {(1 << 2), (1 << 3), (1 << 4), 0}}
-	},
+		.bp_offset = {(1 << 2), (1 << 3), (1 << 4), 0},
+		.quad_register = NONER,
+		.quad_mask = 0,
+	}},
 	{0x016018, {
 		/* https://www.infineon.com/dgdl/Infineon-S25FL128L_S25FL256L_128_Mb_16_MB_256_Mb_32_MB_FL-L_flash_SPI_multi-I_O_3-DataSheet-v13_00-EN.pdf?fileId=8ac78c8c7d0d8da4017d0ed40e335224 */
 		.manufacturer = "spansion",
@@ -99,8 +110,10 @@ static std::map <uint32_t, flash_t> flash_list = {
 		.tb_offset = (1 << 6),
 		.tb_register = STATR,
 		.bp_len = 4,
-		.bp_offset = {(1 << 2), (1 << 3), (1 << 4), (1 << 5)}}
-	},
+		.bp_offset = {(1 << 2), (1 << 3), (1 << 4), (1 << 5)},
+		.quad_register = NONER,
+		.quad_mask = 0,
+	}},
 	{0x016019, {
 		.manufacturer = "spansion",
 		.model = "S25FL256L",
@@ -112,8 +125,10 @@ static std::map <uint32_t, flash_t> flash_list = {
 		.tb_offset = (1 << 6),
 		.tb_register = STATR,
 		.bp_len = 4,
-		.bp_offset = {(1 << 2), (1 << 3), (1 << 4), (1 << 5)}}
-	},
+		.bp_offset = {(1 << 2), (1 << 3), (1 << 4), (1 << 5)},
+		.quad_register = NONER,
+		.quad_mask = 0,
+	}},
 	{0x202014, {
 		/* https://pdf1.alldatasheet.com/datasheet-pdf/download/22807/STMICROELECTRONICS/M25P80.html */
 		.manufacturer = "ST",
@@ -126,8 +141,10 @@ static std::map <uint32_t, flash_t> flash_list = {
 		.tb_offset = 0, // unused
 		.tb_register = STATR,
 		.bp_len = 3,
-		.bp_offset = {(1 << 2), (1 << 3), (1 << 4), 0}}
-	},
+		.bp_offset = {(1 << 2), (1 << 3), (1 << 4), 0},
+		.quad_register = NONER,
+		.quad_mask = 0,
+	}},
 	{0x202015, {
 		/* https://datasheet.octopart.com/M25P16-VME6G-STMicroelectronics-datasheet-7623188.pdf */
 		.manufacturer = "ST",
@@ -140,8 +157,10 @@ static std::map <uint32_t, flash_t> flash_list = {
 		.tb_offset = 0, // unused
 		.tb_register = STATR,
 		.bp_len = 3,
-		.bp_offset = {(1 << 2), (1 << 3), (1 << 4), 0}}
-	},
+		.bp_offset = {(1 << 2), (1 << 3), (1 << 4), 0},
+		.quad_register = NONER,
+		.quad_mask = 0,
+	}},
 	{0x202016, {
 		/* https://pdf1.alldatasheet.com/datasheet-pdf/download/104949/STMICROELECTRONICS/M25P32.html */
 		.manufacturer = "ST",
@@ -154,8 +173,10 @@ static std::map <uint32_t, flash_t> flash_list = {
 		.tb_offset = 0, // unused
 		.tb_register = STATR,
 		.bp_len = 3,
-		.bp_offset = {(1 << 2), (1 << 3), (1 << 4), 0}}
-	},
+		.bp_offset = {(1 << 2), (1 << 3), (1 << 4), 0},
+		.quad_register = NONER,
+		.quad_mask = 0,
+	}},
 	{0x20ba16, {
 		/* https://www.digikey.co.uk/htmldatasheets/production/1283198/0/0/1/N25Q032A-32Mb-1-8V.pdf */
 		.manufacturer = "micron",
@@ -168,8 +189,10 @@ static std::map <uint32_t, flash_t> flash_list = {
 		.tb_offset = (1 << 5),
 		.tb_register = STATR,
 		.bp_len = 3,
-		.bp_offset = {(1 << 2), (1 << 3), (1 << 4), 0}}
-	},
+		.bp_offset = {(1 << 2), (1 << 3), (1 << 4), 0},
+		.quad_register = NVCONFR,
+		.quad_mask = (1 << 3),
+	}},
 	{0x20ba17, {
 		.manufacturer = "micron",
 		.model = "N25Q64",
@@ -181,8 +204,10 @@ static std::map <uint32_t, flash_t> flash_list = {
 		.tb_offset = (1 << 5),
 		.tb_register = STATR,
 		.bp_len = 4,
-		.bp_offset = {(1 << 2), (1 << 3), (1 << 4), (1 << 6)}}
-	},
+		.bp_offset = {(1 << 2), (1 << 3), (1 << 4), (1 << 6)},
+		.quad_register = NVCONFR,
+		.quad_mask = (1 << 3),
+	}},
 	{0x20ba18, {
 		/* https://media-www.micron.com/-/media/client/global/documents/products/data-sheet/nor-flash/serial-nor/n25q/n25q_128mb_3v_65nm.pdf */
 		.manufacturer = "micron",
@@ -195,8 +220,10 @@ static std::map <uint32_t, flash_t> flash_list = {
 		.tb_offset = (1 << 5),
 		.tb_register = STATR,
 		.bp_len = 4,
-		.bp_offset = {(1 << 2), (1 << 3), (1 << 4), (1 << 6)}}
-	},
+		.bp_offset = {(1 << 2), (1 << 3), (1 << 4), (1 << 6)},
+		.quad_register = NVCONFR,
+		.quad_mask = (1 << 3),
+	}},
 	{0x20ba19, {
 		/* https://datasheet.octopart.com/N25Q256A13E1241F-Micron-datasheet-11552757.pdf */
 		.manufacturer = "micron",
@@ -209,8 +236,10 @@ static std::map <uint32_t, flash_t> flash_list = {
 		.tb_offset = (1 << 5),
 		.tb_register = STATR,
 		.bp_len = 4,
-		.bp_offset = {(1 << 2), (1 << 3), (1 << 4), (1 << 6)}}
-	},
+		.bp_offset = {(1 << 2), (1 << 3), (1 << 4), (1 << 6)},
+		.quad_register = NVCONFR,
+		.quad_mask = (1 << 3),
+	}},
 	{0x20bb18, {
 		/* https://www.micron.com/-/media/client/global/documents/products/data-sheet/nor-flash/serial-nor/n25q/n25q_128mb_1_8v_65nm.pdf */
 		/* MT25QU128ABA has the same JEDEC-standard signature: https://media-www.micron.com/-/media/client/global/documents/products/data-sheet/nor-flash/serial-nor/mt25q/die-rev-a/mt25q_qlhs_u_128_aba_0.pdf */
@@ -225,8 +254,10 @@ static std::map <uint32_t, flash_t> flash_list = {
 		.tb_offset = (1 << 5),
 		.tb_register = STATR,
 		.bp_len = 4,
-		.bp_offset = {(1 << 2), (1 << 3), (1 << 4), (1 << 6)}}
-	},
+		.bp_offset = {(1 << 2), (1 << 3), (1 << 4), (1 << 6)},
+		.quad_register = NONER,
+		.quad_mask = 0,
+	}},
 	{0x20bb19, {
 		.manufacturer = "micron",
 		.model = "N25Q256A",
@@ -238,8 +269,10 @@ static std::map <uint32_t, flash_t> flash_list = {
 		.tb_offset = (1 << 5),
 		.tb_register = STATR,
 		.bp_len = 4,
-		.bp_offset = {(1 << 2), (1 << 3), (1 << 4), (1 << 6)}}
-	},
+		.bp_offset = {(1 << 2), (1 << 3), (1 << 4), (1 << 6)},
+		.quad_register = NONER,
+		.quad_mask = 0,
+	}},
 	{0x20bb21, {
 		.manufacturer = "micron",
 		.model = "MT25QU01G",
@@ -251,8 +284,10 @@ static std::map <uint32_t, flash_t> flash_list = {
 		.tb_offset = (1 << 5),
 		.tb_register = STATR,
 		.bp_len = 4,
-		.bp_offset = {(1 << 2), (1 << 3), (1 << 4), (1 << 6)}}
-	},
+		.bp_offset = {(1 << 2), (1 << 3), (1 << 4), (1 << 6)},
+		.quad_register = NONER,
+		.quad_mask = 0,
+	}},
 	{0x20bb22, {
 		.manufacturer = "micron",
 		.model = "MT25QU02G",
@@ -264,8 +299,10 @@ static std::map <uint32_t, flash_t> flash_list = {
 		.tb_offset = (1 << 5),
 		.tb_register = STATR,
 		.bp_len = 4,
-		.bp_offset = {(1 << 2), (1 << 3), (1 << 4), (1 << 6)}}
-	},
+		.bp_offset = {(1 << 2), (1 << 3), (1 << 4), (1 << 6)},
+		.quad_register = NONER,
+		.quad_mask = 0,
+	}},
 	{0x9d6016, {
 		.manufacturer = "ISSI",
 		.model = "IS25LP032",
@@ -277,8 +314,10 @@ static std::map <uint32_t, flash_t> flash_list = {
 		.tb_offset = (1 << 1),
 		.tb_register = FUNCR,
 		.bp_len = 4,
-		.bp_offset = {(1 << 2), (1 << 3), (1 << 4), (1 << 5)}}
-	},
+		.bp_offset = {(1 << 2), (1 << 3), (1 << 4), (1 << 5)},
+		.quad_register = NONER,
+		.quad_mask = 0,
+	}},
 	{0x9d6017, {
 		.manufacturer = "ISSI",
 		.model = "IS25LP064",
@@ -290,8 +329,10 @@ static std::map <uint32_t, flash_t> flash_list = {
 		.tb_offset = (1 << 1),
 		.tb_register = FUNCR,
 		.bp_len = 4,
-		.bp_offset = {(1 << 2), (1 << 3), (1 << 4), (1 << 5)}}
-	},
+		.bp_offset = {(1 << 2), (1 << 3), (1 << 4), (1 << 5)},
+		.quad_register = NONER,
+		.quad_mask = 0,
+	}},
 	{0x9d6018, {
 		.manufacturer = "ISSI",
 		.model = "IS25LP128",
@@ -303,8 +344,10 @@ static std::map <uint32_t, flash_t> flash_list = {
 		.tb_offset = (1 << 1),
 		.tb_register = FUNCR,
 		.bp_len = 4,
-		.bp_offset = {(1 << 2), (1 << 3), (1 << 4), (1 << 5)}}
-	},
+		.bp_offset = {(1 << 2), (1 << 3), (1 << 4), (1 << 5)},
+		.quad_register = NONER,
+		.quad_mask = 0,
+	}},
 	{0x9d6019, {
 		/* https://www.issi.com/WW/pdf/IS25LP(WP)256D.pdf */
 		.manufacturer = "ISSI",
@@ -317,8 +360,10 @@ static std::map <uint32_t, flash_t> flash_list = {
 		.tb_offset = (1 << 1),
 		.tb_register = FUNCR,
 		.bp_len = 4,
-		.bp_offset = {(1 << 2), (1 << 3), (1 << 4), (1 << 5)}}
-	},
+		.bp_offset = {(1 << 2), (1 << 3), (1 << 4), (1 << 5)},
+		.quad_register = NONER,
+		.quad_mask = 0,
+	}},
 	{0xba6015, {
 		.manufacturer = "Zetta",
 		.model = "ZD25WQ16CSIGT",
@@ -330,8 +375,10 @@ static std::map <uint32_t, flash_t> flash_list = {
 		.tb_offset = (1 << 5),
 		.tb_register = STATR,
 		.bp_len = 3,
-		.bp_offset = {(1 << 2), (1 << 3), (1 << 4), 0}}
-	},
+		.bp_offset = {(1 << 2), (1 << 3), (1 << 4), 0},
+		.quad_register = NONER,
+		.quad_mask = 0,
+	}},
 	{0xbf258d, {
 		.manufacturer = "microchip",
 		.model = "SST25VF040B",
@@ -343,8 +390,10 @@ static std::map <uint32_t, flash_t> flash_list = {
 		.tb_offset = 0, // unused
 		.tb_register = NONER,
 		.bp_len = 4,
-		.bp_offset = {(1 << 2), (1 << 3), (1 << 4), (1 << 5)}}
-	},
+		.bp_offset = {(1 << 2), (1 << 3), (1 << 4), (1 << 5)},
+		.quad_register = NONER,
+		.quad_mask = 0,
+	}},
 	{0xbf2642, {
 		.manufacturer = "microchip",
 		.model = "SST26VF032B",
@@ -356,8 +405,10 @@ static std::map <uint32_t, flash_t> flash_list = {
 		.tb_offset = 0, // unused
 		.tb_register = NONER,
 		.bp_len = 0,
-		.bp_offset = {0, 0, 0, 0}}
-	},
+		.bp_offset = {0, 0, 0, 0},
+		.quad_register = NONER,
+		.quad_mask = 0,
+	}},
 	{0xbf2643, {
 		.manufacturer = "microchip",
 		.model = "SST26VF064B",
@@ -369,8 +420,10 @@ static std::map <uint32_t, flash_t> flash_list = {
 		.tb_offset = 0, // unused
 		.tb_register = NONER,
 		.bp_len = 0,
-		.bp_offset = {0, 0, 0, 0}}
-	},
+		.bp_offset = {0, 0, 0, 0},
+		.quad_register = NONER,
+		.quad_mask = 0,
+	}},
 	{0xc22016, {
 		/* https://www.macronix.com/Lists/Datasheet/Attachments/8933/MX25L3233F,%203V,%2032Mb,%20v1.7.pdf */
 		.manufacturer = "Macronix",
@@ -383,8 +436,10 @@ static std::map <uint32_t, flash_t> flash_list = {
 		.tb_offset = (1 << 3),
 		.tb_register = CONFR,
 		.bp_len = 5,
-		.bp_offset = {(1 << 2), (1 << 3), (1 << 4), (1 << 5)}}
-	},
+		.bp_offset = {(1 << 2), (1 << 3), (1 << 4), (1 << 5)},
+		.quad_register = NONER,
+		.quad_mask = 0,
+	}},
 	{0xc22018, {
 		/* https://www.macronix.com/Lists/Datasheet/Attachments/8934/MX25L12833F,%203V,%20128Mb,%20v1.0.pdf */
 		.manufacturer = "Macronix",
@@ -397,8 +452,10 @@ static std::map <uint32_t, flash_t> flash_list = {
 		.tb_offset = (1 << 3),
 		.tb_register = CONFR,
 		.bp_len = 5,
-		.bp_offset = {(1 << 2), (1 << 3), (1 << 4), (1 << 5)}}
-	},
+		.bp_offset = {(1 << 2), (1 << 3), (1 << 4), (1 << 5)},
+		.quad_register = NONER,
+		.quad_mask = 0,
+	}},
 	{0xc2201a, {
 		/* https://www.macronix.com/Lists/Datasheet/Attachments/8745/MX25L51245G,%203V,%20512Mb,%20v1.7.pdf */
 		.manufacturer = "Macronix",
@@ -411,8 +468,10 @@ static std::map <uint32_t, flash_t> flash_list = {
 		.tb_offset = (1 << 3),
 		.tb_register = CONFR,
 		.bp_len = 5,
-		.bp_offset = {(1 << 2), (1 << 3), (1 << 4), (1 << 5)}}
-	},
+		.bp_offset = {(1 << 2), (1 << 3), (1 << 4), (1 << 5)},
+		.quad_register = NONER,
+		.quad_mask = 0,
+	}},
 	{0xc22817, {
 		/* https://www.macronix.com/Lists/Datasheet/Attachments/8868/MX25R6435F,%20Wide%20Range,%2064Mb,%20v1.6.pdf */
 		.manufacturer = "Macronix",
@@ -425,8 +484,10 @@ static std::map <uint32_t, flash_t> flash_list = {
 		.tb_offset = (1 << 3),
 		.tb_register = CONFR,
 		.bp_len = 4,
-		.bp_offset = {(1 << 2), (1 << 3), (1 << 4), (1 << 5)}}
-	},
+		.bp_offset = {(1 << 2), (1 << 3), (1 << 4), (1 << 5)},
+		.quad_register = NONER,
+		.quad_mask = 0,
+	}},
 	{0xef4014, {
 		/* https://cdn-shop.adafruit.com/datasheets/W25Q80BV.pdf */
 		.manufacturer = "Winbond",
@@ -439,8 +500,10 @@ static std::map <uint32_t, flash_t> flash_list = {
 		.tb_offset = (1 << 5),
 		.tb_register = STATR,
 		.bp_len = 3,
-		.bp_offset = {(1 << 2), (1 << 3), (1 << 4), 0}}
-	},
+		.bp_offset = {(1 << 2), (1 << 3), (1 << 4), 0},
+		.quad_register = NONER,
+		.quad_mask = 0,
+	}},
 	{0xef4015, {
 		.manufacturer = "Winbond",
 		.model = "W25Q16",
@@ -452,8 +515,10 @@ static std::map <uint32_t, flash_t> flash_list = {
 		.tb_offset = (1 << 5),
 		.tb_register = STATR,
 		.bp_len = 3,
-		.bp_offset = {(1 << 2), (1 << 3), (1 << 4), 0}}
-	},
+		.bp_offset = {(1 << 2), (1 << 3), (1 << 4), 0},
+		.quad_register = NONER,
+		.quad_mask = 0,
+	}},
 	{0xef4016, {
 		.manufacturer = "Winbond",
 		.model = "W25Q32",
@@ -465,8 +530,10 @@ static std::map <uint32_t, flash_t> flash_list = {
 		.tb_offset = (1 << 5),
 		.tb_register = STATR,
 		.bp_len = 3,
-		.bp_offset = {(1 << 2), (1 << 3), (1 << 4), 0}}
-	},
+		.bp_offset = {(1 << 2), (1 << 3), (1 << 4), 0},
+		.quad_register = NONER,
+		.quad_mask = 0,
+	}},
 	{0xef4017, {
 		.manufacturer = "Winbond",
 		.model = "W25Q64",
@@ -478,8 +545,10 @@ static std::map <uint32_t, flash_t> flash_list = {
 		.tb_offset = (1 << 5),
 		.tb_register = STATR,
 		.bp_len = 3,
-		.bp_offset = {(1 << 2), (1 << 3), (1 << 4), 0}}
-	},
+		.bp_offset = {(1 << 2), (1 << 3), (1 << 4), 0},
+		.quad_register = NONER,
+		.quad_mask = 0,
+	}},
 	{0xef4018, {
 		.manufacturer = "Winbond",
 		.model = "W25Q128",
@@ -491,8 +560,10 @@ static std::map <uint32_t, flash_t> flash_list = {
 		.tb_offset = (1 << 5),
 		.tb_register = STATR,
 		.bp_len = 3,
-		.bp_offset = {(1 << 2), (1 << 3), (1 << 4), 0}}
-	},
+		.bp_offset = {(1 << 2), (1 << 3), (1 << 4), 0},
+		.quad_register = NONER,
+		.quad_mask = 0,
+	}},
 
 };
 
