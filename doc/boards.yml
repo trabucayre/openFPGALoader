@@ -265,6 +265,13 @@
   Memory: OK
   Flash: OK
 
+- ID: cyc5000
+  Description: Trenz CYC5000
+  URL: https://shop.trenz-electronic.de/en/TEI0050-01-AAH13A-CYC5000-with-Cyclone-V-FPGA-25kLE-8-MByte-SDRAM
+  FPGA: Cyclone V 5CEBA2U15C8
+  Memory: OK
+  Flash: OK
+
 - ID: c10lp-refkit
   Description: Trenz c10lp-refkit
   URL: https://shop.trenz-electronic.de/en/TEI0009-02-055-8CA-Cyclone-10-LP-RefKit-10CL055-Development-Board-32-MByte-SDRAM-16-MByte-Flash
