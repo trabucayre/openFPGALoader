@@ -39,7 +39,9 @@ Efinix:
     Flash: OK
 
   - Description: Titanium
-    Model: Ti60
+    Model:
+      - Ti60
+      - Ti180
     URL: https://www.efinixinc.com/products-titanium.html
     Memory: NA
     Flash: OK

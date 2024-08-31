@@ -228,11 +228,33 @@ void Efinix::program(unsigned int offset, bool unprotect_flash)
 	delete bit;
 }
 
+bool Efinix::detect_flash()
+{
+	if (_jtag) {
+		return SPIInterface::detect_flash();
+	}
+
+#if 0
+	/* Untested logic in SPI path -- if you test this, and it works,
+	 * uncomment it and submit a PR!  */
+	_spi->gpio_clear(_rst_pin);
+
+	bool rv = reinterpret_cast<SPIInterface *>(_spi)->detect_flash();
+
+	reset();
+
+	return rv;
+#else
+	printError("detect flash not supported");
+	return false;
+#endif
+}
+
 bool Efinix::dumpFlash(uint32_t base_addr, uint32_t len)
 {
-	if (!_spi) {
-		printError("jtag: dumpFlash not supported");
-		return false;
+	if (_jtag) {
+		SPIInterface::set_filename(_filename);
+		return SPIInterface::dump(base_addr, len);
 	}
 
 	uint32_t timeout = 1000;
@@ -251,7 +273,7 @@ bool Efinix::dumpFlash(uint32_t base_addr, uint32_t len)
 		return false;
 	}
 
-	/* release SPI access */
+	/* release SPI access.  XXX later: refactor to use reset() and make sure the behavior is the same */
 	_spi->gpio_set(_rst_pin | _oe_pin);
 	usleep(12000);
 
