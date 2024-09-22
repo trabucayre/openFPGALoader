@@ -622,6 +622,7 @@ void SPIFlash::display_status_reg(uint8_t reg)
 			printf("IRL  : %x\n", ((reg >> 4) & 0x0f));
 			break;
 		case 0x0102:
+		case 0x0120:
 			_spi->spi_put(FLASH_RDCR, NULL, &reg, 1);
 			printf("\nConfiguration Register\n");
 			printf("RDCR   : %02x\n", reg);
@@ -630,6 +631,8 @@ void SPIFlash::display_status_reg(uint8_t reg)
 			printf("TBPARM : %d\n", ((reg >> 2) & 0x01));
 			printf("BPNV   : %d\n", ((reg >> 3) & 0x01));
 			printf("TBPROT : %d\n", ((reg >> 5) & 0x01));
+			if (dev_id == 0x0120)
+			printf("LC     : %d\n", ((reg >> 6) & 0x02));
 			break;
 		case 0x0160:
 			_spi->spi_put(FLASH_RDCR, NULL, &reg, 1);
@@ -891,11 +894,11 @@ int SPIFlash::enable_protection(uint32_t length)
 
 bool SPIFlash::set_quad_bit(bool set_quad)
 {
-	uint8_t reg_wr, reg_rd; // read/write registers code
-	uint16_t reg_val;
-	uint32_t nb_rd_byte = 1; // Number of bytes to read (may differ from Flash models).
-	uint32_t nb_wr_byte = 1; // Number of bytes to write.
-	uint16_t quad_bit = 0; // quad_mask copy when bit must be set
+	uint8_t reg_wr, reg_rd; // read/write registers code.
+	uint16_t reg_val = 0; // set to 0: avoid random when 8bits are read.
+	uint32_t nb_rd_byte = 1; // read bytes len (may differ from Flash models).
+	uint32_t nb_wr_byte = 1; // write bytes len.
+	uint16_t quad_bit = 0; // quad_mask copy when bit must be set.
 
 	if (!_flash_model) {
 		printError("spiFlash Error: can't configure Quad mode on unknown SPI Flash");
@@ -953,7 +956,6 @@ bool SPIFlash::set_quad_bit(bool set_quad)
 		case CONFR:
 			uint8_t status = read_status_reg();
 			reg_val = ((reg_val & 0xff) << 8) | status;
-			_spi->spi_put(reg_wr, (uint8_t*) &reg_val, NULL, nb_wr_byte);
 			break;
 	}
 
@@ -961,15 +963,16 @@ bool SPIFlash::set_quad_bit(bool set_quad)
 	_spi->spi_put(reg_wr, (uint8_t *)&reg_val, NULL, nb_wr_byte);
 
 	/* Wait for completion */
-	if (_spi->spi_wait(FLASH_RDSR, FLASH_RDSR_WEL, 0x00, 1000) != 0) {
+	if (_spi->spi_wait(FLASH_RDSR, FLASH_RDSR_WEL, 0x00, 10000) != 0) {
 		printError("SPIFlash Error: failed to disable write");
 		return false;
 	}
 
 	/* Check if register is correctly updated */
+	reg_val = 0; // 16 bits but only LSB may be updated
 	_spi->spi_put(reg_rd, NULL, (uint8_t *)&reg_val, nb_rd_byte);
 
-	if ((reg_val & _flash_model->quad_mask) == quad_bit) {
+	if ((reg_val & _flash_model->quad_mask) != quad_bit) {
 		printf("%04x %04x %04x\n", reg_val, reg_val & _flash_model->quad_mask, quad_bit);
 		printError("SPIFlash Error: failed to update Quad bit");
 		return false;
