@@ -437,8 +437,8 @@ static std::map <uint32_t, flash_t> flash_list = {
 		.tb_register = CONFR,
 		.bp_len = 5,
 		.bp_offset = {(1 << 2), (1 << 3), (1 << 4), (1 << 5)},
-		.quad_register = NONER,
-		.quad_mask = 0,
+		.quad_register = STATR,
+		.quad_mask = (1 << 6),
 	}},
 	{0xc22018, {
 		/* https://www.macronix.com/Lists/Datasheet/Attachments/8934/MX25L12833F,%203V,%20128Mb,%20v1.0.pdf */
@@ -453,8 +453,8 @@ static std::map <uint32_t, flash_t> flash_list = {
 		.tb_register = CONFR,
 		.bp_len = 5,
 		.bp_offset = {(1 << 2), (1 << 3), (1 << 4), (1 << 5)},
-		.quad_register = NONER,
-		.quad_mask = 0,
+		.quad_register = STATR,
+		.quad_mask = (1 << 6),
 	}},
 	{0xc2201a, {
 		/* https://www.macronix.com/Lists/Datasheet/Attachments/8745/MX25L51245G,%203V,%20512Mb,%20v1.7.pdf */
@@ -469,8 +469,8 @@ static std::map <uint32_t, flash_t> flash_list = {
 		.tb_register = CONFR,
 		.bp_len = 5,
 		.bp_offset = {(1 << 2), (1 << 3), (1 << 4), (1 << 5)},
-		.quad_register = NONER,
-		.quad_mask = 0,
+		.quad_register = STATR,
+		.quad_mask = (1 << 6),
 	}},
 	{0xc22817, {
 		/* https://www.macronix.com/Lists/Datasheet/Attachments/8868/MX25R6435F,%20Wide%20Range,%2064Mb,%20v1.6.pdf */

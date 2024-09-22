@@ -40,6 +40,7 @@
 #define FLASH_4SE      0x21
 /* read configuration register */
 #define FLASH_RDCR     0x35
+#define MX25L_RDCR     0x15
 /* write function register (at least ISSI) */
 #define FLASH_WRFR     0x42
 /* read function register (at least ISSI) */
@@ -632,7 +633,7 @@ void SPIFlash::display_status_reg(uint8_t reg)
 			printf("BPNV   : %d\n", ((reg >> 3) & 0x01));
 			printf("TBPROT : %d\n", ((reg >> 5) & 0x01));
 			if (dev_id == 0x0120)
-			printf("LC     : %d\n", ((reg >> 6) & 0x02));
+			printf("LC     : %d\n", ((reg >> 6) & 0x03));
 			break;
 		case 0x0160:
 			_spi->spi_put(FLASH_RDCR, NULL, &reg, 1);
@@ -658,6 +659,13 @@ void SPIFlash::display_status_reg(uint8_t reg)
 			printf("DUAL                     : %d\n", ((nv_reg >> 2) & 0x01));
 			/* 1:0: reserved */
 			break;
+		case 0xC220:
+			_spi->spi_put(MX25L_RDCR, NULL, &reg, 1);
+			printf("\nConfiguration Register\n");
+			printf("RDCR : %02x\n", reg);
+			printf("DC   : %d\n", ((reg >> 6) & 0x03));
+			printf("TB   : %d\n", ((reg >> 3) & 0x01));
+			printf("ODS  : %d\n", ((reg >> 0) & 0x07));
 	}
 }
 
@@ -993,7 +1001,10 @@ int8_t SPIFlash::get_tb()
 		_spi->spi_put(FLASH_RDFR, NULL, &status, 1);
 		break;
 	case CONFR:  // function register
-		_spi->spi_put(FLASH_RDCR, NULL, &status, 1);
+		if ((_jedec_id >> 8) == 0xC220)
+			_spi->spi_put(MX25L_RDCR, NULL, &status, 1);
+		else
+			_spi->spi_put(FLASH_RDCR, NULL, &status, 1);
 		break;
 	case NONER:  // no TB bit
 		return 0;
