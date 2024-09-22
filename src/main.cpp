@@ -1071,6 +1071,8 @@ int parse_opt(int argc, char **argv, struct arguments *args,
 			!args->detect &&
 			!args->protect_flash &&
 			!args->unprotect_flash &&
+			!args->enable_quad &&
+			!args->disable_quad &&
 			!args->bulk_erase_flash &&
 			!args->xvc &&
 			!args->reset &&
