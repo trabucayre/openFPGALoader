@@ -95,8 +95,8 @@ static std::map <uint32_t, flash_t> flash_list = {
 		.tb_register = CONFR,
 		.bp_len = 3,
 		.bp_offset = {(1 << 2), (1 << 3), (1 << 4), 0},
-		.quad_register = NONER,
-		.quad_mask = 0,
+		.quad_register = CONFR,
+		.quad_mask = (1 << 1),
 	}},
 	{0x016018, {
 		/* https://www.infineon.com/dgdl/Infineon-S25FL128L_S25FL256L_128_Mb_16_MB_256_Mb_32_MB_FL-L_flash_SPI_multi-I_O_3-DataSheet-v13_00-EN.pdf?fileId=8ac78c8c7d0d8da4017d0ed40e335224 */
