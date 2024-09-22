@@ -93,7 +93,7 @@ if tool in ["ise", "vivado"]:
         "xc7a35tfgg484"    : "xc7a_fgg484",
         "xc7a50tcpg236"    : "xc7a_cpg236",
         "xc7a50tcsg324"    : "xc7a_csg324",
-        "xc7a50tfgg484"	   : "xc7a_fgg484",
+        "xc7a50tfgg484"    : "xc7a_fgg484",
         "xc7a75tfgg484"    : "xc7a_fgg484",
         "xc7a100tcsg324"   : "xc7a_csg324",
         "xc7a100tfgg484"   : "xc7a_fgg484",
@@ -112,10 +112,12 @@ if tool in ["ise", "vivado"]:
         "xc7s25csga225"    : "xc7s_csga225",
         "xc7s25csga324"    : "xc7s_csga324",
         "xc7s50csga324"    : "xc7s_csga324",
-        "xcvu9p-flga2104" : "xcvu9p_flga2104",
+        "xcku040-ffva1156" : "xcku040_ffva1156",
+        "xcku060-ffva1156" : "xcku060_ffva1156",
+        "xcvu9p-flga2104"  : "xcvu9p_flga2104",
         "xcvu37p-fsvh2892" : "xcvu37p_fsvh2892",
-        "xcku3p-ffva676" : "xcku3p_ffva676",
-        "xcku5p-ffvb676" : "xcku5p_ffvb676",
+        "xcku3p-ffva676"   : "xcku3p_ffva676",
+        "xcku5p-ffvb676"   : "xcku5p_ffvb676",
         }[part]
     if tool == "ise":
         cst_type = "UCF"
@@ -172,6 +174,13 @@ if tool in ["ise", "vivado"]:
                 tool_options = {'part': part + '-2-e'}
             elif part == "xcvu37p-fsvh2892":
                 tool_options = {'part': part + '-2L-e'}
+            elif part in ["xcku040-ffva1156", "xcku060-ffva1156"]:
+                tool_options = {'part': part + '-2-e'}
+                parameters["secondaryflash"]= {
+                    'datatype': 'int',
+                    'paramtype': 'vlogdefine',
+                    'description': 'secondary flash',
+                    'default': 1}
         else:
             tool_options = {'part': part + '-1'}
     cst_file = currDir + "constr_" + pkg_name + "." + cst_type.lower()
