@@ -623,6 +623,7 @@ void SPIFlash::display_status_reg(uint8_t reg)
 			printf("IRL  : %x\n", ((reg >> 4) & 0x0f));
 			break;
 		case 0x0102:
+		case 0x0120:
 			_spi->spi_put(FLASH_RDCR, NULL, &reg, 1);
 			printf("\nConfiguration Register\n");
 			printf("RDCR   : %02x\n", reg);
@@ -631,6 +632,8 @@ void SPIFlash::display_status_reg(uint8_t reg)
 			printf("TBPARM : %d\n", ((reg >> 2) & 0x01));
 			printf("BPNV   : %d\n", ((reg >> 3) & 0x01));
 			printf("TBPROT : %d\n", ((reg >> 5) & 0x01));
+			if (dev_id == 0x0120)
+				printf("LC     : %d\n", ((reg >> 6) & 0x03));
 			break;
 		case 0x0160:
 			_spi->spi_put(FLASH_RDCR, NULL, &reg, 1);
