@@ -61,6 +61,8 @@ openFPGALoader -- a program to flash FPGA
   -B, --bridge arg              disable spiOverJtag model detection by
                                 providing bitstream(intel/xilinx)
   -c, --cable arg               jtag interface
+      --status-pin arg          JTAG mode / FTDI: GPIO pin number to use as a
+                                status indicator (active low)
       --invert-read-edge        JTAG mode / FTDI: read on negative edge
                                 instead of positive
       --vid arg                 probe Vendor ID
@@ -71,10 +73,13 @@ openFPGALoader -- a program to flash FPGA
       --ftdi-serial arg         FTDI chip serial number
       --ftdi-channel arg        FTDI chip channel number (channels 0-3 map to
                                 A-D)
+  -d, --device arg              device to use (/dev/ttyUSBx)
       --detect                  detect FPGA, add -f to show connected flash
       --dfu                     DFU mode
       --dump-flash              Dump flash mode
       --bulk-erase              Bulk erase flash
+      --enable-quad             Enable quad mode for SPI Flash
+      --disable-quad            Disable quad mode for SPI Flash
       --target-flash arg        for boards with multiple flash chips (some
                                 Xilinx UltraScale boards), select the target
                                 flash: primary (default), secondary or both
@@ -89,6 +94,7 @@ openFPGALoader -- a program to flash FPGA
       --freq arg                jtag frequency (Hz)
   -f, --write-flash             write bitstream in flash (default: false)
       --index-chain arg         device index in JTAG-chain
+      --misc-device arg         add JTAG non-FPGA devices <idcode,irlen,name>
       --ip arg                  IP address (XVC and remote bitbang client)
       --list-boards             list all supported boards
       --list-cables             list all supported cables
@@ -113,10 +119,14 @@ openFPGALoader -- a program to flash FPGA
                                 1:verbose, 2:debug
   -h, --help                    Give this help list
       --verify                  Verify write operation (SPI Flash only)
+      --xvc                     Xilinx Virtual Cable Functions
       --port arg                Xilinx Virtual Cable and remote bitbang Port
                                 (default 3721)
       --mcufw arg               Microcontroller firmware
       --conmcu                  Connect JTAG to MCU
+  -D, --read-dna                Read DNA (Xilinx FPGA only)
+  -X, --read-xadc               Read XADC (Xilinx FPGA only)
+      --read-register arg       Read Status Register(Xilinx FPGA only)
   -V, --Version                 Print program version
 
 Mandatory or optional arguments to long options are also mandatory or optional
