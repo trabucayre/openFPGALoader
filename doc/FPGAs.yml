@@ -262,7 +262,7 @@ Xilinx:
       - xcku115
     URL: https://www.xilinx.com/products/silicon-devices/fpga/kintex-ultrascale.html#productTable
     Memory: OK
-    Flash: NA
+    Flash: OK (primary)
 
   - Description: Virtex 6
     Model:

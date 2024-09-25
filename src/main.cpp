@@ -865,9 +865,9 @@ int parse_opt(int argc, char **argv, struct arguments *args,
 				cxxopts::value<std::string>(args->mcufw))
 			("conmcu", "Connect JTAG to MCU",
 				cxxopts::value<bool>(args->conmcu))
-			("D,read_dna", "Read DNA (Xilinx FPGA only)",
+			("D,read-dna", "Read DNA (Xilinx FPGA only)",
 				cxxopts::value<bool>(args->read_dna))
-			("X,read_xadc", "Read XADC (Xilinx FPGA only)",
+			("X,read-xadc", "Read XADC (Xilinx FPGA only)",
 				cxxopts::value<bool>(args->read_xadc))
 			("read-register", "Read Status Register(Xilinx FPGA only)",
 				cxxopts::value<string>(rd_reg))
