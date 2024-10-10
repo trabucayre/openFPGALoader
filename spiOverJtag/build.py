@@ -32,6 +32,11 @@ elif subpart[0:2] == '5c':
     tool = "quartus"
     files.append({'name': currDir + 'constr_cycloneV.tcl',
                   'file_type': 'tclSource'})
+elif subpart[0:2] == '5s':
+    family = "Stratix V"
+    tool = "quartus"
+    files.append({'name': currDir + 'constr_cycloneV.tcl',
+                  'file_type': 'tclSource'})
 elif subpart == "xc7a":
     family = "Artix"
     tool = "vivado"
@@ -204,7 +209,8 @@ else:
         "5ce423"     : "5CEBA4F23C8",
         "5ce927"     : "5CEBA9F27C7",
         "5cse423"    : "5CSEMA4U23C6",
-        "5cse623"    : "5CSEBA6U23I7"}[part]
+        "5cse623"    : "5CSEBA6U23I7",
+        "5sgsd5"     : "5SGSMD5K2F40I3"}[part]
     files.append({'name': currDir + 'altera_spiOverJtag.v',
                   'file_type': 'verilogSource'})
     files.append({'name': currDir + 'altera_spiOverJtag.sdc',
