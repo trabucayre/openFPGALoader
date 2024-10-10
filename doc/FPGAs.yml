@@ -108,6 +108,13 @@ Intel:
     URL: https://www.intel.com/content/www/us/en/products/programmable/fpga/cyclone-v.html
     Memory: OK
     Flash: NT
+  
+  - Description: Stratix V GS
+    Model:
+      - 5SGSD5
+    URL: https://www.intel.de/content/www/de/de/products/sku/210318/stratix-v-5sgsd5-fpga/specifications.html
+    Memory: OK
+    Flash: OK
 
   - Description: Cyclone 10 LP
     Model: 10CL025

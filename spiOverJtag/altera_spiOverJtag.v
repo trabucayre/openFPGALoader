@@ -19,6 +19,8 @@ module spiOverJtag ();
 		.INTENDED_DEVICE_FAMILY  ("Cyclone IV E"),
 `elsif cyclonev
 		.INTENDED_DEVICE_FAMILY  ("Cyclone V"),
+`elsif stratixv
+		.INTENDED_DEVICE_FAMILY  ("Stratix V"),
 `endif
 		.ENHANCED_MODE           (1),
 		.ENABLE_SHARED_ACCESS    ("ON"),
