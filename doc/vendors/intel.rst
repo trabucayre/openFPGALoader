@@ -81,3 +81,28 @@ file load:
     openFPGALoader -b boardname -r project_name.rbf
 
 with ``boardname`` = ``cyc1000``, ``c10lp-refkit``.
+
+
+
+
+Intel/Altera (Old Boards)
+=========================
+
+.. NOTE::
+
+  * Cyclone II (FPGA) (Tested OK: EP2C5T144C8N)
+  * Max II (CPLD) (Tested OK: EPM240T100C5N)
+
+Loading a Serial Vector Format (.svf)
+-------------------------------------
+
+SVF files are supported.
+
+To load the file:
+
+ .. code-block:: bash
+
+    openFPGALoader -c usb-blaster project_name.svf
+
+ 
+ 
