@@ -69,6 +69,18 @@ Gowin:
 
 Intel:
 
+  - Description: Max II(CPLD)
+    Model: EPM240T100C5N
+    URL: https://www.intel.com/content/www/us/en/support/programmable/support-resources/devices/max-ii-support.html
+    Memory: OK
+    Flash: OK
+
+  - Description: Cyclone II
+    Model: EP2C5T144C8N
+    URL: https://www.intel.com/content/www/us/en/support/programmable/support-resources/devices/cyclone-ii-support.html
+    Memory: OK
+    Flash: OK
+    
   - Description: Cyclone III
     Model: EP3C16
     URL: https://www.intel.com/content/www/us/en/programmable/products/fpga/cyclone-series/cyclone-iii/support.html
