@@ -57,6 +57,10 @@ LibgpiodJtagBitbang::LibgpiodJtagBitbang(
 	/* Validate pins */
 #ifdef GPIOD_APIV2
 	const unsigned int pins[] = {_tck_pin, _tms_pin, _tdi_pin, _tdo_pin};
+	_out_pins[0] = _tdi_group[0] = _tms_group[0] = _tck_pin;
+	_out_pins[1] = _tdi_group[1] = _tdi_pin;
+	_out_pins[2] = _tms_group[1] = _tms_pin;
+	_out_pins[3] = _tdo_pin;
 #else
 	const int pins[] = {_tck_pin, _tms_pin, _tdi_pin, _tdo_pin};
 #endif
@@ -81,72 +85,49 @@ LibgpiodJtagBitbang::LibgpiodJtagBitbang(
 	}
 
 #ifdef GPIOD_APIV2
-	_tdo_req_cfg = gpiod_request_config_new();
-	_tdi_req_cfg = gpiod_request_config_new();
-	_tck_req_cfg = gpiod_request_config_new();
-	_tms_req_cfg = gpiod_request_config_new();
+	_curr_tms = GPIOD_LINE_VALUE_ACTIVE;
+	_curr_tdi = GPIOD_LINE_VALUE_INACTIVE;
 
-	gpiod_request_config_set_consumer(_tdo_req_cfg, "_tdo");
-	gpiod_request_config_set_consumer(_tdi_req_cfg, "_tdi");
-	gpiod_request_config_set_consumer(_tck_req_cfg, "_tck");
-	gpiod_request_config_set_consumer(_tms_req_cfg, "_tms");
+	_out_req_cfg = gpiod_request_config_new();
 
-	_tdo_settings = gpiod_line_settings_new();
-	_tdi_settings = gpiod_line_settings_new();
-	_tck_settings = gpiod_line_settings_new();
-	_tms_settings = gpiod_line_settings_new();
+	gpiod_request_config_set_consumer(_out_req_cfg, "openFPGALoader_out");
+
+	_out_settings = gpiod_line_settings_new();
+	_in_settings = gpiod_line_settings_new();
 
 	gpiod_line_settings_set_direction(
-		_tdo_settings, GPIOD_LINE_DIRECTION_INPUT);
+		_in_settings, GPIOD_LINE_DIRECTION_INPUT);
 	gpiod_line_settings_set_direction(
-		_tdi_settings, GPIOD_LINE_DIRECTION_OUTPUT);
-	gpiod_line_settings_set_direction(
-		_tck_settings, GPIOD_LINE_DIRECTION_OUTPUT);
-	gpiod_line_settings_set_direction(
-		_tms_settings, GPIOD_LINE_DIRECTION_OUTPUT);
+		_out_settings, GPIOD_LINE_DIRECTION_OUTPUT);
 
 	gpiod_line_settings_set_bias(
-		_tdo_settings, GPIOD_LINE_BIAS_DISABLED);
+		_in_settings, GPIOD_LINE_BIAS_DISABLED);
 	gpiod_line_settings_set_bias(
-		_tdi_settings, GPIOD_LINE_BIAS_DISABLED);
-	gpiod_line_settings_set_bias(
-		_tck_settings, GPIOD_LINE_BIAS_DISABLED);
-	gpiod_line_settings_set_bias(
-		_tms_settings, GPIOD_LINE_BIAS_DISABLED);
+		_out_settings, GPIOD_LINE_BIAS_DISABLED);
 
-	_tdo_line_cfg = gpiod_line_config_new();
-	_tdi_line_cfg = gpiod_line_config_new();
-	_tck_line_cfg = gpiod_line_config_new();
-	_tms_line_cfg = gpiod_line_config_new();
+	_out_line_cfg = gpiod_line_config_new();
 
 	gpiod_line_config_add_line_settings(
-		_tdo_line_cfg, &_tdo_pin, 1, _tdo_settings);
+		_out_line_cfg, _out_pins, 3, _out_settings);
 	gpiod_line_config_add_line_settings(
-		_tdi_line_cfg, &_tdi_pin, 1, _tdi_settings);
-	gpiod_line_config_add_line_settings(
-		_tck_line_cfg, &_tck_pin, 1, _tck_settings);
-	gpiod_line_config_add_line_settings(
-		_tms_line_cfg, &_tms_pin, 1, _tms_settings);
+		_out_line_cfg, &_out_pins[3], 1, _in_settings);
 
-	_tdo_request = gpiod_chip_request_lines(
-		_chip, _tdo_req_cfg, _tdo_line_cfg);
-	_tdi_request = gpiod_chip_request_lines(
-		_chip, _tdi_req_cfg, _tdi_line_cfg);
-	_tck_request = gpiod_chip_request_lines(
-		_chip, _tck_req_cfg, _tck_line_cfg);
-	_tms_request = gpiod_chip_request_lines(
-		_chip, _tms_req_cfg, _tms_line_cfg);
+	_out_request = gpiod_chip_request_lines(
+		_chip, _out_req_cfg, _out_line_cfg);
+
+	/* set default values for all GPIOs */
+	enum gpiod_line_value val[3] = {GPIOD_LINE_VALUE_INACTIVE, _curr_tdi, _curr_tms};
+	gpiod_line_request_set_values_subset(_out_request, 3, _out_pins, val);
 #else
+	_curr_tdi = 0;
+	_curr_tms = 1;
 	_tdo_line = get_line(_tdo_pin, 0, GPIOD_LINE_REQUEST_DIRECTION_INPUT);
 	_tdi_line = get_line(_tdi_pin, 0, GPIOD_LINE_REQUEST_DIRECTION_OUTPUT);
 	_tck_line = get_line(_tck_pin, 0, GPIOD_LINE_REQUEST_DIRECTION_OUTPUT);
 	_tms_line = get_line(_tms_pin, 1, GPIOD_LINE_REQUEST_DIRECTION_OUTPUT);
 #endif
 
-	_curr_tdi = 0;
 	_curr_tck = 0;
-	_curr_tms = 1;
-
 	// FIXME: I'm unsure how this value should be set.
 	// Maybe experiment, or think through what it should be.
 	_clkHZ = 5000000;
@@ -155,33 +136,16 @@ LibgpiodJtagBitbang::LibgpiodJtagBitbang(
 LibgpiodJtagBitbang::~LibgpiodJtagBitbang()
 {
 #ifdef GPIOD_APIV2
-	if (_tms_request)
-		gpiod_line_request_release(_tms_request);
-	if (_tms_line_cfg)
-		gpiod_line_config_free(_tms_line_cfg);
-	if (_tms_settings)
-		gpiod_line_settings_free(_tms_settings);
+	if (_out_request)
+		gpiod_line_request_release(_out_request);
 
-	if (_tck_request)
-		gpiod_line_request_release(_tck_request);
-	if (_tck_line_cfg)
-		gpiod_line_config_free(_tck_line_cfg);
-	if (_tck_settings)
-		gpiod_line_settings_free(_tck_settings);
+	if (_out_line_cfg)
+		gpiod_line_config_free(_out_line_cfg);
 
-	if (_tdi_request)
-		gpiod_line_request_release(_tdi_request);
-	if (_tdi_line_cfg)
-		gpiod_line_config_free(_tdi_line_cfg);
-	if (_tdi_settings)
-		gpiod_line_settings_free(_tdi_settings);
-
-	if (_tdo_request)
-		gpiod_line_request_release(_tdo_request);
-	if (_tdo_line_cfg)
-		gpiod_line_config_free(_tdo_line_cfg);
-	if (_tdo_settings)
-		gpiod_line_settings_free(_tdo_settings);
+	if (_out_settings)
+		gpiod_line_settings_free(_out_settings);
+	if (_in_settings)
+		gpiod_line_settings_free(_in_settings);
 #else
 	if (_tms_line)
 		gpiod_line_release(_tms_line);
@@ -225,44 +189,50 @@ gpiod_line *LibgpiodJtagBitbang::get_line(unsigned int offset, int val, int dir)
 }
 #endif
 
-int LibgpiodJtagBitbang::update_pins(int tck, int tms, int tdi)
-{
-	if (tdi != _curr_tdi) {
 #ifdef GPIOD_APIV2
-		if (gpiod_line_request_set_value(_tdi_request, _tdi_pin,
-			(tdi == 0) ? GPIOD_LINE_VALUE_INACTIVE :
-				GPIOD_LINE_VALUE_ACTIVE) < 0)
+int LibgpiodJtagBitbang::update_pins(gpiod_line_value tms, gpiod_line_value tdi)
 #else
-		if (gpiod_line_set_value(_tdi_line, tdi) < 0)
+int LibgpiodJtagBitbang::update_pins(int tck, int tms, int tdi)
 #endif
+{
+#ifdef GPIOD_APIV2
+	enum gpiod_line_value val[3] = {GPIOD_LINE_VALUE_INACTIVE, tdi, tms};
+	bool tdi_wr = tdi != _curr_tdi;
+	bool tms_wr = tms != _curr_tms;
+
+	if (tdi_wr & tms_wr) {
+		gpiod_line_request_set_values_subset(_out_request, 3, _out_pins, val);
+	} else if (tdi_wr) {
+		gpiod_line_request_set_values_subset(_out_request, 2, _tdi_group, val);
+	} else if (tms_wr) {
+		val[1] = tms;
+		gpiod_line_request_set_values_subset(_out_request, 2, _tms_group, val);
+	} else {
+		gpiod_line_request_set_value(_out_request, _tck_pin,
+			GPIOD_LINE_VALUE_INACTIVE);
+	}
+	gpiod_line_request_set_value(_out_request, _tck_pin,
+		GPIOD_LINE_VALUE_ACTIVE);
+#else
+	if (tdi != _curr_tdi) {
+		if (gpiod_line_set_value(_tdi_line, tdi) < 0)
 			display("Unable to set gpio pin tdi\n");
 	}
 
 	if (tms != _curr_tms) {
-#ifdef GPIOD_APIV2
-		if (gpiod_line_request_set_value(_tms_request, _tms_pin,
-			(tms == 0) ? GPIOD_LINE_VALUE_INACTIVE :
-				GPIOD_LINE_VALUE_ACTIVE) < 0)
-#else
 		if (gpiod_line_set_value(_tms_line, tms) < 0)
-#endif
 			display("Unable to set gpio pin tms\n");
 	}
 
 	if (tck != _curr_tck) {
-#ifdef GPIOD_APIV2
-		if (gpiod_line_request_set_value(_tck_request, _tck_pin,
-			(tck == 0) ? GPIOD_LINE_VALUE_INACTIVE :
-				GPIOD_LINE_VALUE_ACTIVE) < 0)
-#else
 		if (gpiod_line_set_value(_tck_line, tck) < 0)
-#endif
 			display("Unable to set gpio pin tck\n");
 	}
 
+	_curr_tck = tck;
+#endif
 	_curr_tdi = tdi;
 	_curr_tms = tms;
-	_curr_tck = tck;
 
 	return 0;
 }
@@ -271,7 +241,7 @@ int LibgpiodJtagBitbang::read_tdo()
 {
 #ifdef GPIOD_APIV2
 	gpiod_line_value req = gpiod_line_request_get_value(
-		_tdo_request, _tdo_pin);
+		_out_request, _tdo_pin);
 		if (req == GPIOD_LINE_VALUE_ERROR)
 		{
 		display("Error reading TDO line\n");
@@ -295,32 +265,51 @@ int LibgpiodJtagBitbang::writeTMS(const uint8_t *tms_buf, uint32_t len,
 		__attribute__((unused)) bool flush_buffer,
 		__attribute__((unused)) uint8_t tdi)
 {
-	int tms;
-
 	if (len == 0) // nothing -> stop
 		return len;
 
 	for (uint32_t i = 0; i < len; i++) {
-		tms = ((tms_buf[i >> 3] & (1 << (i & 7))) ? 1 : 0);
+#ifdef GPIOD_APIV2
+		gpiod_line_value tms = ((tms_buf[i >> 3] & (1 << (i & 7))) ?
+				GPIOD_LINE_VALUE_ACTIVE : GPIOD_LINE_VALUE_INACTIVE);
+		update_pins(tms, _curr_tdi);
+#else
+		int tms = ((tms_buf[i >> 3] & (1 << (i & 7))) ? 1 : 0);
 
 		update_pins(0, tms, 0);
 		update_pins(1, tms, 0);
+#endif
 	}
-
-	update_pins(0, tms, 0);
 
 	return len;
 }
 
 int LibgpiodJtagBitbang::writeTDI(const uint8_t *tx, uint8_t *rx, uint32_t len, bool end)
 {
+#ifdef GPIOD_APIV2
+	gpiod_line_value tdi = GPIOD_LINE_VALUE_INACTIVE;
+#else
 	int tms = _curr_tms;
 	int tdi = _curr_tdi;
+#endif
 
 	if (rx)
 		memset(rx, 0, len / 8);
 
 	for (uint32_t i = 0; i < len; i++) {
+#ifdef GPIOD_APIV2
+		if (tx) {
+			tdi = (tx[i >> 3] & (1 << (i & 7))) ?
+				GPIOD_LINE_VALUE_ACTIVE : GPIOD_LINE_VALUE_INACTIVE;
+		}
+
+		/* When TMS needs to be also updated (because of end) */
+		if (end && (i == len - 1)) {
+			update_pins(GPIOD_LINE_VALUE_ACTIVE, tdi);
+		} else {
+			update_pins(GPIOD_LINE_VALUE_INACTIVE, tdi);
+		}
+#else
 		if (end && (i == len - 1))
 			tms = 1;
 
@@ -329,6 +318,7 @@ int LibgpiodJtagBitbang::writeTDI(const uint8_t *tx, uint8_t *rx, uint32_t len, 
 
 		update_pins(0, tms, tdi);
 		update_pins(1, tms, tdi);
+#endif
 
 		if (rx) {
 			if (read_tdo() > 0)
@@ -336,19 +326,20 @@ int LibgpiodJtagBitbang::writeTDI(const uint8_t *tx, uint8_t *rx, uint32_t len, 
 		}
 	}
 
-	update_pins(0, tms, tdi);
-
 	return len;
 }
 
 int LibgpiodJtagBitbang::toggleClk(uint8_t tms, uint8_t tdi, uint32_t clk_len)
 {
 	for (uint32_t i = 0; i < clk_len; i++) {
+#ifdef GPIOD_APIV2
+		gpiod_line_request_set_value(_out_request, _tck_pin, GPIOD_LINE_VALUE_INACTIVE);
+		gpiod_line_request_set_value(_out_request, _tck_pin, GPIOD_LINE_VALUE_ACTIVE);
+#else
 		update_pins(0, tms, tdi);
 		update_pins(1, tms, tdi);
+#endif
 	}
-
-	update_pins(0, tms, tdi);
 
 	return clk_len;
 }
