@@ -944,7 +944,7 @@ bool SPIFlash::set_quad_bit(bool set_quad)
 
 	/* Micron: enable 0, disable 1 */
 	if (_jedec_id == 0x20BA)
-		set_quad = ~set_quad;
+		set_quad = !set_quad;
 	if (set_quad) // set quad_bit when required
 		quad_bit = _flash_model->quad_mask;
 
@@ -962,8 +962,9 @@ bool SPIFlash::set_quad_bit(bool set_quad)
 	 */
 	switch (_flash_model->quad_register) {
 		case CONFR:
-			uint8_t status = read_status_reg();
-			reg_val = ((reg_val & 0xff) << 8) | status;
+			reg_val = ((reg_val & 0xff) << 8) | read_status_reg();
+			break;
+		default: /* -Wswitch */
 			break;
 	}
 

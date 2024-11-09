@@ -505,7 +505,7 @@ int main(int argc, char **argv)
 	}
 
 	if (found != 0) {
-		if (args.index_chain == -1) {
+		if (args.index_chain < 0) {
 			for (size_t i = 0; i < found; i++) {
 				if (fpga_list.find(listDev[i]) != fpga_list.end()) {
 					index = i;
@@ -523,7 +523,7 @@ int main(int argc, char **argv)
 			}
 		} else {
 			index = args.index_chain;
-			if (index > found || index < 0) {
+			if (index > found) {
 				printError("wrong index for device in JTAG chain");
 				delete(jtag);
 				return EXIT_FAILURE;

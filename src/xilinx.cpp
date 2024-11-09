@@ -850,19 +850,7 @@ void Xilinx::program_mem(ConfigBitstreamParser *bitfile)
 	}
 }
 
-static const uint32_t reverseByte(uint32_t in) {
-	uint8_t out [4];
-	for (int i = 0; i < 4; i++) {
-		uint8_t tmp = (in >> (i*8)) & 0xff;
-		out[i] = BitParser::reverseByte(tmp);
-	}
-	return ((((uint32_t)out[0]) << 24) |
-		(((uint32_t)out[1]) << 16) |
-		(((uint32_t)out[2]) <<  8) |
-		(((uint32_t)out[3]) <<  0));
-}
-
-static const uint32_t reverseWord(uint32_t in) {
+static uint32_t reverseWord(uint32_t in) {
 	uint32_t out = 0;
 	for (int i = 0; i < 32; i++) {
 		out <<= 1;
@@ -871,7 +859,7 @@ static const uint32_t reverseWord(uint32_t in) {
 	return out;
 }
 
-static const uint32_t char_array_to_word(uint8_t *in)
+static uint32_t char_array_to_word(uint8_t *in)
 {
 	return (((uint32_t)in[3] << 24) |
 		((uint32_t)in[2] << 16) |
@@ -1808,7 +1796,7 @@ void Xilinx::xc2c_init(uint32_t idcode)
 {
 	_fpga_family = XC2C_FAMILY;
 	std::string model = fpga_list[idcode].model;
-	int underscore_pos = model.find_first_of('_', 0);
+	size_t underscore_pos = model.find_first_of('_', 0);
 	if (underscore_pos == model.npos) {
 		underscore_pos = model.length();
 	}
