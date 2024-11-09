@@ -47,6 +47,7 @@ class ConfigBitstreamParser {
 		};
 
 		static uint8_t reverseByte(uint8_t src);
+		static uint32_t reverse_32(uint32_t src);
 
 	private:
 		/**

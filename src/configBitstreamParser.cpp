@@ -157,6 +157,14 @@ uint8_t ConfigBitstreamParser::reverseByte(uint8_t src)
 #endif
 }
 
+uint32_t ConfigBitstreamParser::reverse_32(const uint32_t src)
+{
+	return (revertByteArr[(src >> 0)  & 0xff] << 24) |
+		   (revertByteArr[(src >> 8)  & 0xff] << 16) |
+		   (revertByteArr[(src >> 16) & 0xff] <<  8) |
+		   (revertByteArr[(src >> 24) & 0xff] <<  0);
+}
+
 bool ConfigBitstreamParser::decompress_bitstream(string source, string *dest)
 {
 #ifndef HAS_ZLIB
