@@ -850,15 +850,6 @@ void Xilinx::program_mem(ConfigBitstreamParser *bitfile)
 	}
 }
 
-static uint32_t reverseWord(uint32_t in) {
-	uint32_t out = 0;
-	for (int i = 0; i < 32; i++) {
-		out <<= 1;
-		out |= (in >> i) & 0x01;
-	}
-	return out;
-}
-
 static uint32_t char_array_to_word(uint8_t *in)
 {
 	return (((uint32_t)in[3] << 24) |
@@ -1037,7 +1028,7 @@ uint32_t Xilinx::dumpRegister(std::string reg_name)
 	for (int i = 0; i < 5; i++) {
 		if (i == 4)
 			next_state = Jtag::SELECT_IR_SCAN;
-		const uint32_t tmp = reverseWord(cfg_packets[i]);
+		const uint32_t tmp = BitParser::reverse_32(cfg_packets[i]);
 		const uint8_t cfg[] = {
 			static_cast<uint8_t>((tmp >>  0) & 0xff),
 			static_cast<uint8_t>((tmp >>  8) & 0xff),
@@ -1053,7 +1044,7 @@ uint32_t Xilinx::dumpRegister(std::string reg_name)
 	_jtag->go_test_logic_reset();
 
 	uint32_t reg_word = char_array_to_word(reg);
-	reg_word = reverseWord(reg_word);
+	reg_word = BitParser::reverse_32(reg_word);
 	return reg_word;
 }
 
