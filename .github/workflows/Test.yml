@@ -27,7 +27,7 @@ jobs:
       run: sudo rm -rf doc/_build/html/.git
 
     - name: '📤 Upload artifact: HTML'
-      uses: actions/upload-artifact@v2
+      uses: actions/upload-artifact@v4
       with:
         name: openFPGALoader-Documentation
         path: doc/_build/html
@@ -80,7 +80,7 @@ jobs:
         tar -cvzf ../ubtuntu${{ matrix.os }}.04-openFPGALoader.tgz -C dist .
 
     - name: '📤 Upload artifact: tarball'
-      uses: actions/upload-artifact@v2
+      uses: actions/upload-artifact@v4
       with:
         name: ubtuntu${{ matrix.os }}.04-openFPGALoader
         path: ubtuntu${{ matrix.os }}.04-openFPGALoader.tgz
