@@ -48,7 +48,6 @@ class LibgpiodJtagBitbang : public JtagInterface {
 #else
 	int update_pins(gpiod_line_value tms, gpiod_line_value tdi);
 #endif
-
 	int read_tdo();
 
 	bool _verbose;
