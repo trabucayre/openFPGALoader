@@ -290,6 +290,13 @@ Xilinx:
     Memory: OK
     Flash: OK
 
+  - Description: Virtex UltraScale
+    Model:
+      - xcvu095
+    URL: https://www.amd.com/en/products/adaptive-socs-and-fpgas/fpga/virtex-ultrascale.html#productTable
+    Memory: OK
+    Flash: TBD
+
   - Description: Virtex UltraScale+
     Model:
       - xcvu9p

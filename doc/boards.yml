@@ -867,6 +867,13 @@
   Memory: OK
   Flash: NA
 
+- ID: vcu108
+  Description: Xilinx VCU108
+  URL: https://www.xilinx.com/products/boards-and-kits/vcu108.html
+  FPGA: Virtex UltraScale xcvu095-ffva2104
+  Memory: OK
+  Flash: TBD
+
 - ID: vcu118
   Description: Xilinx VCU118
   URL: https://www.xilinx.com/products/boards-and-kits/vcu118.html

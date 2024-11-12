@@ -194,6 +194,7 @@ class Xilinx: public Device, SPIInterface {
 			ZYNQMP_FAMILY,
 			XCF_FAMILY,
 			ARTIXUSP_FAMILY,
+			VIRTEXUS_FAMILY,
 			VIRTEXUSP_FAMILY,
 			UNKNOWN_FAMILY  = 999
 		};
