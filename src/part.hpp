@@ -329,6 +329,7 @@ static std::map <uint32_t, fpga_model> fpga_list = {
 
 	/* Gowin GW2 */
 	{0x0000081b, {"Gowin", "GW2A", "GW2A(R)-18(C)", 8}},
+	{0x0000281B, {"Gowin", "GW2A", "GW2A-55",       8}},
 
 	/* Gowin GW5 */
 	{0x0001081b, {"Gowin", "GW5AST", "GW5AST-138", 8}},
