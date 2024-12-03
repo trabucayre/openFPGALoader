@@ -6,6 +6,15 @@ Installing openFPGALoader
 Linux
 =====
 
+Guix
+----------
+
+openFPGALoader is available in the default repositories:
+
+.. code-block:: bash
+
+    guix install openfpgaloader
+
 Arch Linux
 ----------
 
