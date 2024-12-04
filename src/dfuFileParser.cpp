@@ -119,13 +119,26 @@ int DFUFileParser::parseHeader()
 		{"idVendor", string(7, ' ')}, {"idProduct", string(7, ' ')},
 		{"bcdDevice", string(7, ' ')}};
 
-	snprintf(&_hdr["dwCRC"][0], 11, "0x%08x", _dwCRC);
+
+	char __buf[16];
+	int __buf_valid_bytes;
+	__buf_valid_bytes = snprintf(__buf, 11, "0x%08x", _dwCRC);
+	_hdr["dwCRC"] = string(__buf, __buf_valid_bytes);
+	_hdr["dwCRC"].resize(11, ' ');
 	_hdr["bLength"] = to_string(_bLength);
 	_hdr["ucDfuSignature"] = ucDfuSignature;
-	snprintf(&_hdr["bcdDFU"][0], 7, "0x%04x", _bcdDFU);
-	snprintf(&_hdr["idVendor"][0], 7, "0x%04x", _idVendor);
-	snprintf(&_hdr["idProduct"][0], 7, "0x%04x", _idProduct);
-	snprintf(&_hdr["bcdDevice"][0], 7, "0X%04x", _bcdDevice);
+	__buf_valid_bytes = snprintf(__buf, 7, "0x%04x", _bcdDFU);
+	_hdr["bcdDFU"] = string(__buf, __buf_valid_bytes);
+	_hdr["bcdDFU"].resize(7, ' ');
+	__buf_valid_bytes = snprintf(__buf, 7, "0x%04x", _idVendor);
+	_hdr["idVendor"] = string(__buf, __buf_valid_bytes);
+	_hdr["idVendor"].resize(7, ' ');
+	__buf_valid_bytes = snprintf(__buf, 7, "0x%04x", _idProduct);
+	_hdr["idProduct"] = string(__buf, __buf_valid_bytes);
+	_hdr["idProduct"].resize(7, ' ');
+	__buf_valid_bytes = snprintf(__buf, 7, "0x%04x", _bcdDevice);
+	_hdr["bcdDevice"] = string(__buf, __buf_valid_bytes);
+	_hdr["bcdDevice"].resize(7, ' ');
 
 	return 1;
 }
