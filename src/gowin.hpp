@@ -105,7 +105,7 @@ class Gowin: public Device, SPIInterface {
 		void programExtFlash(unsigned int offset, bool unprotect_flash);
 		void programSRAM();
 		bool writeSRAM(const uint8_t *data, int length);
-		bool writeFLASH(uint32_t page, const uint8_t *data, int length);
+		bool writeFLASH(uint32_t page, const uint8_t *data, int length, bool invert_bits = false);
 		void displayReadReg(const char *, uint32_t dev);
 		uint32_t readStatusReg();
 		uint32_t readUserCode();
@@ -131,6 +131,7 @@ class Gowin: public Device, SPIInterface {
 
 		std::unique_ptr<ConfigBitstreamParser> _fs;
 		std::unique_ptr<ConfigBitstreamParser> _mcufw;
+		std::unique_ptr<ConfigBitstreamParser> _userflash;
 		uint32_t _idcode;
 		bool is_gw1n1;
 		bool is_gw1n4;

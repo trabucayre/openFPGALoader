@@ -153,6 +153,22 @@ Gowin::Gowin(Jtag *jtag, const string filename, const string &file_type, std::st
 		}
 	}
 
+	if (user_flash.size() > 0) {
+		if (!is_gw1n9)
+			throw std::runtime_error("Unsupported FPGA model (only GW1N(R)-9(C) is supported at the moment)");
+		if (mcufw.size() > 0)
+			throw std::runtime_error("Microcontroller firmware and user flash can't be specified simultaneously");
+
+		_userflash = std::unique_ptr<ConfigBitstreamParser>(new RawParser(user_flash, false));
+
+		if (_userflash->parse() == EXIT_FAILURE) {
+			printError("FAIL");
+			throw std::runtime_error("can't parse file");
+		} else {
+			printSuccess("DONE");
+		}
+	}
+
 	if (is_gw5a && _mode == Device::FLASH_MODE) {
 		_jtag->setClkFreq(2500000);
 		_jtag->set_state(Jtag::TEST_LOGIC_RESET);
@@ -290,6 +306,13 @@ void Gowin::programFlash()
 		const uint8_t *mcu_data = _mcufw->getData();
 		int mcu_length = _mcufw->getLength();
 		if (!writeFLASH(0x380, mcu_data, mcu_length))
+			return;
+	}
+
+	if (_userflash) {
+		const uint8_t *userflash_data = _userflash->getData();
+		int userflash_length = _userflash->getLength();
+		if (!writeFLASH(0x6D0, userflash_data, userflash_length, true))
 			return;
 	}
 
@@ -567,7 +590,7 @@ inline uint32_t bswap_32(uint32_t x)
 }
 
 /* TN653 p. 17-21 */
-bool Gowin::writeFLASH(uint32_t page, const uint8_t *data, int length)
+bool Gowin::writeFLASH(uint32_t page, const uint8_t *data, int length, bool invert_bits)
 {
 
 #if 1
@@ -652,6 +675,13 @@ bool Gowin::writeFLASH(uint32_t page, const uint8_t *data, int length)
                 else
                     tx[x] = t[x];
             }
+
+            if (invert_bits) {
+            	for (int x = 0; x < 4; x++) {
+            		tx[x] ^= 0xFF;
+            	}
+            }
+
             _jtag->shiftDR(tx, NULL, 32);
 
             if (!is_gw1n1)
