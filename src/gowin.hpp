@@ -10,6 +10,7 @@
 #include <iostream>
 #include <string>
 #include <vector>
+#include <memory>
 
 #include "configBitstreamParser.hpp"
 #include "device.hpp"
@@ -22,7 +23,6 @@ class Gowin: public Device, SPIInterface {
 		Gowin(Jtag *jtag, std::string filename, const std::string &file_type,
 				std::string mcufw, Device::prog_type_t prg_type,
 				bool external_flash, bool verify, int8_t verbose);
-		~Gowin();
 		uint32_t idCode() override;
 		void reset() override;
 		void program(unsigned int offset, bool unprotect_flash) override;
@@ -128,7 +128,8 @@ class Gowin: public Device, SPIInterface {
 		 */
 		bool gw5a_enable_spi();
 
-		ConfigBitstreamParser *_fs;
+		std::unique_ptr<ConfigBitstreamParser> _fs;
+		std::unique_ptr<ConfigBitstreamParser> _mcufw;
 		uint32_t _idcode;
 		bool is_gw1n1;
 		bool is_gw2a;
@@ -141,7 +142,6 @@ class Gowin: public Device, SPIInterface {
 		uint8_t _spi_di;      /**< di signal (mosi) offset in bscan SPI */
 		uint8_t _spi_do;      /**< do signal (miso) offset in bscan SPI */
 		uint8_t _spi_msk;     /** default spi msk with only do out */
-		ConfigBitstreamParser *_mcufw;
 		JtagInterface::tck_edge_t _prev_rd_edge; /**< default probe rd edge cfg */
 		JtagInterface::tck_edge_t _prev_wr_edge; /**< default probe wr edge cfg */
 };

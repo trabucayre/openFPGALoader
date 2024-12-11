@@ -80,12 +80,11 @@ Gowin::Gowin(Jtag *jtag, const string filename, const string &file_type, std::st
 		bool verify, int8_t verbose): Device(jtag, filename, file_type,
 		verify, verbose),
 		SPIInterface(filename, verbose, 0, verify, false, false),
-		_fs(NULL), _idcode(0), is_gw1n1(false), is_gw2a(false),
-		is_gw1n4(false), is_gw5a(false), _external_flash(external_flash),
+		_idcode(0), is_gw1n1(false), is_gw2a(false), is_gw1n4(false),
+		is_gw5a(false), _external_flash(external_flash),
 		_spi_sck(BSCAN_SPI_SCK), _spi_cs(BSCAN_SPI_CS),
 		_spi_di(BSCAN_SPI_DI), _spi_do(BSCAN_SPI_DO),
-		_spi_msk(BSCAN_SPI_MSK),
-		_mcufw(NULL)
+		_spi_msk(BSCAN_SPI_MSK)
 {
 	detectFamily();
 
@@ -100,7 +99,7 @@ Gowin::Gowin(Jtag *jtag, const string filename, const string &file_type, std::st
 	if (!_file_extension.empty() && prg_type != Device::RD_FLASH) {
 		if (_file_extension == "fs") {
 			try {
-				_fs = new FsParser(_filename, _mode == Device::MEM_MODE, _verbose);
+				_fs = std::unique_ptr<ConfigBitstreamParser>(new FsParser(_filename, _mode == Device::MEM_MODE, _verbose));
 			} catch (std::exception &e) {
 				throw std::runtime_error(e.what());
 			}
@@ -109,7 +108,7 @@ Gowin::Gowin(Jtag *jtag, const string filename, const string &file_type, std::st
 			if (!_external_flash)
 				throw std::runtime_error("incompatible file format");
 			try {
-				_fs = new RawParser(_filename, false);
+				_fs = std::unique_ptr<ConfigBitstreamParser>(new RawParser(_filename, false));
 			} catch (std::exception &e) {
 				throw std::runtime_error(e.what());
 			}
@@ -118,7 +117,6 @@ Gowin::Gowin(Jtag *jtag, const string filename, const string &file_type, std::st
 		printInfo("Parse file ", false);
 		if (_fs->parse() == EXIT_FAILURE) {
 			printError("FAIL");
-			delete _fs;
 			throw std::runtime_error("can't parse file");
 		} else {
 			printSuccess("DONE");
@@ -144,11 +142,10 @@ Gowin::Gowin(Jtag *jtag, const string filename, const string &file_type, std::st
 		if (_idcode != 0x0100981b)
 			throw std::runtime_error("Microcontroller firmware flashing only supported on GW1NSR-4C");
 
-		_mcufw = new RawParser(mcufw, false);
+		_mcufw = std::unique_ptr<ConfigBitstreamParser>(new RawParser(mcufw, false));
 
 		if (_mcufw->parse() == EXIT_FAILURE) {
 			printError("FAIL");
-			delete _mcufw;
 			throw std::runtime_error("can't parse file");
 		} else {
 			printSuccess("DONE");
@@ -165,14 +162,6 @@ Gowin::Gowin(Jtag *jtag, const string filename, const string &file_type, std::st
 		_jtag->set_state(Jtag::TEST_LOGIC_RESET);
 		gw5a_disable_spi();
 	}
-}
-
-Gowin::~Gowin()
-{
-	if (_fs)
-		delete _fs;
-	if (_mcufw)
-		delete _mcufw;
 }
 
 bool Gowin::detectFamily()
@@ -415,7 +404,7 @@ void Gowin::program(unsigned int offset, bool unprotect_flash)
 void Gowin::checkCRC()
 {
 	uint32_t ucode = readUserCode();
-	uint16_t checksum = static_cast<FsParser *>(_fs)->checksum();
+	uint16_t checksum = static_cast<FsParser *>(_fs.get())->checksum();
 	if (static_cast<uint16_t>(0xffff & ucode) == checksum)
 		goto success;
 	/* no match:
@@ -788,7 +777,7 @@ bool Gowin::writeSRAM(const uint8_t *data, int length)
 	}
 	progress.done();
 	send_command(0x0a);
-	uint32_t checksum = static_cast<FsParser *>(_fs)->checksum();
+	uint32_t checksum = static_cast<FsParser *>(_fs.get())->checksum();
 	checksum = htole32(checksum);
 	_jtag->shiftDR((uint8_t *)&checksum, NULL, 32);
 	send_command(0x08);
