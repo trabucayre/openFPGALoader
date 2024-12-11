@@ -80,8 +80,9 @@ Gowin::Gowin(Jtag *jtag, const string filename, const string &file_type, std::st
 		bool verify, int8_t verbose): Device(jtag, filename, file_type,
 		verify, verbose),
 		SPIInterface(filename, verbose, 0, verify, false, false),
-		_idcode(0), is_gw1n1(false), is_gw2a(false), is_gw1n4(false),
-		is_gw5a(false), _external_flash(external_flash),
+		_idcode(0), is_gw1n1(false), is_gw1n4(false), is_gw1n9(false),
+		is_gw2a(false), is_gw5a(false),
+		_external_flash(external_flash),
 		_spi_sck(BSCAN_SPI_SCK), _spi_cs(BSCAN_SPI_CS),
 		_spi_di(BSCAN_SPI_DI), _spi_do(BSCAN_SPI_DO),
 		_spi_msk(BSCAN_SPI_MSK)
@@ -168,13 +169,6 @@ bool Gowin::detectFamily()
 {
 	_idcode = _jtag->get_target_device_id();
 
-	/* erase and program flash differ for GW1N1 */
-	if (_idcode == 0x0900281B)
-		is_gw1n1 = true;
-	/* erase and program flash differ for GW1N4, GW1N1Z-1 */
-	if (_idcode == 0x0100381B || _idcode == 0x100681b)
-		is_gw1n4 = true;
-
 	/* bscan spi external flash differ for GW1NSR-4C */
 	if (_idcode == 0x0100981b) {
 		_spi_sck = BSCAN_GW1NSR_4C_SPI_SCK;
@@ -189,6 +183,16 @@ bool Gowin::detectFamily()
 	 * algorithm that is not yet supported.
 	 */
 	switch (_idcode) {
+		case 0x0900281B: /* GW1N-1 */
+			is_gw1n1 = true;
+			break;
+		case 0x0100381B: /* GW1N-4B */
+		case 0x0100681b: /* GW1NZ-1 */
+			is_gw1n4 = true;
+			break;
+		case 0x0100481B: /* GW1N(R)-9, although documentation says otherwise */
+			is_gw1n9 = true;
+			break;
 		case 0x0000081b: /* GW2A(R)-18(C) */
 		case 0x0000281b: /* GW2A(R)-55(C) */
 			_external_flash = true;

@@ -132,8 +132,9 @@ class Gowin: public Device, SPIInterface {
 		std::unique_ptr<ConfigBitstreamParser> _mcufw;
 		uint32_t _idcode;
 		bool is_gw1n1;
-		bool is_gw2a;
 		bool is_gw1n4;
+		bool is_gw1n9;
+		bool is_gw2a;
 		bool is_gw5a;
 		bool skip_checksum;   /**< bypass checksum verification (GW2A) */
 		bool _external_flash; /**< select between int or ext flash */
