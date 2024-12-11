@@ -77,8 +77,8 @@ using namespace std;
 
 Gowin::Gowin(Jtag *jtag, const string filename, const string &file_type, std::string mcufw,
 		Device::prog_type_t prg_type, bool external_flash,
-		bool verify, int8_t verbose): Device(jtag, filename, file_type,
-		verify, verbose),
+		bool verify, int8_t verbose, const std::string& user_flash)
+	: Device(jtag, filename, file_type, verify, verbose),
 		SPIInterface(filename, verbose, 0, verify, false, false),
 		_idcode(0), is_gw1n1(false), is_gw1n4(false), is_gw1n9(false),
 		is_gw2a(false), is_gw5a(false),

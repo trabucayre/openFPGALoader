@@ -22,7 +22,8 @@ class Gowin: public Device, SPIInterface {
 	public:
 		Gowin(Jtag *jtag, std::string filename, const std::string &file_type,
 				std::string mcufw, Device::prog_type_t prg_type,
-				bool external_flash, bool verify, int8_t verbose);
+				bool external_flash, bool verify, int8_t verbose,
+				const std::string& user_flash);
 		uint32_t idCode() override;
 		void reset() override;
 		void program(unsigned int offset, bool unprotect_flash) override;

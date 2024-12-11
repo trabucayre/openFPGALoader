@@ -97,6 +97,7 @@ struct arguments {
 	bool read_dna;
 	bool read_xadc;
 	string read_register;
+	string user_flash;
 };
 
 int run_xvc_server(const struct arguments &args, const cable_t &cable,
@@ -582,7 +583,7 @@ int main(int argc, char **argv)
 				args.verify, args.verbose);
 		} else if (fab == "Gowin") {
 			fpga = new Gowin(jtag, args.bit_file, args.file_type, args.mcufw,
-				args.prg_type, args.external_flash, args.verify, args.verbose);
+				args.prg_type, args.external_flash, args.verify, args.verbose, args.user_flash);
 		} else if (fab == "lattice") {
 			fpga = new Lattice(jtag, args.bit_file, args.file_type,
 				args.prg_type, args.flash_sector, args.verify, args.verbose, args.skip_load_bridge, args.skip_reset);
@@ -871,6 +872,8 @@ int parse_opt(int argc, char **argv, struct arguments *args,
 				cxxopts::value<bool>(args->read_xadc))
 			("read-register", "Read Status Register(Xilinx FPGA only)",
 				cxxopts::value<string>(rd_reg))
+			("user-flash", "User flash file (Gowin LittleBee FPGA only)",
+				cxxopts::value<string>(args->user_flash))
 			("V,Version", "Print program version");
 
 		options.parse_positional({"bitstream"});
