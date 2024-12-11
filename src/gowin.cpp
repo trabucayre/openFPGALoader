@@ -77,15 +77,15 @@ using namespace std;
 
 Gowin::Gowin(Jtag *jtag, const string filename, const string &file_type, std::string mcufw,
 		Device::prog_type_t prg_type, bool external_flash,
-		bool verify, int8_t verbose): Device(jtag, filename, file_type,
-		verify, verbose),
+		bool verify, int8_t verbose, const std::string& user_flash)
+	: Device(jtag, filename, file_type, verify, verbose),
 		SPIInterface(filename, verbose, 0, verify, false, false),
-		_fs(NULL), _idcode(0), is_gw1n1(false), is_gw2a(false),
-		is_gw1n4(false), is_gw5a(false), _external_flash(external_flash),
+		_idcode(0), is_gw1n1(false), is_gw1n4(false), is_gw1n9(false),
+		is_gw2a(false), is_gw5a(false),
+		_external_flash(external_flash),
 		_spi_sck(BSCAN_SPI_SCK), _spi_cs(BSCAN_SPI_CS),
 		_spi_di(BSCAN_SPI_DI), _spi_do(BSCAN_SPI_DO),
-		_spi_msk(BSCAN_SPI_MSK),
-		_mcufw(NULL)
+		_spi_msk(BSCAN_SPI_MSK)
 {
 	detectFamily();
 
@@ -100,7 +100,7 @@ Gowin::Gowin(Jtag *jtag, const string filename, const string &file_type, std::st
 	if (!_file_extension.empty() && prg_type != Device::RD_FLASH) {
 		if (_file_extension == "fs") {
 			try {
-				_fs = new FsParser(_filename, _mode == Device::MEM_MODE, _verbose);
+				_fs = std::unique_ptr<ConfigBitstreamParser>(new FsParser(_filename, _mode == Device::MEM_MODE, _verbose));
 			} catch (std::exception &e) {
 				throw std::runtime_error(e.what());
 			}
@@ -109,7 +109,7 @@ Gowin::Gowin(Jtag *jtag, const string filename, const string &file_type, std::st
 			if (!_external_flash)
 				throw std::runtime_error("incompatible file format");
 			try {
-				_fs = new RawParser(_filename, false);
+				_fs = std::unique_ptr<ConfigBitstreamParser>(new RawParser(_filename, false));
 			} catch (std::exception &e) {
 				throw std::runtime_error(e.what());
 			}
@@ -118,7 +118,6 @@ Gowin::Gowin(Jtag *jtag, const string filename, const string &file_type, std::st
 		printInfo("Parse file ", false);
 		if (_fs->parse() == EXIT_FAILURE) {
 			printError("FAIL");
-			delete _fs;
 			throw std::runtime_error("can't parse file");
 		} else {
 			printSuccess("DONE");
@@ -144,11 +143,26 @@ Gowin::Gowin(Jtag *jtag, const string filename, const string &file_type, std::st
 		if (_idcode != 0x0100981b)
 			throw std::runtime_error("Microcontroller firmware flashing only supported on GW1NSR-4C");
 
-		_mcufw = new RawParser(mcufw, false);
+		_mcufw = std::unique_ptr<ConfigBitstreamParser>(new RawParser(mcufw, false));
 
 		if (_mcufw->parse() == EXIT_FAILURE) {
 			printError("FAIL");
-			delete _mcufw;
+			throw std::runtime_error("can't parse file");
+		} else {
+			printSuccess("DONE");
+		}
+	}
+
+	if (user_flash.size() > 0) {
+		if (!is_gw1n9)
+			throw std::runtime_error("Unsupported FPGA model (only GW1N(R)-9(C) is supported at the moment)");
+		if (mcufw.size() > 0)
+			throw std::runtime_error("Microcontroller firmware and user flash can't be specified simultaneously");
+
+		_userflash = std::unique_ptr<ConfigBitstreamParser>(new RawParser(user_flash, false));
+
+		if (_userflash->parse() == EXIT_FAILURE) {
+			printError("FAIL");
 			throw std::runtime_error("can't parse file");
 		} else {
 			printSuccess("DONE");
@@ -167,24 +181,9 @@ Gowin::Gowin(Jtag *jtag, const string filename, const string &file_type, std::st
 	}
 }
 
-Gowin::~Gowin()
-{
-	if (_fs)
-		delete _fs;
-	if (_mcufw)
-		delete _mcufw;
-}
-
 bool Gowin::detectFamily()
 {
 	_idcode = _jtag->get_target_device_id();
-
-	/* erase and program flash differ for GW1N1 */
-	if (_idcode == 0x0900281B)
-		is_gw1n1 = true;
-	/* erase and program flash differ for GW1N4, GW1N1Z-1 */
-	if (_idcode == 0x0100381B || _idcode == 0x100681b)
-		is_gw1n4 = true;
 
 	/* bscan spi external flash differ for GW1NSR-4C */
 	if (_idcode == 0x0100981b) {
@@ -200,6 +199,16 @@ bool Gowin::detectFamily()
 	 * algorithm that is not yet supported.
 	 */
 	switch (_idcode) {
+		case 0x0900281B: /* GW1N-1 */
+			is_gw1n1 = true;
+			break;
+		case 0x0100381B: /* GW1N-4B */
+		case 0x0100681b: /* GW1NZ-1 */
+			is_gw1n4 = true;
+			break;
+		case 0x0100481B: /* GW1N(R)-9, although documentation says otherwise */
+			is_gw1n9 = true;
+			break;
 		case 0x0000081b: /* GW2A(R)-18(C) */
 		case 0x0000281b: /* GW2A(R)-55(C) */
 			_external_flash = true;
@@ -297,6 +306,13 @@ void Gowin::programFlash()
 		const uint8_t *mcu_data = _mcufw->getData();
 		int mcu_length = _mcufw->getLength();
 		if (!writeFLASH(0x380, mcu_data, mcu_length))
+			return;
+	}
+
+	if (_userflash) {
+		const uint8_t *userflash_data = _userflash->getData();
+		int userflash_length = _userflash->getLength();
+		if (!writeFLASH(0x6D0, userflash_data, userflash_length, true))
 			return;
 	}
 
@@ -415,7 +431,7 @@ void Gowin::program(unsigned int offset, bool unprotect_flash)
 void Gowin::checkCRC()
 {
 	uint32_t ucode = readUserCode();
-	uint16_t checksum = static_cast<FsParser *>(_fs)->checksum();
+	uint16_t checksum = static_cast<FsParser *>(_fs.get())->checksum();
 	if (static_cast<uint16_t>(0xffff & ucode) == checksum)
 		goto success;
 	/* no match:
@@ -574,7 +590,7 @@ inline uint32_t bswap_32(uint32_t x)
 }
 
 /* TN653 p. 17-21 */
-bool Gowin::writeFLASH(uint32_t page, const uint8_t *data, int length)
+bool Gowin::writeFLASH(uint32_t page, const uint8_t *data, int length, bool invert_bits)
 {
 
 #if 1
@@ -659,6 +675,13 @@ bool Gowin::writeFLASH(uint32_t page, const uint8_t *data, int length)
                 else
                     tx[x] = t[x];
             }
+
+            if (invert_bits) {
+            	for (int x = 0; x < 4; x++) {
+            		tx[x] ^= 0xFF;
+            	}
+            }
+
             _jtag->shiftDR(tx, NULL, 32);
 
             if (!is_gw1n1)
@@ -788,7 +811,7 @@ bool Gowin::writeSRAM(const uint8_t *data, int length)
 	}
 	progress.done();
 	send_command(0x0a);
-	uint32_t checksum = static_cast<FsParser *>(_fs)->checksum();
+	uint32_t checksum = static_cast<FsParser *>(_fs.get())->checksum();
 	checksum = htole32(checksum);
 	_jtag->shiftDR((uint8_t *)&checksum, NULL, 32);
 	send_command(0x08);
