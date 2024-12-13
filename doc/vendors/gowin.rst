@@ -62,3 +62,17 @@ It's possible to flash external SPI Flash (connected to MSPI) in bscan mode by u
 
   Gowin's FPGA may fails to be detected if **JTAGSEL_N** (pin 08 for *GW1N-4K*) is used as a GPIO.
   To recover you have to pull down this pin (before power up) to recover JTAG interface (*UG292 - JTAGSELL_N section*).
+
+User Flash
+----------
+
+.. ATTENTION::
+  User Flash support is based on reverse engineering of the JTAG protocol. This functionality should be considered
+  experimental as it hasn't been thoroughly tested, and may in some circumstances destroy your device.
+
+Gowin FPGA come with extra flash space that can be read and written from the programmable logic ("User Flash"). This
+flash section can also be programmed via the JTAG interface:
+
+.. code-block:: bash
+
+    openFPGALoader --write-flash /path/to/bitstream.fs --user-flash /path/to/flash.bin
