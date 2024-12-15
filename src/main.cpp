@@ -130,7 +130,8 @@ int main(int argc, char **argv)
 			/* xvc server */
 			false, 3721, "-",
 			"", false, {},  // mcufw conmcu, user_misc_dev_list
-			false, false, "" // read_dna, read_xadc, read_register
+			false, false, "", // read_dna, read_xadc, read_register
+			"" // user_flash
 	};
 	/* parse arguments */
 	try {
