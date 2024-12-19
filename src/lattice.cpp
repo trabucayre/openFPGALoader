@@ -702,6 +702,13 @@ bool Lattice::post_flash_access()
 	_jtag->go_test_logic_reset();
 	return true;
 }
+void Lattice::reset()
+{
+	if (_fpga_family == ECP5_FAMILY)
+		post_flash_access();
+	else
+		printError("Lattice Reset only tested on ECP5 Family.");
+}
 
 bool Lattice::clearSRAM()
 {
