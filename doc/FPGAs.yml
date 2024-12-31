@@ -139,7 +139,7 @@ Intel:
     Model: 10M08
     URL: https://www.intel.fr/content/www/fr/fr/products/details/fpga/max/10.html
     Memory: SVF
-    Flash: SVF
+    Flash: POF
 
 
 Lattice:

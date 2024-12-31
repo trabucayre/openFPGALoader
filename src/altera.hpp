@@ -82,6 +82,31 @@ class Altera: public Device, SPIInterface {
 		bool post_flash_access() override;
 
 	private:
+		enum altera_family_t {
+			MAX2_FAMILY      = 0,
+			MAX10_FAMILY     = 1,
+			CYCLONE5_FAMILY  = 2,
+			CYCLONE10_FAMILY = 3,
+			STRATIXV_FAMILY  = 3,
+			CYCLONE_MISC     = 10, // Fixme: idcode shared
+			UNKNOWN_FAMILY = 999
+		};
+		/*************************/
+		/*     max10 specific    */
+		/*************************/
+		void max10_program();
+		void writeXFM(const uint8_t *cfg_data, uint32_t base_addr, uint32_t offset, uint32_t len);
+		uint32_t verifyxFM(const uint8_t *cfg_data, uint32_t base_addr, uint32_t offset,
+			uint32_t len);
+		void max10_dsm_program_success();
+		void max10_flow_program_donebit();
+		void max10_addr_shift(uint32_t addr);
+		void max_10_flow_enable();
+		void max_10_flow_disable();
+		void max10_flow_erase();
+		void max10_dsm_program(const uint8_t *dsm_data, const uint32_t dsm_len);
+		bool max10_dsm_verify();
+
 		/*!
 		 * \brief with intel devices SPI flash direct access is not possible
 		 * 		so a bridge must be loaded in RAM to access flash
@@ -110,6 +135,10 @@ class Altera: public Device, SPIInterface {
 		std::string _spiOverJtagPath; /**< spiOverJtag explicit path */
 		uint32_t _vir_addr; /**< addr affected to virtual jtag */
 		uint32_t _vir_length; /**< length of virtual jtag IR */
+		uint32_t _clk_period; /**< JTAG clock period */
+
+		altera_family_t _fpga_family;
+		uint32_t _idcode;
 };
 
 #endif  // SRC_ALTERA_HPP_

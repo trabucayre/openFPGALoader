@@ -55,7 +55,7 @@ with ``boardname`` = ``de0``, ``cyc1000``, ``c10lp-refkit``, ``de0nano``, ``de0n
 SPI flash
 ---------
 
-RPD and RBF are supported.
+RPD and RBF are supported. POF is only supported for MAX10 (internal flash).
 
 ``pof`` to ``rpd``:
 
@@ -82,8 +82,10 @@ file load:
 
 with ``boardname`` = ``cyc1000``, ``c10lp-refkit``.
 
+MAX10:
 
-
+.. code-block:: bash
+    openFPGALoader -b boardname project_name_auto.pof
 
 Intel/Altera (Old Boards)
 =========================

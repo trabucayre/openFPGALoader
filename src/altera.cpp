@@ -15,6 +15,7 @@
 #include "epcq.hpp"
 #include "progressBar.hpp"
 #include "rawParser.hpp"
+#include "pofParser.hpp"
 #if defined (_WIN64) || defined (_WIN32)
 #include "pathHelper.hpp"
 #endif
@@ -34,7 +35,7 @@ Altera::Altera(Jtag *jtag, const std::string &filename,
 	SPIInterface(filename, verbose, 256, verify, skip_load_bridge,
 				 skip_reset),
 	_device_package(device_package), _spiOverJtagPath(spiOverJtagPath),
-	_vir_addr(0x1000), _vir_length(14)
+	_vir_addr(0x1000), _vir_length(14), _clk_period(1)
 {
 	if (prg_type == Device::RD_FLASH) {
 		_mode = Device::READ_MODE;
@@ -48,6 +49,8 @@ Altera::Altera(Jtag *jtag, const std::string &filename,
 					_mode = Device::MEM_MODE;
 				else
 					_mode = Device::SPI_MODE;
+			} else if (_file_extension == "pof") { // MAX10
+				_mode = Device::FLASH_MODE;
 			} else { // unknown type -> sanity check
 				if (prg_type == Device::WR_SRAM) {
 					printError("file has an unknown type:");
@@ -61,6 +64,16 @@ Altera::Altera(Jtag *jtag, const std::string &filename,
 			}
 		}
 	}
+
+	/* check device family */
+	_idcode = _jtag->get_target_device_id();
+	string family = fpga_list[_idcode].family;
+	if (family == "MAX 10") {
+		_fpga_family = MAX10_FAMILY;
+	} else {
+		_fpga_family = CYCLONE_MISC; // FIXME
+	}
+
 }
 
 Altera::~Altera()
@@ -80,8 +93,6 @@ void Altera::programMem(RawParser &_bit)
 	int byte_length = _bit.getLength()/8;
 	const uint8_t *data = _bit.getData();
 
-	uint32_t clk_period = 1e9/static_cast<float>(_jtag->getClkFreq());
-
 	unsigned char cmd[2];
 	unsigned char tx[864/8], rx[864/8];
 
@@ -95,7 +106,7 @@ void Altera::programMem(RawParser &_bit)
 	_jtag->shiftIR(cmd, NULL, IRLENGTH, Jtag::PAUSE_IR);
 	/* RUNTEST IDLE 12000 TCK ENDSTATE IDLE; */
 	_jtag->set_state(Jtag::RUN_TEST_IDLE);
-	_jtag->toggleClk(1000000/clk_period);
+	_jtag->toggleClk(1000000/_clk_period);
 	/* write */
 	ProgressBar progress("Load SRAM", byte_length, 50, _quiet);
 
@@ -122,7 +133,7 @@ void Altera::programMem(RawParser &_bit)
 	_jtag->shiftIR(cmd, NULL, IRLENGTH, Jtag::PAUSE_IR);
 	/* RUNTEST 60 TCK; */
 	_jtag->set_state(Jtag::RUN_TEST_IDLE);
-	_jtag->toggleClk(5000/clk_period);
+	_jtag->toggleClk(5000/_clk_period);
 	/*
 	 * SDR 864 TDI
 	 * (000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000)
@@ -138,7 +149,7 @@ void Altera::programMem(RawParser &_bit)
 	_jtag->shiftIR(cmd, NULL, IRLENGTH, Jtag::PAUSE_IR);
 	/* RUNTEST 49152 TCK; */
 	_jtag->set_state(Jtag::RUN_TEST_IDLE);
-	_jtag->toggleClk(4099645/clk_period);
+	_jtag->toggleClk(4099645/_clk_period);
 	/* RUNTEST 512 TCK; */
 	_jtag->set_state(Jtag::RUN_TEST_IDLE);
 	_jtag->toggleClk(512);
@@ -148,7 +159,7 @@ void Altera::programMem(RawParser &_bit)
 
 	/* RUNTEST 12000 TCK; */
 	_jtag->set_state(Jtag::RUN_TEST_IDLE);
-	_jtag->toggleClk(1000000/clk_period);
+	_jtag->toggleClk(1000000/_clk_period);
 	/* -> idle */
 	_jtag->set_state(Jtag::RUN_TEST_IDLE);
 }
@@ -214,6 +225,20 @@ void Altera::program(unsigned int offset, bool unprotect_flash)
 {
 	if (_mode == Device::NONE_MODE)
 		return;
+
+	/* Access clk frequency to store clk_period required
+	 * for all operations. Can't be done at CTOR because
+	 * frequency be changed between these 2 methods.
+	 *
+	 */
+	_clk_period = 1e9/static_cast<float>(_jtag->getClkFreq());
+
+	/* Specific case for MAX10 */
+	if (_fpga_family == MAX10_FAMILY) {
+		max10_program();
+		return;
+	}
+
 	/* in all case we consider svf is mandatory
 	 * MEM_MODE : svf file provided for constructor
 	 *            is the bitstream to use
@@ -264,6 +289,366 @@ uint32_t Altera::idCode()
 		((rx_data[3] << 24) & 0xff000000));
 }
 
+/* MAX 10 specifics methods */
+/* ------------------------ */
+#define MAX10_ISC_ADDRESS_SHIFT {0x03, 0x02}
+#define MAX10_ISC_READ          {0x05, 0x02}
+#define MAX10_ISC_ENABLE        {0xcc, 0x02}
+#define MAX10_ISC_DISABLE       {0x01, 0x02}
+#define MAX10_ISC_ADDRESS_SHIFT {0x03, 0x02}
+#define MAX10_ISC_PROGRAM       {0xf4, 0x02}
+#define MAX10_DSM_ICB_PROGRAM   {0xF4, 0x03}
+#define MAX10_DSM_VERIFY        {0x07, 0x03}
+#define MAX10_DSM_CLEAR         {0xf2, 0x03}
+#define MAX10_BYPASS            {0xFF, 0x03}
+
+typedef struct {
+	uint32_t dsm_addr;
+	uint32_t dsm_len;  // 32bits
+	uint32_t ufm_addr; // UFM1 addr
+	uint32_t ufm_len[2];
+	uint32_t cfm_addr; // CFM2 addr
+	uint32_t cfm_len[3];
+} max10_mem_t;
+
+static const std::map<uint32_t, max10_mem_t> max10_memory_map = {
+	{0x031820dd, {
+		0x0000, 512, // DSM
+		0x0200, {4096, 4096}, // UFM
+		0x2200, {35840, 14848, 20992}} // CFM
+	},
+};
+
+void Altera::max10_program()
+{
+	POFParser _bit(_filename, true);
+	_bit.parse();
+	_bit.displayHeader();
+
+	uint32_t base_addr; // CFM2 addr
+	uint32_t offset = 0;
+
+	auto mem_map = max10_memory_map.find(_idcode);
+	if (mem_map == max10_memory_map.end()) {
+		printError("Model not supported. Please update max10_memory_map.");
+		throw std::runtime_error("Model not supported. Please update max10_memory_map.");
+	}
+	max10_mem_t mem = mem_map->second;
+
+	const uint8_t *cfm_data = _bit.getData("CFM0");
+	const uint8_t *ufm_data = _bit.getData("UFM");
+	const uint8_t *dsm_data = _bit.getData("ICB");
+	const int dsm_len = _bit.getLength("ICB") / 32; // getLength (bits) dsm_len in 32bits word
+
+	max_10_flow_enable();
+
+	max10_flow_erase();
+	max10_dsm_verify();
+
+	/* Write */
+	// CFM2->0
+	offset = 0;
+	base_addr = mem.cfm_addr;
+	for (int i = 2; i >= 0; i--) {
+		printInfo("Write CFM" + std::to_string(i));
+		writeXFM(cfm_data, base_addr, offset, mem.cfm_len[i]);
+		base_addr += mem.cfm_len[i];
+		offset += (mem.cfm_len[i] * 4);
+	}
+	// UFM1->0
+	offset = 0;
+	base_addr = mem.ufm_addr;
+	for (int i = 1; i >= 0; i--) {
+		printInfo("Write UFM" + std::to_string(i));
+		writeXFM(ufm_data, base_addr, offset, mem.ufm_len[i]);
+		offset += mem.ufm_len[i] * 4;
+		base_addr += mem.ufm_len[i];
+	}
+
+	/* Verify */
+	if (_verify) {
+		// CFM2->0
+		offset = 0;
+		base_addr = mem.cfm_addr;
+		for (int i = 2; i >= 0; i--) {
+			printInfo("Verify CFM" + std::to_string(i));
+			verifyxFM(cfm_data, base_addr, offset, mem.cfm_len[i]);
+			base_addr += mem.cfm_len[i];
+			offset += (mem.cfm_len[i] * 4);
+		}
+
+		// UFM1->0
+		offset = 0;
+		base_addr = mem.ufm_addr;
+		for (int i = 1; i >= 0; i--) {
+			printInfo("Verify UFM" + std::to_string(i));
+			verifyxFM(ufm_data, base_addr, offset, mem.ufm_len[i]);
+			offset += mem.ufm_len[i] * 4;
+			base_addr += mem.ufm_len[i];
+		}
+	}
+
+	// DSM
+
+	max10_dsm_program(dsm_data, dsm_len);
+	max10_dsm_verify();
+
+	max10_flow_program_donebit();
+	max10_dsm_verify();
+	max10_dsm_program_success();
+	max10_dsm_verify();
+
+	/* disable ISC flow */
+	max_10_flow_disable();
+	_jtag->set_state(Jtag::RUN_TEST_IDLE);
+}
+
+static void word_to_array(uint32_t in, uint8_t *out) {
+	out[0] = (in >>  0) & 0xff;
+	out[1] = (in >>  8) & 0xff;
+	out[2] = (in >> 16) & 0xff;
+	out[3] = (in >> 24) & 0xff;
+}
+
+void Altera::max10_flow_erase()
+{
+	const uint32_t dsm_clear_delay = 350000120 / _clk_period;
+	const uint8_t dsm_clear[2] = MAX10_DSM_CLEAR;
+
+	max10_addr_shift(0x000000);
+
+	_jtag->shiftIR((unsigned char *)dsm_clear, NULL, IRLENGTH);
+	_jtag->set_state(Jtag::RUN_TEST_IDLE);
+	_jtag->toggleClk(dsm_clear_delay);
+}
+
+void Altera::writeXFM(const uint8_t *cfg_data, uint32_t base_addr, uint32_t offset, uint32_t len)
+{
+	uint8_t *ptr = (uint8_t *)cfg_data + offset; // FIXME: maybe adding offset here ?
+	const uint8_t isc_program[2] = MAX10_ISC_PROGRAM;
+
+	/* precompute some delays required during loop */
+	const uint32_t isc_program2_delay = 320000 / _clk_period; // ns must be 350us
+
+	ProgressBar progress("Verify", len, 50, _quiet);
+	for (uint32_t i = 0; i < len; i+=512) {
+		bool must_send_sir = true;
+		uint32_t max = (i + 512 <= len)? 512 : len - i;
+		for (uint32_t ii = 0; ii < max; ii++) {
+			const uint32_t data = ARRAY2INT32(ptr);
+			progress.display(i);
+
+			/* flash was erased before: to save time skip write when cfg_data
+			 * contains only bit set to high
+			 */
+			if (data == 0xffffffff) {
+				must_send_sir = true;
+				ptr += 4;
+				continue;
+			}
+
+			/* TODO: match more or less svf but not bsdl */
+			if (must_send_sir) {
+				/* Set base addr */
+				max10_addr_shift(base_addr + i + ii);
+
+				/* set ISC_PROGRAM/DSM_PROGRAM */
+				_jtag->shiftIR((unsigned char *)isc_program, NULL, IRLENGTH, Jtag::PAUSE_IR);
+				must_send_sir = false;
+			}
+
+			_jtag->shiftDR(ptr, NULL, 32, Jtag::RUN_TEST_IDLE);
+			_jtag->toggleClk(isc_program2_delay);
+			ptr += 4;
+		}
+	}
+	progress.done();
+}
+
+uint32_t Altera::verifyxFM(const uint8_t *cfg_data, uint32_t base_addr, uint32_t offset,
+	uint32_t len)
+{
+	uint8_t *ptr = (uint8_t *)cfg_data + offset; // avoid passing offset ?
+
+	//const uint32_t isc_read_delay = 5120 / _clk_period;
+
+	const uint8_t read_cmd[2] = MAX10_ISC_READ;
+	uint32_t errors = 0;
+
+	ProgressBar progress("Verify", len, 50, _quiet);
+	for (uint32_t i = 0; i < len; i+=512) {
+		const uint32_t max = (i + 512 <= len)? 512 : len - i;
+		progress.display(i);
+
+		/* send address */
+		max10_addr_shift(base_addr + i);
+
+		/* send read command */
+		_jtag->shiftIR((unsigned char *)read_cmd, NULL, IRLENGTH, Jtag::PAUSE_IR);
+
+		for (uint32_t ii = 0; ii < max; ii++) {
+			uint8_t data[4];
+
+			_jtag->shiftDR(NULL, data, 32, Jtag::RUN_TEST_IDLE);
+			/* TODO: compare */
+			for (uint8_t pos = 0; pos < 4; pos++) {
+				if (ptr[pos] != data[pos]) {
+					printf("Error@%d: %02x %02x %02x %02x ", pos, data[0], data[1], data[2], data[3]);
+					printf("%02x %02x %02x %02x\n", ptr[0], ptr[1], ptr[2], ptr[3]);
+					errors++;
+					break;
+				}
+			}
+			ptr += 4;
+		}
+	}
+	if (errors == 0)
+		progress.done();
+	else
+		progress.fail();
+
+	return errors;
+}
+
+void Altera::max_10_flow_enable()
+{
+	const int enable_delay  = 350000120 / _clk_period; // must be 1 tck
+	const uint8_t cmd[2] = MAX10_ISC_ENABLE;
+
+	_jtag->shiftIR((unsigned char *)cmd, NULL, IRLENGTH);
+	_jtag->set_state(Jtag::RUN_TEST_IDLE);
+	_jtag->toggleClk(enable_delay);
+}
+
+void Altera::max_10_flow_disable()
+{
+	//ISC_DISABLE  WAIT  100.0e-3)
+	//BYPASS	   WAIT  305.0e-6
+	const int disable_len = (1e9 * 350e-3) / _clk_period;
+	const int bypass_len = (3 + (1e9 * 1e-3) / _clk_period);
+	const uint8_t cmd0[2] = MAX10_ISC_DISABLE;
+	const uint8_t cmd1[2] = MAX10_BYPASS;
+
+	_jtag->shiftIR((unsigned char *)cmd0, NULL, IRLENGTH);
+	_jtag->set_state(Jtag::RUN_TEST_IDLE);
+	_jtag->toggleClk(disable_len);
+
+	_jtag->shiftIR((unsigned char *)cmd1, NULL, IRLENGTH);
+	_jtag->set_state(Jtag::RUN_TEST_IDLE);
+	_jtag->toggleClk(bypass_len);
+}
+
+void Altera::max10_dsm_program(const uint8_t *dsm_data, const uint32_t dsm_len)
+{
+	const int program_del = 5120 / _clk_period;
+	const int write_del = 320000 / _clk_period;
+
+	uint32_t *icb_dat = (uint32_t *)dsm_data;
+	const int len = dsm_len / 32;
+	const uint8_t cmd[2] = MAX10_DSM_ICB_PROGRAM;
+	uint8_t dat[4];
+	/* Instead of writing the full section
+	 * only write word with a value != 0xffffffff
+	 */
+	for (int i = 0; i < len; i++) {
+		if (icb_dat[i] != 0xffffffff) {
+			/* send addr */
+			max10_addr_shift(i);
+			word_to_array(icb_dat[i], dat);
+
+			_jtag->shiftIR((unsigned char *)cmd, NULL, IRLENGTH);
+			_jtag->set_state(Jtag::RUN_TEST_IDLE);
+			_jtag->toggleClk(program_del);
+			_jtag->shiftDR(dat, NULL, 32, Jtag::RUN_TEST_IDLE);
+			_jtag->toggleClk(write_del); // 305.0e-6
+		}
+	}
+}
+
+bool Altera::max10_dsm_verify()
+{
+	const uint32_t dsm_delay = 5120 / _clk_period;
+	const uint8_t cmd[2] = MAX10_DSM_VERIFY;
+
+	const uint8_t tx = 0x00; // 1 in bsdl, 0 in svf
+	uint8_t rx=0;
+
+	_jtag->shiftIR((unsigned char *)cmd, NULL, IRLENGTH);
+	_jtag->set_state(Jtag::RUN_TEST_IDLE);
+	_jtag->toggleClk(dsm_delay);
+	_jtag->shiftDR(&tx, &rx, 1, Jtag::RUN_TEST_IDLE);
+
+	printf("BSM: %02x\n", rx);
+	if ((rx & 0x01) == 0x01) {
+		printInfo("DSM Verify: OK");
+		return true;
+	}
+	printError("DSM Verify: KO");
+	return false;
+}
+
+void Altera::max10_addr_shift(uint32_t addr)
+{
+	const uint8_t cmd[2] = MAX10_ISC_ADDRESS_SHIFT;
+	const uint32_t base_addr = POFParser::reverse_32(addr) >> 9;
+
+	uint8_t addr_arr[4];
+	word_to_array(base_addr, addr_arr);
+	//printf("%08x %08x\n", addr, base_addr);
+
+	/* FIXME/TODO:
+	 * 1. in bsdl file no delay between IR and DR
+	 *	but 1TCK after DR
+	 * 2. PAUSE IR is a state where loop is possible -> required to move
+	 *	to RUN_TEST_IDLE ?
+	 */
+	_jtag->shiftIR((unsigned char *)cmd, NULL, IRLENGTH, Jtag::PAUSE_IR);
+	_jtag->set_state(Jtag::RUN_TEST_IDLE);
+	_jtag->toggleClk(5120 / _clk_period); // fine delay ?
+	_jtag->shiftDR(addr_arr, NULL, 23, Jtag::RUN_TEST_IDLE);
+}
+
+void Altera::max10_dsm_program_success()
+{
+	const uint32_t prog_len = 5120 / _clk_period; // ??
+	const uint32_t prog2_len = 320000 / _clk_period; // ??
+													 //
+	const uint8_t cmd[2] = MAX10_DSM_ICB_PROGRAM;
+
+	uint8_t magic[4];
+	word_to_array(0x6C48A50F, magic); // FIXME: uses define instead
+
+	max10_addr_shift(0x00000b);
+
+	/* Send 'Magic' code */
+	_jtag->shiftIR((unsigned char *)cmd, NULL, IRLENGTH, Jtag::PAUSE_IR);
+	_jtag->set_state(Jtag::RUN_TEST_IDLE);
+	_jtag->toggleClk(prog_len); // fine delay ?
+	_jtag->shiftDR(magic, NULL, 32, Jtag::RUN_TEST_IDLE);
+	_jtag->toggleClk(prog2_len); // must wait 305.0e-6
+}
+
+void Altera::max10_flow_program_donebit()
+{
+	const uint32_t addr_shift_delay = 5120 / _clk_period; // ??
+	const uint32_t icb_program_delay = 320000 / _clk_period; // ??
+
+	uint8_t cmd[2] = MAX10_DSM_ICB_PROGRAM;
+
+	uint8_t magic[4];
+	word_to_array(0x6C48A50F, magic); // FIXME: uses define instead
+
+	/* Send target address */
+	max10_addr_shift(0x000009);
+
+	/* Send 'Magic' code */
+	_jtag->shiftIR(cmd, NULL, IRLENGTH, Jtag::PAUSE_IR);
+	_jtag->set_state(Jtag::RUN_TEST_IDLE);
+	_jtag->toggleClk(addr_shift_delay); // fine delay ?
+	_jtag->shiftDR(magic, NULL, 32, Jtag::RUN_TEST_IDLE);
+	_jtag->toggleClk(icb_program_delay); // must wait 305.0e-6
+}
+
 /* SPI interface */
 
 int Altera::spi_put(uint8_t cmd, const uint8_t *tx, uint8_t *rx, uint32_t len)
@@ -291,6 +676,7 @@ int Altera::spi_put(uint8_t cmd, const uint8_t *tx, uint8_t *rx, uint32_t len)
 
 	return 0;
 }
+
 int Altera::spi_put(const uint8_t *tx, uint8_t *rx, uint32_t len)
 {
 	return spi_put(tx[0], &tx[1], rx, len-1);
