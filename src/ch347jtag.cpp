@@ -33,7 +33,7 @@ using namespace std;
 #define CH347JTAG_WRITE_EP    0x06
 #define CH347JTAG_READ_EP     0x86
 
-#define CH347JTAG_TIMEOUT     200
+#define CH347JTAG_TIMEOUT     1000
 
 enum CH347JtagCmd {
 	CMD_BYTES_WO = 0xd3,
