@@ -253,7 +253,8 @@ static std::map <std::string, target_board_t> board_list = {
 	JTAG_BOARD("zybo_z7_10",      "xc7z010clg400",  "digilent", 0, 0, CABLE_DEFAULT),
 	JTAG_BOARD("zybo_z7_20",      "xc7z020clg400",  "digilent", 0, 0, CABLE_DEFAULT),
 	JTAG_BOARD("mini_itx",        "xc7z100ffg900", "jtag-smt2-nc", 0, 0, CABLE_DEFAULT),
-	JTAG_BOARD("vmm3",            "xc7s50csga324", "ft2232", 0, 0, CABLE_DEFAULT)
+	JTAG_BOARD("vmm3",            "xc7s50csga324", "ft2232", 0, 0, CABLE_DEFAULT),
+	JTAG_BOARD("step-max10_v1",   "10m02scm153c8g", "usb-blaster",0, 0, CABLE_DEFAULT)
 };
 
 #endif
