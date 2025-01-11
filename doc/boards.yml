@@ -995,3 +995,10 @@
   FPGA: Titanium Ti180J484 (and others)
   Memory: OK
   Flash: NA
+
+- ID: step-max10_v1
+  Description: STEP MAX10 V1
+  URL: https://wiki.stepfpga.com/step-max10
+  FPGA: Altera 10M02SCM153C8G
+  Memory: OK
+  Flash: NA
