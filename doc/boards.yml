@@ -1002,3 +1002,10 @@
   FPGA: Altera 10M02SCM153C8G
   Memory: OK
   Flash: NA
+
+- ID: step-mxo2_v2
+  Description: STEP MXO2 V2
+  URL: https://wiki.stepfpga.com/xo2-4000hc
+  FPGA: Lattice LCMXO2-4000HC-4MG132CC
+  Memory: OK
+  Flash: OK
