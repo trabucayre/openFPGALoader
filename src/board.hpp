@@ -102,7 +102,7 @@ typedef struct {
 	{_name, {"", _cable, _fpga_part, 0, 0, 0, COMM_DFU, {}, {}, 0, _vid, _pid, _alt}}
 
 static std::map <std::string, target_board_t> board_list = {
-	JTAG_BOARD("ac701",           "xc7a200t2fbg676c", "digilent", 0, 0, CABLE_DEFAULT),
+	JTAG_BOARD("ac701",           "xc7a200tfbg676", "digilent", 0, 0, CABLE_DEFAULT),
 	JTAG_BOARD("acornCle215",     "xc7a200tsbg484", "",         0, 0, CABLE_DEFAULT),
 	JTAG_BOARD("analogMax",       "",               "ft2232",   0, 0, CABLE_DEFAULT),
 	JTAG_BOARD("litex-acorn-baseboard-mini", "xc7a200tsbg484", "", 0, 0, CABLE_DEFAULT),
