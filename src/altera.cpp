@@ -335,6 +335,26 @@ void Altera::max10_program()
 	}
 	max10_mem_t mem = mem_map->second;
 
+	/*
+	 * MAX10 memory map differs according to internal configuration mode
+	 * - 1   dual       compressed image:               CFM0 is used for img0, CFM1 + CFM2 for img1
+	 * - 2   single   uncompressed image:               CFM0 + CFM1 are used, CFM2 used to additional UFM
+	 * - 3/4 single (un)compressed image with mem init: CFM0 + CFM1 + CFM2
+	 * - 5   single     compressed image:               CFM0 is used, CFM1&CFM2 used to additional UFM
+	 */
+	/* OPTIONS:
+	 * ON_CHIP_BITSTREAM_DECOMPRESSION ON/OFF
+	 * Dual Compressed Images (256Kbits UFM):
+	 *     set_global_assignment -name INTERNAL_FLASH_UPDATE_MODE "DUAL IMAGES"
+	 * Single Compressed Image (1376Kbits UFM):
+	 *     set_global_assignment -name INTERNAL_FLASH_UPDATE_MODE "SINGLE COMP IMAGE"
+	 * Single Compressed Image with Memory Initialization (256Kbits UFM):
+	 *     set_global_assignment -name INTERNAL_FLASH_UPDATE_MODE "SINGLE COMP IMAGE WITH ERAM"
+	 * Single Uncompressed Image (912Kbits UFM):
+	 *     set_global_assignment -name INTERNAL_FLASH_UPDATE_MODE "SINGLE IMAGE"
+	 * Single Uncompressed Image with Memory Initialization (256Kbits UFM):
+	 *     set_global_assignment -name INTERNAL_FLASH_UPDATE_MODE "SINGLE IMAGE WITH ERAM"
+	 */
 	const uint8_t *cfm_data = _bit.getData("CFM0");
 	const uint8_t *ufm_data = _bit.getData("UFM");
 	const uint8_t *dsm_data = _bit.getData("ICB");
