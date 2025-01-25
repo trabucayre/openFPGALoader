@@ -124,9 +124,13 @@ int POFParser::parse()
 uint32_t POFParser::parseSection(uint16_t flag, uint32_t pos, uint32_t size)
 {
 	std::string content;
+	std::string t;
+	char mess[1024];
 
-	if (_verbose)
-		printf("%d %u\n", flag, size);
+	if (_verbose) {
+		snprintf(mess, 1024, "Flag: %02x (%d) Size: %u", flag, flag, size);
+		printInfo(mess);
+	}
 
 	/* 0x01: software name/version */
 	/* 0x02: full FPGAs model */
@@ -165,6 +169,30 @@ uint32_t POFParser::parseSection(uint16_t flag, uint32_t pos, uint32_t size)
 			if (_verbose)
 				printf("size %u %zu\n", size, _bit_data.size());
 			break;
+		case 0x13:  // contains usercode / checksum
+			_hdr["usercode"] = std::to_string(ARRAY2INT16((&_raw_data.data()[pos])));
+			if (_verbose) {
+				t = _raw_data.substr(pos, size);
+				for (size_t i = 0; i < t.size(); i++)
+					printf("%02x ", static_cast<uint8_t>(t[i]));
+				printf("\n");
+				printf("%s\n", t.c_str());
+
+				/* 4 x 32bits */
+				uint32_t sec0, sec1, sec2, sec3;
+				sec0 = (t[0] << 24) | (t[1] << 16) | (t[2] << 8)  | (t[3] << 0);
+				sec1 = (t[4] << 24) | (t[5] << 16) | (t[6] << 8)  | (t[7] << 0);
+				sec2 = (t[8] << 24) | (t[9] << 16) | (t[10] << 8)  | (t[11] << 0);
+				sec3 = ((unsigned char)t[size-4] << 24) |
+					((unsigned char)t[size-3] << 16) |
+					((unsigned char)t[size-2] << 8) |
+					((unsigned char)t[size-1] << 0);
+				printf("sec0: %08x\n", sec0);
+				printf("sec1: %08x\n", sec1);
+				printf("sec2: %08x\n", sec2);
+				printf("sec3: %08x\n", sec3);
+			}
+			break;
 		case 0x1a:  // flash sections
 					// 12Bytes ?
 					// followed by flash sections separates by ';'
@@ -173,7 +201,6 @@ uint32_t POFParser::parseSection(uint16_t flag, uint32_t pos, uint32_t size)
 			parseFlag26(flag, pos, size, content);
 			break;
 		default:
-			char mess[1024];
 			snprintf(mess, 1024, "unknown flag 0x%02x: offset %u length %u",
 				flag, pos - 6, size);
 			printWarn(mess);
