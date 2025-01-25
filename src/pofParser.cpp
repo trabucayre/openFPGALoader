@@ -68,7 +68,9 @@ void POFParser::displayHeader()
 		char mess[1024];
 		snprintf(mess, 1024, "%02x %4s: ", v.flag, v.section.c_str());
 		printInfo(mess, false);
-		snprintf(mess, 1024, "%08x %08x", v.offset, v.len);
+		// start address + len (in bits) + end addr
+		snprintf(mess, 1024, "  %08x %08x %08x", v.offset, v.len, v.offset + ((v.len/8)-1));
+		/* Note: for CFM0 end address is displayed with another value in () */
 		printSuccess(mess);
 	}
 }
@@ -109,6 +111,10 @@ int POFParser::parse()
 	/* update pointers to memory area */
 	ptr = (uint8_t *)_bit_data.data();
 	mem_section["CFM0"].data = &ptr[mem_section["CFM0"].offset + 0x0C];
+	if (getMemSection("CFM1") != -1)
+		mem_section["CFM1"].data = &ptr[mem_section["CFM1"].offset + 0x0C];
+	if (getMemSection("CFM2") != -1)
+		mem_section["CFM2"].data = &ptr[mem_section["CFM2"].offset + 0x0C];
 	mem_section["UFM"].data = &ptr[mem_section["UFM"].offset + 0x0C];
 	mem_section["ICB"].data = &ptr[mem_section["ICB"].offset + 0x0C];
 
