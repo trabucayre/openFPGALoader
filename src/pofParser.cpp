@@ -28,18 +28,36 @@ POFParser::POFParser(const std::string &filename, bool verbose):
 POFParser::~POFParser()
 {}
 
+int POFParser::getMemSection(const std::string &name)
+{
+	int i = 0;
+	for (auto it = mem_section.begin(); it != mem_section.end(); it++, i++) {
+		if ((*it).first == name)
+			return i;
+	}
+	return -1;
+}
+
 uint8_t *POFParser::getData(const std::string &section_name)
 {
 	if (section_name == "")
 		return (uint8_t*)_bit_data.data();
-	return mem_section[section_name].data;
+	int idx = getMemSection(section_name);
+	if (idx != -1)
+		return mem_section[section_name].data;
+	else
+		return NULL;
 }
 
 int POFParser::getLength(const std::string &section_name)
 {
 	if (section_name == "")
 		return _bit_length;
-	return mem_section[section_name].len;
+	int idx = getMemSection(section_name);
+	if (idx != -1)
+		return mem_section[section_name].len;
+	else
+		return -1;
 }
 
 void POFParser::displayHeader()
