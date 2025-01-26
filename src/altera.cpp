@@ -361,10 +361,51 @@ void Altera::max10_program()
 	 * Single Uncompressed Image with Memory Initialization (256Kbits UFM):
 	 *     set_global_assignment -name INTERNAL_FLASH_UPDATE_MODE "SINGLE IMAGE WITH ERAM"
 	 */
-	const uint8_t *cfm_data = _bit.getData("CFM0");
-	const uint8_t *ufm_data = _bit.getData("UFM");
-	const uint8_t *dsm_data = _bit.getData("ICB");
+	uint8_t *cfm0_data = _bit.getData("CFM0");
+	uint8_t *cfm1_data = _bit.getData("CFM1");
+	uint8_t *cfm2_data = _bit.getData("CFM2");
+	uint8_t *ufm_data = _bit.getData("UFM");
+	uint8_t *dsm_data = _bit.getData("ICB");
 	const int dsm_len = _bit.getLength("ICB") / 32; // getLength (bits) dsm_len in 32bits word
+	// cfm0 len is required to deduces mode
+	const uint32_t cfm0_len = _bit.getLength("CFM0") / 8;
+	// full configuration section is required
+	const uint32_t cfm_len = (mem.cfm_len[0] + mem.cfm_len[1] + mem.cfm_len[2]) * 4;
+
+	/* we needs to know how many sections are present in the POF file */
+	const bool cfm1_null = cfm1_data == NULL;
+	const bool cfm2_null = cfm2_data == NULL;
+
+	/* Reorganize CFM sections */
+	if (cfm2_null && cfm1_null) { // POF contains only CFM0 section (mode 2, 3, 4 or 5)
+		// CFM0 contains CFM2+CFM1+CFM0 (in this order) (mode 3 or 4)
+		if (cfm0_len == cfm_len) {
+			cfm2_data = cfm0_data;
+			cfm1_data = &cfm2_data[mem.cfm_len[2] * 4];
+			cfm0_data = &cfm1_data[mem.cfm_len[1] * 4];
+		} else {  // CFM2 or CMF2+CFM1 used for UFM
+			// Single Uncompressed Image (CFM1 + CFM0) (mode 2)
+			if (cfm0_len == cfm_len - (mem.cfm_len[2] * 4)) {
+				cfm1_data = cfm0_data;
+				cfm0_data = &cfm1_data[mem.cfm_len[1] * 4];
+			// Single Compressed image (CFM0) (mode 5)
+			// CFM0 contains CFM0...
+			} else if (cfm0_len == (mem.cfm_len[0] * 4)) {
+				// nothing to do CFM0 == CFM0, no CFM1/CFM2
+			// unknown mode
+			} else {
+				throw std::runtime_error("Unknown mode");
+			}
+		}
+	} else if (cfm2_null) { // POF with CFM0 & CFM1 (mode 1 only)
+		// CFM0 == CFM0 (nothing to change)
+		// CFM1 contains CFM2 + CFM1 in this order
+		cfm2_data = cfm1_data;
+		cfm1_data = &cfm2_data[mem.cfm_len[2] * 4];
+	} else {
+		throw std::runtime_error("Error: can't be happens");
+	}
+
 
 	max_10_flow_enable();
 
@@ -372,15 +413,8 @@ void Altera::max10_program()
 	max10_dsm_verify();
 
 	/* Write */
-	// CFM2->0
-	offset = 0;
-	base_addr = mem.cfm_addr;
-	for (int i = 2; i >= 0; i--) {
-		printInfo("Write CFM" + std::to_string(i));
-		writeXFM(cfm_data, base_addr, offset, mem.cfm_len[i]);
-		base_addr += mem.cfm_len[i];
-		offset += (mem.cfm_len[i] * 4);
-	}
+	uint8_t *cfm_d;
+
 	// UFM1->0
 	offset = 0;
 	base_addr = mem.ufm_addr;
@@ -391,18 +425,30 @@ void Altera::max10_program()
 		base_addr += mem.ufm_len[i];
 	}
 
+	// CFM2->0
+	for (int i = 2; i >= 0; i--) {
+		switch(i) {
+			case 0:  // just after CFM1
+				cfm_d = cfm0_data;
+				base_addr = mem.cfm_addr + mem.cfm_len[2] + mem.cfm_len[1];
+				break;
+			case 1:  // just after CFM2
+				cfm_d = cfm1_data;
+				base_addr = mem.cfm_addr + mem.cfm_len[2];
+				break;
+			case 2:  // beginning of the Configuration Flash Memory Sectors
+				cfm_d = cfm2_data;
+				base_addr = mem.cfm_addr;
+				break;
+		}
+		if (cfm_d) {
+			printInfo("Write CFM" + std::to_string(i));
+			writeXFM(cfm_d, base_addr, 0, mem.cfm_len[i]);
+		}
+	}
+
 	/* Verify */
 	if (_verify) {
-		// CFM2->0
-		offset = 0;
-		base_addr = mem.cfm_addr;
-		for (int i = 2; i >= 0; i--) {
-			printInfo("Verify CFM" + std::to_string(i));
-			verifyxFM(cfm_data, base_addr, offset, mem.cfm_len[i]);
-			base_addr += mem.cfm_len[i];
-			offset += (mem.cfm_len[i] * 4);
-		}
-
 		// UFM1->0
 		offset = 0;
 		base_addr = mem.ufm_addr;
@@ -411,6 +457,32 @@ void Altera::max10_program()
 			verifyxFM(ufm_data, base_addr, offset, mem.ufm_len[i]);
 			offset += mem.ufm_len[i] * 4;
 			base_addr += mem.ufm_len[i];
+		}
+
+		// CFM2->0
+		for (int i = 2; i >= 0; i--) {
+			uint8_t fake_cfm[mem.cfm_len[i] * 4];
+			switch(i) {
+				case 0:
+					cfm_d = cfm0_data;
+					base_addr = mem.cfm_addr + mem.cfm_len[2] + mem.cfm_len[1];
+					break;
+				case 1:
+					cfm_d = cfm1_data;
+					base_addr = mem.cfm_addr + mem.cfm_len[2];
+					break;
+				case 2:
+					cfm_d = cfm2_data;
+					base_addr = mem.cfm_addr;
+					break;
+			}
+			if (!cfm_d) {
+				memset(fake_cfm, 0xff, mem.cfm_len[i] * 4);
+				cfm_d = fake_cfm;
+			}
+
+			printInfo("Verify CFM" + std::to_string(i));
+			verifyxFM(cfm_d, base_addr, 0, mem.cfm_len[i]);
 		}
 	}
 
