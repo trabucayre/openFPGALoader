@@ -57,11 +57,6 @@ class POFParser: public ConfigBitstreamParser {
 
 
 	private:
-		/* \brief return index for a section called name
-		 * \return -1 when section not present, index otherwise
-		 */
-		int getMemSection(const std::string &name);
-
 		/* packet 0x1A content */
 		typedef struct {
 			uint8_t flag;         // 1 Byte before section name
