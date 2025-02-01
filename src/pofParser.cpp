@@ -144,6 +144,14 @@ uint32_t POFParser::parseSection(uint16_t flag, uint32_t pos, uint32_t size)
 		case 0x11:  // cfg data
 					// 12 Bytes unknown
 					// followed by UFM/CFM/DSM data
+			if (_verbose) {
+				content = _raw_data.substr(pos, size);
+				uint32_t val0 = ARRAY2INT32((&content.c_str()[0]));
+				uint32_t val1 = ARRAY2INT32((&content.c_str()[4]));
+				uint32_t val2 = ARRAY2INT32((&content.c_str()[8]));
+				printf("Flag 0x11: Unknown %08x %08x %08x\n", val0, val1, val2);
+			}
+
 			_bit_data.resize(size);
 			std::copy(_raw_data.begin() + pos, _raw_data.begin() + pos + size,
 					_bit_data.begin());
