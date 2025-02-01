@@ -97,6 +97,10 @@ int POFParser::parse()
 	/* update pointers to memory area */
 	ptr = (uint8_t *)_bit_data.data();
 	mem_section["CFM0"].data = &ptr[mem_section["CFM0"].offset + 0x0C];
+	if (mem_section.find("CFM1") != mem_section.end())
+		mem_section["CFM1"].data = &ptr[mem_section["CFM1"].offset + 0x0C];
+	if (mem_section.find("CFM2") != mem_section.end())
+		mem_section["CFM2"].data = &ptr[mem_section["CFM2"].offset + 0x0C];
 	mem_section["UFM"].data = &ptr[mem_section["UFM"].offset + 0x0C];
 	mem_section["ICB"].data = &ptr[mem_section["ICB"].offset + 0x0C];
 
