@@ -303,6 +303,7 @@ uint32_t Altera::idCode()
 #define MAX10_BYPASS            {0xFF, 0x03}
 
 typedef struct {
+	uint32_t check_addr0; // something to check before sequence
 	uint32_t dsm_addr;
 	uint32_t dsm_len;  // 32bits
 	uint32_t ufm_addr; // UFM1 addr
@@ -315,6 +316,7 @@ typedef struct {
 
 static const std::map<uint32_t, max10_mem_t> max10_memory_map = {
 	{0x031820dd, {
+		0x80005, // check_addr0
 		0x0000, 512, // DSM
 		0x0200, {4096, 4096}, // UFM
 		0x2200, {35840, 14848, 20992}, // CFM
@@ -329,66 +331,115 @@ void Altera::max10_program()
 	_bit.parse();
 	_bit.displayHeader();
 
-	uint32_t base_addr; // CFM2 addr
-	uint32_t offset = 0;
+	uint32_t base_addr;
 
+	/* Needs to have some specifics informations about internal flash size/organisation
+	 * and some magics.
+	 */
 	auto mem_map = max10_memory_map.find(_idcode);
 	if (mem_map == max10_memory_map.end()) {
 		printError("Model not supported. Please update max10_memory_map.");
 		throw std::runtime_error("Model not supported. Please update max10_memory_map.");
 	}
-	max10_mem_t mem = mem_map->second;
+	const max10_mem_t mem = mem_map->second;
 
-	const uint8_t *cfm_data = _bit.getData("CFM0");
-	const uint8_t *ufm_data = _bit.getData("UFM");
+	/*
+	 * MAX10 memory map differs according to internal configuration mode
+	 * - 1   dual       compressed image:               CFM0 is used for img0, CFM1 + CFM2 for img1
+	 * - 2   single   uncompressed image:               CFM0 + CFM1 are used, CFM2 used to additional UFM
+	 * - 3/4 single (un)compressed image with mem init: CFM0 + CFM1 + CFM2
+	 * - 5   single     compressed image:               CFM0 is used, CFM1&CFM2 used to additional UFM
+	 */
+	/* For Mode (POF content):
+	 * 1  :  UFM: UFM1+UFM0 (in this order, this POF section size == memory section size),
+	 *      CFM1: CFM2+CFM1 (in this order, this section == CFM2+CFM1 size),
+	 *      CFM0: CFM0 (this section size == CFM0 size)
+	 *
+	 * 2  :  UFM: UFM1+UFM0+CFM2 (in this order, this section size == full UFM section size + CFM2 size)
+	 *      CFM0: CFM1+CFM0 (in this order, this section size == CFM1+CFM0)
+	 *
+	 * 3/4:  UFM: UFM1+UFM0 (in this order, this section size == full UFM section size)
+	 *      CFM0: CFM2+CFM1+CFM0 (in this order, this section size == full CFM section size)
+	 *
+	 * 5  :  UFM: UFM1+UFM0+CFM2+CFM1 (in this order, this section size == full UFM section size + CFM2 size + CFM1 size)
+	 *      CFM0: CFM0 (this section size == CFM0)
+	 */
+	/* OPTIONS:
+	 * ON_CHIP_BITSTREAM_DECOMPRESSION ON/OFF
+	 * Dual Compressed Images (256Kbits UFM):
+	 *     set_global_assignment -name INTERNAL_FLASH_UPDATE_MODE "DUAL IMAGES"
+	 * Single Compressed Image (1376Kbits UFM):
+	 *     set_global_assignment -name INTERNAL_FLASH_UPDATE_MODE "SINGLE COMP IMAGE"
+	 * Single Compressed Image with Memory Initialization (256Kbits UFM):
+	 *     set_global_assignment -name INTERNAL_FLASH_UPDATE_MODE "SINGLE COMP IMAGE WITH ERAM"
+	 * Single Uncompressed Image (912Kbits UFM):
+	 *     set_global_assignment -name INTERNAL_FLASH_UPDATE_MODE "SINGLE IMAGE"
+	 * Single Uncompressed Image with Memory Initialization (256Kbits UFM):
+	 *     set_global_assignment -name INTERNAL_FLASH_UPDATE_MODE "SINGLE IMAGE WITH ERAM"
+	 */
+
+	/*
+	 * Memory organisation based on internal flash configuration mode is great but in fact
+	 * POF configuration data match MAX10 memory organisation:
+	 * its more easy to start with POF's CFM section and uses pointer based on prev ptr and section size
+	 */
+
+	uint8_t *ufm_data[2], *cfm_data[3]; // memory pointers (2 for UFM, 3 for CFM)
+
+	// UFM Mapping
+	ufm_data[0] = _bit.getData("UFM");
+	ufm_data[1] = &ufm_data[0][mem.ufm_len[0] * 4]; // Just after UFM0 (but size may differs
+
+	// CFM Mapping
+	cfm_data[2] = &ufm_data[1][mem.ufm_len[1] * 4]; // First CFM section in FPGA internal flash
+	cfm_data[1] = &cfm_data[2][mem.cfm_len[2] * 4]; // Second CFM section but just after CFM2
+	cfm_data[0] = &cfm_data[1][mem.cfm_len[1] * 4]; // last CFM section but just after CFM1
+
+	// DSM Mapping
 	const uint8_t *dsm_data = _bit.getData("ICB");
 	const int dsm_len = _bit.getLength("ICB") / 32; // getLength (bits) dsm_len in 32bits word
 
+
+	// Start!
 	max_10_flow_enable();
 
 	max10_flow_erase();
 	max10_dsm_verify();
 
 	/* Write */
-	// CFM2->0
-	offset = 0;
-	base_addr = mem.cfm_addr;
-	for (int i = 2; i >= 0; i--) {
-		printInfo("Write CFM" + std::to_string(i));
-		writeXFM(cfm_data, base_addr, offset, mem.cfm_len[i]);
-		base_addr += mem.cfm_len[i];
-		offset += (mem.cfm_len[i] * 4);
-	}
-	// UFM1->0
-	offset = 0;
+
+	// UFM 1 -> 0
 	base_addr = mem.ufm_addr;
 	for (int i = 1; i >= 0; i--) {
 		printInfo("Write UFM" + std::to_string(i));
-		writeXFM(ufm_data, base_addr, offset, mem.ufm_len[i]);
-		offset += mem.ufm_len[i] * 4;
+		writeXFM(ufm_data[i], base_addr, 0, mem.ufm_len[i]);
 		base_addr += mem.ufm_len[i];
+	}
+
+	// CFM2 -> 0
+	base_addr = mem.cfm_addr;
+	for (int i = 2; i >= 0; i--) {
+		printInfo("Write CFM" + std::to_string(i));
+		writeXFM(cfm_data[i], base_addr, 0, mem.cfm_len[i]);
+		base_addr += mem.cfm_len[i];
 	}
 
 	/* Verify */
 	if (_verify) {
-		// CFM2->0
-		offset = 0;
-		base_addr = mem.cfm_addr;
-		for (int i = 2; i >= 0; i--) {
-			printInfo("Verify CFM" + std::to_string(i));
-			verifyxFM(cfm_data, base_addr, offset, mem.cfm_len[i]);
-			base_addr += mem.cfm_len[i];
-			offset += (mem.cfm_len[i] * 4);
-		}
-
-		// UFM1->0
-		offset = 0;
+		// UFM 1 -> 0
 		base_addr = mem.ufm_addr;
 		for (int i = 1; i >= 0; i--) {
 			printInfo("Verify UFM" + std::to_string(i));
-			verifyxFM(ufm_data, base_addr, offset, mem.ufm_len[i]);
-			offset += mem.ufm_len[i] * 4;
+			verifyxFM(ufm_data[i], base_addr, 0, mem.ufm_len[i]);
 			base_addr += mem.ufm_len[i];
+		}
+
+		// CFM2->0
+		base_addr = mem.cfm_addr;
+		for (int i = 2; i >= 0; i--) {
+			printInfo("Verify CFM" + std::to_string(i));
+			verifyxFM(cfm_data[i], base_addr, 0, mem.cfm_len[i]);
+			base_addr += mem.cfm_len[i];
 		}
 	}
 
@@ -434,7 +485,7 @@ void Altera::writeXFM(const uint8_t *cfg_data, uint32_t base_addr, uint32_t offs
 	/* precompute some delays required during loop */
 	const uint32_t isc_program2_delay = 320000 / _clk_period; // ns must be 350us
 
-	ProgressBar progress("Verify", len, 50, _quiet);
+	ProgressBar progress("Write Flash", len, 50, _quiet);
 	for (uint32_t i = 0; i < len; i+=512) {
 		bool must_send_sir = true;
 		uint32_t max = (i + 512 <= len)? 512 : len - i;
