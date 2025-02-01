@@ -51,12 +51,16 @@ int POFParser::getLength(const std::string &section_name)
 void POFParser::displayHeader()
 {
 	ConfigBitstreamParser::displayHeader();
+	char mess[1024];
+	snprintf(mess, 1024, "Flag section offset   len      end");
+	printInfo(mess);
 	for (auto it = mem_section.begin(); it != mem_section.end(); it++) {
 		memory_section_t v = (*it).second;
-		char mess[1024];
-		snprintf(mess, 1024, "%02x %4s: ", v.flag, v.section.c_str());
+		snprintf(mess, 1024, "%02x   %4s: ", v.flag, v.section.c_str());
 		printInfo(mess, false);
-		snprintf(mess, 1024, "%08x %08x", v.offset, v.len);
+		// start address + len (in bits) + end addr
+		snprintf(mess, 1024, "  %08x %08x %08x", v.offset, v.len, v.offset + ((v.len/8)-1));
+		/* Note: for CFM0 end address is displayed with another value in () */
 		printSuccess(mess);
 	}
 }
