@@ -49,7 +49,7 @@ Efinix:
 
 Gowin:
 
-  - Description: GW1N
+  - Description: LittleBee (GW1N)
     Model:
      - GW1N-1
      - GW1N-4
@@ -58,14 +58,27 @@ Gowin:
      - GW1NS-2C
      - GW1NSR-4C
      - GW1NZ-1
+    URL: https://www.gowinsemi.com/en/product/detail/46/
+    Memory: OK
+    Flash: IF
+
+  - Description: Arora (GW2A)
+    Model:
      - GW2A-18C
      - GW2A-55
-     - GW5AST-138
-     - GW5AT-138
-     - GW5A-25
-    URL: https://www.gowinsemi.com/en/product/detail/2/
+    URL: https://www.gowinsemi.com/en/product/detail/38/
     Memory: OK
-    Flash: IF / EF
+    Flash: EF
+
+  - Description: Arora V (GW5A)
+    Model:
+     - GW5A-25
+     - GW5AST-138
+     - GW5AT-60
+     - GW5AT-138
+    URL: https://www.gowinsemi.com/en/product/detail/60/
+    Memory: OK
+    Flash: EF
 
 
 Intel:
