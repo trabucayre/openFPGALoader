@@ -106,9 +106,13 @@ int POFParser::parse()
 uint32_t POFParser::parseSection(uint16_t flag, uint32_t pos, uint32_t size)
 {
 	std::string content;
+	std::string t;
+	char mess[1024];
 
-	if (_verbose)
-		printf("%d %u\n", flag, size);
+	if (_verbose) {
+		snprintf(mess, 1024, "Flag: %02x (%d) Size: %u", flag, flag, size);
+		printInfo(mess);
+	}
 
 	/* 0x01: software name/version */
 	/* 0x02: full FPGAs model */
@@ -129,7 +133,7 @@ uint32_t POFParser::parseSection(uint16_t flag, uint32_t pos, uint32_t size)
 			_hdr["tool"] = _raw_data.substr(pos, size);
 			break;
 		case 0x02:  // full FPGA part name
-			_hdr["part_name"] = _raw_data.substr(pos, size);
+			_hdr["part_name"] = _raw_data.substr(pos, size-1); // -1 because '\0'
 			break;
 		case 0x03:  // bitstream/design/xxx name
 			_hdr["design_name"] = _raw_data.substr(pos, size);
@@ -179,7 +183,6 @@ uint32_t POFParser::parseSection(uint16_t flag, uint32_t pos, uint32_t size)
 			parseFlag26(flag, pos, size, content);
 			break;
 		default:
-			char mess[1024];
 			snprintf(mess, 1024, "unknown flag 0x%02x: offset %u length %u",
 				flag, pos - 6, size);
 			printWarn(mess);
