@@ -309,13 +309,17 @@ typedef struct {
 	uint32_t ufm_len[2];
 	uint32_t cfm_addr; // CFM2 addr
 	uint32_t cfm_len[3];
+	uint32_t done_bit_addr;
+	uint32_t pgm_success_addr;
 } max10_mem_t;
 
 static const std::map<uint32_t, max10_mem_t> max10_memory_map = {
 	{0x031820dd, {
 		0x0000, 512, // DSM
 		0x0200, {4096, 4096}, // UFM
-		0x2200, {35840, 14848, 20992}} // CFM
+		0x2200, {35840, 14848, 20992}, // CFM
+		0x0009, // done bit
+		0x000b} // program success addr
 	},
 };
 
@@ -393,9 +397,9 @@ void Altera::max10_program()
 	max10_dsm_program(dsm_data, dsm_len);
 	max10_dsm_verify();
 
-	max10_flow_program_donebit();
+	max10_flow_program_donebit(mem.done_bit_addr);
 	max10_dsm_verify();
-	max10_dsm_program_success();
+	max10_dsm_program_success(mem.pgm_success_addr);
 	max10_dsm_verify();
 
 	/* disable ISC flow */
@@ -608,7 +612,7 @@ void Altera::max10_addr_shift(uint32_t addr)
 	_jtag->shiftDR(addr_arr, NULL, 23, Jtag::RUN_TEST_IDLE);
 }
 
-void Altera::max10_dsm_program_success()
+void Altera::max10_dsm_program_success(const uint32_t pgm_success_addr)
 {
 	const uint32_t prog_len = 5120 / _clk_period; // ??
 	const uint32_t prog2_len = 320000 / _clk_period; // ??
@@ -618,7 +622,7 @@ void Altera::max10_dsm_program_success()
 	uint8_t magic[4];
 	word_to_array(0x6C48A50F, magic); // FIXME: uses define instead
 
-	max10_addr_shift(0x00000b);
+	max10_addr_shift(pgm_success_addr);
 
 	/* Send 'Magic' code */
 	_jtag->shiftIR((unsigned char *)cmd, NULL, IRLENGTH, Jtag::PAUSE_IR);
@@ -628,7 +632,7 @@ void Altera::max10_dsm_program_success()
 	_jtag->toggleClk(prog2_len); // must wait 305.0e-6
 }
 
-void Altera::max10_flow_program_donebit()
+void Altera::max10_flow_program_donebit(const uint32_t done_bit_addr)
 {
 	const uint32_t addr_shift_delay = 5120 / _clk_period; // ??
 	const uint32_t icb_program_delay = 320000 / _clk_period; // ??
@@ -639,7 +643,7 @@ void Altera::max10_flow_program_donebit()
 	word_to_array(0x6C48A50F, magic); // FIXME: uses define instead
 
 	/* Send target address */
-	max10_addr_shift(0x000009);
+	max10_addr_shift(done_bit_addr);
 
 	/* Send 'Magic' code */
 	_jtag->shiftIR(cmd, NULL, IRLENGTH, Jtag::PAUSE_IR);
