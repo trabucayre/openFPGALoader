@@ -217,6 +217,7 @@ bool Gowin::detectFamily()
 			is_gw2a = true;
 			break;
 		case 0x0001081b: /* GW5AST-138 */
+		case 0x0001481b: /* GW5AT-60 */
 		case 0x0001181b: /* GW5AT-138 */
 		case 0x0001281b: /* GW5A-25 */
 			_external_flash = true;
