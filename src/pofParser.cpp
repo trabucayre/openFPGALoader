@@ -32,14 +32,20 @@ uint8_t *POFParser::getData(const std::string &section_name)
 {
 	if (section_name == "")
 		return (uint8_t*)_bit_data.data();
-	return mem_section[section_name].data;
+	auto section = mem_section.find(section_name);
+	if (section == mem_section.end())
+		return NULL;
+	return (*section).second.data;
 }
 
 int POFParser::getLength(const std::string &section_name)
 {
 	if (section_name == "")
 		return _bit_length;
-	return mem_section[section_name].len;
+	auto section = mem_section.find(section_name);
+	if (section == mem_section.end())
+		return -1;
+	return (*section).second.len;
 }
 
 void POFParser::displayHeader()
