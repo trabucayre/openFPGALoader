@@ -124,8 +124,11 @@ int LatticeBitParser::parse()
 				continue;
 			string model = fpga.second.model;
 			if (subpart.compare(0, model.size(), model) == 0) {
-				_hdr["idcode"] = string(8, ' ');
-				snprintf(&_hdr["idcode"][0], 9, "%08x", fpga.first);
+				char __buf[10];
+				int __buf_valid_bytes;
+				__buf_valid_bytes = snprintf(__buf, 9, "%08x", fpga.first);
+				_hdr["idcode"] = string(__buf, __buf_valid_bytes);
+				_hdr["idcode"].resize(8, ' ');
 			}
 		}
 	}
@@ -172,6 +175,8 @@ bool LatticeBitParser::parseCfgData()
 	uint8_t *ptr;
 	size_t pos = _endHeader + 5;  // drop preamble
 	uint32_t idcode;
+	char __buf[10];
+	int __buf_valid_bytes;
 	while (pos < _raw_data.size()) {
 		uint8_t cmd = (uint8_t) _raw_data[pos++];
 		switch (cmd) {
@@ -186,8 +191,9 @@ bool LatticeBitParser::parseCfgData()
 					 (((uint32_t)reverseByte(ptr[5])) << 16) |
 					 (((uint32_t)reverseByte(ptr[4])) <<  8) |
 					 (((uint32_t)reverseByte(ptr[3])) <<  0);
-			_hdr["idcode"] = string(8, ' ');
-			snprintf(&_hdr["idcode"][0], 9, "%08x", idcode);
+			__buf_valid_bytes = snprintf(__buf, 9, "%08x", idcode);
+			_hdr["idcode"] = string(__buf, __buf_valid_bytes);
+			_hdr["idcode"].resize(8, ' ');
 			pos += 7;
 			if (!_is_machXO2)
 				return true;
@@ -198,8 +204,9 @@ bool LatticeBitParser::parseCfgData()
 					 (((uint32_t)ptr[4]) << 16) |
 					 (((uint32_t)ptr[5]) <<  8) |
 					 (((uint32_t)ptr[6]) <<  0);
-			_hdr["idcode"] = string(8, ' ');
-			snprintf(&_hdr["idcode"][0], 9, "%08x", idcode);
+			__buf_valid_bytes = snprintf(__buf, 9, "%08x", idcode);
+			_hdr["idcode"] = string(__buf, __buf_valid_bytes);
+			_hdr["idcode"].resize(8, ' ');
 			pos += 7;
 			if (!_is_machXO2)
 				return true;
