@@ -63,15 +63,19 @@ int FsParser::parseHeader()
 		uint8_t key = c & 0x7F;
 		uint64_t val = bitToVal(buffer.c_str(), buffer.size());
 
+		char __buf[10];
+		int __buf_valid_bytes;
 		switch (key) {
 			case 0x06: /* idCode */
 				_idcode = (0xffffffff & val);
-				_hdr["idcode"] = string(8, ' ');
-				snprintf(&_hdr["idcode"][0], 9, "%08x", _idcode);
+				__buf_valid_bytes = snprintf(__buf, 9, "%08x", _idcode);
+				_hdr["idcode"] = string(__buf, __buf_valid_bytes);
+				_hdr["idcode"].resize(8, ' ');
 				break;
 			case 0x0A: /* user code or checksum ? */
-				_hdr["CheckSum"] = string(8, ' ');
-				snprintf(&_hdr["CheckSum"][0], 9, "%08x", (uint32_t)(0xffffffff & val));
+				__buf_valid_bytes = snprintf(__buf, 9, "%08x", (uint32_t)(0xffffffff & val));
+				_hdr["CheckSum"] = string(__buf, __buf_valid_bytes);
+				_hdr["CheckSum"].resize(8, ' ');
 				break;
 			case 0x0B: /* only present when bit_security is set */
 				_hdr["SecurityBit"] = "ON";
@@ -107,8 +111,9 @@ int FsParser::parseHeader()
 			case 0x52: /* documentation issue */
 				uint32_t flash_addr;
 				flash_addr = val & 0xffffffff;
-				_hdr["SPIAddr"] = string(8, ' ');
-				snprintf(&_hdr["SPIAddr"][0], 9, "%08x", flash_addr);
+				__buf_valid_bytes = snprintf(__buf, 9, "%08x", flash_addr);
+				_hdr["SPIAddr"] = string(__buf, __buf_valid_bytes);
+				_hdr["SPIAddr"].resize(8, ' ');
 
 				break;
 			case 0x3B: /* last header line with crc and cfg data length */

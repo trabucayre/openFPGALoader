@@ -402,20 +402,24 @@ int FTDIpp_MPSSE::setClkFreq(uint32_t clkHZ)
 	real_freq = base_freq / ((1+presc)*2);
 
 	/* just to have a better display */
-	string clkHZ_str(10, ' ');
-	string real_freq_str(10, ' ');
+	char __buf[16];
+	int __buf_valid_bytes;
 	if (clkHZ >= 1e6)
-		snprintf(&clkHZ_str[0], 9, "%2.2fMHz", clkHZ / 1e6);
+		__buf_valid_bytes = snprintf(__buf, 9, "%2.2fMHz", clkHZ / 1e6);
 	else if (clkHZ >= 1e3)
-		snprintf(&clkHZ_str[0], 10, "%3.2fKHz", clkHZ / 1e3);
+		__buf_valid_bytes = snprintf(__buf, 10, "%3.2fKHz", clkHZ / 1e3);
 	else
-		snprintf(&clkHZ_str[0], 10, "%3u.00Hz", clkHZ);
+		__buf_valid_bytes = snprintf(__buf, 10, "%3u.00Hz", clkHZ);
+	string clkHZ_str(__buf, __buf_valid_bytes);
+	clkHZ_str.resize(10, ' ');
 	if (real_freq >= 1e6)
-		snprintf(&real_freq_str[0], 9, "%2.2fMHz", real_freq / 1e6);
+		__buf_valid_bytes = snprintf(__buf, 9, "%2.2fMHz", real_freq / 1e6);
 	else if (real_freq >= 1e3)
-		snprintf(&real_freq_str[0], 10, "%3.2fKHz", real_freq / 1e3);
+		__buf_valid_bytes = snprintf(__buf, 10, "%3.2fKHz", real_freq / 1e3);
 	else
-		snprintf(&real_freq_str[0], 10, "%3.2fHz", real_freq);
+		__buf_valid_bytes = snprintf(__buf, 10, "%3.2fHz", real_freq);
+	string real_freq_str(__buf, __buf_valid_bytes);
+	real_freq_str.resize(10, ' ');
 
 
 	printInfo("Jtag frequency : requested " + clkHZ_str +
