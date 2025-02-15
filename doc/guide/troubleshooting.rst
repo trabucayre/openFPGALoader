@@ -32,6 +32,13 @@ Check your openFPGALoader version:
 
 If it is older than release then v0.9.0, install the most recent version (from commit `f5b89bff68a5e2147404a895c075773884077438 <https://github.com/trabucayre/openFPGALoader/commit/fe259fb78d185b3113661d04cd7efa9ae0232425>`_ or later).
 
+Cannot flash Tang Nano 20k (issue `#251 <https://github.com/trabucayre/openFPGALoader/issues/511>`_)
+====================================================================================================
+
+Some firmware version cannot be flashed on Linux-based systems. Version 2024122312 is such an example. It seems this version was not published on the `SiPeed website <https://api.dl.sipeed.com/TANG/Debugger/onboard/BL616/>`_, however some boards sold have this firmware.
+
+The cause of the problem is the debugger on the Tang Nano, specifically the firmware of this debugger. This firmware can be easily updated by following `these <https://wiki.sipeed.com/hardware/en/tang/common-doc/update_debugger.html>`_ steps.
+
 Cannot flash Tang Nano 9k (issue `#251 <https://github.com/trabucayre/openFPGALoader/issues/251>`_)
 ===================================================================================================
 
