@@ -723,6 +723,13 @@
   Memory: OK
   Flash: OK
 
+- ID: tangconsole
+  Description: Sipeed Tang Console (dock board for Tang Mega 60k or 138k SOM)
+  URL: https://wiki.sipeed.com/hardware/en/tang/tang-console/mega-console.html
+  FPGA: Gowin Arora V GW5AT-60 / GW5AT-138
+  Memory: OK
+  Flash: OK
+
 - ID: tangnano
   Description: Sipeed Tang Nano
   URL: https://tangnano.sipeed.com/en/
