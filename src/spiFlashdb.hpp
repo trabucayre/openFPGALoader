@@ -471,6 +471,22 @@ static std::map <uint32_t, flash_t> flash_list = {
 		.bp_offset = {(1 << 2), (1 << 3), (1 << 4), (1 << 5)},
 		.quad_register = STATR,
 		.quad_mask = (1 << 6),
+	}},	
+	{0xc22537, {
+		/* https://www.macronix.com/Lists/Datasheet/Attachments/8904/MX25U6432F,%201.8V,%2064Mb,%20v1.1.pdf */
+		.manufacturer = "Macronix",
+		.model = "MX25U6432F",
+		.nr_sector = 128,
+		.sector_erase = true,
+		.subsector_erase = true,
+		.has_extended = false,
+		.tb_otp = true,
+		.tb_offset = (1 << 3),
+		.tb_register = CONFR,
+		.bp_len = 4,
+		.bp_offset = {(1 << 2), (1 << 3), (1 << 4), (1 << 5)},
+		.quad_register = STATR,
+		.quad_mask = (1 << 6),
 	}},
 	{0xc22817, {
 		/* https://www.macronix.com/Lists/Datasheet/Attachments/8868/MX25R6435F,%20Wide%20Range,%2064Mb,%20v1.6.pdf */
