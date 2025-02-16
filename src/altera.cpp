@@ -387,18 +387,17 @@ void Altera::max10_program()
 	uint8_t *ufm_data[2], *cfm_data[3];  // memory pointers (2 for UFM, 3 for CFM)
 
 	// UFM Mapping
-	ufm_data[0] = _bit.getData("UFM");
-	ufm_data[1] = &ufm_data[0][mem.ufm_len[0] * 4];  // Just after UFM0 (but size may differs
+	ufm_data[1] = _bit.getData("UFM");
+	ufm_data[0] = &ufm_data[1][mem.ufm_len[0] * 4];  // Just after UFM1 (but size may differs
 
 	// CFM Mapping
-	cfm_data[2] = &ufm_data[1][mem.ufm_len[1] * 4];  // First CFM section in FPGA internal flash
+	cfm_data[2] = &ufm_data[0][mem.ufm_len[1] * 4];  // First CFM section in FPGA internal flash
 	cfm_data[1] = &cfm_data[2][mem.cfm_len[2] * 4];  // Second CFM section but just after CFM2
 	cfm_data[0] = &cfm_data[1][mem.cfm_len[1] * 4];  // last CFM section but just after CFM1
 
 	// DSM Mapping
 	const uint8_t *dsm_data = _bit.getData("ICB");
 	const int dsm_len = _bit.getLength("ICB") / 32;  // getLength (bits) dsm_len in 32bits word
-
 
 	// Start!
 	max10_flow_enable();
