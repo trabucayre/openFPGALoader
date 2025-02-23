@@ -296,34 +296,12 @@ uint32_t Altera::idCode()
 #define MAX10_ISC_ENABLE        {0xcc, 0x02}
 #define MAX10_ISC_DISABLE       {0x01, 0x02}
 #define MAX10_ISC_ADDRESS_SHIFT {0x03, 0x02}
+#define MAX10_ISC_ERASE         {0xf2, 0x02}
 #define MAX10_ISC_PROGRAM       {0xf4, 0x02}
 #define MAX10_DSM_ICB_PROGRAM   {0xF4, 0x03}
 #define MAX10_DSM_VERIFY        {0x07, 0x03}
 #define MAX10_DSM_CLEAR         {0xf2, 0x03}
 #define MAX10_BYPASS            {0xFF, 0x03}
-
-typedef struct {
-	uint32_t check_addr0;  // something to check before sequence
-	uint32_t dsm_addr;
-	uint32_t dsm_len;  // 32bits
-	uint32_t ufm_addr;  // UFM1 addr
-	uint32_t ufm_len[2];
-	uint32_t cfm_addr;  // CFM2 addr
-	uint32_t cfm_len[3];
-	uint32_t done_bit_addr;
-	uint32_t pgm_success_addr;
-} max10_mem_t;
-
-static const std::map<uint32_t, max10_mem_t> max10_memory_map = {
-	{0x031820dd, {
-		0x80005,  // check_addr0
-		0x0000, 512,  // DSM
-		0x0200, {4096, 4096},  // UFM
-		0x2200, {35840, 14848, 20992},  // CFM
-		0x0009,  // done bit
-		0x000b}  // program success addr
-	},
-};
 
 void Altera::max10_program()
 {
@@ -402,7 +380,7 @@ void Altera::max10_program()
 	// Start!
 	max10_flow_enable();
 
-	max10_flow_erase();
+	max10_flow_erase(mem);
 	max10_dsm_verify();
 
 	/* Write */
@@ -464,16 +442,28 @@ static void word_to_array(uint32_t in, uint8_t *out) {
 	out[3] = (in >> 24) & 0xff;
 }
 
-void Altera::max10_flow_erase()
+void Altera::max10_flow_erase(const max10_mem_t &mem, const uint8_t erase_sectors)
 {
 	const uint32_t dsm_clear_delay = 350000120 / _clk_period;
 	const uint8_t dsm_clear[2] = MAX10_DSM_CLEAR;
+	const uint8_t isc_erase[2] = MAX10_ISC_ERASE;
 
-	max10_addr_shift(0x000000);
+	/* All sectors must be erased: DSM_CLEAR is better */
+	if (erase_sectors == 0x1f) {
+		max10_addr_shift(0x000000);
 
-	_jtag->shiftIR((unsigned char *)dsm_clear, NULL, IRLENGTH);
-	_jtag->set_state(Jtag::RUN_TEST_IDLE);
-	_jtag->toggleClk(dsm_clear_delay);
+		_jtag->shiftIR((unsigned char *)dsm_clear, NULL, IRLENGTH);
+		_jtag->set_state(Jtag::RUN_TEST_IDLE);
+		_jtag->toggleClk(dsm_clear_delay);
+	} else {
+		/* each bit is a sector to erase */
+		for (int sect = 0; sect < 5; sect++) {
+			if ((erase_sectors >> sect) & 0x01) {
+				max10_addr_shift(mem.sectors_erase_addr[sect]);
+				_jtag->shiftIR((unsigned char *)isc_erase, NULL, IRLENGTH);
+			}
+		}
+	}
 }
 
 void Altera::writeXFM(const uint8_t *cfg_data, uint32_t base_addr, uint32_t offset, uint32_t len)

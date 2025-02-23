@@ -91,11 +91,36 @@ class Altera: public Device, SPIInterface {
 			CYCLONE10_FAMILY = 3,
 			STRATIXV_FAMILY  = 3,
 			CYCLONE_MISC     = 10, // Fixme: idcode shared
-			UNKNOWN_FAMILY = 999
+			UNKNOWN_FAMILY   = 999
 		};
 		/*************************/
 		/*     max10 specific    */
 		/*************************/
+		struct max10_mem_t {
+			uint32_t check_addr0;  // something to check before sequence
+			uint32_t dsm_addr;
+			uint32_t dsm_len;  // 32bits
+			uint32_t ufm_addr;  // UFM1 addr
+			uint32_t ufm_len[2];
+			uint32_t cfm_addr;  // CFM2 addr
+			uint32_t cfm_len[3];
+			uint32_t sectors_erase_addr[5]; // UFM1, UFM0, CFM2, CFM1, CFM0
+			uint32_t done_bit_addr;
+			uint32_t pgm_success_addr;
+		};
+
+		std::map<uint32_t, max10_mem_t> max10_memory_map = {
+			{0x031820dd, {
+				.check_addr0 = 0x80005,  // check_addr0
+				.dsm_addr = 0x0000, 512,  // DSM
+				.ufm_addr = 0x0200, .ufm_len = {4096, 4096},  // UFM
+				.cfm_addr = 0x2200, .cfm_len = {35840, 14848, 20992},  // CFM
+				.sectors_erase_addr = {0, 1, 2, 3, 4}, // sectors erase address
+				.done_bit_addr = 0x0009,  // done bit
+				.pgm_success_addr = 0x000b}  // program success addr
+			},
+		};
+
 		void max10_program();
 		void writeXFM(const uint8_t *cfg_data, uint32_t base_addr, uint32_t offset, uint32_t len);
 		uint32_t verifyxFM(const uint8_t *cfg_data, uint32_t base_addr, uint32_t offset,
@@ -105,7 +130,7 @@ class Altera: public Device, SPIInterface {
 		void max10_addr_shift(uint32_t addr);
 		void max10_flow_enable();
 		void max10_flow_disable();
-		void max10_flow_erase();
+		void max10_flow_erase(const max10_mem_t &mem, const uint8_t erase_sectors=0x1f);
 		void max10_dsm_program(const uint8_t *dsm_data, const uint32_t dsm_len);
 		bool max10_dsm_verify();
 		bool max10_dump();
