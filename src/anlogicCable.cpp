@@ -27,6 +27,14 @@ using namespace std;
 
 #define ANLOGICCABLE_FREQ_CMD 0x01
 
+/* Pinout:
+ * PA0 - JTAG TDO
+ * PA1 - JTAG TMS
+ * PA2 - JTAG TDI
+ * PA3 - JTAG TCK
+ * ref: https://github.com/AnlogicInfo/anlogic-usbjtag
+/
+
 enum analogicCablePin {
 	ANLOGICCABLE_TCK_PIN = (1 << 2),
 	ANLOGICCABLE_TDI_PIN = (1 << 1),
