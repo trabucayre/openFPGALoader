@@ -24,6 +24,7 @@ ATTRS{idVendor}=="0403", ATTRS{idProduct}=="6015", MODE="664", GROUP="plugdev", 
 
 # anlogic cable
 ATTRS{idVendor}=="0547", ATTRS{idProduct}=="1002", MODE="664", GROUP="plugdev", TAG+="uaccess"
+ATTRS{idVendor}=="336c", ATTRS{idProduct}=="1002", MODE="664", GROUP="plugdev", TAG+="uaccess"
 
 # altera usb-blaster
 ATTRS{idVendor}=="09fb", ATTRS{idProduct}=="6001", MODE="664", GROUP="plugdev", TAG+="uaccess"
