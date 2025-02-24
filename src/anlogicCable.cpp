@@ -33,7 +33,7 @@ using namespace std;
  * PA2 - JTAG TDI
  * PA3 - JTAG TCK
  * ref: https://github.com/AnlogicInfo/anlogic-usbjtag
-/
+*/
 
 enum analogicCablePin {
 	ANLOGICCABLE_TCK_PIN = (1 << 2),
