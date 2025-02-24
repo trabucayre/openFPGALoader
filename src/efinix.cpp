@@ -83,6 +83,8 @@ Efinix::Efinix(Jtag* jtag, const std::string &filename,
 	std::string spi_board_name = "";
 	if (board_name == "xyloni_jtag") {
 		spi_board_name = "xyloni_spi";
+	} else if (board_name == "trion_t20_bga256_jtag") {
+		spi_board_name = "trion_t20_bga256";
 	} else if (board_name == "trion_t120_bga576_jtag") {
 		spi_board_name = "trion_t120_bga576";
 	} else if (board_name == "titanium_ti60_f225_jtag") {
