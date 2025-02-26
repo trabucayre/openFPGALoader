@@ -381,7 +381,7 @@ bool Efinix::programJTAG(const uint8_t *data, const int length)
 	_jtag->shiftDR(tx, NULL, 100);
 	_jtag->shiftIR(IDCODE, _irlen);
 	uint8_t idc[4];
-	_jtag->shiftDR(NULL, idc, 4);
+	_jtag->shiftDR(NULL, idc, 32);
 	printf("%02x%02x%02x%02x\n",
 			idc[0], idc[1], idc[2], idc[3]);
 	return true;
