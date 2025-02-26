@@ -74,11 +74,12 @@ FtdiSpi::FtdiSpi(int vid, int pid, unsigned char interface, uint32_t clkHZ,
 	(void)pid;
 	(void)vid;
 	(void)interface;
+
+	init(1, 0x00, BITMODE_MPSSE);
+
 	setMode(0);
 	setCSmode(SPI_CS_AUTO);
 	setEndianness(SPI_MSB_FIRST);
-
-	init(1, 0x00, BITMODE_MPSSE);
 }
 
 FtdiSpi::FtdiSpi(const cable_t &cable,
@@ -96,6 +97,8 @@ FtdiSpi::FtdiSpi(const cable_t &cable,
 	if (spi_config.wpn_pin)
 		_wpn = spi_config.wpn_pin;
 
+	init(1, _cs_bits, BITMODE_MPSSE);
+
 	/* clk is fixed by MPSSE engine
 	 * but CS, holdn, wpn are free -> update bits direction
 	 */
@@ -106,7 +109,6 @@ FtdiSpi::FtdiSpi(const cable_t &cable,
 	setCSmode(SPI_CS_AUTO);
 	setEndianness(SPI_MSB_FIRST);
 
-	init(1, 0x00, BITMODE_MPSSE);
 }
 
 FtdiSpi::~FtdiSpi()
