@@ -13,6 +13,20 @@
   Memory: OK
   Flash: OK
 
+- ID: alinx_ax7201
+  Description: AX7201 FPGA Dev Board & Kit with AMD Artix 7
+  URL: https://www.en.alinx.com/Product/FPGA-Development-Boards/Artix-7/AX7201.html
+  FPGA: Artix xc7a200tsbg484
+  Memory: OK
+  Flash: OK
+
+- ID: alinx_ax7203
+  Description: AX7203 FPGA Dev Board & Kit with AMD Artix 7
+  URL: https://www.en.alinx.com/Product/FPGA-Development-Boards/Artix-7/AX7203.html
+  FPGA: Artix xc7a200tfbg484
+  Memory: OK
+  Flash: OK
+
 - ID: litex-acorn-baseboard-mini
   Description: The LiteX-Acorn-Baseboards are baseboards developed around the SQRL's Acorn board (or Nite/LiteFury)
   URL: https://github.com/enjoy-digital/litex-acorn-baseboard/
