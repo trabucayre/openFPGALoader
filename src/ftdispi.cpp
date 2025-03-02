@@ -168,15 +168,18 @@ int FtdiSpi::ft2232_spi_wr_and_rd(//struct ftdi_spi *spi,
 				uint32_t writecnt,
 				const uint8_t * writearr, uint8_t * readarr)
 {
-	uint32_t max_xfer = (readarr) ? _buffer_size : 4096;
+	// -3: for MPSSE instruction
+	const uint32_t max_xfer = ((readarr) ? _buffer_size : 4096);
 	uint8_t buf[max_xfer];
-	int i = 0;
+	uint8_t cmd[] = {
+		static_cast<uint8_t>(((readarr) ? (MPSSE_DO_READ | _rd_mode) : 0) |
+			((writearr) ? (MPSSE_DO_WRITE | _wr_mode) : 0)),
+		0, 0};
 	int ret = 0;
 
 	uint8_t *rx_ptr = readarr;
 	uint8_t *tx_ptr = (uint8_t *)writearr;
 	uint32_t len = writecnt;
-	uint32_t xfer;
 
 	if (_cs_mode == SPI_CS_AUTO) {
 		clearCs();
@@ -190,33 +193,27 @@ int FtdiSpi::ft2232_spi_wr_and_rd(//struct ftdi_spi *spi,
 	 * operations.
 	 */
 	while (len > 0) {
-		xfer = (len > max_xfer) ? max_xfer : len;
-
-		buf[i++] = ((readarr) ? (MPSSE_DO_READ | _rd_mode) : 0) |
-					((writearr) ? (MPSSE_DO_WRITE | _wr_mode) : 0);
-		buf[i++] = (xfer - 1) & 0xff;
-		buf[i++] = ((xfer - 1) >> 8) & 0xff;
+		const uint32_t xfer = (len > max_xfer) ? max_xfer : len;
+		cmd[1] = ((xfer - 1) >> 0) & 0xff;
+		cmd[2] = ((xfer - 1) >> 8) & 0xff;
+		mpsse_store(cmd, 3);
 		if (writearr) {
-			memcpy(buf + i, tx_ptr, xfer);
+			memcpy(buf, tx_ptr, xfer);
 			tx_ptr += xfer;
-			i += xfer;
 		}
 
-		ret = mpsse_store(buf, i);
+		ret = mpsse_store(buf, xfer);
 		if (ret)
 			printf("send_buf failed before read: %i %s\n", ret, ftdi_get_error_string(_ftdi));
-		i = 0;
 		if (readarr) {
-			//if (ret == 0) {
 			ret = mpsse_read(rx_ptr, xfer);
-			if ((uint32_t)ret != xfer)
-				printf("get_buf failed: %i\n", ret);
-			//}
+			if (ret < 0)
+				printf("get_buf failed: %i %s\n", ret, ftdi_get_error_string(_ftdi));
 			rx_ptr += xfer;
 		} else {
 			ret = mpsse_write();
-			if ((uint32_t)ret != xfer+3)
-				printf("error %d %d\n", ret, i);
+			if (ret < 0)
+				printf("error: %i %s\n", ret, ftdi_get_error_string(_ftdi));
 		}
 		len -= xfer;
 
