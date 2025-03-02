@@ -8,7 +8,9 @@
 #include <ftdi.h>
 #include <unistd.h>
 #include <string.h>
+
 #include "board.hpp"
+#include "display.hpp"
 #include "ftdipp_mpsse.hpp"
 #include "ftdispi.hpp"
 
@@ -203,17 +205,29 @@ int FtdiSpi::ft2232_spi_wr_and_rd(//struct ftdi_spi *spi,
 		}
 
 		ret = mpsse_store(buf, xfer);
-		if (ret)
-			printf("send_buf failed before read: %i %s\n", ret, ftdi_get_error_string(_ftdi));
+		if (ret) {
+			printError("send_buf failed before read with error: " +
+				std::string(ftdi_get_error_string(_ftdi)) + " (" +
+				std::to_string(ret) + ")");
+			return ret;
+		}
 		if (readarr) {
 			ret = mpsse_read(rx_ptr, xfer);
-			if (ret < 0)
-				printf("get_buf failed: %i %s\n", ret, ftdi_get_error_string(_ftdi));
+			if (ret < 0) {
+				printError("read failed with error: " +
+					std::string(ftdi_get_error_string(_ftdi)) + " (" +
+					std::to_string(ret) + ")");
+				return ret;
+			}
 			rx_ptr += xfer;
 		} else {
 			ret = mpsse_write();
-			if (ret < 0)
-				printf("error: %i %s\n", ret, ftdi_get_error_string(_ftdi));
+			if (ret < 0) {
+				printError("write failed with error: " +
+					std::string(ftdi_get_error_string(_ftdi)) + " (" +
+					std::to_string(ret) + ")");
+				return ret;
+			}
 		}
 		len -= xfer;
 
