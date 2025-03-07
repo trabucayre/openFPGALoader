@@ -54,10 +54,12 @@ static version_specific v_options[4] ={{0, 240}, {0, 240}, {NO_READ, 496},
 
 
 enum dirtyJtagSig {
-	SIG_TCK =   (1 << 1),
-	SIG_TDI =   (1 << 2),
-	SIG_TDO =   (1 << 3),
-	SIG_TMS =   (1 << 4)
+	SIG_TCK = (1 << 1),
+	SIG_TDI = (1 << 2),
+	SIG_TDO = (1 << 3),
+	SIG_TMS = (1 << 4),
+	SIG_TRST = (1 << 5),
+	SIG_SRST = (1 << 6)
 };
 
 DirtyJtag::DirtyJtag(uint32_t clkHZ, int8_t verbose):
@@ -383,4 +385,57 @@ int DirtyJtag::writeTDI(const uint8_t *tx, uint8_t *rx, uint32_t len, bool end)
 		}
 	}
 	return EXIT_SUCCESS;
+}
+
+/* GPIOs */
+/* Read GPIOs */
+uint8_t DirtyJtag::gpio_get()
+{
+	int actual_length;
+	uint8_t sig;
+	uint8_t buf[] = {CMD_GETSIG, CMD_STOP};
+	if (libusb_bulk_transfer(dev_handle, DIRTYJTAG_WRITE_EP, buf, sizeof(buf),
+			&actual_length, DIRTYJTAG_TIMEOUT) < 0) {
+		printError("writeTDI: last bit error: usb bulk write failed 1");
+		return -EXIT_FAILURE;
+	}
+
+	do {
+		if (libusb_bulk_transfer(dev_handle, DIRTYJTAG_READ_EP, &sig, 1,
+				&actual_length, DIRTYJTAG_TIMEOUT) < 0) {
+			printError("writeTDI: last bit error: usb bulk read failed");
+			return -EXIT_FAILURE;
+		}
+	} while (actual_length == 0);
+
+	return sig;
+}
+
+bool DirtyJtag::_set_gpio_level(uint8_t gpio, uint8_t val)
+{
+	int actual_length;
+	uint8_t buf[] = {
+		CMD_SETSIG,
+		static_cast<uint8_t>(gpio), // mask
+		static_cast<uint8_t>(val), // bit set
+		CMD_STOP,
+	};
+	if (libusb_bulk_transfer(dev_handle, DIRTYJTAG_WRITE_EP, buf, 4,
+			&actual_length, DIRTYJTAG_TIMEOUT) < 0) {
+		printError("GPIO set: usb bulk write failed 1");
+		return false;
+	}
+
+	return true;
+}
+
+/* update selected gpio */
+bool DirtyJtag::gpio_set(uint8_t gpio)
+{
+	return _set_gpio_level(gpio, gpio);
+}
+
+bool DirtyJtag::gpio_clear(uint8_t gpio)
+{
+	return _set_gpio_level(gpio, 0);
 }

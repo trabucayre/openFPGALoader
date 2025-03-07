@@ -42,11 +42,20 @@ class DirtyJtag : public JtagInterface {
 
 	int flush() override;
 
+	/* access gpio */
+	/* read gpio */
+	uint8_t gpio_get();
+	/* update selected gpio */
+	bool gpio_set(uint8_t gpio);
+	bool gpio_clear(uint8_t gpio);
+
  private:
 	int8_t _verbose;
 
 	int sendBitBang(uint8_t mask, uint8_t val, uint8_t *read, bool last);
 	bool getVersion();
+
+	bool _set_gpio_level(uint8_t gpio, uint8_t val);
 
     libusb_device_handle *dev_handle;
 	libusb_context *usb_ctx;
