@@ -46,6 +46,12 @@ CologneChip::CologneChip(Jtag* jtag, const std::string &filename,
 		ftdi_board_name = std::regex_replace(board_name, std::regex("jtag"), "spi");
 	} else if (cable_name == "gatemate_pgm") {
 		ftdi_board_name = "gatemate_pgm_spi";
+	} else if (cable_name == "dirtyJtag") {
+		_dirtyjtag = reinterpret_cast<DirtyJtag *>(_jtag->_jtag);
+		_rstn_pin = (1 << 6);
+		_done_pin = 0;
+		_fail_pin = 0;
+		_oen_pin  = 0;
 	}
 
 	if (ftdi_board_name != "") {
@@ -84,6 +90,10 @@ void CologneChip::reset()
 		_ftdi_jtag->gpio_clear(_rstn_pin | _oen_pin);
 		usleep(SLEEP_US);
 		_ftdi_jtag->gpio_set(_rstn_pin);
+	} else if (_dirtyjtag) {
+		_dirtyjtag->gpio_clear(_rstn_pin);
+		_dirtyjtag->gpio_set(_rstn_pin);
+		usleep(SLEEP_US);
 	}
 }
 
@@ -123,10 +133,7 @@ void CologneChip::waitCfgDone()
 	}
 }
 
-/**
- * Dump flash contents to file. Works in both SPI and JTAG-SPI-bypass mode.
- */
-bool CologneChip::detect_flash()
+bool CologneChip::prepare_flash_access()
 {
 	if (_spi) {
 		/* enable output and hold reset */
@@ -135,22 +142,17 @@ bool CologneChip::detect_flash()
 		/* enable output and disable reset */
 		_ftdi_jtag->gpio_clear(_oen_pin);
 		_ftdi_jtag->gpio_set(_rstn_pin);
+	} else if (_dirtyjtag) {
+		_dirtyjtag->gpio_clear(_rstn_pin);
+		_dirtyjtag->gpio_set(_rstn_pin);
+		usleep(SLEEP_US);
 	}
 
-	/* prepare SPI access */
-	printInfo("Read Flash ", false);
-	try {
-		std::unique_ptr<SPIFlash> flash(_spi ?
-				new SPIFlash(reinterpret_cast<SPIInterface *>(_spi), false, _verbose):
-				new SPIFlash(this, false, _verbose));
-		flash->read_id();
-		flash->display_status_reg();
-	} catch (std::exception &e) {
-		printError("Fail");
-		printError(std::string(e.what()));
-		return false;
-	}
+	return true;
+}
 
+bool CologneChip::post_flash_access()
+{
 	if (_spi) {
 		/* disable output and release reset */
 		_spi->gpio_set(_rstn_pin | _oen_pin);
@@ -166,18 +168,35 @@ bool CologneChip::detect_flash()
 /**
  * Dump flash contents to file. Works in both SPI and JTAG-SPI-bypass mode.
  */
-bool CologneChip::dumpFlash(uint32_t base_addr, uint32_t len)
+bool CologneChip::detect_flash()
 {
-	if (_spi) {
-		/* enable output and hold reset */
-		_spi->gpio_clear(_rstn_pin | _oen_pin);
-	} else if (_ftdi_jtag) {
-		/* enable output and disable reset */
-		_ftdi_jtag->gpio_clear(_oen_pin);
-		_ftdi_jtag->gpio_set(_rstn_pin);
+	/* prepare SPI access */
+	prepare_flash_access();
+
+	printInfo("Read Flash ", false);
+	try {
+		std::unique_ptr<SPIFlash> flash(_spi ?
+				new SPIFlash(reinterpret_cast<SPIInterface *>(_spi), false, _verbose):
+				new SPIFlash(this, false, _verbose));
+		flash->read_id();
+		flash->display_status_reg();
+	} catch (std::exception &e) {
+		printError("Fail");
+		printError(std::string(e.what()));
+		return false;
 	}
 
+	return post_flash_access();
+}
+
+/**
+ * Dump flash contents to file. Works in both SPI and JTAG-SPI-bypass mode.
+ */
+bool CologneChip::dumpFlash(uint32_t base_addr, uint32_t len)
+{
 	/* prepare SPI access */
+	prepare_flash_access();
+
 	printInfo("Read Flash ", false);
 	try {
 		std::unique_ptr<SPIFlash> flash(_spi ?
@@ -190,16 +209,7 @@ bool CologneChip::dumpFlash(uint32_t base_addr, uint32_t len)
 		return false;
 	}
 
-	if (_spi) {
-		/* disable output and release reset */
-		_spi->gpio_set(_rstn_pin | _oen_pin);
-	} else if (_ftdi_jtag) {
-		/* disable output */
-		_ftdi_jtag->gpio_set(_oen_pin);
-	}
-	usleep(SLEEP_US);
-
-	return true;
+	return post_flash_access();
 }
 
 /**

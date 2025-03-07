@@ -12,6 +12,7 @@
 #include <string>
 
 #include "device.hpp"
+#include "dirtyJtag.hpp"
 #include "jtag.hpp"
 #include "ftdispi.hpp"
 #include "ftdiJtagMPSSE.hpp"
@@ -48,6 +49,10 @@ class CologneChip: public Device, SPIInterface {
 		uint32_t idCode() override {return 0;}
 		void reset() override;
 
+	protected:
+		bool prepare_flash_access() override;
+		bool post_flash_access() override;
+
 	private:
 		void programSPI_sram(const uint8_t *data, int length);
 		void programSPI_flash(unsigned int offset, const uint8_t *data, int length,
@@ -65,6 +70,7 @@ class CologneChip: public Device, SPIInterface {
 
 		FtdiSpi *_spi = NULL;
 		FtdiJtagMPSSE *_ftdi_jtag = NULL;
+		DirtyJtag *_dirtyjtag = NULL;
 		uint16_t _rstn_pin;
 		uint16_t _done_pin;
 		uint16_t _fail_pin;
