@@ -252,6 +252,8 @@ bool Gowin::send_command(uint8_t cmd)
 			#define le32toh(x) (x)
 		#endif
 	#endif
+#else
+#include <endian.h>
 #endif
 
 uint32_t Gowin::readReg32(uint8_t cmd)
