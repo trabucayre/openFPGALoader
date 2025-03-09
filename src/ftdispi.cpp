@@ -171,7 +171,7 @@ int FtdiSpi::ft2232_spi_wr_and_rd(//struct ftdi_spi *spi,
 				const uint8_t * writearr, uint8_t * readarr)
 {
 	// -3: for MPSSE instruction
-	const uint32_t max_xfer = ((readarr) ? _buffer_size : 4096);
+	const uint16_t max_xfer = ((readarr) ? _buffer_size : 4096);
 	uint8_t buf[max_xfer];
 	uint8_t cmd[] = {
 		static_cast<uint8_t>(((readarr) ? (MPSSE_DO_READ | _rd_mode) : 0) |
@@ -195,16 +195,18 @@ int FtdiSpi::ft2232_spi_wr_and_rd(//struct ftdi_spi *spi,
 	 * operations.
 	 */
 	while (len > 0) {
-		const uint32_t xfer = (len > max_xfer) ? max_xfer : len;
-		cmd[1] = ((xfer - 1) >> 0) & 0xff;
-		cmd[2] = ((xfer - 1) >> 8) & 0xff;
+		const uint16_t xfer = (len > max_xfer) ? max_xfer : len;
+		cmd[1] = static_cast<uint8_t>(((xfer - 1) >> 0) & 0xff);
+		cmd[2] = static_cast<uint8_t>(((xfer - 1) >> 8) & 0xff);
+		uint16_t xfer_len = 0; // 0 when read-only
+
 		mpsse_store(cmd, 3);
 		if (writearr) {
 			memcpy(buf, tx_ptr, xfer);
 			tx_ptr += xfer;
+			xfer_len = xfer;
 		}
-
-		ret = mpsse_store(buf, xfer);
+		ret = mpsse_store(buf, xfer_len);
 		if (ret) {
 			printError("send_buf failed before read with error: " +
 				std::string(ftdi_get_error_string(_ftdi)) + " (" +
