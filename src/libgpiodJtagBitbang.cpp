@@ -343,3 +343,27 @@ int LibgpiodJtagBitbang::toggleClk(uint8_t tms, uint8_t tdi, uint32_t clk_len)
 
 	return clk_len;
 }
+
+bool LibgpiodJtagBitbang::writeTMSTDI(const uint8_t *tms, const uint8_t *tdi, uint8_t *tdo,
+				      uint32_t len)
+{
+	memset(tdo, 0, (len+7) / 8);
+
+	for (uint32_t i = 0; i < len; i++) {
+#ifdef GPIOD_APIV2
+		gpiod_line_value tdix = (tdi[i >> 3] & (1 << (i & 7))) ? GPIOD_LINE_VALUE_ACTIVE : GPIOD_LINE_VALUE_INACTIVE;
+		gpiod_line_value tmsx = (tms[i >> 3] & (1 << (i & 7))) ? GPIOD_LINE_VALUE_ACTIVE : GPIOD_LINE_VALUE_INACTIVE;
+		update_pins(tmsx, tdix);
+#else
+		int tdix = (tdi[i >> 3] & (1 << (i & 7))) ? 1 : 0;
+		int tmsx = (tms[i >> 3] & (1 << (i & 7))) ? 1 : 0;
+
+		update_pins(0, tmsx, tdix);
+		update_pins(1, tmsx, tdix);
+#endif
+		if (read_tdo() > 0)
+			tdo[i >> 3] |= 1 << (i & 7);
+	}
+
+	return true;
+}
