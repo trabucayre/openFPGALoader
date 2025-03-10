@@ -14,6 +14,9 @@
 #include <stdexcept>
 
 #include "ftdiJtagMPSSE.hpp"
+#ifdef ENABLE_LIBGPIOD
+#include "libgpiodJtagBitbang.hpp"
+#endif
 #include "cable.hpp"
 #include "display.hpp"
 
@@ -36,6 +39,11 @@ XVC_server::XVC_server(int port, const cable_t & cable,
 		_jtag = new FtdiJtagMPSSE(cable, dev, serial, clkHZ,
 					  invert_read_edge, _verbose);
 		break;
+#ifdef ENABLE_LIBGPIOD
+	case MODE_LIBGPIOD_BITBANG:
+		_jtag = new LibgpiodJtagBitbang(pin_conf, dev, clkHZ, verbose);
+		break;
+#endif
 #if 0
 	case MODE_ANLOGICCABLE:
 		_jtag = new AnlogicCable(clkHZ);

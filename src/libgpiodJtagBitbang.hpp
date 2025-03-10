@@ -36,6 +36,8 @@ class LibgpiodJtagBitbang : public JtagInterface {
 	int writeTMS(const uint8_t *tms_buf, uint32_t len, bool flush_buffer, const uint8_t tdi = 1) override;
 	int writeTDI(const uint8_t *tx, uint8_t *rx, uint32_t len, bool end) override;
 	int toggleClk(uint8_t tms, uint8_t tdo, uint32_t clk_len) override;
+	bool writeTMSTDI(const uint8_t *tms, const uint8_t *tdi, uint8_t *tdo,
+			 uint32_t len) override;
 
 	int get_buffer_size() override { return 0; }
 	bool isFull() override { return false; }
