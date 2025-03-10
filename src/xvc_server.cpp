@@ -148,6 +148,7 @@ void XVC_server::thread_listen()
 
 	maxfd = _sock;
 
+	try {
 	while (!_must_stop) {
 		fd_set read = conn, except = conn;
 		int fd;
@@ -203,6 +204,9 @@ void XVC_server::thread_listen()
 			}
 		}
 	}
+	} catch (const std::runtime_error& e) {
+		std::cerr << "thread exiting with error: " << e.what() << std::endl;
+	}
 	_is_stopped = true;
 }
 
@@ -216,6 +220,7 @@ bool XVC_server::listen_loop()
 	_must_stop = true;
 	close_connection();
 	while (!_is_stopped){}
+	_thread->join();
 	delete _thread;
 
 	return true;
