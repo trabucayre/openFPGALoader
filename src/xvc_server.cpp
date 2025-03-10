@@ -149,61 +149,61 @@ void XVC_server::thread_listen()
 	maxfd = _sock;
 
 	try {
-	while (!_must_stop) {
-		fd_set read = conn, except = conn;
-		int fd;
+		while (!_must_stop) {
+			fd_set read = conn, except = conn;
+			int fd;
 
-		struct timeval tv;
-		tv.tv_sec = 1;
-		tv.tv_usec = 0;
-		if (select(maxfd + 1, &read, 0, &except, &tv) < 0) {
-			printError("select");
-			break;
-		}
+			struct timeval tv;
+			tv.tv_sec = 1;
+			tv.tv_usec = 0;
+			if (select(maxfd + 1, &read, 0, &except, &tv) < 0) {
+				printError("select");
+				break;
+			}
 
-		for (fd = 0; fd <= maxfd; ++fd) {
-			if (FD_ISSET(fd, &read)) {
-				if (fd == _sock) {
-					int newfd;
-					socklen_t nsize = sizeof(_sock_addr);
+			for (fd = 0; fd <= maxfd; ++fd) {
+				if (FD_ISSET(fd, &read)) {
+					if (fd == _sock) {
+						int newfd;
+						socklen_t nsize = sizeof(_sock_addr);
 
-					newfd = accept(_sock, (struct sockaddr*) &_sock_addr,
-						&nsize);
+						newfd = accept(_sock, (struct sockaddr*) &_sock_addr,
+							&nsize);
 
-					printf("connection accepted - fd %d\n", newfd);
-					if (newfd < 0) {
-						throw std::runtime_error("accept");
-					} else {
-						printInfo("setting TCP_NODELAY to 1\n");
-						int flag = 1;
-						int optResult = setsockopt(newfd, IPPROTO_TCP,
-								TCP_NODELAY, (char *)&flag, sizeof(int));
-						if (optResult < 0)
-							throw std::runtime_error("TCP_NODELAY error");
-						if (newfd > maxfd) {
-							maxfd = newfd;
+						printf("connection accepted - fd %d\n", newfd);
+						if (newfd < 0) {
+							throw std::runtime_error("accept");
+						} else {
+							printInfo("setting TCP_NODELAY to 1\n");
+							int flag = 1;
+							int optResult = setsockopt(newfd, IPPROTO_TCP,
+									TCP_NODELAY, (char *)&flag, sizeof(int));
+							if (optResult < 0)
+								throw std::runtime_error("TCP_NODELAY error");
+							if (newfd > maxfd) {
+								maxfd = newfd;
+							}
+							FD_SET(newfd, &conn);
 						}
-						FD_SET(newfd, &conn);
+					} else {
+						int ret = handle_data(fd);
+						if (ret != 0) {
+							printInfo("connection closed - fd " + std::to_string(fd));
+							close(fd);
+							FD_CLR(fd, &conn);
+							if (ret == 3)
+								throw std::runtime_error("communication failure");
+						}
 					}
-				} else {
-					int ret = handle_data(fd);
-					if (ret != 0) {
-						printInfo("connection closed - fd " + std::to_string(fd));
-						close(fd);
-						FD_CLR(fd, &conn);
-						if (ret == 3)
-							throw std::runtime_error("communication failure");
-					}
+				} else if (FD_ISSET(fd, &except)) {
+					printWarn("connection aborted - fd " + std::to_string(fd));
+					close(fd);
+					FD_CLR(fd, &conn);
+					if (fd == _sock)
+						break;
 				}
-			} else if (FD_ISSET(fd, &except)) {
-				printWarn("connection aborted - fd " + std::to_string(fd));
-				close(fd);
-				FD_CLR(fd, &conn);
-				if (fd == _sock)
-					break;
 			}
 		}
-	}
 	} catch (const std::runtime_error& e) {
 		std::cerr << "thread exiting with error: " << e.what() << std::endl;
 	}
