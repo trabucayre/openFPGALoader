@@ -91,13 +91,21 @@ class Altera: public Device, SPIInterface {
 			CYCLONE10_FAMILY = 3,
 			STRATIXV_FAMILY  = 3,
 			CYCLONE_MISC     = 10, // Fixme: idcode shared
-			UNKNOWN_FAMILY = 999
+			UNKNOWN_FAMILY   = 999
 		};
 		/*************************/
 		/*     max10 specific    */
 		/*************************/
-		void max10_program();
+		struct max10_mem_t;
+		static const std::map<uint32_t, Altera::max10_mem_t> max10_memory_map;
+
+		/* Write a full POF file, or updates UFM with an arbitrary binary file */
+		void max10_program(uint32_t offset);
+		/* Write something in UFMx sections after erase */
+		bool max10_program_ufm(const max10_mem_t *mem, uint32_t offset);
+		/* Write len Word from cfg_data at a specific address */
 		void writeXFM(const uint8_t *cfg_data, uint32_t base_addr, uint32_t offset, uint32_t len);
+		/* Compare cfg_data with data stored at base_addr */
 		uint32_t verifyxFM(const uint8_t *cfg_data, uint32_t base_addr, uint32_t offset,
 			uint32_t len);
 		void max10_dsm_program_success(const uint32_t pgm_success_addr);
@@ -105,7 +113,8 @@ class Altera: public Device, SPIInterface {
 		void max10_addr_shift(uint32_t addr);
 		void max10_flow_enable();
 		void max10_flow_disable();
-		void max10_flow_erase();
+		/* Performs a full internal flash erase or sectors per sectors erase */
+		void max10_flow_erase(const max10_mem_t *mem, const uint8_t erase_sectors=0x1f);
 		void max10_dsm_program(const uint8_t *dsm_data, const uint32_t dsm_len);
 		bool max10_dsm_verify();
 		bool max10_dump();

@@ -38,6 +38,15 @@ Altera::Altera(Jtag *jtag, const std::string &filename,
 	_device_package(device_package), _spiOverJtagPath(spiOverJtagPath),
 	_vir_addr(0x1000), _vir_length(14), _clk_period(1)
 {
+	/* check device family */
+	_idcode = _jtag->get_target_device_id();
+	string family = fpga_list[_idcode].family;
+	if (family == "MAX 10") {
+		_fpga_family = MAX10_FAMILY;
+	} else {
+		_fpga_family = CYCLONE_MISC;  // FIXME
+	}
+
 	if (prg_type == Device::RD_FLASH) {
 		_mode = Device::READ_MODE;
 	} else {
@@ -52,6 +61,8 @@ Altera::Altera(Jtag *jtag, const std::string &filename,
 					_mode = Device::SPI_MODE;
 			} else if (_file_extension == "pof") {  // MAX10
 				_mode = Device::FLASH_MODE;
+			} else if (_fpga_family == MAX10_FAMILY) {
+				_mode = Device::FLASH_MODE;
 			} else {  // unknown type -> sanity check
 				if (prg_type == Device::WR_SRAM) {
 					printError("file has an unknown type:");
@@ -64,15 +75,6 @@ Altera::Altera(Jtag *jtag, const std::string &filename,
 				}
 			}
 		}
-	}
-
-	/* check device family */
-	_idcode = _jtag->get_target_device_id();
-	string family = fpga_list[_idcode].family;
-	if (family == "MAX 10") {
-		_fpga_family = MAX10_FAMILY;
-	} else {
-		_fpga_family = CYCLONE_MISC;  // FIXME
 	}
 }
 
@@ -235,7 +237,7 @@ void Altera::program(unsigned int offset, bool unprotect_flash)
 
 	/* Specific case for MAX10 */
 	if (_fpga_family == MAX10_FAMILY) {
-		max10_program();
+		max10_program(offset);
 		return;
 	}
 
@@ -296,41 +298,101 @@ uint32_t Altera::idCode()
 #define MAX10_ISC_ENABLE        {0xcc, 0x02}
 #define MAX10_ISC_DISABLE       {0x01, 0x02}
 #define MAX10_ISC_ADDRESS_SHIFT {0x03, 0x02}
+#define MAX10_ISC_ERASE         {0xf2, 0x02}
 #define MAX10_ISC_PROGRAM       {0xf4, 0x02}
 #define MAX10_DSM_ICB_PROGRAM   {0xF4, 0x03}
 #define MAX10_DSM_VERIFY        {0x07, 0x03}
 #define MAX10_DSM_CLEAR         {0xf2, 0x03}
 #define MAX10_BYPASS            {0xFF, 0x03}
 
-typedef struct {
+struct Altera::max10_mem_t {
 	uint32_t check_addr0;  // something to check before sequence
 	uint32_t dsm_addr;
 	uint32_t dsm_len;  // 32bits
 	uint32_t ufm_addr;  // UFM1 addr
-	uint32_t ufm_len[2];
+	uint32_t ufm_len[2]; // 32bits
 	uint32_t cfm_addr;  // CFM2 addr
-	uint32_t cfm_len[3];
+	uint32_t cfm_len[3]; // 32bits
+	uint32_t sectors_erase_addr[5]; // UFM1, UFM0, CFM2, CFM1, CFM0
 	uint32_t done_bit_addr;
 	uint32_t pgm_success_addr;
-} max10_mem_t;
+};
 
-static const std::map<uint32_t, max10_mem_t> max10_memory_map = {
-	{0x031820dd, {
-		0x80005,  // check_addr0
-		0x0000, 512,  // DSM
-		0x0200, {4096, 4096},  // UFM
-		0x2200, {35840, 14848, 20992},  // CFM
-		0x0009,  // done bit
-		0x000b}  // program success addr
+const std::map<uint32_t, Altera::max10_mem_t> Altera::max10_memory_map = {
+	{0x031820dd, { // 10M08SAU
+		.check_addr0 = 0x80005,  // check_addr0
+		.dsm_addr = 0x0000, 512,  // DSM
+		.ufm_addr = 0x0200, .ufm_len = {4096, 4096},  // UFM
+		.cfm_addr = 0x2200, .cfm_len = {35840, 14848, 20992},  // CFM
+		.sectors_erase_addr = {0x17ffff, 0x27ffff, 0x37ffff, 0x47ffff, 0x57ffff}, // sectors erase address
+		.done_bit_addr = 0x0009,  // done bit
+		.pgm_success_addr = 0x000b}  // program success addr
 	},
 };
 
-void Altera::max10_program()
+/* Write an arbitrary file in UFM1 and UFM0
+ * FIXME: in some mode its also possible to uses CFM2 & CFM1
+ */
+bool Altera::max10_program_ufm(const Altera::max10_mem_t *mem, unsigned int offset)
 {
-	POFParser _bit(_filename, _verbose);
+	RawParser _bit(_filename, true);
 	_bit.parse();
 	_bit.displayHeader();
+	const uint8_t *data = _bit.getData();
+	const uint32_t length = _bit.getLength() / 8;
+	const uint32_t base_addr = mem->ufm_addr + offset;
 
+	uint8_t *buff = (uint8_t *)malloc(length);
+	if (!buff) {
+		printError("max10_program_ufm: Failed to allocate buffer");
+		return false;
+	}
+
+	/* check */
+	const uint32_t ufmx_len = 4 * (mem->ufm_len[0] + mem->ufm_len[1]);
+	if (base_addr > length) {
+		printError("Error: start offset is out of UFM region");
+		return false;
+	}
+	if (base_addr + length > ufmx_len) {
+		printError("Error: end address is out of UFM region");
+		return false;
+	}
+
+	/* data needs to be re-ordered */
+	for (uint32_t i = 0; i < length; i+=4) {
+		for (int b = 0; b < 4; b++) {
+			buff[i + b] = data[i + (3-b)];
+		}
+	}
+
+	// Start!
+	max10_flow_enable();
+
+	/* Erase UFM1 & UFM0 */
+	printInfo("Erase UFM ", false);
+	max10_flow_erase(mem, 0x3);
+	printInfo("Done");
+
+	/* Program UFM1 & UFM0 */
+	// Simplify code:
+	// UFM0 follows UFM1, so we don't need to iterate
+	printInfo("Write UFM");
+	writeXFM(buff, base_addr, 0, length / 4);
+
+	/* Verify */
+	if (_verify)
+		verifyxFM(buff, base_addr, 0, length / 4);
+
+	max10_flow_disable();
+
+	free(buff);
+
+	return true;
+}
+
+void Altera::max10_program(unsigned int offset)
+{
 	uint32_t base_addr;
 
 	/* Needs to have some specifics informations about internal flash size/organisation
@@ -341,7 +403,16 @@ void Altera::max10_program()
 		printError("Model not supported. Please update max10_memory_map.");
 		throw std::runtime_error("Model not supported. Please update max10_memory_map.");
 	}
-	const max10_mem_t mem = mem_map->second;
+	const Altera::max10_mem_t mem = mem_map->second;
+
+	if (_file_extension != "pof") {
+		max10_program_ufm(&mem, offset);
+		return;
+	}
+
+	POFParser _bit(_filename, _verbose);
+	_bit.parse();
+	_bit.displayHeader();
 
 	/*
 	 * MAX10 memory map differs according to internal configuration mode
@@ -402,7 +473,7 @@ void Altera::max10_program()
 	// Start!
 	max10_flow_enable();
 
-	max10_flow_erase();
+	max10_flow_erase(&mem, 0x1F);
 	max10_dsm_verify();
 
 	/* Write */
@@ -464,16 +535,39 @@ static void word_to_array(uint32_t in, uint8_t *out) {
 	out[3] = (in >> 24) & 0xff;
 }
 
-void Altera::max10_flow_erase()
+/* Two possibilities:
+ * - full internal flash must be erased (to write a POF file): DSM_CLEAR must be used to
+ *   perform a full erase
+ * - only a sub-set of sectors must be erased (to update a CPU firmware): only specified
+ *   sectors have to be erased using MAX10_ISC_ERASE instruction after moving to a specific
+ *   erase address
+ */
+void Altera::max10_flow_erase(const Altera::max10_mem_t *mem, const uint8_t erase_sectors)
 {
 	const uint32_t dsm_clear_delay = 350000120 / _clk_period;
-	const uint8_t dsm_clear[2] = MAX10_DSM_CLEAR;
+	/* All sectors must be erased: DSM_CLEAR is better/faster */
+	if (erase_sectors == 0x1f) {
+		const uint8_t dsm_clear[2] = MAX10_DSM_CLEAR;
 
-	max10_addr_shift(0x000000);
+		max10_addr_shift(0x000000);
 
-	_jtag->shiftIR((unsigned char *)dsm_clear, NULL, IRLENGTH);
-	_jtag->set_state(Jtag::RUN_TEST_IDLE);
-	_jtag->toggleClk(dsm_clear_delay);
+		_jtag->shiftIR((unsigned char *)dsm_clear, NULL, IRLENGTH);
+		_jtag->set_state(Jtag::RUN_TEST_IDLE);
+		_jtag->toggleClk(dsm_clear_delay);
+	} else {
+		//const uint32_t isc_clear_delay = 5120 / _clk_period;
+		const uint8_t isc_erase[2] = MAX10_ISC_ERASE;
+
+		/* each bit is a sector to erase */
+		for (int sect = 0; sect < 5; sect++) {
+			if ((erase_sectors >> sect) & 0x01) {
+				max10_addr_shift(mem->sectors_erase_addr[sect]);
+				_jtag->shiftIR((unsigned char *)isc_erase, NULL, IRLENGTH);
+				_jtag->set_state(Jtag::RUN_TEST_IDLE);
+				_jtag->toggleClk(dsm_clear_delay);
+			}
+		}
+	}
 }
 
 void Altera::writeXFM(const uint8_t *cfg_data, uint32_t base_addr, uint32_t offset, uint32_t len)
