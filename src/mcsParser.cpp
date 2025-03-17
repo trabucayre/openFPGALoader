@@ -85,14 +85,14 @@ int McsParser::parse()
 			_bit_length += (byteLen * 8);
 			break;
 		case 1:
-			if (_bit_data.size()*8 != _bit_length)
+			if (_bit_data.size() * 8 != (size_t)_bit_length)
 				_bit_length = _bit_data.size() * 8;
 			return EXIT_SUCCESS;
 			break;
 		case 4:
 			sscanf((char*)&str[DATA_BASE], "%4x", &loc_addr);
 			_base_addr = (loc_addr << 16);
-			if (_base_addr > _bit_data.size())
+			if ((size_t)_base_addr > _bit_data.size())
 				_bit_data.resize(_base_addr);
 			if (_base_addr * 8 > _bit_length)
 				_bit_length = _base_addr * 8;
