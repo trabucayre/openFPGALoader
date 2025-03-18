@@ -7,6 +7,7 @@
 #define SRC_COMMON_HPP_
 
 #include <string>
+#include <vector>
 
 /*!
  * \brief return shell environment variable value

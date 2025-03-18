@@ -142,7 +142,6 @@ int main(int argc, char **argv)
 		printError("Error in parse arg step");
 		return EXIT_FAILURE;
 	}
-	printf("sectors: %s\n", args.flash_sector.c_str());
 
 	if (args.is_list_command) {
 		displaySupported(args);

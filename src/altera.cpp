@@ -486,7 +486,7 @@ void Altera::max10_program(unsigned int offset)
 	if (_flash_sectors.size() > 0) {
 		const std::vector<std::string> sectors = splitString(_flash_sectors, ',');
 		update_sectors = 0;
-		for (const auto sector: sectors) {
+		for (const auto &sector: sectors) {
 			if (sector == "UFM1")
 				update_sectors |= (1 << 0);
 			else if (sector == "UFM0")

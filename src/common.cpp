@@ -6,8 +6,9 @@
 
 #include "common.hpp"
 
-#include <string>
 #include <cstdlib>
+#include <string>
+#include <vector>
 
 /*!
  * \brief return shell environment variable value
@@ -31,7 +32,7 @@ const std::vector<std::string> splitString(const std::string& in,
 	std::vector<std::string> tokens;
 	size_t start = 0, end = 0;
 
-	while ((end = in.find(',', start)) != std::string::npos) {
+	while ((end = in.find(delim, start)) != std::string::npos) {
 		tokens.push_back(in.substr(start, end - start));
 		start = end + 1;
 	}
