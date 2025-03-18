@@ -22,6 +22,7 @@ class Altera: public Device, SPIInterface {
 				const std::string &device_package,
 				const std::string &spiOverJtagPath,
 				bool verify, int8_t verbose,
+				const std::string &flash_sectors,
 				bool skip_load_bridge, bool skip_reset);
 		~Altera();
 
@@ -152,6 +153,7 @@ class Altera: public Device, SPIInterface {
 
 		altera_family_t _fpga_family;
 		uint32_t _idcode;
+		std::string _flash_sectors; /**< MAX10 Only: list of sectors to erase/write */
 };
 
 #endif  // SRC_ALTERA_HPP_

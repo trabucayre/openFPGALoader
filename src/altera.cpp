@@ -31,12 +31,14 @@ Altera::Altera(Jtag *jtag, const std::string &filename,
 	const std::string &file_type, Device::prog_type_t prg_type,
 	const std::string &device_package,
 	const std::string &spiOverJtagPath, bool verify, int8_t verbose,
+	const std::string &flash_sectors,
 	bool skip_load_bridge, bool skip_reset):
 	Device(jtag, filename, file_type, verify, verbose),
 	SPIInterface(filename, verbose, 256, verify, skip_load_bridge,
 				 skip_reset),
 	_device_package(device_package), _spiOverJtagPath(spiOverJtagPath),
-	_vir_addr(0x1000), _vir_length(14), _clk_period(1)
+	_vir_addr(0x1000), _vir_length(14), _clk_period(1),
+	_flash_sectors(flash_sectors)
 {
 	/* check device family */
 	_idcode = _jtag->get_target_device_id();
@@ -403,6 +405,7 @@ bool Altera::max10_program_ufm(const Altera::max10_mem_t *mem, unsigned int offs
 void Altera::max10_program(unsigned int offset)
 {
 	uint32_t base_addr;
+	uint8_t update_sectors;
 
 	/* Needs to have some specifics informations about internal flash size/organisation
 	 * and some magics.
@@ -479,27 +482,54 @@ void Altera::max10_program(unsigned int offset)
 	const uint8_t *dsm_data = _bit.getData("ICB");
 	const int dsm_len = _bit.getLength("ICB") / 32;  // getLength (bits) dsm_len in 32bits word
 
+	/* Check for a full update or only for a subset */
+	if (_flash_sectors.size() > 0) {
+		const std::vector<std::string> sectors = splitString(_flash_sectors, ',');
+		update_sectors = 0;
+		for (const auto sector: sectors) {
+			if (sector == "UFM1")
+				update_sectors |= (1 << 0);
+			else if (sector == "UFM0")
+				update_sectors |= (1 << 1);
+			else if (sector == "CFM2")
+				update_sectors |= (1 << 2);
+			else if (sector == "CFM1")
+				update_sectors |= (1 << 3);
+			else if (sector == "CFM0")
+				update_sectors |= (1 << 4);
+			else
+				throw std::runtime_error("Unknown sector " + sector);
+		}
+	} else { // full update
+		update_sectors = 0x1F;
+	}
+
 	// Start!
 	max10_flow_enable();
 
-	max10_flow_erase(&mem, 0x1F);
-	max10_dsm_verify();
+	max10_flow_erase(&mem, update_sectors);
+	if (update_sectors == 0x1f)
+		max10_dsm_verify();
 
 	/* Write */
 
 	// UFM 1 -> 0
 	base_addr = mem.ufm_addr;
 	for (int i = 1; i >= 0; i--) {
-		printInfo("Write UFM" + std::to_string(i));
-		writeXFM(ufm_data[i], base_addr, 0, mem.ufm_len[i]);
+		if (update_sectors & (1 << i)) {
+			printInfo("Write UFM" + std::to_string(i));
+			writeXFM(ufm_data[i], base_addr, 0, mem.ufm_len[i]);
+		}
 		base_addr += mem.ufm_len[i];
 	}
 
 	// CFM2 -> 0
 	base_addr = mem.cfm_addr;
 	for (int i = 2; i >= 0; i--) {
-		printInfo("Write CFM" + std::to_string(i));
-		writeXFM(cfm_data[i], base_addr, 0, mem.cfm_len[i]);
+		if (update_sectors & (1 << ((2 - i) + 2))) {
+			printInfo("Write CFM" + std::to_string(i));
+			writeXFM(cfm_data[i], base_addr, 0, mem.cfm_len[i]);
+		}
 		base_addr += mem.cfm_len[i];
 	}
 
@@ -508,29 +538,35 @@ void Altera::max10_program(unsigned int offset)
 		// UFM 1 -> 0
 		base_addr = mem.ufm_addr;
 		for (int i = 1; i >= 0; i--) {
-			printInfo("Verify UFM" + std::to_string(i));
-			verifyxFM(ufm_data[i], base_addr, 0, mem.ufm_len[i]);
+			if (update_sectors & (1 << i)) {
+				printInfo("Verify UFM" + std::to_string(i));
+				verifyxFM(ufm_data[i], base_addr, 0, mem.ufm_len[i]);
+			}
 			base_addr += mem.ufm_len[i];
 		}
 
 		// CFM2->0
 		base_addr = mem.cfm_addr;
 		for (int i = 2; i >= 0; i--) {
-			printInfo("Verify CFM" + std::to_string(i));
-			verifyxFM(cfm_data[i], base_addr, 0, mem.cfm_len[i]);
+			if (update_sectors & (1 << ((2 - i) + 2))) {
+				printInfo("Verify CFM" + std::to_string(i));
+				verifyxFM(cfm_data[i], base_addr, 0, mem.cfm_len[i]);
+			}
 			base_addr += mem.cfm_len[i];
 		}
 	}
 
 	// DSM
 
-	max10_dsm_program(dsm_data, dsm_len);
-	max10_dsm_verify();
+	if (update_sectors == 0x1F) {
+		max10_dsm_program(dsm_data, dsm_len);
+		max10_dsm_verify();
 
-	max10_flow_program_donebit(mem.done_bit_addr);
-	max10_dsm_verify();
-	max10_dsm_program_success(mem.pgm_success_addr);
-	max10_dsm_verify();
+		max10_flow_program_donebit(mem.done_bit_addr);
+		max10_dsm_verify();
+		max10_dsm_program_success(mem.pgm_success_addr);
+		max10_dsm_verify();
+	}
 
 	/* disable ISC flow */
 	max10_flow_disable();

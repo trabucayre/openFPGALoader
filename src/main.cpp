@@ -18,6 +18,7 @@
 #include "board.hpp"
 #include "cable.hpp"
 #include "colognechip.hpp"
+#include "common.hpp"
 #include "cxxopts.hpp"
 #include "device.hpp"
 #include "dfu.hpp"
@@ -141,6 +142,7 @@ int main(int argc, char **argv)
 		printError("Error in parse arg step");
 		return EXIT_FAILURE;
 	}
+	printf("sectors: %s\n", args.flash_sector.c_str());
 
 	if (args.is_list_command) {
 		displaySupported(args);
@@ -574,7 +576,7 @@ int main(int argc, char **argv)
 		} else if (fab == "altera") {
 			fpga = new Altera(jtag, args.bit_file, args.file_type,
 				args.prg_type, args.fpga_part, args.bridge_path, args.verify,
-				args.verbose, args.skip_load_bridge, args.skip_reset);
+				args.verbose, args.flash_sector, args.skip_load_bridge, args.skip_reset);
 		} else if (fab == "anlogic") {
 			fpga = new Anlogic(jtag, args.bit_file, args.file_type,
 				args.prg_type, args.verify, args.verbose);
@@ -808,7 +810,7 @@ int parse_opt(int argc, char **argv, struct arguments *args,
 			("file-type",
 				"provides file type instead of let's deduced by using extension",
 				cxxopts::value<string>(args->file_type))
-			("flash-sector", "flash sector (Lattice parts only)",
+			("flash-sector", "flash sector (Lattice and Altera MAX10 parts only)",
 				cxxopts::value<string>(args->flash_sector))
 			("fpga-part",   "fpga model flavor + package",
 				cxxopts::value<string>(args->fpga_part))

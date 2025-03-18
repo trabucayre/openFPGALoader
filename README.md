@@ -89,7 +89,7 @@ openFPGALoader -- a program to flash FPGA
                                 with dump-flash
       --file-type arg           provides file type instead of let's deduced
                                 by using extension
-      --flash-sector arg        flash sector (Lattice parts only)
+      --flash-sector arg        flash sector (Lattice and Altera MAX10 parts only)
       --fpga-part arg           fpga model flavor + package
       --freq arg                jtag frequency (Hz)
   -f, --write-flash             write bitstream in flash (default: false)
