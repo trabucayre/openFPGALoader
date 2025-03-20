@@ -494,7 +494,7 @@
   URL: https://www.xilinx.com/products/boards-and-kits/kcu105.html
   FPGA: Kintex UltraScale xcku040-ffva1156
   Memory: OK
-  Flash: OK
+  Flash: OK (primary and secondary)
 
 - ID: kcu116
   Description: Xilinx KCU116

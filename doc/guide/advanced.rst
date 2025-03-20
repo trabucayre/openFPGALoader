@@ -34,7 +34,7 @@ Reading the bitstream from STDIN
   .. code-block:: bash
 
     # FPGA side
-    nc -lp port | openFPGALoader --file-type xxx [option
+    nc -lp port | openFPGALoader --file-type xxx [option]
 
     # Bitstream side
     nc -q 0 host port < /path/to/bitstream.ext
@@ -82,6 +82,35 @@ Writing to an arbitrary address in flash memory
 
 With FPGA using an external SPI flash (*xilinx*, *lattice ECP5/nexus/ice40*, *anlogic*, *efinix*) option ``-o`` allows
 one to write raw binary file to an arbitrary adress in FLASH.
+
+Detect/read/write on primary/secondary flash memories
+=====================================================
+
+With FPGA using two external SPI flash (some *xilinx* boards) option ``--target-flash`` allows to select the QSPI chip.
+
+To detect:
+
+.. code-block:: bash
+
+    openFPGALoader -b kcu105 -f --target-flash {primary,secondary} --detect
+
+To read the primary flash memory:
+
+.. code-block:: bash
+
+    openFPGALoader -b kcu105 -f --target-flash primary --dump-flash --file-size N_BYTES mydump.bin
+
+and the second flash memory:
+
+.. code-block:: bash
+
+    openFPGALoader -b kcu105 -f --target-flash secondary --dump-flash --file-size N_BYTES --secondary-bitstream mydump.bin
+
+To write on secondary flash memory:
+
+.. code-block:: bash
+
+    openFPGALoader -b kcu105 -f --target-flash secondary --secondary-bitstream mySecondaryBitstream.bin
 
 Using an alternative directory for *spiOverJtag*
 ================================================
