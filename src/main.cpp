@@ -1043,7 +1043,8 @@ int parse_opt(int argc, char **argv, struct arguments *args,
 				 args->secondary_bit_file.empty() &&
 				 !args->protect_flash &&
 				 !args->unprotect_flash &&
-				 !args->bulk_erase_flash
+				 !args->bulk_erase_flash &&
+				 !args->detect
 				) {
 				printError("Error: secondary bitfile not specified");
 				cout << options.help() << endl;
