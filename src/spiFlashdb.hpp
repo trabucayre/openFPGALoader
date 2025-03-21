@@ -456,6 +456,22 @@ static std::map <uint32_t, flash_t> flash_list = {
 		.quad_register = STATR,
 		.quad_mask = (1 << 6),
 	}},
+	{0xc22019, {
+		/* https://www.mxic.com.tw/Lists/Datasheet/Attachments/8906/MX25L25645G,%203V,%20256Mb,%20v2.0.pdf */
+		.manufacturer = "Macronix",
+		.model = "MX25L25645G",
+		.nr_sector = 512,
+		.sector_erase = true,
+		.subsector_erase = true,
+		.has_extended = false,
+		.tb_otp = true,
+		.tb_offset = (1 << 3),
+		.tb_register = CONFR,
+		.bp_len = 5,
+		.bp_offset = {(1 << 2), (1 << 3), (1 << 4), (1 << 5)},
+		.quad_register = STATR,
+		.quad_mask = (1 << 6),
+	}},
 	{0xc2201a, {
 		/* https://www.macronix.com/Lists/Datasheet/Attachments/8745/MX25L51245G,%203V,%20512Mb,%20v1.7.pdf */
 		.manufacturer = "Macronix",
