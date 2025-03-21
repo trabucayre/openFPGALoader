@@ -243,7 +243,7 @@ static uint16_t esp_usb_target_chip_id = 0; /* not applicable for FPGA, they hav
 
 
 esp_usb_jtag::esp_usb_jtag(uint32_t clkHZ, int8_t verbose, int vid = ESPUSBJTAG_VID, int pid = ESPUSBJTAG_PID):
-			_verbose(verbose),
+			_verbose(verbose > 1),
 			dev_handle(NULL), usb_ctx(NULL), _tdi(0), _tms(0)
 {
 	int ret;
@@ -276,6 +276,18 @@ esp_usb_jtag::esp_usb_jtag(uint32_t clkHZ, int8_t verbose, int vid = ESPUSBJTAG_
 	if (setClkFreq(clkHZ) < 0) {
 		cerr << "Fail to set frequency" << endl;
 		throw std::exception();
+	}
+
+	//drain_in(); // FIXME: why buffer is not empty here, and why some read fails ?
+
+	if (1 == 0) { // debug functions
+		uint8_t mess[256];
+		mess[0] = 0x55;
+		mess[1] = 0xAA;
+		mess[2] = 0xBB;
+		while(1)
+			writeTDI(mess, 0, 8 * 3, false);
+			//toggleClk(0,1, 10000);
 	}
 }
 
@@ -424,8 +436,10 @@ int esp_usb_jtag::writeTMS(const uint8_t *tms, uint32_t len, bool flush_buffer,
 {
 	uint8_t buf[OUT_BUF_SZ];
 	char mess[256];
-	snprintf(mess, 256, "writeTMS %d %d", len, flush_buffer);
-	printSuccess(mess);
+	if (_verbose) {
+		snprintf(mess, 256, "writeTMS %d %d", len, flush_buffer);
+		printSuccess(mess);
+	}
 
 	if(flush_buffer)
 		flush();
@@ -474,7 +488,8 @@ int esp_usb_jtag::writeTMS(const uint8_t *tms, uint32_t len, bool flush_buffer,
 			printError(mess);
 			return -EXIT_FAILURE;
 		}
-		cerr << "tms" << endl;
+		if (_verbose)
+			cerr << "tms" << endl;
 	}
 
 	return len;
@@ -493,8 +508,10 @@ int esp_usb_jtag::toggleClk(uint8_t tms, uint8_t tdi, uint32_t len)
 {
 	uint8_t buf[OUT_BUF_SZ];
 	char mess[256];
-	snprintf(mess, 256, "toggleClk %d", len);
-	printSuccess(mess);
+	if (_verbose) {
+		snprintf(mess, 256, "toggleClk %d", len);
+		printSuccess(mess);
+	}
 
 	if (len == 0)
 		return 0;
@@ -559,7 +576,8 @@ int esp_usb_jtag::setio(int srst, int tms, int tdi, int tck)
 int esp_usb_jtag::flush()
 {
 	const uint8_t buf = (CMD_FLUSH << 4) | CMD_FLUSH;
-	printInfo("flush");
+	if (_verbose)
+		printInfo("flush");
 
 	if (xfer(&buf, NULL, 1) < 0) {
 		printError("ESP USB Jtag: flush failed");
@@ -586,11 +604,13 @@ int esp_usb_jtag::xfer(const uint8_t *tx, uint8_t *rx, const uint16_t length)
 {
 	char mess[128];
 	const bool is_read = (rx != NULL), is_write = (tx != NULL);
-	snprintf(mess, 128, "xfer: rx: %d tx: %d length %d", is_read, is_write, length);
-	printInfo(mess);
+	if (_verbose) {
+		snprintf(mess, 128, "xfer: rx: %d tx: %d length %d", is_read, is_write, length);
+		printInfo(mess);
+	}
 	const unsigned char endpoint = (is_write) ? ESPUSBJTAG_WRITE_EP : ESPUSBJTAG_READ_EP;
 	uint8_t *data = (is_write) ? (uint8_t *)tx : rx;
-	if (is_write) {
+	if (is_write && _verbose) {
 		printf("xfer: write: ");
 		for (int i = 0; i < length; i++)
 			printf("%02x ", data[i]);
@@ -606,7 +626,7 @@ int esp_usb_jtag::xfer(const uint8_t *tx, uint8_t *rx, const uint16_t length)
 		return ret;
 	}
 
-	if (is_read) {
+	if (is_read && _verbose) {
 		printf("xfer: read: ");
 		for (int i = 0; i < length; i++)
 			printf("%02x ", data[i]);
@@ -624,8 +644,10 @@ int esp_usb_jtag::xfer(const uint8_t *tx, uint8_t *rx, const uint16_t length)
 int esp_usb_jtag::writeTDI(const uint8_t *tx, uint8_t *rx, uint32_t len, bool end)
 {
 	char mess[256];
-	snprintf(mess, 256, "writeTDI: start len: %d end: %d", len, end);
-	printSuccess(mess);
+	if (_verbose) {
+		snprintf(mess, 256, "writeTDI: start len: %d end: %d", len, end);
+		printSuccess(mess);
+	}
 	int ret;
 	uint8_t tx_buf[OUT_EP_SZ];
 	const uint8_t tdo = !(rx == NULL); // only set cap/tdo when something to read
@@ -645,8 +667,10 @@ int esp_usb_jtag::writeTDI(const uint8_t *tx, uint8_t *rx, uint32_t len, bool en
 	uint32_t real_bit_len = len - (end ? 1 : 0);  // substractor 1 when the
 												  // last bit is sent with
 												  // TMS transition
-	snprintf(mess, 256, "real_bit_len=0x%08x\n", real_bit_len);
-	printInfo(mess);
+	if (_verbose) {
+		snprintf(mess, 256, "real_bit_len=0x%08x\n", real_bit_len);
+		printInfo(mess);
+	}
 
 	// drain_in();
 	uint32_t tx_buffer_idx = 0; // reset
@@ -658,11 +682,14 @@ int esp_usb_jtag::writeTDI(const uint8_t *tx, uint8_t *rx, uint32_t len, bool en
 	//               2nd (low nibble) is data
 	// last byte in buf will have data in both nibbles, no flush
 	// exec order: high-nibble-first, low-nibble-second
-	cerr << "is high nibble=" << (int)is_high_nibble << endl;
-	for(uint32_t i = 0; i < (real_bit_len + 7) >> 3; i++)
-		cerr << " " << std::hex << (int)tx[i];
-	cerr << endl;
-	cerr << "tdi_bits ";
+	if (_verbose) {
+		cerr << "is high nibble=" << (int)is_high_nibble << endl;
+		//int bits_in_tx_buf = 0;
+		for(uint32_t i = 0; i < (real_bit_len + 7) >> 3; i++)
+			cerr << " " << std::hex << (int)tx[i];
+		cerr << endl;
+		cerr << "tdi_bits ";
+	}
 
 	for (uint32_t pos = 0; pos < real_bit_len; pos += xfer_len) {
 		// Compute number of bits to write
@@ -686,7 +713,8 @@ int esp_usb_jtag::writeTDI(const uint8_t *tx, uint8_t *rx, uint32_t len, bool en
 		for (uint32_t i = 0; i < xfer_len; i++) {
 			uint32_t curr_pos = pos + i;
 			_tdi = (tx[curr_pos >> 3] >> (curr_pos & 7)) & 1; // get i'th bit from rx
-			cerr << (int)_tdi;
+			if (_verbose)
+				cerr << (int)_tdi;
 			const uint8_t cmd = CMD_CLK(tdo, _tdi, _tms); // with TDO capture
 			if(is_high_nibble) {   // 1st (high nibble) = data
 				tx_buf[tx_buffer_idx] = prev_high_nibble = cmd << 4;
@@ -698,18 +726,22 @@ int esp_usb_jtag::writeTDI(const uint8_t *tx, uint8_t *rx, uint32_t len, bool en
 		}
 
 		/* Flush current buffer */
-		printf("\nwriteTDI: write_ep len bytes=0x%04x\n", tx_buffer_idx);
-		for(uint32_t j = 0; j < tx_buffer_idx; j++)
-			printf(" %02x", tx_buf[j]);
-		printf("\n");
-		printf("AA\n");
+		if (_verbose) {
+			printf("\nwriteTDI: write_ep len bytes=0x%04x\n", tx_buffer_idx);
+			for(uint32_t j = 0; j < tx_buffer_idx; j++)
+				printf(" %02x", tx_buf[j]);
+			printf("\n");
+			printf("AA\n");
+		}
 		ret = xfer(tx_buf, NULL, tx_buffer_idx);
-		printf("BB\n");
+		if (_verbose)
+			printf("BB\n");
 		if (ret < 0) {
 			printError("writeTDI: usb bulk write failed " + std::to_string(ret));
 			return -EXIT_FAILURE;
 		}
-		cerr << "writeTDI write 0x" << tx_buffer_idx << " bytes" << endl;
+		if (_verbose)
+			cerr << "writeTDI write 0x" << tx_buffer_idx << " bytes" << endl;
 		if (rx) {
 			flush(); // must flush before reading
 			// TODO support odd len for TDO
@@ -728,7 +760,8 @@ int esp_usb_jtag::writeTDI(const uint8_t *tx, uint8_t *rx, uint32_t len, bool en
 					}
 					nb_try++;
 				} while (nb_try < 3 && ret == 0);
-				cerr << "writeTDI read " << std::to_string(ret) << endl;
+				if (_verbose)
+					cerr << "writeTDI read " << std::to_string(ret) << endl;
 				if (read_byte_len != ret) {
 					snprintf(mess, 256, "writeTDI: usb bulk read expected=%d received=%d", read_byte_len, ret);
 					printError(mess);
@@ -739,7 +772,8 @@ int esp_usb_jtag::writeTDI(const uint8_t *tx, uint8_t *rx, uint32_t len, bool en
 		}
 	}
 
-	printSuccess("WriteTDI: end");
+	if (_verbose)
+		printSuccess("WriteTDI: end");
 
 #if 1
 	if (end) {
