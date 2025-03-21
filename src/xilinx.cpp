@@ -313,7 +313,7 @@ Xilinx::Xilinx(Jtag *jtag, const std::string &filename,
 		_secondary_file_extension = secondary_filename.substr(
 			secondary_filename.find_last_of(".") + 1);
 		_mode = Device::SPI_MODE;
-		if (!(_device_package == "xcvu9p-flga2104" || _device_package == "xcku5p-ffvb676")) {
+		if (!(_device_package == "xcvu9p-flga2104" || _device_package == "xcku5p-ffvb676" || _device_package == "xcku040-ffva1156")) {
 			throw std::runtime_error("Error: secondary flash unavailable");
 		}
 	}
