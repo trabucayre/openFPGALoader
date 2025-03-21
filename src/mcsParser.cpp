@@ -92,10 +92,10 @@ int McsParser::parse()
 		case 4:
 			sscanf((char*)&str[DATA_BASE], "%4x", &loc_addr);
 			_base_addr = (loc_addr << 16);
-			if ((size_t)_base_addr > _bit_data.size())
-				_bit_data.resize(_base_addr);
 			if (_base_addr * 8 > _bit_length)
 				_bit_length = _base_addr * 8;
+			if (_bit_length > _bit_data.size() * 8)
+				_bit_data.resize(_bit_length / 8);
 			sum += (loc_addr & 0xff) + ((loc_addr >> 8) & 0xff);
 			break;
 		default:
