@@ -713,6 +713,8 @@ int esp_usb_jtag::writeTDI(const uint8_t *tx, uint8_t *rx, uint32_t len, bool en
 			_tdi = (tx[curr_pos >> 3] >> (curr_pos & 7)) & 1; // get i'th bit from rx
 			if (_verbose)
 				cerr << (int)_tdi;
+			if (end && curr_pos == len - 1)
+				_tms = 1;
 			const uint8_t cmd = CMD_CLK(tdo, _tdi, _tms); // with TDO capture
 			if(is_high_nibble) {   // 1st (high nibble) = data
 				tx_buf[tx_buffer_idx] = prev_high_nibble = cmd << 4;
@@ -773,13 +775,5 @@ int esp_usb_jtag::writeTDI(const uint8_t *tx, uint8_t *rx, uint32_t len, bool en
 	if (_verbose)
 		printSuccess("WriteTDI: end");
 
-#if 1
-	if (end) {
-		// TODO support end (DR_SHIFT, IR_SHIFT)
-		_tms = 1;
-		tx_buf[0] = CMD_FLUSH << 4 | CMD_CLK(0, 1, _tms); // FIXME: TDI must be read from buffer
-		xfer(tx_buf, NULL, 1);
-	}
-#endif
 	return EXIT_SUCCESS;
 }
