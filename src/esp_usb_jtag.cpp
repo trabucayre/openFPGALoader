@@ -534,7 +534,7 @@ int esp_usb_jtag::toggleClk(uint8_t tms, uint8_t tdi, uint32_t len)
 		else
 			real_len = OUT_EP_SZ * 2;
 
-		const uint32_t byte_len = (real_len + 1) >> 1; // Byte len (rounded)
+		const uint32_t byte_len = (real_len + 1) >> 1; // Byte len (2bits/bytes, rounded)
 
 		// prepare buffer
 		memset(buf, prev_high_nibble, byte_len);
@@ -549,7 +549,6 @@ int esp_usb_jtag::toggleClk(uint8_t tms, uint8_t tdi, uint32_t len)
 			return -EXIT_FAILURE;
 		}
 	}
-
 	return EXIT_SUCCESS;
 }
 
@@ -569,7 +568,8 @@ int esp_usb_jtag::setio(int srst, int tms, int tdi, int tck)
 		cerr << "setio: control write failed " << ret << endl;
 		return -EXIT_FAILURE;
 	}
-	cerr << "setio 0x" << std::hex << wvalue << endl;
+	if (_verbose)
+		cerr << "setio 0x" << std::hex << wvalue << endl;
 	return 0;
 }
 
@@ -605,7 +605,8 @@ int esp_usb_jtag::xfer(const uint8_t *tx, uint8_t *rx, const uint16_t length)
 	char mess[128];
 	const bool is_read = (rx != NULL), is_write = (tx != NULL);
 	if (_verbose) {
-		snprintf(mess, 128, "xfer: rx: %d tx: %d length %d", is_read, is_write, length);
+		snprintf(mess, 128, "xfer: rx: %s tx: %s length %d",
+			is_read ? "True" : "False", is_write ? "True" : "False", length);
 		printInfo(mess);
 	}
 	const unsigned char endpoint = (is_write) ? ESPUSBJTAG_WRITE_EP : ESPUSBJTAG_READ_EP;
@@ -664,17 +665,14 @@ int esp_usb_jtag::writeTDI(const uint8_t *tx, uint8_t *rx, uint32_t len, bool en
 		rx_ptr = rx;
 	}
 
-	uint32_t real_bit_len = len - (end ? 1 : 0);  // substractor 1 when the
-												  // last bit is sent with
-												  // TMS transition
 	if (_verbose) {
-		snprintf(mess, 256, "real_bit_len=0x%08x\n", real_bit_len);
+		snprintf(mess, 256, "len=0x%08x\n", len);
 		printInfo(mess);
 	}
 
 	// drain_in();
 	uint32_t tx_buffer_idx = 0; // reset
-	uint8_t is_high_nibble = 1 & ~real_bit_len;
+	uint8_t is_high_nibble = 1 & ~len;
 
 	// for even len: start with is_high_nibble = 1
 	// for odd len:  start with is_high_nibble = 0
@@ -685,15 +683,15 @@ int esp_usb_jtag::writeTDI(const uint8_t *tx, uint8_t *rx, uint32_t len, bool en
 	if (_verbose) {
 		cerr << "is high nibble=" << (int)is_high_nibble << endl;
 		//int bits_in_tx_buf = 0;
-		for(uint32_t i = 0; i < (real_bit_len + 7) >> 3; i++)
+		for(uint32_t i = 0; i < (len + 7) >> 3; i++)
 			cerr << " " << std::hex << (int)tx[i];
 		cerr << endl;
 		cerr << "tdi_bits ";
 	}
 
-	for (uint32_t pos = 0; pos < real_bit_len; pos += xfer_len) {
+	for (uint32_t pos = 0; pos < len; pos += xfer_len) {
 		// Compute number of bits to write
-		const uint32_t remaining_bits = real_bit_len - pos;
+		const uint32_t remaining_bits = len - pos;
 		// select before the full buffer or remaining bits
 		if (remaining_bits < (OUT_EP_SZ * 2))
 			xfer_len = remaining_bits;
