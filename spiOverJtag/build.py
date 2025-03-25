@@ -117,6 +117,7 @@ if tool in ["ise", "vivado"]:
         "xc7s25csga225"    : "xc7s_csga225",
         "xc7s25csga324"    : "xc7s_csga324",
         "xc7s50csga324"    : "xc7s_csga324",
+        "xc7s75fgga676"    : "xc7s_fgga676",
         "xcku040-ffva1156" : "xcku040_ffva1156",
         "xcku060-ffva1156" : "xcku060_ffva1156",
         "xcvu9p-flga2104"  : "xcvu9p_flga2104",
