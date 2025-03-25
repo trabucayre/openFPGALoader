@@ -277,23 +277,11 @@ esp_usb_jtag::esp_usb_jtag(uint32_t clkHZ, int8_t verbose, int vid = ESPUSBJTAG_
 		cerr << "Fail to set frequency" << endl;
 		throw std::exception();
 	}
-
-	//drain_in(); // FIXME: why buffer is not empty here, and why some read fails ?
-
-	if (1 == 0) { // debug functions
-		uint8_t mess[256];
-		mess[0] = 0x55;
-		mess[1] = 0xAA;
-		mess[2] = 0xBB;
-		while(1)
-			writeTDI(mess, 0, 8 * 3, false);
-			//toggleClk(0,1, 10000);
-	}
 }
 
 esp_usb_jtag::~esp_usb_jtag()
 {
-	drain_in();  // just to be sure try to flush buffer
+	drain_in(true);  // just to be sure try to flush buffer
 	if (dev_handle)
 		libusb_close(dev_handle);
 	if (usb_ctx)
@@ -586,21 +574,23 @@ int esp_usb_jtag::flush()
 	return 0;
 }
 
-void esp_usb_jtag::drain_in()
+void esp_usb_jtag::drain_in(bool is_timeout_fine)
 {
 	uint8_t dummy_rx[64];
 	int ret = 1;
 	do {
-		ret = xfer(NULL, dummy_rx, sizeof(dummy_rx));
+		ret = xfer(NULL, dummy_rx, sizeof(dummy_rx), is_timeout_fine);
 		if (ret < 0) {
 			printError("ESP USB Jtag drain_in failed");
 			return;
 		}
 	} while(ret > 0);
-	cerr << "drain_in" << endl;
+	if (_verbose)
+		printInfo("drain_in");
 }
 
-int esp_usb_jtag::xfer(const uint8_t *tx, uint8_t *rx, const uint16_t length)
+int esp_usb_jtag::xfer(const uint8_t *tx, uint8_t *rx, const uint16_t length,
+		bool is_timeout_fine)
 {
 	char mess[128];
 	const bool is_read = (rx != NULL), is_write = (tx != NULL);
@@ -622,7 +612,10 @@ int esp_usb_jtag::xfer(const uint8_t *tx, uint8_t *rx, const uint16_t length)
 		&transferred_length, ESPUSBJTAG_TIMEOUT_MS);
 
 	if (ret < 0) {
-		snprintf(mess, 128, "xfer: usb bulk write failed with error %d", ret);
+		if (ret == -7 && is_timeout_fine)
+			return 0;
+		snprintf(mess, 128, "xfer: usb bulk write failed with error %d %s %s", ret,
+			libusb_error_name(ret), libusb_strerror(ret));
 		printError(mess);
 		return ret;
 	}
