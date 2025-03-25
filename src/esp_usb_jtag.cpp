@@ -643,6 +643,8 @@ int esp_usb_jtag::writeTDI(const uint8_t *tx, uint8_t *rx, uint32_t len, bool en
 		printSuccess(mess);
 	}
 	int ret;
+	const uint32_t kTdiLen = (len+7) >> 3; // TDI/RX len in byte
+	uint8_t tdi[kTdiLen]; // TDI buffer (required when tx is NULL)
 	uint8_t tx_buf[OUT_EP_SZ];
 	const uint8_t tdo = !(rx == NULL); // only set cap/tdo when something to read
 	uint8_t *rx_ptr = NULL;
@@ -657,6 +659,12 @@ int esp_usb_jtag::writeTDI(const uint8_t *tx, uint8_t *rx, uint32_t len, bool en
 		memset(rx, 0, (len + 7) >> 3);
 		rx_ptr = rx;
 	}
+
+	/* Copy RX or fill the buffer with TDI current level */
+	if (tx)
+		memcpy(tdi, tx, kTdiLen);
+	else
+		memset(tdi, _tdi ? 0xff : 0x00, kTdiLen);
 
 	if (_verbose) {
 		snprintf(mess, 256, "len=0x%08x\n", len);
@@ -677,7 +685,7 @@ int esp_usb_jtag::writeTDI(const uint8_t *tx, uint8_t *rx, uint32_t len, bool en
 		cerr << "is high nibble=" << (int)is_high_nibble << endl;
 		//int bits_in_tx_buf = 0;
 		for(uint32_t i = 0; i < (len + 7) >> 3; i++)
-			cerr << " " << std::hex << (int)tx[i];
+			cerr << " " << std::hex << (int)tdi[i];
 		cerr << endl;
 		cerr << "tdi_bits ";
 	}
@@ -703,7 +711,7 @@ int esp_usb_jtag::writeTDI(const uint8_t *tx, uint8_t *rx, uint32_t len, bool en
 
 		for (uint32_t i = 0; i < xfer_len; i++) {
 			uint32_t curr_pos = pos + i;
-			_tdi = (tx[curr_pos >> 3] >> (curr_pos & 7)) & 1; // get i'th bit from rx
+			_tdi = (tdi[curr_pos >> 3] >> (curr_pos & 7)) & 1; // get i'th bit from rx
 			if (_verbose)
 				cerr << (int)_tdi;
 			if (end && curr_pos == len - 1)
