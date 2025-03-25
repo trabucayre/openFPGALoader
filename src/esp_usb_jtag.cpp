@@ -615,7 +615,7 @@ int esp_usb_jtag::xfer(const uint8_t *tx, uint8_t *rx, const uint16_t length,
 		if (ret == -7 && is_timeout_fine)
 			return 0;
 		snprintf(mess, 128, "xfer: usb bulk write failed with error %d %s %s", ret,
-			libusb_error_name(ret), libusb_strerror(ret));
+			libusb_error_name(ret), libusb_strerror(static_cast<libusb_error>(ret)));
 		printError(mess);
 		return ret;
 	}
