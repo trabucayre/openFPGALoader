@@ -911,7 +911,10 @@ bool Gowin::eraseSRAM()
 	// is set
 	bool auto_boot_2nd_fail = (status & (1 << 4)) == (1 << 4);
 	bool is_timeout = (status & (1 << 3)) == (1 << 3);
-	if (is_gw5a && (is_timeout || auto_boot_2nd_fail)) {
+	bool bad_cmd = (status & STATUS_BAD_COMMAND) == STATUS_BAD_COMMAND;
+	uint8_t loop = 0;
+	bool must_loop = is_gw5a;
+	if (is_gw5a && (is_timeout || auto_boot_2nd_fail || bad_cmd)) {
 		send_command(CONFIG_ENABLE);
 		send_command(0x3F);
 		send_command(CONFIG_DISABLE);
@@ -920,36 +923,44 @@ bool Gowin::eraseSRAM()
 		send_command(NOOP);
 		_jtag->toggleClk(125 * 8);
 	}
+	do {
 
-	if (!enableCfg()) {
-		printError("FAIL");
-		return false;
-	}
-	send_command(ERASE_SRAM);
-	send_command(NOOP);
+		if (!enableCfg()) {
+			printError("FAIL");
+			return false;
+		}
+		send_command(ERASE_SRAM);
+		send_command(NOOP);
 
-	/* TN653 specifies to wait for 4ms with
-	 * clock generated but
-	 * status register bit MEMORY_ERASE goes low when ERASE_SRAM
-	 * is send and goes high after erase
-	 * this check seems enough
-	 */
-	if (_idcode == 0x0001081b) // seems required for GW5AST...
-		sendClkUs(10000);
-	if (pollFlag(STATUS_MEMORY_ERASE, STATUS_MEMORY_ERASE)) {
-		if (_verbose)
-			displayReadReg("after erase sram", readStatusReg());
-	} else {
-		printError("FAIL");
-		return false;
-	}
+		/* TN653 specifies to wait for 4ms with
+		 * clock generated but
+		 * status register bit MEMORY_ERASE goes low when ERASE_SRAM
+		 * is send and goes high after erase
+		 * this check seems enough
+		 */
+		if (_idcode == 0x0001081b) // seems required for GW5AST...
+			sendClkUs(10000);
+		if (pollFlag(STATUS_MEMORY_ERASE, STATUS_MEMORY_ERASE)) {
+			if (_verbose)
+				displayReadReg("after erase sram", readStatusReg());
+		} else {
+			printError("FAIL");
+			return false;
+		}
 
-	send_command(XFER_DONE);
-	send_command(NOOP);
-	if (!disableCfg()) {
-		printError("FAIL");
-		return false;
-	}
+		send_command(XFER_DONE);
+		send_command(NOOP);
+		if (!disableCfg()) {
+			printError("FAIL");
+			return false;
+		}
+		if (is_gw5a) {
+			uint32_t status_reg = readStatusReg();
+			if ((loop >= 1) && ((status_reg & (1 << 13)) == 0))
+				must_loop = false;
+			loop++;
+		}
+	} while(must_loop);
 
 	if (_mode == Device::FLASH_MODE) {
 		uint32_t status_reg = readStatusReg();
@@ -1179,16 +1190,18 @@ bool Gowin::dumpFlash(uint32_t base_addr, uint32_t len)
 
 bool Gowin::prepare_flash_access()
 {
+	/* Work around FPGA stuck in Bad Command status */
+	if (is_gw5a) {
+		reset();
+		_jtag->set_state(Jtag::RUN_TEST_IDLE);
+		_jtag->toggleClk(1000000);
+	}
 	if (!eraseSRAM()) {
 		printError("Error: fail to erase SRAM");
 		return false;
 	}
 
 	if (is_gw5a) {
-		if (!eraseSRAM()) {
-			printError("Error: fail to erase SRAM");
-			return false;
-		}
 		usleep(100000);
 		if (!gw5a_enable_spi()) {
 			printError("Error: fail to switch GW5A to SPI mode");
