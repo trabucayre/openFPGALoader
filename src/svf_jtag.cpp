@@ -230,7 +230,9 @@ void SVF_jtag::parse_runtest(vector<string> const &vstr)
 	}
 	_jtag->set_state(_run_state);
 	_jtag->toggleClk(nb_iter);
-	if (min_duration > 0) {
+	_jtag->flush();
+	if (min_duration > 0)
+	{
 		usleep((useconds_t)(min_duration * 1.0E6));
 	}
 	_jtag->set_state(_end_state);
