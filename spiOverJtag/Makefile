@@ -6,7 +6,7 @@ XILINX_PARTS := xc3s500evq100 \
 	xc7a15tcpg236 \
 	xc7a25tcpg238 xc7a25tcsg325 \
 	xc7a35tcpg236 xc7a35tcsg324 xc7a35tftg256 xc7a35tfgg484 \
-	xc7a50tcsg324 xc7a50tfgg484 xc7a50tcpg236 xc7a75tfgg484 \
+	xc7a50tcsg324 xc7a50tfgg484 xc7a50tcpg236 xc7a50tcsg325 xc7a75tfgg484 \
 	xc7a100tcsg324 xc7a100tfgg484 xc7a100tfgg676\
 	xc7a200tsbg484 xc7a200tfbg484 xc7a200tfbg676\
 	xc7s6ftgb196 xc7s25csga225 xc7s25csga324 xc7s50csga324 \
