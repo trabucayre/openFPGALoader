@@ -83,7 +83,7 @@ file load:
 with ``boardname`` = ``cyc1000``, ``c10lp-refkit``.
 
 MAX10: FPGA Programming Guide
------------------------------
+=============================
 
 Supported Boards:
 
@@ -97,7 +97,7 @@ Supported File Types:
 * ``bin`` (arbitrary binary files)
 
 Using ``svf``
-^^^^^^^^^^^^^
+-------------
 
 .. note::
 
@@ -113,7 +113,7 @@ Parameters:
 * ``cablename``: One of the supported cables (see ``--list-cables``).
 
 Using ``pof``
-^^^^^^^^^^^^^
+-------------
 
 When writing the bitstream to internal flash, using a ``pof`` file is the fastest approach.
 
@@ -143,7 +143,7 @@ Example:
 This command updates ``UFM1``, ``CFM0``, and ``CFM2``, while leaving other sectors unchanged.
 
 Using an arbitrary binary file
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+------------------------------
 
 This command updates only *User Flash Memory* sectors without modifying ``CFMx``. Unlike Altera Quartus, it supports
 any binary format without limitations (not limited to a ``.bin``.
