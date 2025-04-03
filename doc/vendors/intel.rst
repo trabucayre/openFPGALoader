@@ -82,10 +82,86 @@ file load:
 
 with ``boardname`` = ``cyc1000``, ``c10lp-refkit``.
 
-MAX10:
+MAX10: FPGA Programming Guide
+-----------------------------
+
+Supported Boards:
+
+* step-max10_v1
+* analogMax
+
+Supported File Types:
+
+* ``svf``
+* ``svf``
+* ``bin`` (arbitrary binary files)
+
+Using ``svf``
+^^^^^^^^^^^^^
+
+.. note::
+
+    This method is required to load a bitstream into *SRAM*.
 
 .. code-block:: bash
-    openFPGALoader -b boardname project_name_auto.pof
+
+    openFPGALoader [-b boardname] -c cablename the_svf_file.svf
+
+Parameters:
+
+* ``boardname``: One of the boards supported by ``openFPGALoader`` (optional).
+* ``cablename``: One of the supported cables (see ``--list-cables``).
+
+Using ``pof``
+^^^^^^^^^^^^^
+
+When writing the bitstream to internal flash, using a ``pof`` file is the fastest approach.
+
+.. code-block:: bash
+
+    openFPGALoader [-b boardname] [--flash-sector] -c cablename the_pof_file.pof
+
+Parameters:
+
+* ``boardname``: One of the boards supported by ``openFPGALoader`` (optional).
+* ``cablename``: One of the supported cables (see ``--list-cables``).
+* ``--flash-sector``: Specifies which internal flash sectors to erase/update instead of modifying the entire flash. One
+  or more section may be provided, with ``,`` as separator. When this option isn't provided a full internal flash erase/
+  update is performed
+
+Accepted Flash Sectors:
+
+* ``UFM0``, ``UFM1``: User Flash Memory sections.
+* ``CFM0``, ``CFM1``, ``CFM2``: Configuration Flash Memory sectors.
+
+Example:
+
+.. code-block:: bash
+
+    openFPGALoader -c usb-blaster --flash-sector UFM1,CFM0,CFM2 the_pof_file.pof
+
+This command updates ``UFM1``, ``CFM0``, and ``CFM2``, while leaving other sectors unchanged.
+
+Using an arbitrary binary file
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+This command updates only *User Flash Memory* sectors without modifying ``CFMx``. Unlike Altera Quartus, it supports
+any binary format without limitations (not limited to a ``.bin``.
+
+.. note:: This approach is useful to updates, for example, a softcore CPU firmware.
+
+.. code-block:: bash
+
+    openFPGALoader [-b boardname] -c cablename the_bin_file.bin
+
+* ``boardname``: One of the boards supported by ``openFPGALoader`` (optional).
+* ``cablename``: One of the supported cables (see ``--list-cables``).
+
+Behavior:
+
+``UFM0`` and ``UFM1`` will be erased before writing the binary file.
+
+.. note:: Depending on the internal flash configuration, ``CFM1`` and ``CFM2`` may also store arbitrary data. However, currently, ``openFPGALoader`` only supports writing to ``UFMx``.
 
 Intel/Altera (Old Boards)
 =========================
