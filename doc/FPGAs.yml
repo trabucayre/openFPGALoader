@@ -260,6 +260,7 @@ Xilinx:
       - xc7k325t
       - xc7k410t
       - xc7k420t
+      - xc7k480t
     URL: https://www.xilinx.com/products/silicon-devices/fpga/kintex-7.html#productTable
     Memory: OK
     Flash: OK
