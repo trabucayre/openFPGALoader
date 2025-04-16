@@ -38,7 +38,6 @@ jobs:
       fail-fast: false
       matrix:
         os:
-        - 20
         - 22
         - 24
     name: '🚧🐧 Ubuntu ${{ matrix.os }} | build'
@@ -123,7 +122,6 @@ jobs:
       fail-fast: false
       matrix:
         os:
-        - 20
         - 22
         - 24
     name: '🚦🐧 Ubuntu ${{ matrix.os }} | test'
