@@ -3,6 +3,10 @@
  * Copyright (C) 2024 EMARD
  */
 
+/* To prepare the cable see:
+ * https://github.com/emard/esp32s3-jtag
+ */
+
 /*
 Holy Crap, it's protocol documentation, and it's even vendor-provided!
 

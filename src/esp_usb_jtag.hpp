@@ -3,6 +3,10 @@
  * Copyright (C) 2024 EMARD
  */
 
+/* To prepare the cable see:
+ * https://github.com/emard/esp32s3-jtag
+ */
+
 #ifndef SRC_ESPUSBJTAG_HPP_
 #define SRC_ESPUSBJTAG_HPP_
 
