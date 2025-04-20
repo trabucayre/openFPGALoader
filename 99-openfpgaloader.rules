@@ -60,4 +60,7 @@ ATTRS{idVendor}=="1209", ATTRS{idProduct}=="3442", MODE="664", GROUP="plugdev", 
 # QinHeng Electronics USB To UART+JTAG (ch347)
 ATTRS{idVendor}=="1a86", ATTRS{idProduct}=="55dd", MODE="664", GROUP="plugdev", TAG+="uaccess"
 
+# ESP32-S3 (usb-jtag bridge)
+ATTRS{idVendor}=="303a", ATTRS{idProduct}=="1001", MODE="664", GROUP="plugdev", TAG+="uaccess"
+
 LABEL="openfpgaloader_rules_end"
