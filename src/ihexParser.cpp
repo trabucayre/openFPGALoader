@@ -112,13 +112,38 @@ int IhexParser::parse()
 				_array_content.push_back(cnt);
 			return EXIT_SUCCESS;
 			break;
+		case 4:  // Extended Linear Address Record
+			if (addr != 0 || byteLen != 2) {
+				printError("Error: Wrong Extented Linear Address Record instruction");
+				return EXIT_FAILURE;
+			}
+			sscanf((char *)&str[DATA_BASE], "%4hx", &tmp);
+			_base_addr = ((uint32_t)tmp << 16);
+			sum += ((tmp >> 0) & 0xff) + ((tmp >> 8) & 0xff);
+			break;
+		case 5:  // Start Linear Address Record.
+			if (addr != 0 || byteLen != 4) {
+				printError("Error: Wrong Start Linear Address Record instruction");
+				return EXIT_FAILURE;
+			}
+			sscanf((char *)&str[DATA_BASE], "%4x", &addr);
+			_base_addr = addr;
+			for (uint8_t i = 0; i < 4; i++)
+				sum += (addr >> (i * 8)) & 0xff;
+			break;
 		default:
-			printError("Error: unknown type");
+			char mess[256];
+			snprintf(mess, 256, "Error: unknown type %d %d %d\n", type,
+				byteLen, addr);
+			printError(mess);
 			return EXIT_FAILURE;
 		}
 
 		if (checksum != (0xff&((~sum)+1))) {
-			printError("Error: wrong checksum");
+			char mess[256];
+			snprintf(mess, 256, "Error: wrong checksum %02x %02x %02x",
+				checksum, sum, (0xff & ((~sum) + 1)));
+			printError(mess);
 			return EXIT_FAILURE;
 		}
 	}
