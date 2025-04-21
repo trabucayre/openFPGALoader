@@ -129,14 +129,13 @@ int SPIFlash::sector_erase(int addr)
 
 	uint8_t cmd = (addr <= 0xffffff) ? FLASH_SE : FLASH_4SE;
 
-	tx[len++] = cmd;
 	if (cmd == FLASH_4SE)
 		tx[len++] = static_cast<uint8_t>(0xff & (addr >> 24));
 	tx[len++] = static_cast<uint8_t>(0xff & (addr >> 16));
 	tx[len++] = static_cast<uint8_t>(0xff & (addr >>  8));
 	tx[len++] = static_cast<uint8_t>(0xff & (addr      ));
 
-	_spi->spi_put(tx, NULL, len);
+	_spi->spi_put(cmd, tx, NULL, len);
 
 	return 0;
 }
@@ -148,14 +147,13 @@ int SPIFlash::block32_erase(int addr)
 
 	uint8_t cmd = (addr <= 0xffffff) ? FLASH_BE32 : FLASH_4BE32;
 
-	tx[len++] = cmd;
 	if (cmd == FLASH_4BE32)
 		tx[len++] = static_cast<uint8_t>(0xff & (addr >> 24));
 	tx[len++] = static_cast<uint8_t>(0xff & (addr >> 16));
 	tx[len++] = static_cast<uint8_t>(0xff & (addr >>  8));
 	tx[len++] = static_cast<uint8_t>(0xff & (addr      ));
 
-	_spi->spi_put(tx, NULL, len);
+	_spi->spi_put(cmd, tx, NULL, len);
 
 	return 0;
 }
@@ -168,14 +166,13 @@ int SPIFlash::block64_erase(int addr)
 
 	uint8_t cmd = (addr <= 0xffffff) ? FLASH_BE64 : FLASH_4BE64;
 
-	tx[len++] = cmd;
 	if (cmd == FLASH_4BE64)
 		tx[len++] = static_cast<uint8_t>(0xff & (addr >> 24));
 	tx[len++] = static_cast<uint8_t>(0xff & (addr >> 16));
 	tx[len++] = static_cast<uint8_t>(0xff & (addr >>  8));
 	tx[len++] = static_cast<uint8_t>(0xff & (addr      ));
 
-	_spi->spi_put(tx, NULL, len);
+	_spi->spi_put(cmd, tx, NULL, len);
 
 	return 0;
 }
