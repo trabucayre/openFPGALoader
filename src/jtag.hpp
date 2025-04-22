@@ -80,6 +80,12 @@ class Jtag {
 	uint32_t get_target_device_id() {return _devices_list[device_index];}
 
 	/*!
+	 * \brief return JTAG chain length
+	 * \return number of devices present
+	 */
+	size_t get_chain_len() {return _devices_list.size();}
+
+	/*!
 	 * \brief set index for targeted FPGA
 	 * \param[in] index: index in the chain
 	 * \return -1 if index is out of bound, index otherwise
