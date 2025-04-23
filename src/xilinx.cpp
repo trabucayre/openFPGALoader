@@ -37,6 +37,7 @@
 
 /* Used for xc3s */
 #define USER1       0x02
+#define USER4       0x23
 #define CFG_IN      0x05
 #define USERCODE    0x08
 #define IDCODE      0x09
@@ -278,7 +279,8 @@ Xilinx::Xilinx(Jtag *jtag, const std::string &filename,
 	SPIInterface(filename, verbose, 256, verify, skip_load_bridge,
 				 skip_reset),
 	_device_package(device_package), _spiOverJtagPath(spiOverJtagPath),
-	_irlen(6), _secondary_filename(secondary_filename)
+	_irlen(6), _secondary_filename(secondary_filename), _soj_is_v2(false),
+	_jtag_chain_len(1)
 {
 	if (prg_type == Device::RD_FLASH) {
 		_mode = Device::READ_MODE;
@@ -673,11 +675,24 @@ bool Xilinx::post_flash_access()
 
 bool Xilinx::prepare_flash_access()
 {
+	bool ret = false;
 	if (_skip_load_bridge) {
 		printInfo("Skip loading bridge for spiOverjtag");
-		return true;
+		ret = true;
+	} else {
+		ret = load_bridge();
 	}
-	return load_bridge();
+
+	/* Get number of FPGAs in the Jtag Chain */
+	_jtag_chain_len = _jtag->get_chain_len();
+
+	/* check SpiOverJtag version */
+	if (ret) {
+		if (get_spiOverJtag_version() == 2.0f)
+			_soj_is_v2 = true;
+		printf("SOJ version: %f\n", _soj_is_v2 ? 2.0f : 1.0f);
+	}
+	return ret;
 }
 
 bool Xilinx::load_bridge()
@@ -714,7 +729,30 @@ bool Xilinx::load_bridge()
 		printError(e.what());
 		throw std::runtime_error(e.what());
 	}
+
 	return true;
+}
+
+float Xilinx::get_spiOverJtag_version()
+{
+	uint8_t jtx[6] = {0x01, 0x00, 0x00, 0x00, 0x00, 0x00};
+	uint8_t jrx[7];
+	uint8_t rx[6];
+
+	_jtag->shiftIR(USER4, _irlen, Jtag::UPDATE_IR);
+	printf("jtag_chain_len: %d\n", _jtag_chain_len);
+	if (_jtag_chain_len > 1)
+		_jtag->shiftDR(jtx, NULL, _jtag_chain_len - 1, Jtag::SHIFT_DR);
+	_jtag->shiftDR(jtx, jrx, 6 * 8);
+	_jtag->flush();
+
+	memcpy(rx, &jrx[1], 5);
+	rx[5] = '\0';
+
+	float version = atof((const char *)rx);
+	if (version == 0.0f)  // not supported => 1.0
+		return 1.0f;
+	return version;
 }
 
 void Xilinx::program_spi(ConfigBitstreamParser * bit, unsigned int offset,
@@ -889,7 +927,7 @@ static const std::map<std::string, std::list<reg_struct_t>> reg_content = {
 		REG_ENTRY("ConfigFallback", 10, 1,
 			{0, "Disable"}, {1, "Enable"}),
 		REG_ENTRY("Reserved",       11, 1),
-		REG_ENTRY("OverTempPwrDown",12, 1,
+		REG_ENTRY("OverTempPwrDown", 12, 1,
 			{0, "Disable"}, {1, "Enable"}),
 		REG_ENTRY("Reserved",       13, 17),
 		REG_ENTRY("ICAP Select",    30, 1,
@@ -1003,7 +1041,7 @@ uint32_t Xilinx::dumpRegister(std::string reg_name)
 	if (code == reg_code.end()) {
 		printError("Unknown register " + reg_name);
 		printError("Known Register are:");
-		for (auto reg :reg_code)
+		for (auto reg : reg_code)
 			printError("\t" + reg.first);
 		return 0xdeadbeef;
 	}
@@ -2023,6 +2061,10 @@ bool Xilinx::xc2c_flow_program(JedParser *jed)
 int Xilinx::spi_put(uint8_t cmd,
 			const uint8_t *tx, uint8_t *rx, uint32_t len)
 {
+	/* SpiOverJtag v2 */
+	if (_soj_is_v2)
+		return spi_put_v2(cmd, tx, rx, len);
+
 	int xfer_len = len + 1 + ((rx == NULL) ? 0 : 1);
 	uint8_t jtx[xfer_len];
 	jtx[0] = McsParser::reverseByte(cmd);
@@ -2075,28 +2117,37 @@ int Xilinx::spi_wait(uint8_t cmd, uint8_t mask, uint8_t cond,
 			uint32_t timeout, bool verbose)
 {
 	uint8_t rx[2];
-	uint8_t dummy[2];
-	memset(dummy, 0xff, sizeof(dummy));
+	uint8_t tx[2];
 	uint8_t tmp;
-	uint8_t tx = McsParser::reverseByte(cmd);
 	uint32_t count = 0;
+	const uint8_t shift = _jtag_chain_len;
+	uint8_t idx = 0;
+
+	if (_soj_is_v2)
+		tx[idx++] = (0x2 << 1) | 1;
+	tx[idx++] = McsParser::reverseByte(cmd);
 
 	_jtag->shiftIR(get_ircode(_ircode_map, _user_instruction), NULL, _irlen, Jtag::UPDATE_IR);
-	_jtag->shiftDR(&tx, NULL, 8, Jtag::SHIFT_DR);
+	_jtag->shiftDR(tx, NULL, 8 * idx, Jtag::SHIFT_DR);
 
 	do {
-		_jtag->shiftDR(dummy, rx, 8*2, Jtag::SHIFT_DR);
-		tmp = (McsParser::reverseByte(rx[0]>>1)) | (0x01 & rx[1]);
+		_jtag->shiftDR(tx, rx, 8*2, Jtag::SHIFT_DR);
+		tmp = McsParser::reverseByte(rx[0 ]>> shift);
+		if (shift == 1)
+			tmp |= (0x01 & rx[1]);
+		else
+			tmp |= McsParser::reverseByte(rx[1]) >> (8 - shift);
+
 		count++;
 		if (count == timeout){
 			printf("timeout: %x %x %x\n", tmp, rx[0], rx[1]);
 			break;
 		}
 		if (verbose) {
-			printf("%x %x %x %u\n", tmp, mask, cond, count);
+			printf("%x %x %x %u %02x %02x\n", tmp, mask, cond, count, rx[0], rx[1]);
 		}
 	} while ((tmp & mask) != cond);
-	_jtag->shiftDR(dummy, rx, 8*2, Jtag::EXIT1_DR);
+	_jtag->shiftDR(tx, rx, 8 * 2, Jtag::EXIT1_DR);
 	_jtag->go_test_logic_reset();
 
 	if (count == timeout) {
@@ -2106,6 +2157,75 @@ int Xilinx::spi_wait(uint8_t cmd, uint8_t mask, uint8_t cond,
 	} else {
 		return 0;
 	}
+}
+
+int Xilinx::spi_put_v2(uint8_t cmd, const uint8_t *tx, uint8_t *rx,
+		uint32_t len)
+{
+	const uint32_t real_len = len + 1;  // rx/tx length + cmd
+	uint32_t kPktLen = real_len + 2;  // One header and +1 due to the needs of an additional bit/byte
+	uint8_t mode = 0x01;
+	if (real_len > 32) {
+		kPktLen++;  // Additional header
+		mode = 0x00;
+	}
+
+	const uint32_t xfer_bit_len = (kPktLen - 1) * 8 + (rx ? 8 : 1);
+
+	uint8_t jrx[kPktLen];
+	uint8_t pkt[kPktLen];
+	uint32_t idx = 0;
+
+	pkt[idx++] = ((0x1f & real_len) << 3) | ((0x03 & mode) << 1) | 1;
+	if (mode == 0x00)
+		pkt[idx++] = 0xff & (real_len >> 5);
+
+	pkt[idx++] = McsParser::reverseByte(cmd);
+	if (tx) {
+		for (uint32_t i=0; i < len; i++)
+			pkt[idx++] = McsParser::reverseByte(tx[i]);
+	} else {
+		memset(&pkt[idx], 0, len);
+		idx += len;
+	}
+
+	/* addr BSCAN user1 */
+	_jtag->shiftIR(get_ircode(_ircode_map, _user_instruction), NULL, _irlen);
+	_jtag->shiftDR(pkt, (rx == NULL) ? NULL : jrx, xfer_bit_len);
+	_jtag->go_test_logic_reset();
+	_jtag->flush();
+
+	if (_verbose) {
+		for (uint32_t i = 0; i < kPktLen; i++)
+			printf("%02x ", pkt[i]);
+		printf("\n");
+	}
+
+	if (rx != NULL) {
+		if (_verbose) {
+			for (uint32_t i = 0; i < kPktLen; i++)
+				printf("%02x ", jrx[i]);
+			printf("\n");
+			for (uint32_t i = 0; i < kPktLen; i++)
+				printf("%02x ", McsParser::reverseByte(jrx[i]));
+			printf("\n");
+		}
+		idx = (mode == 0 ? 3 : 2);
+		const uint8_t shift = _jtag_chain_len;
+		for (uint32_t i = 0; i < len; i++) {
+			rx[i] = McsParser::reverseByte(jrx[i + idx] >> shift);
+			if (shift == 1)
+				rx[i] |= (jrx[i + idx + 1] & 0x01);
+			else
+				rx[i] |= McsParser::reverseByte(jrx[i + idx + 1]) >> (8 - shift);
+			if (_verbose)
+				printf("%02x ", rx[i]);
+		}
+		if (_verbose)
+			printf("\n");
+	}
+
+	return 0;
 }
 
 void Xilinx::select_flash_chip(xilinx_flash_chip_t flash_chip) {

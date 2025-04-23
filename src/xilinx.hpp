@@ -168,6 +168,10 @@ class Xilinx: public Device, SPIInterface {
 		int spi_wait(uint8_t cmd, uint8_t mask, uint8_t cond,
 				uint32_t timeout, bool verbose = false) override;
 
+		/* SpiOverJtag v2 specifics methods */
+		int spi_put_v2(uint8_t cmd, const uint8_t *tx, uint8_t *rx,
+				uint32_t len);
+
 	protected:
 		/*!
 		 * \brief prepare SPI flash access (need to have bridge in RAM)
@@ -215,6 +219,12 @@ class Xilinx: public Device, SPIInterface {
 		 */
 		bool load_bridge();
 
+		/*!
+		 * \brief read SpiOverJtag version to select between v1 and v2
+		 * \return 2.0 for v2 or 1.0 for v1
+		 */
+		float get_spiOverJtag_version();
+
 		enum xilinx_flash_chip_t {
 			PRIMARY_FLASH = 0x1,
 			SECONDARY_FLASH = 0x2
@@ -249,6 +259,8 @@ class Xilinx: public Device, SPIInterface {
 		std::string _secondary_file_extension; /* file type for the secondary flash file */
 		int _flash_chips; /* bitfield to select the target in boards with two flash chips */
 		std::string _user_instruction; /* which USER bscan instruction to interface with SPI */
+		bool _soj_is_v2; /* SpiOverJtag version (1.0 or 2.0) */
+		uint32_t _jtag_chain_len; /* Jtag Chain Length */
 };
 
 #endif  // SRC_XILINX_HPP_
