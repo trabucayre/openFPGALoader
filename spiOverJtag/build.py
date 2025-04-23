@@ -220,6 +220,9 @@ else:
                   'file_type': 'SDC'})
     tool_options = {'device': full_part, 'family':family}
 
+files.append({'name': currDir + 'spiOverJtag_core.v',
+              'file_type': 'verilogSource'})
+
 parameters[family.lower().replace(' ', '')]= {
     'datatype': 'int',
     'paramtype': 'vlogdefine',
