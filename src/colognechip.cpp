@@ -161,6 +161,7 @@ bool CologneChip::post_flash_access()
 		_ftdi_jtag->gpio_set(_oen_pin);
 	}
 	usleep(SLEEP_US);
+	reset();
 
 	return true;
 }
@@ -383,9 +384,7 @@ void CologneChip::programJTAG_flash(unsigned int offset, const uint8_t *data,
 	if (_verify)
 		flash.verify(offset, data, length);
 
-	if (_ftdi_jtag) {
-		_ftdi_jtag->gpio_set(_oen_pin);
-	}
+	post_flash_access();
 }
 
 /**
