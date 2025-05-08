@@ -67,7 +67,7 @@ elif subpart == "xc6v":
     family = "Virtex6"
     tool = "ise"
     speed = -1
-elif subpart in ["xcvu", "xcku"]:
+elif subpart in ["xcvu", "xcku", "xcau"]:
     family = "Xilinx UltraScale"
     tool = "vivado"
 else:
@@ -126,6 +126,7 @@ if tool in ["ise", "vivado"]:
         "xcvu37p-fsvh2892" : "xcvu37p_fsvh2892",
         "xcku3p-ffva676"   : "xcku3p_ffva676",
         "xcku5p-ffvb676"   : "xcku5p_ffvb676",
+        "xcau15p-ffvb676"  : "xcau15p_ffvb676",
         }[part]
     if tool == "ise":
         cst_type = "UCF"
@@ -189,6 +190,8 @@ if tool in ["ise", "vivado"]:
                     'paramtype': 'vlogdefine',
                     'description': 'secondary flash',
                     'default': 1}
+            elif part == "xcau15p-ffvb676":
+                tool_options = {'part': part + '-2-e'}
         else:
             tool_options = {'part': part + '-1'}
     cst_file = currDir + "constr_" + pkg_name + "." + cst_type.lower()
