@@ -73,6 +73,7 @@ module spiOverJtag
 	end
 
 `ifdef xilinxultrascale
+    assign sck = drck;
 	wire [3:0] di;
 	assign wpn_dq2  = 1'b1;
 	assign hldn_dq3 = 1'b1;
