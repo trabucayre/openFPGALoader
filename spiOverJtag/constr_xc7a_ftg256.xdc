@@ -8,3 +8,6 @@ set_property -dict {PACKAGE_PIN J13 IOSTANDARD LVCMOS33} [get_ports {sdi_dq0}];
 set_property -dict {PACKAGE_PIN J14 IOSTANDARD LVCMOS33} [get_ports {sdo_dq1}];
 set_property -dict {PACKAGE_PIN K15 IOSTANDARD LVCMOS33} [get_ports {wpn_dq2}];
 set_property -dict {PACKAGE_PIN K16 IOSTANDARD LVCMOS33} [get_ports {hldn_dq3}];
+
+create_clock -period 33.000 -name jtag_tck -waveform {0.000 16.500} [get_pins {bscane2_inst/DRCK}]
+create_clock -period 33.000 -name vers_tck -waveform {0.000 16.500} [get_pins {bscane2_version/DRCK}]
