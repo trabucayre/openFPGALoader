@@ -40,7 +40,7 @@ tmp_efinix_%/efinix_spiOverJtag.bit : efinix_spiOverJtag.v
 
 $(XILINX_BIT_FILES) : spiOverJtag_%.bit.gz : tmp_%/spiOverJtag.bit
 	gzip -9 -c $< > $@
-tmp_%/spiOverJtag.bit : xilinx_spiOverJtag.v
+tmp_%/spiOverJtag.bit : xilinx_spiOverJtag.v spiOverJtag_core.v
 	./build.py $*
 
 $(ALTERA_BIT_FILES): spiOverJtag_%.rbf.gz: tmp_%/spiOverJtag.rbf
