@@ -200,6 +200,7 @@ static std::map <std::string, target_board_t> board_list = {
 	JTAG_BOARD("nexys_a7_100",    "xc7a100tcsg324", "digilent", 0, 0, CABLE_DEFAULT),
 	JTAG_BOARD("nexysVideo",      "xc7a200tsbg484", "digilent_b", 0, 0, CABLE_DEFAULT),
 	JTAG_BOARD("olimex_gatemateevb", "GM1A1", "dirtyJtag", 0, 0, CABLE_DEFAULT),
+	JTAG_BOARD("opensourceSDRLabKintex7", "xc7k325tffg676", "ft232", 0, 0, CABLE_DEFAULT),
 	DFU_BOARD("orangeCrab",       "", "dfu", 0x1209, 0x5af0, 0),
 	DFU_BOARD("orbtrace_dfu",     "", "dfu", 0x1209, 0x3442, 1),
 	JTAG_BOARD("papilio_one",     "xc3s500evq100", "papilio", 0, 0, CABLE_DEFAULT),
