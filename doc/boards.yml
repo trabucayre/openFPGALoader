@@ -603,6 +603,13 @@
   Memory: OK
   Flash: NT
 
+- ID: opensourceSDRLabKintex7
+  Description: Open Source SDR Lab Kintex-7 325t FPGA PCIE Development Board
+  URL: https://opensourcesdrlab.com/products/fpga-xilinx-kintex-7-xc7k325t-pcie-development-board-with-dual-gigabit-ethernet-ports-dual-10-gigabit-sfp-optical-communication
+  FPGA: Kintex7 xc7k325tffg676
+  Memory: OK
+  Flash: OK
+
 - ID: orbtrace_dfu
   Description: ORBTrace mini (dfu mode)
   URL: https://store.zyp.no/product/orbtrace-mini
