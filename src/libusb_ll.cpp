@@ -9,8 +9,11 @@
 #include <cstdio>
 #include <cstdlib>
 #include <cstring>
+#include <iomanip>
+#include <list>
 #include <vector>
 #include <string>
+#include <sstream> // For std::stringstream
 #include <stdexcept>
 
 #include "cable.hpp"
@@ -101,20 +104,45 @@ int libusb_ll::get_devices_list(const cable_t *cable)
 	return static_cast<int>(_usb_dev_list.size());
 }
 
+struct cable_details_t {
+	uint8_t bus;
+	uint8_t device;
+	uint16_t vid;
+	uint16_t pid;
+	std::string probe;
+	std::string manufacturer;
+	std::string serial;
+	std::string product;
+	cable_details_t(uint8_t& b, uint8_t& d,
+		uint16_t& v, uint16_t& p,
+		std::string prb, std::string m,
+		std::string s, std::string prd):
+		bus(b), device(d), vid(v), pid(p),
+		probe(prb), manufacturer(m),
+		serial(s), product(prd) {}
+};
+std::string formatHex(uint16_t c, int len) {
+	std::stringstream ss;
+	ss << "0x";
+	ss << std::hex << std::setfill('0') << std::setw(len)
+	   << (static_cast<unsigned int>(static_cast<unsigned short>(c)) & 0xFFFF);
+	return ss.str();
+}
+
+std::string formatDec(char c, int len) {
+	std::stringstream ss;
+	ss << std::setfill('0') << std::setw(len) << std::to_string(c);
+	return ss.str();
+}
+
 bool libusb_ll::scan()
 {
-	char *mess = reinterpret_cast<char *>(malloc(1024));
-	if (!mess) {
-		printError("Error: failed to allocate buffer");
-		return false;
-	}
+	std::list<cable_details_t> list_cables;
+	size_t manufacturer_len = 12;
+	size_t probe_len = 10;
+	size_t serial_len = 6;
 
 	get_devices_list(nullptr);
-
-	snprintf(mess, 1024, "%3s %3s %-13s %-15s %-12s %-20s %s",
-			"Bus", "device", "vid:pid", "probe type", "manufacturer",
-			"serial", "product");
-	printSuccess(mess);
 
 	for (libusb_device *usb_dev : _usb_dev_list) {
 		bool found = false;
@@ -171,6 +199,7 @@ bool libusb_ll::scan()
 		libusb_device_handle *handle;
 		int ret = libusb_open(usb_dev, &handle);
 		if (ret != 0) {
+			char mess[1024];
 			snprintf(mess, 1024,
 				"Error: can't open device with vid:vid = 0x%04x:0x%04x. "
 				"Error code %d %s",
@@ -198,17 +227,50 @@ bool libusb_ll::scan()
 		uint8_t bus_addr = libusb_get_bus_number(usb_dev);
 		uint8_t dev_addr = libusb_get_device_address(usb_dev);
 
-		snprintf(mess, 1024, "%03d %03d    0x%04x:0x%04x %-15s %-12s %-20s %s",
-				bus_addr, dev_addr,
-				desc.idVendor, desc.idProduct,
-				probe_type, imanufacturer, iserial, iproduct);
+		list_cables.emplace_back(cable_details_t(
+			bus_addr, dev_addr, desc.idVendor, desc.idProduct,
+			std::string(probe_type), std::string((const char *)imanufacturer),
+			std::string((const char *)iserial), std::string((const char *)iproduct)));
 
-		printInfo(mess);
+		if (strlen((const char *)imanufacturer) > manufacturer_len)
+			manufacturer_len = strlen((const char *)imanufacturer);
+		if (strlen((const char *)probe_type) > probe_len)
+			probe_len = strlen((const char *)probe_type);
+		if (strlen((const char *)iserial) > serial_len)
+			serial_len = strlen((const char *)iserial);
 
 		libusb_close(handle);
 	}
 
-	free(mess);
+	manufacturer_len++;
+	serial_len++;
+	probe_len++;
+
+	std::stringstream buffer;
+	buffer << std::left
+		<< std::setw(4) << "Bus"
+		<< std::setw(7) << "device"
+		<< std::setw(14) << "vid:pid"
+		<< std::setw(probe_len) << "probe type"
+		<< std::setw(manufacturer_len) << "manufacturer"
+		<< std::setw(serial_len) << "serial"
+		<< "product";
+	printSuccess(buffer.str());
+
+	for (const auto& cable : list_cables) {
+		std::stringstream buffer;
+		buffer << std::left // Left-align all fields
+			<< std::setw(4) << formatDec(cable.bus, 3)
+			<< std::setw(7) << formatDec(cable.device, 3)
+			<< std::setw(14)
+			<< (formatHex(cable.vid, 4) + ":" + formatHex(cable.pid, 4))
+			<< std::setw(probe_len) << cable.probe
+			<< std::setw(manufacturer_len) << cable.manufacturer
+			<< std::setw(serial_len) << cable.serial
+			<< cable.product;
+
+		printInfo(buffer.str());
+	}
 
 	return true;
 }
