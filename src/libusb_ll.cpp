@@ -251,7 +251,7 @@ bool libusb_ll::scan()
 		<< std::setw(4) << "Bus"
 		<< std::setw(7) << "device"
 		<< std::setw(14) << "vid:pid"
-		<< std::setw(probe_len) << "probe type"
+		<< std::setw(probe_len) << "probe_type"
 		<< std::setw(manufacturer_len) << "manufacturer"
 		<< std::setw(serial_len) << "serial"
 		<< "product";
