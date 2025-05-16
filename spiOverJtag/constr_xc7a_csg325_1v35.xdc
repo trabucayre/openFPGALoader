@@ -1,8 +1,7 @@
-set_property BITSTREAM.GENERAL.COMPRESS TRUE [current_design]
-set_property BITSTREAM.CONFIG.CONFIGRATE 16 [current_design]
-
-set_property CONFIG_VOLTAGE 1.8 [current_design]
 set_property CFGBVS GND [current_design]
+set_property CONFIG_VOLTAGE 1.8 [current_design]
+set_property BITSTREAM.CONFIG.CONFIGRATE 16 [current_design]
+set_property BITSTREAM.GENERAL.COMPRESS TRUE [current_design]
 
 set_property CONFIG_MODE SPIx4 [current_design]
 set_property BITSTREAM.CONFIG.SPI_32BIT_ADDR NO [current_design]
@@ -21,3 +20,5 @@ set_property -dict {PACKAGE_PIN L17 IOSTANDARD SSTL135_R} [get_ports sdo_dq1]
 set_property -dict {PACKAGE_PIN J15 IOSTANDARD SSTL135_R} [get_ports wpn_dq2]
 set_property -dict {PACKAGE_PIN J16 IOSTANDARD SSTL135_R} [get_ports hldn_dq3]
 
+create_clock -period 33.000 -name jtag_tck -waveform {0.000 16.500} [get_pins {bscane2_inst/DRCK]}}
+create_clock -period 33.000 -name vers_tck -waveform {0.000 16.500} [get_pins {bscane2_version/DRCK]}}

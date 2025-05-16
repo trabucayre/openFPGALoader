@@ -1,6 +1,29 @@
 #!/usr/bin/env python3
-from edalize.edatool import get_edatool
+
 import os
+
+from edalize.edatool import get_edatool
+
+packages = {
+    "Artix": {
+        "xc7a12t"  : ["cpg238", "csg325"],
+        "xc7a15t"  : ["cpg236", "csg324", "csg325", "ftg256", "fgg484"],
+        "xc7a25t"  : ["cpg238", "csg325"],
+        "xc7a35t"  : ["cpg236", "csg324", "csg325", "ftg256", "fgg484"],
+        "xc7a50t"  : ["cpg236", "csg324", "csg325", "ftg256", "fgg484"],
+        "xc7a75t"  : ["csg324", "ftg256", "fgg484", "fgg676"],
+        "xc7a100t" : ["csg324", "ftg256", "fgg484", "fgg676"],
+        "xc7a200t" : ["sbg484", "fbg484", "fbg676", "ffg1156"],
+    },
+    "Spartan 7": {
+        "xc7s6"   : ["ftgb196", "cpga196", "csga225"],
+        "xc7s15"  : ["ftgb196", "cpga196", "csga225"],
+        "xc7s25"  : ["ftgb196", "csga225", "csga324"],
+        "xc7s50"  : ["ftgb196", "csga324", "fgga484"],
+        "xc7s75"  : ["fgga484", "fgga676"],
+        "xc7s100" : ["fgga484", "fgga676"],
+    },
+}
 
 if len(os.sys.argv) != 2:
     print("missing board param")
@@ -16,9 +39,10 @@ if not os.path.isdir(build_dir):
     else:
         print ("Successfully created the directory %s " % build_dir)
 
-currDir = os.path.abspath(os.path.curdir) + '/'
-files = []
+currDir    = os.path.abspath(os.path.curdir) + '/'
+files      = []
 parameters = {}
+pkg_name   = None
 
 subpart = part[0:4].lower()
 if subpart == '10cl':
@@ -39,7 +63,8 @@ elif subpart[0:2] == '5s':
                   'file_type': 'tclSource'})
 elif subpart == "xc7a":
     family = "Artix"
-    tool = "vivado"
+    tool   = "vivado"
+    model  = subpart
 elif subpart == "xc7v":
     family = "Virtex 7"
     tool = "vivado"
@@ -54,7 +79,8 @@ elif subpart == "xc7k":
     speed = -2
 elif subpart == "xc7s":
     family = "Spartan 7"
-    tool = "vivado"
+    tool   = "vivado"
+    model  = subpart
 elif subpart == "xc6s":
     family = "Spartan6"
     tool = "ise"
@@ -74,6 +100,10 @@ else:
     print("Error: unknown device")
     os.sys.exit()
 
+if model in ["xc7a", "xc7s"]:
+    pkg      = packages[family][part][0]
+    pkg_name = f"{model}_{pkg}"
+
 if tool in ["ise", "vivado"]:
     pkg_name = {
         "xc3s500evq100"    : "xc3s_vq100",
@@ -89,25 +119,6 @@ if tool in ["ise", "vivado"]:
         "xc6slx150tcsg484" : "xc6s_csg484",
         "xc6slx150tfgg484" : "xc6s_t_fgg484",
         "xc6vlx130tff784"  : "xc6v_ff784",
-        "xc7a15tcpg236"    : "xc7a_cpg236",
-        "xc7a15tfgg484"    : "xc7a_fgg484",
-        "xc7a25tcpg238"    : "xc7a_cpg238",
-        "xc7a25tcsg325"    : "xc7a_csg325",
-        "xc7a35tcpg236"    : "xc7a_cpg236",
-        "xc7a35tcsg324"    : "xc7a_csg324",
-        "xc7a35tftg256"    : "xc7a_ftg256",
-        "xc7a35tfgg484"    : "xc7a_fgg484",
-        "xc7a50tcpg236"    : "xc7a_cpg236",
-        "xc7a50tcsg324"    : "xc7a_csg324",
-        "xc7a50tfgg484"    : "xc7a_fgg484",
-        "xc7a50tcsg325"    : "xc7a_csg325",
-        "xc7a75tfgg484"    : "xc7a_fgg484",
-        "xc7a100tcsg324"   : "xc7a_csg324",
-        "xc7a100tfgg484"   : "xc7a_fgg484",
-        "xc7a100tfgg676"   : "xc7a_fgg676",
-        "xc7a200tsbg484"   : "xc7a_sbg484",
-        "xc7a200tfbg484"   : "xc7a_fbg484",
-        "xc7a200tfbg676"   : "xc7a_fbg676",
         "xc7k70tfbg484"    : "xc7k_fbg484",
         "xc7k70tfbg676"    : "xc7k_fbg676",
         "xc7k160tffg676"   : "xc7k_ffg676",
@@ -115,11 +126,6 @@ if tool in ["ise", "vivado"]:
         "xc7k325tffg900"   : "xc7k_ffg900",
         "xc7k420tffg901"   : "xc7k_ffg901",
         "xc7vx330tffg1157" : "xc7v_ffg1157",
-        "xc7s6ftgb196"     : "xc7s_ftgb196",
-        "xc7s25csga225"    : "xc7s_csga225",
-        "xc7s25csga324"    : "xc7s_csga324",
-        "xc7s50csga324"    : "xc7s_csga324",
-        "xc7s75fgga676"    : "xc7s_fgga676",
         "xcku040-ffva1156" : "xcku040_ffva1156",
         "xcku060-ffva1156" : "xcku060_ffva1156",
         "xcvu9p-flga2104"  : "xcvu9p_flga2104",
@@ -127,7 +133,7 @@ if tool in ["ise", "vivado"]:
         "xcku3p-ffva676"   : "xcku3p_ffva676",
         "xcku5p-ffvb676"   : "xcku5p_ffvb676",
         "xcau15p-ffvb676"  : "xcau15p_ffvb676",
-        }[part]
+    }.get(part, pkg_name)
     if tool == "ise":
         cst_type = "UCF"
         tool_options = {'family': family,
@@ -171,7 +177,10 @@ if tool in ["ise", "vivado"]:
                 }
     else:
         cst_type = "xdc"
-        if family == "Xilinx UltraScale":
+        # Artix/Spartan 7 Specific use case:
+        if family in ["Artix", "Spartan 7"]:
+            tool_options = {'part': f"{part}{pkg}-1"}
+        elif family == "Xilinx UltraScale":
             if part in ["xcvu9p-flga2104", "xcku5p-ffvb676"]:
                 tool_options = {'part': part + '-1-e'}
                 parameters["secondaryflash"]= {
@@ -194,6 +203,7 @@ if tool in ["ise", "vivado"]:
                 tool_options = {'part': part + '-2-e'}
         else:
             tool_options = {'part': part + '-1'}
+
     cst_file = currDir + "constr_" + pkg_name + "." + cst_type.lower()
     files.append({'name': currDir + 'xilinx_spiOverJtag.v',
                   'file_type': 'verilogSource'})
@@ -223,6 +233,9 @@ else:
                   'file_type': 'SDC'})
     tool_options = {'device': full_part, 'family':family}
 
+files.append({'name': currDir + 'spiOverJtag_core.v',
+              'file_type': 'verilogSource'})
+
 parameters[family.lower().replace(' ', '')]= {
     'datatype': 'int',
     'paramtype': 'vlogdefine',
@@ -242,5 +255,18 @@ backend.build()
 
 if tool == "vivado":
     import shutil
-    shutil.copy("tmp_" + part + "/spiOverJtag.runs/impl_1/spiOverJtag.bit",
-            "tmp_" + part);
+    import subprocess
+    import gzip
+
+    # Compress bitstream.
+    with open(f"tmp_{part}/spiOverJtag.bit", 'rb') as bit:
+        with gzip.open(f"spiOverJtag_{part}.bit.gz", 'wb', compresslevel=9) as bit_gz:
+            shutil.copyfileobj(bit, bit_gz)
+
+    # Create Symbolic links for all supported packages.
+    if family in ["Artix", "Spartan 7"]:
+        in_file = f"spiOverJtag_{part}.bit.gz"
+        for pkg in packages[family][part]:
+            out_file = f"spiOverJtag_{part}{pkg}.bit.gz"
+            if not os.path.exists(out_file):
+                subprocess.run(["ln", "-s", in_file, out_file])
