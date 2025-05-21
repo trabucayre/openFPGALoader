@@ -190,8 +190,12 @@ static std::map <uint32_t, flash_t> flash_list = {
 		.tb_register = STATR,
 		.bp_len = 3,
 		.bp_offset = {(1 << 2), (1 << 3), (1 << 4), 0},
-		.quad_register = NVCONFR,
-		.quad_mask = (1 << 3),
+		// Disabled because the chip is unable to work in single after being confgured in quad
+		// this option isn't required and the chip is always able to uses quad mode instructions
+		.quad_register = NONER,
+		.quad_mask = 0,
+		//.quad_register = NVCONFR,
+		//.quad_mask = (1 << 3),
 	}},
 	{0x20ba17, {
 		.manufacturer = "micron",
@@ -205,8 +209,12 @@ static std::map <uint32_t, flash_t> flash_list = {
 		.tb_register = STATR,
 		.bp_len = 4,
 		.bp_offset = {(1 << 2), (1 << 3), (1 << 4), (1 << 6)},
-		.quad_register = NVCONFR,
-		.quad_mask = (1 << 3),
+		// Disabled because the chip is unable to work in single after being confgured in quad
+		// this option isn't required and the chip is always able to uses quad mode instructions
+		.quad_register = NONER,
+		.quad_mask = 0,
+		//.quad_register = NVCONFR,
+		//.quad_mask = (1 << 3),
 	}},
 	{0x20ba18, {
 		/* https://media-www.micron.com/-/media/client/global/documents/products/data-sheet/nor-flash/serial-nor/n25q/n25q_128mb_3v_65nm.pdf */
@@ -221,8 +229,12 @@ static std::map <uint32_t, flash_t> flash_list = {
 		.tb_register = STATR,
 		.bp_len = 4,
 		.bp_offset = {(1 << 2), (1 << 3), (1 << 4), (1 << 6)},
-		.quad_register = NVCONFR,
-		.quad_mask = (1 << 3),
+		// Disabled because the chip is unable to work in single after being confgured in quad
+		// this option isn't required and the chip is always able to uses quad mode instructions
+		.quad_register = NONER,
+		.quad_mask = 0,
+		//.quad_register = NVCONFR,
+		//.quad_mask = (1 << 3),
 	}},
 	{0x20ba19, {
 		/* https://datasheet.octopart.com/N25Q256A13E1241F-Micron-datasheet-11552757.pdf */
@@ -237,8 +249,12 @@ static std::map <uint32_t, flash_t> flash_list = {
 		.tb_register = STATR,
 		.bp_len = 4,
 		.bp_offset = {(1 << 2), (1 << 3), (1 << 4), (1 << 6)},
-		.quad_register = NVCONFR,
-		.quad_mask = (1 << 3),
+		// Disabled because the chip is unable to work in single after being confgured in quad
+		// this option isn't required and the chip is always able to uses quad mode instructions
+		.quad_register = NONER,
+		.quad_mask = 0,
+		//.quad_register = NVCONFR,
+		//.quad_mask = (1 << 3),
 	}},
 	{0x20bb18, {
 		/* https://www.micron.com/-/media/client/global/documents/products/data-sheet/nor-flash/serial-nor/n25q/n25q_128mb_1_8v_65nm.pdf */
