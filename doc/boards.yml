@@ -552,6 +552,13 @@
   Memory: OK
   Flash: OK
 
+- ID: mlk-s200-eg4d20
+  Description: MILIANKE S200 EG4D20 Development Board
+  URL: https://www.milianke.com/product-item-108.html
+  FPGA: eagle s20 EG4D20EG176
+  Memory: OK
+  Flash: OK
+
 - ID: mini_itx
   Description: Avnet Mini-ITX Base Kit
   URL: https://www.avnet.com/wps/portal/us/products/avnet-boards/avnet-board-families/mini-itx/

@@ -1,14 +1,16 @@
 Anlogic:
 
   - Description: EG4
-    Model: S20
-    URL: http://www.anlogic.com/prod_view.aspx?TypeId=10&Id=168&FId=t3:10:3
+    Model:
+      - EG4D20
+      - EG4S20
+    URL: https://www.anlogic.com/en/product/fpga/saleagle/eg4
     Memory: OK
     Flash: AS
 
   - Description: SALELF 2
     Model: EF2M45
-    URL: http://www.anlogic.com/prod_view.aspx?TypeId=12&Id=170&FId=t3:12:3
+    URL: https://www.anlogic.com/en/product/fpga/salelf/salelf2
     Memory: OK
     Flash: OK
 
