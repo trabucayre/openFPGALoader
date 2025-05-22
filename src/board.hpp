@@ -179,6 +179,8 @@ static std::map <std::string, target_board_t> board_list = {
 			DBUS4, DBUS0, DBUS1, DBUS2,
 			0, 0, CABLE_DEFAULT),
 	DFU_BOARD("icebreaker-bitsy", "", "dfu", 0x1d50, 0x6146, 0),
+	JTAG_BITBANG_BOARD("icepi-zero",   "", "ft231X",  0, 0,
+			FT232RL_DCD, FT232RL_DSR, FT232RL_RI, FT232RL_CTS, CABLE_DEFAULT),
 	JTAG_BOARD("kc705",           "", "digilent", 0, 0, CABLE_DEFAULT),
 	JTAG_BOARD("kcu105",          "xcku040-ffva1156", "jtag-smt2-nc", 0, 0, CABLE_DEFAULT),
 	JTAG_BOARD("kcu116",          "xcku5p-ffvb676", "jtag-smt2-nc", 0, 0, CABLE_DEFAULT),
