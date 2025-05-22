@@ -17,7 +17,7 @@
 
 using namespace std;
 
-#define ANLOGICCABLE_VIDv1 0x336C
+#define ANLOGICCABLE_VIDv1 0x0547
 #define ANLOGICCABLE_VIDv2 0x336C
 #define ANLOGICCABLE_PID   0x1002
 
