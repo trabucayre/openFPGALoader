@@ -481,6 +481,13 @@
   Flash: AS
   Constraints: IceZumAlhambraII
 
+- ID: icepi-zero
+  Description: Icepi Zero
+  URL: https://github.com/cheyao/icepi-zero
+  FPGA: ECP5 LFE5U
+  Memory: OK
+  Flash: OK
+
 - ID: kc705
   Description: Xilinx KC705
   URL: https://www.xilinx.com/products/boards-and-kits/ek-k7-kc705-g.html
