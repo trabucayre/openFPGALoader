@@ -24,6 +24,7 @@ static std::map <uint32_t, fpga_model> fpga_list = {
 	/**************************************************************************/
 
 	/* Anlogic Eagle */
+	{0x04014c35, {"anlogic", "eagle d20", "EG4D20EG176", 8}},
 	{0x0a014c35, {"anlogic", "eagle s20", "EG4S20BG256", 8}},
 
 	/* Anlogic Elf2 */
