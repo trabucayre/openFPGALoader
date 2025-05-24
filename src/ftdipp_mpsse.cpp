@@ -173,7 +173,7 @@ void FTDIpp_MPSSE::open_device(const std::string &serial, unsigned int baudrate)
 		throw std::runtime_error(err);
 	}
 
-	if (_bus == 0 || _addr == 0)
+	if (_bus == 0 && _addr == 0)
 		ret = ftdi_usb_open_desc_index(_ftdi, _vid, _pid, NULL, serial.empty() ? NULL : serial.c_str(), _index);
 	else
 #if (FTDI_VERSION < 104)

@@ -57,7 +57,7 @@ int libusb_ll::get_devices_list(const cable_t *cable)
 		bus_addr = cable->bus_addr;
 		device_addr = cable->device_addr;
 		vid_pid_filter = (vid != 0) && (pid != 0);
-		bus_dev_filter = (bus_addr != 0) && (device_addr != 0);
+		bus_dev_filter = ~(bus_addr == 0 && device_addr == 0);
 	}
 
 	int i = 0;
