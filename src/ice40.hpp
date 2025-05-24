@@ -24,6 +24,9 @@ class Ice40: public Device, SPIInterface {
 		void program(unsigned int offset, bool unprotect_flash) override;
 		bool program_cram(const uint8_t *data, uint32_t length);
 		bool dumpFlash(uint32_t base_addr, uint32_t len) override;
+		bool detect_flash() override {
+			return SPIInterface::detect_flash();
+		}
 		bool protect_flash(uint32_t len) override;
 		bool unprotect_flash() override;
 		bool bulk_erase_flash() override;
