@@ -305,7 +305,10 @@ int main(int argc, char **argv)
 			} else if ((args.prg_type == Device::WR_FLASH ||
 						args.prg_type == Device::WR_SRAM) ||
 						!args.bit_file.empty() || !args.file_type.empty()) {
-				target->program(args.offset, args.unprotect_flash);
+				if (args.detect_flash)
+					target->detect_flash();
+				else
+					target->program(args.offset, args.unprotect_flash);
 			}
 			if (args.unprotect_flash && args.bit_file.empty())
 				if (!target->unprotect_flash())
