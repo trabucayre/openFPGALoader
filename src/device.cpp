@@ -15,7 +15,7 @@ Device::Device(Jtag *jtag, string filename, const string &file_type,
 		_filename(filename),
 		_file_extension(filename.substr(filename.find_last_of(".") +1)),
 		_mode(NONE_MODE), _verify(verify), _verbose(verbose > 0),
-		_quiet(verbose < 0)
+		_verbose_level(verbose), _quiet(verbose < 0)
 {
 	/* extension overwritten by user */
 	if (!file_type.empty()) {

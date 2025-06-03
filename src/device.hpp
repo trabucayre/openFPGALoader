@@ -70,6 +70,7 @@ class Device {
 		enum prog_mode _mode;
 		bool _verify; /**< verify flash write */
 		bool _verbose;
+		int8_t _verbose_level;
 		bool _quiet;
 };
 
