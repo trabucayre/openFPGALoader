@@ -319,7 +319,7 @@ bool SPIFlash::dump(const std::string &filename, const int &base_addr,
 		printSuccess("DONE");
 	}
 
-	ProgressBar progress("Read flash ", len, 50, false);
+	ProgressBar progress("Read flash ", len, 50, _verbose < 0);
 	for (int i = 0; i < len; i += rd_burst) {
 		if (rd_burst + i > len)
 			rd_burst = len - i;
