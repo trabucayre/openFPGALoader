@@ -28,6 +28,7 @@
 #include "gowin.hpp"
 #include "ice40.hpp"
 #include "lattice.hpp"
+#include "latticeSSPI.hpp"
 #include "libusb_ll.hpp"
 #include "jtag.hpp"
 #include "part.hpp"
