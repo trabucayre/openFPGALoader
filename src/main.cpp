@@ -285,9 +285,17 @@ int main(int argc, char **argv)
 					board->reset_pin, board->done_pin, board->oe_pin,
 					args.verify, args.verbose);
 			} else if (board->manufacturer == "lattice") {
-				target = new Ice40(spi, args.bit_file, args.file_type,
-					args.prg_type,
-					board->reset_pin, board->done_pin, args.verify, args.verbose);
+				if (board->fpga_part == "ice40") {
+					target = new Ice40(spi, args.bit_file, args.file_type,
+						args.prg_type,
+						board->reset_pin, board->done_pin, args.verify, args.verbose);
+				} else if (board->fpga_part == "ecp5") {
+					target = new LatticeSSPI(spi, args.bit_file, args.file_type, args.verbose);
+				} else {
+					printError("Error (SPI mode): " + board->fpga_part +
+						" is an unsupported/unknown Lattice Model");
+					return EXIT_FAILURE;
+				}
 			} else if (board->manufacturer == "colognechip") {
 				target = new CologneChip(spi, args.bit_file, args.file_type, args.prg_type,
 					board->reset_pin, board->done_pin, DBUS6, board->oe_pin,

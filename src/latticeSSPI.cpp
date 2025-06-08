@@ -3,20 +3,20 @@
  * Copyright (C) 2025 Gwenhael Goavec-Merou <gwenhael.goavec-merou@trabucayre.com>
  */
 
-#define __STDC_FORMAT_MACROS
-#include <iostream>
-#include <string>
-#include <cinttypes>
+#include "latticeSSPI.hpp"
 
 #include <string.h>
 #include <unistd.h>
+
+#define __STDC_FORMAT_MACROS
+#include <cinttypes>
+#include <iostream>
+#include <string>
 
 #include "device.hpp"
 #include "ftdispi.hpp"
 #include "latticeBitParser.hpp"
 #include "progressBar.hpp"
-
-#include "latticeSSPI.hpp"
 
 #define SSPI_READ_ID               0xE0
 #define SSPI_ISC_READ_STATUS       0x3C
@@ -46,7 +46,7 @@ LatticeSSPI::LatticeSSPI(FtdiSpi *spi, const std::string &filename,
 	_spi->setMode(0);
 }
 
-uint32_t LatticeSSPI::char_array_to_word(uint8_t *in)
+uint32_t LatticeSSPI::char_array_to_word(const uint8_t *in)
 {
 	return static_cast<uint32_t>(in[0] << 24) |
 		static_cast<uint32_t>(in[1] << 16) |
@@ -54,7 +54,7 @@ uint32_t LatticeSSPI::char_array_to_word(uint8_t *in)
 		static_cast<uint32_t>(in[3] <<  0);
 }
 
-bool LatticeSSPI::EnableISC(uint8_t flash_mode)
+bool LatticeSSPI::EnableISC(uint8_t /*flash_mode*/)
 {
 	cmd_class_c(ISC_ENABLE);
 
@@ -82,7 +82,7 @@ uint32_t LatticeSSPI::readStatusReg()
 
 	cmd_class_a(SSPI_ISC_READ_STATUS, rx, 4 * 8);
 
-	return static_cast<uint64_t>(char_array_to_word(rx));
+	return char_array_to_word(rx);
 }
 
 /*
@@ -93,7 +93,7 @@ uint32_t LatticeSSPI::readStatusReg()
 bool LatticeSSPI::cmd_class_a(uint8_t cmd, uint8_t *rx, uint32_t len)
 {
 	const uint32_t xferByteLen = (len + 7) / 8;
-	const uint32_t kBytetLen = xferByteLen + 3; // Convert bits to bytes after adding dummy
+	const uint32_t kBytetLen = xferByteLen + 3;  // Convert bits to bytes after adding dummy
 	uint8_t lrx[kBytetLen];
 	uint8_t ltx[kBytetLen];
 	memset(ltx, 0x00, kBytetLen);
@@ -102,12 +102,6 @@ bool LatticeSSPI::cmd_class_a(uint8_t cmd, uint8_t *rx, uint32_t len)
 
 	memcpy(rx, &lrx[3], xferByteLen);
 
-	return true;
-}
-
-bool LatticeSSPI::cmd_class_b(uint8_t cmd, uint8_t *tx, uint32_t len)
-{
-	throw std::runtime_error("Not implemented");
 	return true;
 }
 
@@ -146,7 +140,7 @@ bool LatticeSSPI::pollBusyFlag(bool verbose)
 	return true;
 }
 
-bool LatticeSSPI::flashErase(uint32_t  mask)
+bool LatticeSSPI::flashErase(uint32_t /*mask*/)
 {
 	const uint8_t tx[] = {0x01, 0x00, 0x00};
 	_spi->spi_put(FLASH_ERASE, tx, 0, 3);
@@ -162,13 +156,12 @@ bool LatticeSSPI::flashErase(uint32_t  mask)
 
 bool LatticeSSPI::program_mem()
 {
-	bool err;
 	LatticeBitParser _bit(_filename, false, _verbose);
 
 	printInfo("Open file: ", false);
 	printSuccess("DONE");
 
-	err = _bit.parse();
+	const bool err = _bit.parse();
 
 	printInfo("Parse file: ", false);
 	if (err == EXIT_FAILURE) {
@@ -183,11 +176,11 @@ bool LatticeSSPI::program_mem()
 
 	/* Prepare bitstream */
 	const uint8_t *data = _bit.getData();
-	int length = _bit.getLength()/8;
+	const int length = _bit.getLength() / 8;
 
 	/* read ID Code 0xE0 and compare to bitstream */
-	uint32_t bit_idcode = std::stoul(_bit.getHeaderVal("idcode").c_str(), NULL, 16);
-	uint32_t idcode = idCode();
+	const uint32_t bit_idcode = std::stoul(_bit.getHeaderVal("idcode").c_str(), NULL, 16);
+	const uint32_t idcode = idCode();
 	if (idcode != bit_idcode) {
 		char mess[256];
 		snprintf(mess, 256, "mismatch between target's idcode and bitstream idcode\n"
@@ -224,7 +217,6 @@ bool LatticeSSPI::program_mem()
 	 * For Nexus family (from svf file): 1 byte to tx 0x00
 	 */
 	printInfo("SRAM erase: ", false);
-	//uint32_t mask_erase[1] = {FLASH_ERASE_SRAM};
 
 	if (flashErase(0x01/*mask_erase[0]*/) == false) {
 		printError("FAIL");
@@ -245,7 +237,6 @@ bool LatticeSSPI::program_mem()
 	_spi->clearCs();
 	cmd_class_c(0x7A);
 
-	uint8_t tmp[1024];
 	int size = 1024;
 
 	ProgressBar progress("Loading", length, 50, _quiet);
@@ -253,14 +244,10 @@ bool LatticeSSPI::program_mem()
 	for (int i = 0; i < length; i += size) {
 		progress.display(i);
 
-		if (length < i + size) {
+		if (length < i + size)
 			size = length-i;
-		}
 
-		for (int ii = 0; ii < size; ii++)
-			tmp[ii] = data[i+ii];
-
-		_spi->spi_put(tmp, NULL, size);
+		_spi->spi_put(&data[i], NULL, size);
 	}
 	progress.done();
 	/* Switch CS to Automatic mode */
@@ -281,26 +268,24 @@ bool LatticeSSPI::program_mem()
 
 	if (_verbose)
 		displayReadReg(readStatusReg());
-	uint8_t nop[] = {0xff, 0xff, 0xff, 0xff};
+	const uint8_t nop[] = {0xff, 0xff, 0xff, 0xff};
 	_spi->spi_put(nop, NULL, 4);
 
 	return true;
 }
 
-void LatticeSSPI::program(unsigned int offset, bool unprotect_flash)
+void LatticeSSPI::program(unsigned int /*offset*/, bool /*unprotect_flash*/)
 {
-	bool retval = true;
 	if (_mode == FLASH_MODE)
 		throw std::runtime_error("Flash mode not avaible when programming in Slave SPI");
 
-	retval = program_mem();
+	const bool retval = program_mem();
 	if (!retval)
 		throw std::exception();
 }
 
 void LatticeSSPI::displayReadReg(uint32_t dev)
 {
-	uint8_t err;
 	printf("displayReadReg 0x%08x\n", dev);
 	if (dev & 1<<0) printf("\tTRAN Mode\n");
 	printf("\tConfig Target Selection : %" PRIx32 "\n", (dev >> 1) & 0x07);
@@ -323,7 +308,7 @@ void LatticeSSPI::displayReadReg(uint32_t dev)
 	if (dev & 1 << 20) printf("\tEncryption PreAmble\n");
 	if (dev & 1 << 21) printf("\tStd PreAmble\n");
 	if (dev & 1 << 22) printf("\tSPIm Fail1\n");
-	err = (dev >> 23)&0x07;
+	const uint8_t err = (dev >> 23)&0x07;
 
 	printf("\tBSE Error Code\n");
 	printf("\t\t");
