@@ -471,7 +471,7 @@ bool SPIFlash::verify(const int &base_addr, const uint8_t *data,
 	std::string verify_data;
 	verify_data.resize(rd_burst);
 
-	ProgressBar progress("Read flash ", len, 50, false);
+	ProgressBar progress("Reading", len, 50, false);
 	for (int i = 0; i < len; i += rd_burst) {
 		if (rd_burst + i > len)
 			rd_burst = len - i;
