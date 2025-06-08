@@ -45,16 +45,16 @@ void Ice40::reset()
 	_spi->gpio_clear(_rst_pin);
 	usleep(1000);
 	_spi->gpio_set(_rst_pin);
-	printInfo("Reset ", false);
 	usleep(12000);
+	printInfo("Reset and Wait for CDONE:");
 	do {
 		timeout--;
 		usleep(12000);
 	} while (((_spi->gpio_get(true) & _done_pin) == 0) && timeout > 0);
 	if (timeout == 0)
-		printError("FAIL");
+		printError("Fail");
 	else
-		printSuccess("DONE");
+		printSuccess("Done");
 }
 
 /* cf. TN1248 (iCE40 Programming and Configuration)
@@ -96,25 +96,23 @@ bool Ice40::program_cram(const uint8_t *data, uint32_t length)
 	/* wait CDONE */
 	usleep(12000);
 
-	printInfo("Wait for CDONE ", false);
+	printInfo("Wait for CDONE");
 	do {
 		timeout--;
 		usleep(12000);
 	} while (((_spi->gpio_get(true) & _done_pin) == 0) && timeout > 0);
 	if (timeout == 0)
-		printError("FAIL");
+		printError("Fail");
 	else
-		printSuccess("DONE");
+		printSuccess("Done");
 
 	_spi->setCs();
 
-	return true;
+	return (timeout == 0) ? false : true;
 }
 
 void Ice40::program(unsigned int offset, bool unprotect_flash)
 {
-	uint32_t timeout = 1000;
-
 	if (_file_extension.empty())
 		return;
 
@@ -141,33 +139,19 @@ void Ice40::program(unsigned int offset, bool unprotect_flash)
 	SPIFlash flash(reinterpret_cast<SPIInterface *>(_spi), unprotect_flash,
 			_verbose_level);
 
-	printf("%02x\n", flash.read_status_reg());
-	flash.read_id();
 	flash.erase_and_prog(offset, data, length);
 
 	if (_verify)
 		flash.verify(offset, data, length);
 
-	_spi->gpio_set(_rst_pin);
-	usleep(12000);
-
-	printInfo("Wait for CDONE ", false);
-	do {
-		timeout--;
-		usleep(12000);
-	} while (((_spi->gpio_get(true) & _done_pin) == 0) && timeout > 0);
-	if (timeout == 0)
-		printError("FAIL");
-	else
-		printSuccess("DONE");
+	/* release SPI access / reload */
+	post_flash_access();
 }
 
 bool Ice40::dumpFlash(uint32_t base_addr, uint32_t len)
 {
-	uint32_t timeout = 1000;
-	_spi->gpio_clear(_rst_pin);
-
 	/* prepare SPI access */
+	prepare_flash_access();
 	printInfo("Read Flash ", false);
 	try {
 		SPIFlash flash(reinterpret_cast<SPIInterface *>(_spi), false, _verbose_level);
@@ -180,22 +164,8 @@ bool Ice40::dumpFlash(uint32_t base_addr, uint32_t len)
 		return false;
 	}
 
-	/* release SPI access */
-
-	_spi->gpio_set(_rst_pin);
-	usleep(12000);
-
-	printInfo("Wait for CDONE ", false);
-	do {
-		timeout--;
-		usleep(12000);
-	} while (((_spi->gpio_get(true) & _done_pin) == 0) && timeout > 0);
-	if (timeout == 0)
-		printError("FAIL");
-	else
-		printSuccess("DONE");
-
-	return false;
+	/* release SPI access / reload */
+	return post_flash_access();
 }
 
 bool Ice40::protect_flash(uint32_t len)
