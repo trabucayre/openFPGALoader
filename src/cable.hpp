@@ -87,6 +87,7 @@ static std::map <std::string, cable_t> cable_list = {
 	// some cables requires explicit values on some of the I/Os
 	{"anlogicCable",       CABLE_DEF(MODE_ANLOGICCABLE, 0x0547, 0x1002)},
 	{"arm-usb-ocd-h",      FTDI_SER(0x15ba, 0x002b, FTDI_INTF_A, 0x08, 0x1B, 0x09, 0x0B)},
+	{"arm-usb-tiny-h",     FTDI_SER(0x15ba, 0x002a, FTDI_INTF_A, 0x08, 0x1B, 0x09, 0x0B)},
 	{"bus_blaster",        FTDI_SER(0x0403, 0x6010, FTDI_INTF_A, 0x08, 0x1B, 0x08, 0x0B)},
 	{"bus_blaster_b",      FTDI_SER(0x0403, 0x6010, FTDI_INTF_B, 0x08, 0x0B, 0x08, 0x0B)},
 	{"ch552_jtag",         FTDI_SER(0x0403, 0x6010, FTDI_INTF_A, 0x08, 0x0B, 0x08, 0x0B)},
