@@ -12,6 +12,13 @@ arm-usb-ocd-h:
     URL: https://www.olimex.com/Products/ARM/JTAG/ARM-USB-OCD-H/
 
 
+arm-usb-tiny-h:
+
+  - Name: Olimex ARM-USB-TINY-H adapter
+    Description: Low-cost high-speed ARM USB JTAG
+    URL: https://www.olimex.com/Products/ARM/JTAG/ARM-USB-TINY-H/
+
+
 bus_blaster:
 
   - Name: Dangerousprototypes Bus Blaster
