@@ -371,11 +371,11 @@ int Jtag::read_write(const uint8_t *tdi, unsigned char *tdo, int len, char last)
 	return 0;
 }
 
-void Jtag::toggleClk(int nb)
+void Jtag::toggleClk(int nb, uint8_t tdi)
 {
 	unsigned char c = (TEST_LOGIC_RESET == _state) ? 1 : 0;
 	flushTMS(false);
-	if (_jtag->toggleClk(c, 0, nb) >= 0)
+	if (_jtag->toggleClk(c, tdi, nb) >= 0)
 		return;
 	throw std::exception();
 	return;

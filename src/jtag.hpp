@@ -133,7 +133,7 @@ class Jtag {
 		tapState_t end_state = RUN_TEST_IDLE);
 	int read_write(const uint8_t *tdi, unsigned char *tdo, int len, char last);
 
-	void toggleClk(int nb);
+	void toggleClk(int nb, uint8_t tdi = 0);
 	void go_test_logic_reset();
 	void set_state(tapState_t newState, const uint8_t tdi = 1);
 	int flushTMS(bool flush_buffer = false);
