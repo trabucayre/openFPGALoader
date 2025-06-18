@@ -12,7 +12,9 @@
 #include <string.h>
 #include <unistd.h>
 
+#include <iomanip>
 #include <iostream>
+#include <list>
 #include <stdexcept>
 
 #include "jtag.hpp"
@@ -141,6 +143,17 @@ using namespace std;
 
 #define PUBKEY_LENGTH_BYTES				64			/* length of the public key (MachXO3D) in bytes */
 
+/* ECP3 */
+#define ECP3_LSCC_BITSTREAM_BURST 0x02
+#define ECP3_ISC_ERASE            0x03  /* ISC_ERASE */
+#define ECP3_ISC_ENABLE           0x15
+#define ECP3_IDCODE               0x16
+#define ECP3_READ_USERCODE        0x17
+#define ECP3_ISC_PROGRAM_USERCODE 0x1A
+#define ECP3_RESET_ADDRESS        0x21
+#define ECP3_LSCC_REFRESH         0x23
+#define ECP3_READ_STATUS_REGISTER 0x53
+
 Lattice::Lattice(Jtag *jtag, const string filename, const string &file_type,
 	Device::prog_type_t prg_type, std::string flash_sector, bool verify, int8_t verbose, bool skip_load_bridge, bool skip_reset):
 		Device(jtag, filename, file_type, verify, verbose),
@@ -203,6 +216,8 @@ Lattice::Lattice(Jtag *jtag, const string filename, const string &file_type,
 			printError("Unknown flash sector");
 			throw std::exception();
 		}
+	} else if (family == "ECP3") {
+		_fpga_family = ECP3_FAMILY;
 	} else if (family == "ECP5") {
 		_fpga_family = ECP5_FAMILY;
 	} else if (family == "CrosslinkNX") {
@@ -270,6 +285,7 @@ bool Lattice::checkStatus(uint64_t val, uint64_t mask)
 bool Lattice::program_mem()
 {
 	bool err;
+
 	LatticeBitParser _bit(_filename, false, _verbose);
 
 	printInfo("Open file: ", false);
@@ -308,14 +324,21 @@ bool Lattice::program_mem()
 	 * PRELOAD/SAMPLE 0x1C
 	 * For NEXUS family fpgas, the Bscan register is 362 bits long or
 	 * 45.25 bytes => 46 bytes
+	 * For ECP3 family fpgas, the Bscan register is 1077 bits long or
+	 * 134.62 bytes => 135 bytes
 	 */
-	uint8_t tx_buf[46];
-	memset(tx_buf, 0xff, 46);
+	uint8_t tx_buf[135];
+	memset(tx_buf, 0xff, 135);
 	int tx_len;
-	if(_fpga_family == NEXUS_FAMILY){
-		tx_len = 46;
-	} else {
-		tx_len = 26;
+	switch (_fpga_family) {
+		case NEXUS_FAMILY:
+			tx_len = 46;
+			break;
+		case ECP3_FAMILY:
+			tx_len = 135;
+			break;
+		default:
+			tx_len = 26;
 	}
 	wr_rd(PRELOAD_SAMPLE, tx_buf, tx_len, NULL, 0);
 
@@ -326,32 +349,41 @@ bool Lattice::program_mem()
 	 */
 	/*flag to understand if we refreshed or not*/
 	bool was_refreshed;
-	if (_fpga_family == NEXUS_FAMILY) {
-		if (!checkStatus(0, REG_STATUS_PRV_CNF_CHK_MASK)) {
-			printInfo("Error in previous bitstream execution. REFRESH: ", false);
-			wr_rd(REFRESH, NULL, 0, NULL, 0);
-			_jtag->set_state(Jtag::RUN_TEST_IDLE);
-			_jtag->toggleClk(1000);
-			/* In Lattice FPGA-TN-02099 document in a note it's reported that there
-				 is a delay time after LSC_REFRESH where "Duration could be in
-				 seconds". Without whis waiting time, busy flag can't be cleared.*/
-			sleep(5);
-			was_refreshed = true;
+	switch (_fpga_family) {
+		case NEXUS_FAMILY:
 			if (!checkStatus(0, REG_STATUS_PRV_CNF_CHK_MASK)) {
-				printError("FAIL");
-				displayReadReg(readStatusReg());
-				return false;
+				printInfo("Error in previous bitstream execution. REFRESH: ", false);
+				wr_rd(REFRESH, NULL, 0, NULL, 0);
+				_jtag->set_state(Jtag::RUN_TEST_IDLE);
+				_jtag->toggleClk(1000);
+				/* In Lattice FPGA-TN-02099 document in a note it's reported that there
+					 is a delay time after LSC_REFRESH where "Duration could be in
+					 seconds". Without whis waiting time, busy flag can't be cleared.*/
+				sleep(5);
+				was_refreshed = true;
+				if (!checkStatus(0, REG_STATUS_PRV_CNF_CHK_MASK)) {
+					printError("FAIL");
+					displayReadReg(readStatusReg());
+					return false;
+				} else {
+					printSuccess("DONE");
+				}
 			} else {
-				printSuccess("DONE");
+				was_refreshed = false;
+				if (_verbose){
+					printInfo("No error in previous bitstream execution.", true);
+				}
 			}
-		} else {
+			break;
+		case ECP3_FAMILY:
+			wr_rd(ECP3_LSCC_REFRESH, NULL, 0, NULL, 0);
+			_jtag->set_state(Jtag::RUN_TEST_IDLE);
+			_jtag->toggleClk(5, 1);
+			usleep_ecp3(500000);  // 0.5s
 			was_refreshed = false;
-			if (_verbose){
-				printInfo("No error in previous bitstream execution.", true);
-			}
-		}
-	} else {
-		was_refreshed = false;
+			break;
+		default:
+			was_refreshed = false;
 	}
 
 	/* ISC Enable 0xC6 */
@@ -387,6 +419,11 @@ bool Lattice::program_mem()
 		printSuccess("DONE");
 	}
 
+	if (_fpga_family == ECP3_FAMILY) {
+		if (!write_userCode(0xffffffff))
+			return false;
+	}
+
 	/* ISC ERASE
 	 * For Nexus family (from svf file): 1 byte to tx 0x00
 	 */
@@ -404,15 +441,43 @@ bool Lattice::program_mem()
 	}
 
 	/* LSC_INIT_ADDRESS */
-	wr_rd(0x46, NULL, 0, NULL, 0);
-	_jtag->set_state(Jtag::RUN_TEST_IDLE);
-	_jtag->toggleClk(1000);
+	if (_fpga_family == ECP3_FAMILY) {
+		wr_rd(ECP3_RESET_ADDRESS, NULL, 0, NULL, 0);
+		_jtag->set_state(Jtag::RUN_TEST_IDLE);
+		_jtag->toggleClk(5);
+		usleep_ecp3(2000); // 2ms
+
+		/* read user code (User Code register must have all bit set cleared) */
+		const uint32_t dummy = 0xffffffff;
+		uint32_t rx = 0;
+		wr_rd(ECP3_READ_USERCODE, (uint8_t *)&dummy, 4, (uint8_t *)&rx, 4);
+		if (rx != 0x00000000) {
+			char message[256];
+			snprintf(message, 256, "failed: 0x%08x instead of 0xffffffff", rx);
+			printError(message);
+			return false;
+		}
+	} else {
+		wr_rd(0x46, NULL, 0, NULL, 0);
+		_jtag->set_state(Jtag::RUN_TEST_IDLE);
+		_jtag->toggleClk(1000);
+	}
 
 	const uint8_t *data = _bit.getData();
 	int length = _bit.getLength()/8;
-	wr_rd(0x7A, NULL, 0, NULL, 0);
-	_jtag->set_state(Jtag::RUN_TEST_IDLE);
-	_jtag->toggleClk(2);
+	if (_fpga_family == ECP3_FAMILY) {
+		/* Reset Address */
+		wr_rd(ECP3_RESET_ADDRESS, NULL, 0, NULL, 0);
+		_jtag->set_state(Jtag::RUN_TEST_IDLE);
+		_jtag->toggleClk(5, 1);
+		usleep_ecp3(2000); // 2ms
+
+		wr_rd(ECP3_LSCC_BITSTREAM_BURST, NULL, 0, NULL, 0);
+	} else {
+		wr_rd(0x7A, NULL, 0, NULL, 0);
+		_jtag->set_state(Jtag::RUN_TEST_IDLE);
+		_jtag->toggleClk(2);
+	}
 
 	uint8_t tmp[1024];
 	int size = 1024;
@@ -431,27 +496,45 @@ bool Lattice::program_mem()
 		for (int ii = 0; ii < size; ii++)
 			tmp[ii] = ConfigBitstreamParser::reverseByte(data[i+ii]);
 
-		_jtag->shiftDR(tmp, NULL, size*8, next_state);
+		_jtag->shiftDR(tmp, NULL, size * 8, next_state);
 	}
 
 	_jtag->set_state(Jtag::RUN_TEST_IDLE);
-	_jtag->toggleClk(1000);
 
-	uint32_t status_mask;
-	if (_fpga_family == MACHXO3D_FAMILY)
-		status_mask = REG_STATUS_MACHXO3D_CNF_CHK_MASK;
-	else
-		status_mask = REG_STATUS_CNF_CHK_MASK;
+	if (_fpga_family == ECP3_FAMILY) {
+		_jtag->toggleClk(256, 1);
+		usleep_ecp3(2000);
 
-	if (checkStatus(0, status_mask)) {
+		/* Verifiy User Code register */
+		uint32_t rx = userCode();
+		if (rx != 0x00000000) {
+			progress.fail();
+			char message[256];
+			snprintf(message, 256, "failed: 0x%08x instead of 0x00000000", rx);
+			printError(message);
+			return false;
+		}
 		progress.done();
 	} else {
-		progress.fail();
-		displayReadReg(readStatusReg());
-		return false;
-	}
+		_jtag->toggleClk(1000);
 
-	wr_rd(0xff, NULL, 0, NULL, 0);
+		uint32_t status_mask;
+		if (_fpga_family == MACHXO3D_FAMILY)
+			status_mask = REG_STATUS_MACHXO3D_CNF_CHK_MASK;
+		else
+			status_mask = REG_STATUS_CNF_CHK_MASK;
+
+		if (checkStatus(0, status_mask)) {
+			progress.done();
+		} else {
+			progress.fail();
+			displayReadReg(readStatusReg());
+			return false;
+		}
+
+		/* bypass */
+		wr_rd(0xff, NULL, 0, NULL, 0);
+	}
 
 	if (_verbose)
 		printf("userCode: %08x\n", userCode());
@@ -466,6 +549,25 @@ bool Lattice::program_mem()
 		return false;
 	} else {
 		printSuccess("DONE");
+	}
+
+	if (_fpga_family == ECP3_FAMILY) {
+		/* Bypass */
+		wr_rd(0xff, NULL, 0, NULL, 0);
+		_jtag->set_state(Jtag::RUN_TEST_IDLE);
+		_jtag->toggleClk(100, 1);
+		usleep_ecp3(1000);
+
+		// Verify STATUS Register
+		uint64_t status = readStatusReg();
+		_jtag->toggleClk(5, 1);
+		if ((status & 0x60007) != 0x20000) {
+			char message[256];
+			snprintf(message, 256, "Programming failed: status 0x%" PRIx64 "instead of 0x20000", status);
+			printError(message);
+			displayReadReg(status);
+			return false;
+		}
 	}
 
 	if (_verbose)
@@ -898,6 +1000,14 @@ void Lattice::program(unsigned int offset, bool unprotect_flash)
  */
 bool Lattice::EnableISC(uint8_t flash_mode)
 {
+	if (_fpga_family == ECP3_FAMILY) {
+		wr_rd(ECP3_ISC_ENABLE, NULL, 0, NULL, 0);
+		_jtag->set_state(Jtag::RUN_TEST_IDLE);
+		_jtag->toggleClk(5, 1);
+		usleep_ecp3(20000); // 0.20s
+		return true;
+	}
+
 	wr_rd(ISC_ENABLE, &flash_mode, 1, NULL, 0);
 
 	_jtag->set_state(Jtag::RUN_TEST_IDLE);
@@ -911,6 +1021,13 @@ bool Lattice::EnableISC(uint8_t flash_mode)
 
 bool Lattice::DisableISC()
 {
+	if (_fpga_family == ECP3_FAMILY) {
+		/** Shift in ISC DISABLE instruction */
+		_jtag->shiftIR(0x1E, 8, Jtag::RUN_TEST_IDLE);
+		_jtag->toggleClk(5, 1);
+		usleep_ecp3(200000);
+		return true;
+	}
 	wr_rd(ISC_DISABLE, NULL, 0, NULL, 0);
 	_jtag->set_state(Jtag::RUN_TEST_IDLE);
 	_jtag->toggleClk(1000);
@@ -942,7 +1059,8 @@ bool Lattice::DisableCfg()
 uint32_t Lattice::idCode()
 {
 	uint8_t device_id[4];
-	wr_rd(READ_DEVICE_ID_CODE, NULL, 0, device_id, 4);
+	const uint8_t idcode = (_fpga_family == ECP3_FAMILY) ? ECP3_IDCODE : READ_DEVICE_ID_CODE;
+	wr_rd(idcode, NULL, 0, device_id, 4);
 	return device_id[3] << 24 |
 					device_id[2] << 16 |
 					device_id[1] << 8  |
@@ -952,11 +1070,38 @@ uint32_t Lattice::idCode()
 int Lattice::userCode()
 {
 	uint8_t usercode[4];
-	wr_rd(0xC0, NULL, 0, usercode, 4);
+	wr_rd((_fpga_family == ECP3_FAMILY) ? ECP3_READ_USERCODE : 0xC0,
+		NULL, 0, usercode, 4);
 	return usercode[3] << 24 |
 					usercode[2] << 16 |
 					usercode[1] << 8  |
 					usercode[0];
+}
+
+bool Lattice::write_userCode(uint32_t usercode)
+{
+	// ! Shift in ISC PROGRAM USERCODE(0x1A) instruction
+	// SIR 8   TDI  (1A);
+	// SDR 32  TDI  (FFFFFFFF);
+	// RUNTEST IDLE    5 TCK   2,00E-03 SEC;
+	// ! Shift in READ USERCODE(0x17) instruction
+	// SIR 8   TDI  (17);
+	// SDR 32  TDI  (FFFFFFFF)
+	//         TDO  (FFFFFFFF);
+	wr_rd(ECP3_ISC_PROGRAM_USERCODE, (uint8_t *)&usercode, 4, NULL, 0);
+	_jtag->set_state(Jtag::RUN_TEST_IDLE);
+	_jtag->toggleClk(5, 1);
+	usleep_ecp3(2000); // 2ms
+
+	uint32_t rd_usercode = userCode();
+	if (rd_usercode != usercode) {
+		char message[256];
+		snprintf(message, 256, "failed: 0x%08x instead of 0x%08x",
+			rd_usercode, usercode);
+		printError(message);
+		return false;
+	}
+	return true;
 }
 
 bool Lattice::checkID()
@@ -1005,12 +1150,13 @@ uint64_t Lattice::readStatusReg()
 	uint64_t reg;
 	uint8_t rx[8], tx[8];
 
-	int reg_len = get_statusreg_size() / 8;
+	const int reg_len = get_statusreg_size() / 8;
+	const uint8_t regcode = (_fpga_family == ECP3_FAMILY) ? ECP3_READ_STATUS_REGISTER : READ_STATUS_REGISTER;
 
 	/* valgrind warn */
 	memset(tx, 0, 8);
 	memset(rx, 0, 8);
-	wr_rd(READ_STATUS_REGISTER, tx, reg_len, rx, reg_len);
+	wr_rd(regcode, tx, reg_len, rx, reg_len);
 	_jtag->set_state(Jtag::RUN_TEST_IDLE);
 	_jtag->toggleClk(1000);
 	reg = (uint64_t) rx[7] << 56 | (uint64_t) rx[6] << 48 | (uint64_t) rx[5] << 40 | (uint64_t) rx[4] << 32 | rx[3] << 24 | rx[2] << 16 | rx[1] << 8 | rx[0];
@@ -1052,8 +1198,75 @@ bool Lattice::wr_rd(uint8_t cmd,
 	return true;
 }
 
+typedef struct {
+	std::string description;
+	uint8_t offset;
+	uint8_t size;
+	std::map<int, std::string> reg_cnt;
+} reg_struct_t;
+
+#define REG_ENTRY(_description, _offset, _size, ...) \
+	{_description, _offset, _size, {__VA_ARGS__}}
+
+static const std::map<std::string, std::list<reg_struct_t>> reg_content = {
+	{"StatusRegister", std::list<reg_struct_t>{
+		REG_ENTRY("CRC Error",            0, 1, {0, "OK"}, {1, "KO"}),
+		REG_ENTRY("ID Verify failed",     1, 1, {0, "No"}, {1, "Yes"}),
+		REG_ENTRY("Invalid Command",      2, 1, {0, "No"}, {1, "Yes"}),
+		REG_ENTRY("SPIm Mode Error",      3, 1, {0, "No"}, {1, "Yes"}),
+		REG_ENTRY("Device locked",        4, 1, {0, "No"}, {1, "Yes"}),
+		REG_ENTRY("Key Fire",             5, 1, {0, "No"}, {1, "Yes"}),
+		REG_ENTRY("Alignement Preamble",  6, 1, {0, "No"}, {1, "Yes"}),
+		REG_ENTRY("Encryption Preamble",  7, 1, {0, "No"}, {1, "Yes"}),
+		REG_ENTRY("Std Preamble",         8, 1, {0, "No"}, {1, "Yes"}),
+		REG_ENTRY("HFC",                  9, 1, {0, "No"}, {1, "Yes"}),
+		REG_ENTRY("Memory Cleared",      15, 1, {0, "No"}, {1, "Yes"}),
+		REG_ENTRY("Device Secured",      16, 1, {0, "No"}, {1, "Yes"}),
+		REG_ENTRY("Device Configured",   17, 1, {0, "No"}, {1, "Yes"}),
+		REG_ENTRY("Non-JTAG Mode",       18, 1, {0, "No"}, {1, "Yes"}),
+		REG_ENTRY("ReadBack Mode",       19, 1, {0, "No"}, {1, "Yes"}),
+		REG_ENTRY("Bypass Mode",         20, 1, {0, "No"}, {1, "Yes"}),
+		REG_ENTRY("Flow Trough",         21, 1, {0, "No"}, {1, "Yes"}),
+		REG_ENTRY("Configuration Mode",  22, 1, {0, "No"}, {1, "Yes"}),
+		REG_ENTRY("Transparent Mode",    23, 1, {0, "No"}, {1, "Yes"}),
+	}},
+};
+
 void Lattice::displayReadReg(uint64_t dev)
 {
+	if (_fpga_family == ECP3_FAMILY) {
+		auto reg = reg_content.find("StatusRegister");
+		if (reg == reg_content.end()) {
+			printError("Unknown register StatusRegister");
+			return;
+		}
+
+		std::stringstream raw_val;
+		raw_val << "0x" << std::hex << dev;
+		printSuccess("Register raw value: " + raw_val.str());
+
+		const std::list<reg_struct_t> regs = reg->second;
+		for (reg_struct_t r: regs) {
+			uint8_t offset = r.offset;
+			uint8_t size = r.size;
+			uint32_t mask = (1 << size) - 1;
+			uint32_t val = (dev >> offset) & mask;
+			std::stringstream ss, desc;
+			desc << r.description;
+			ss << std::setw(20) << std::left << r.description;
+			if (r.reg_cnt.size() != 0) {
+				ss << r.reg_cnt[val];
+			} else {
+				std::stringstream hex_val;
+				hex_val << "0x" << std::hex << val;
+				ss << hex_val.str();
+			}
+
+			printInfo(ss.str());
+		}
+		return;
+	}
+
 	uint8_t err;
 	printf("displayReadReg\n");
 	if (dev & 1<<0) printf("\tTRAN Mode\n");
@@ -1247,6 +1460,12 @@ bool Lattice::flashErase(uint32_t  mask)
 			(uint8_t)((mask >> 16) & 0xff)
 		};
 		wr_rd(FLASH_ERASE, tx, 2, NULL, 0);
+	} else if (_fpga_family == ECP3_FAMILY) {
+		wr_rd(ECP3_ISC_ERASE, NULL, 0, NULL, 0);
+		_jtag->set_state(Jtag::RUN_TEST_IDLE);
+		_jtag->toggleClk(5, 1);
+		usleep_ecp3(2000000);  // 2s
+		return true;
 	} else {
 		uint8_t tx[1] = {(uint8_t)(mask & 0xff)};
 		wr_rd(FLASH_ERASE, tx, 1, NULL, 0);
@@ -1540,6 +1759,14 @@ int Lattice::spi_wait(uint8_t cmd, uint8_t mask, uint8_t cond,
 	return 0;
 }
 
+/*************************** MODS FOR ECP3 ************************************/
+
+void Lattice::usleep_ecp3(uint64_t us_time)
+{
+	const uint32_t clk_period = 1e9/static_cast<float>(_jtag->getClkFreq());
+	const uint32_t clk_len = (us_time * 1000) / clk_period;
+	_jtag->toggleClk(clk_len, 0); // 0.5s
+}
 
 /*************************** MODS FOR MacXO3D *********************************/
 

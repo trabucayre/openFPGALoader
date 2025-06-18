@@ -25,6 +25,7 @@ class Lattice: public Device, SPIInterface {
 			int8_t verbose, bool skip_load_bridge, bool skip_reset);
 		uint32_t idCode() override;
 		int userCode();
+		bool write_userCode(uint32_t usercode);
 		void reset() override;
 		void program(unsigned int offset, bool unprotect_flash) override;
 		bool program_mem();
@@ -74,6 +75,7 @@ class Lattice: public Device, SPIInterface {
 			MACHXO3D_FAMILY = 2,
 			ECP5_FAMILY = 3,
 			NEXUS_FAMILY = 4,
+			ECP3_FAMILY,
 			UNKNOWN_FAMILY = 999
 		};
 
@@ -121,6 +123,9 @@ class Lattice: public Device, SPIInterface {
 
 		/* test */
 		bool checkID();
+
+		/************************* MODS for ECP3 ******************************/
+		void usleep_ecp3(uint64_t us_time);
 
 		/*********************** MODS FOR MacXO3D *****************************/
 		enum lattice_flash_sector_t {
