@@ -93,11 +93,31 @@ Supported Boards:
 Supported File Types:
 
 * ``svf``
-* ``svf``
+* ``pof``
 * ``bin`` (arbitrary binary files)
+
+Internal Flash Organization
+---------------------------
+
+The internal flash is divided into five sections:
+
+- ``UFM1`` and ``UFM0`` for user data
+- ``CFM2``, ``CFM1``, and ``CFM0`` for storing one or two bitstreams
+
+.. image:: ../figs/max10_flash-memory.png
+  :alt: max10 internal flash memory structure
+
+Flash usage depends on the configuration mode. In all modes:
+
+- ``CFM0`` is used to store a bitstream
+- ``UFM0`` and ``UFM1`` are available for user data
+- The remaining ``CFMx`` sections (``CFM1``, ``CFM2``) can be used for
+  additional bitstreams or user data
 
 Using ``svf``
 -------------
+
+This method is the **simplest** (and slowest) way to load or write a bitstream.
 
 .. note::
 
@@ -107,7 +127,7 @@ Using ``svf``
 
     openFPGALoader [-b boardname] -c cablename the_svf_file.svf
 
-Parameters:
+**Parameters:**
 
 * ``boardname``: One of the boards supported by ``openFPGALoader`` (optional).
 * ``cablename``: One of the supported cables (see ``--list-cables``).
@@ -115,53 +135,69 @@ Parameters:
 Using ``pof``
 -------------
 
-When writing the bitstream to internal flash, using a ``pof`` file is the fastest approach.
+To write a bitstream into the internal flash, using a ``pof`` file is the
+**fastest** approach.
 
 .. code-block:: bash
 
     openFPGALoader [-b boardname] [--flash-sector] -c cablename the_pof_file.pof
 
-Parameters:
+**Parameters:**
 
-* ``boardname``: One of the boards supported by ``openFPGALoader`` (optional).
+* ``boardname``: A board supported by ``openFPGALoader`` (optional).
 * ``cablename``: One of the supported cables (see ``--list-cables``).
-* ``--flash-sector``: Specifies which internal flash sectors to erase/update instead of modifying the entire flash. One
-  or more section may be provided, with ``,`` as separator. When this option isn't provided a full internal flash erase/
-  update is performed
+* ``--flash-sector``: Optional. Comma-separated list of sectors to update.
+  If omitted, the entire flash is erased and reprogrammed.
 
 Accepted Flash Sectors:
 
 * ``UFM0``, ``UFM1``: User Flash Memory sections.
 * ``CFM0``, ``CFM1``, ``CFM2``: Configuration Flash Memory sectors.
 
-Example:
+**Example:**
 
 .. code-block:: bash
 
     openFPGALoader -c usb-blaster --flash-sector UFM1,CFM0,CFM2 the_pof_file.pof
 
-This command updates ``UFM1``, ``CFM0``, and ``CFM2``, while leaving other sectors unchanged.
+This command updates ``UFM1``, ``CFM0``, and ``CFM2``, leaving all other
+sectors unchanged.
 
 Using an arbitrary binary file
 ------------------------------
 
-This command updates only *User Flash Memory* sectors without modifying ``CFMx``. Unlike Altera Quartus, it supports
-any binary format without limitations (not limited to a ``.bin``.
+Unlike Altera Quartus, it supports any binary format without limitations
+(not limited to a ``.bin``).
+With this feature, it's not required to provides the file at gateware build
+time: it may be updated at any time without gateware modification/rebuild.
 
 .. note:: This approach is useful to updates, for example, a softcore CPU firmware.
 
+**Basic usage:**
+
 .. code-block:: bash
 
-    openFPGALoader [-b boardname] -c cablename the_bin_file.bin
+    openFPGALoader [-b boardname] -c cablename [--offset $OFFSET] the_bin_file.bin
 
-* ``boardname``: One of the boards supported by ``openFPGALoader`` (optional).
+* ``boardname``: a boards supported by ``openFPGALoader`` (optional).
 * ``cablename``: One of the supported cables (see ``--list-cables``).
+* ``$OFFSET``: To start writing ``$OFFSET`` bytes after *User Flash memory*
+  start address (optional, default: 0x00).
 
-Behavior:
+This command erases and writes the contents of ``the_bin_file.bin`` into
+``UFM1`` and ``UFM0``. If ``--offset`` is specified, the binary content is
+written starting from that offset.
 
-``UFM0`` and ``UFM1`` will be erased before writing the binary file.
+Depending on the max10 configuration mode (see picture), it's possible to
+extend *User Flash Memory* area by using `CFM2` and `CFM1`. This is not the
+default behavior and user must explictly change this by using
+`--flash-sector` argument:
 
-.. note:: Depending on the internal flash configuration, ``CFM1`` and ``CFM2`` may also store arbitrary data. However, currently, ``openFPGALoader`` only supports writing to ``UFMx``.
+* ``--flash-sector UFMx`` or ``--flash-sector CFMy`` (with x= 1 or 0 and
+  y = 2 or 1) to specify only one sector
+* ``--flash-sector UFM1,UFM0`` is equivalent to the default behavior
+* ``--flash-sector UFM1,CFM2`` to erase and update ``UFM1``, ``UFM0``
+  and ``CFM2`` (equivalent to ``--flash-sector UFM1,UFM0,CFM2``)
 
 Intel/Altera (Old Boards)
 =========================
