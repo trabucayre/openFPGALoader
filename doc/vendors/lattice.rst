@@ -73,8 +73,8 @@ Bin file load:
 
 Since it's a direct access to the flash (SPI) the ``-b`` option is required.
 
-ECP5/Crosslink-NX
-=================
+ECP5/ECP3/Certus-NX/CertusPro-NX/Crosslink-NX
+=============================================
 
 SRAM
 ----
@@ -88,6 +88,10 @@ SRAM
 
 SPI Flash
 ---------
+
+.. note::
+
+   SPI Flash write is not supported for ECP3 family.
 
 BIT:
 

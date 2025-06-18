@@ -179,6 +179,12 @@ Lattice:
     Memory: OK
     Flash: OK
 
+  - Description: ECP3
+    Model: LFE3-70E
+    URL: https://www.latticesemi.com/Products/FPGAandCPLD/LatticeECP3
+    Memory: OK
+    Flash: TBD
+
   - Description: ECP5
     Model:
       - LFE5U-12
