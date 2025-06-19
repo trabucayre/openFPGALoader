@@ -94,7 +94,7 @@ int McsParser::parse()
 			_base_addr = (loc_addr << 16);
 			if (_base_addr * 8 > _bit_length)
 				_bit_length = _base_addr * 8;
-			if (_bit_length > _bit_data.size() * 8)
+			if ((size_t)_bit_length > _bit_data.size() * 8)
 				_bit_data.resize(_bit_length / 8);
 			sum += (loc_addr & 0xff) + ((loc_addr >> 8) & 0xff);
 			break;

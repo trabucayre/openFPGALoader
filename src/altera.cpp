@@ -978,7 +978,7 @@ bool Altera::sectors_mask_start_end_addr(const Altera::max10_mem_t *mem,
 		}
 
 		/* decrement eaddr until last bit == 1 found */
-		for (uint8_t i = 3; i >= 0; i--) {
+		for (int8_t i = 3; i >= 0; i--) {
 			if (update_sectors & (1 << i)) {
 				end_bit = i + 1;
 				break;
