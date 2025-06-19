@@ -10,7 +10,10 @@
 
 #define __STDC_FORMAT_MACROS
 #include <cinttypes>
+#include <iomanip>
 #include <iostream>
+#include <list>
+#include <sstream>
 #include <string>
 
 #include "device.hpp"
@@ -284,76 +287,85 @@ void LatticeSSPI::program(unsigned int /*offset*/, bool /*unprotect_flash*/)
 		throw std::exception();
 }
 
+typedef struct {
+	std::string description;
+	uint8_t offset;
+	uint8_t size;
+	std::map<int, std::string> reg_cnt;
+} reg_struct_t;
+
+#define REG_ENTRY(_description, _offset, _size, ...) \
+	{_description, _offset, _size, {__VA_ARGS__}}
+
+static const std::map<std::string, std::list<reg_struct_t>> reg_content = {
+	{"StatusRegister", std::list<reg_struct_t>{
+		REG_ENTRY("Transparent Mode",         0, 1, {0, "No"},         {1, "Yes"}),
+		REG_ENTRY("Config Target Selection",  1, 3, {0, "SRAM array"}, {1, "Efuse"}),
+		REG_ENTRY("JTAG Active",              4, 1, {0, "No"},         {1, "Yes"}),
+		REG_ENTRY("PWD Protect",              5, 1, {0, "No"},         {1, "Yes"}),
+		REG_ENTRY("Decrypt Enable",           7, 1, {0, "No"},         {1, "Yes"}),
+		REG_ENTRY("Done",                     8, 1, {0, "No"},         {1, "Yes"}),
+		REG_ENTRY("ISC Enable",               9, 1, {0, "No"},         {1, "Yes"}),
+		REG_ENTRY("Write Enable",            11, 1, {0, "Not Writable"}, {1, "Writable"}),
+		REG_ENTRY("Read Enable",             11, 1, {0, "Not Readable"}, {1, "Readable"}),
+		REG_ENTRY("Busy Flag",               12, 1, {0, "No"},         {1, "Yes"}),
+		REG_ENTRY("Fail Flag",               13, 1, {0, "No"},         {1, "Yes"}),
+		REG_ENTRY("FFEA OTP",                14, 1, {0, "No"},         {1, "Yes"}),
+		REG_ENTRY("Decrypt Only",            15, 1, {0, "No"},         {1, "Yes"}),
+		REG_ENTRY("PWD Enable",              16, 1, {0, "No"},         {1, "Yes"}),
+		REG_ENTRY("Std Preamble",            20, 1, {0, "No"},         {1, "Yes"}),
+		REG_ENTRY("SPIm Fail1",              21, 1, {0, "No"},         {1, "Yes"}),
+		REG_ENTRY("BSE Error Code",          22, 3,
+			{ 0, "No err"},
+			{ 1, "ID ERR"},
+			{ 2, "CMD ERR"},
+			{ 3, "CRC ERR"},
+			{ 4, "Preamble ERR"},
+			{ 5, "Abort ERR"},
+			{ 6, "Overflow ERR"},
+			{ 7, "SDM EOF"},
+			{ 8, "Authentication ERR"},
+			{ 9, "Authentication Setup ERR"},
+			{10, "Bitstream Engine Timeout ERR"}),
+		REG_ENTRY("EXEC Error",              26, 1, {0, "No"}, {1, "Yes"}),
+		REG_ENTRY("Device failed to verify", 27, 1, {0, "No"}, {1, "Yes"}),
+		REG_ENTRY("Invalid Command",         28, 1, {0, "No"}, {1, "Yes"}),
+		REG_ENTRY("SED Error",               29, 1, {0, "No"}, {1, "Yes"}),
+		REG_ENTRY("Bypass Mode",             30, 1, {0, "No"}, {1, "Yes"}),
+		REG_ENTRY("FT Mode",                 31, 1, {0, "No"}, {1, "Yes"}),
+
+	}},
+};
+
 void LatticeSSPI::displayReadReg(uint32_t dev)
 {
-	printf("displayReadReg 0x%08x\n", dev);
-	if (dev & 1<<0) printf("\tTRAN Mode\n");
-	printf("\tConfig Target Selection : %" PRIx32 "\n", (dev >> 1) & 0x07);
-	if (dev & 1<<4) printf("\tJTAG Active\n");
-	if (dev & 1<<5) printf("\tPWD Protect\n");
-	if (dev & 1<<6) printf("\tOTP\n");
-	if (dev & 1<<7) printf("\tDecrypt Enable\n");
-	if (dev & REG_STATUS_DONE) printf("\tDone Flag\n");
-	if (dev & REG_STATUS_ISC_EN) printf("\tISC Enable\n");
-	if (dev & 1 << 10) printf("\tWrite Enable\n");
-	if (dev & 1 << 11) printf("\tRead Enable\n");
-	if (dev & REG_STATUS_BUSY) printf("\tBusy Flag\n");
-	if (dev & REG_STATUS_FAIL) printf("\tFail Flag\n");
-	if (dev & 1 << 14) printf("\tFFEA OTP\n");
-	if (dev & 1 << 15) printf("\tDecrypt Only\n");
-	if (dev & 1 << 16) printf("\tPWD Enable\n");
-	if (dev & 1 << 17) printf("\tUFM OTP\n");
-	if (dev & 1 << 18) printf("\tASSP\n");
-	if (dev & 1 << 19) printf("\tSDM Enable\n");
-	if (dev & 1 << 20) printf("\tEncryption PreAmble\n");
-	if (dev & 1 << 21) printf("\tStd PreAmble\n");
-	if (dev & 1 << 22) printf("\tSPIm Fail1\n");
-	const uint8_t err = (dev >> 23)&0x07;
-
-	printf("\tBSE Error Code\n");
-	printf("\t\t");
-	switch (err) {
-		case 0:
-			printf("No err\n");
-			break;
-		case 1:
-			printf("ID ERR\n");
-			break;
-		case 2:
-			printf("CMD ERR\n");
-			break;
-		case 3:
-			printf("CRC ERR\n");
-			break;
-		case 4:
-			printf("Preamble ERR\n");
-			break;
-		case 5:
-			printf("Abort ERR\n");
-			break;
-		case 6:
-			printf("Overflow ERR\n");
-			break;
-		case 7:
-			printf("SDM EOF\n");
-			break;
-		case 8:
-			printf("Authentication ERR\n");
-			break;
-		case 9:
-			printf("Authentication Setup ERR\n");
-			break;
-		case 10:
-			printf("Bitstream Engine Timeout ERR\n");
-			break;
-		default:
-			printf("unknown error: %x\n", err);
+	auto reg = reg_content.find("StatusRegister");
+	if (reg == reg_content.end()) {
+		printError("Unknown register StatusRegister");
+		return;
 	}
 
-	if (dev & REG_STATUS_EXEC_ERR) printf("\tEXEC Error\n");
-	if ((dev >> 27) & 0x01) printf("\tDevice failed to verify\n");
-	if ((dev >> 28) & 0x01) printf("\tInvalid Command\n");
-	if ((dev >> 29) & 0x01) printf("\tSED Error\n");
-	if ((dev >> 30) & 0x01) printf("\tBypass Mode\n");
-	if ((dev >> 31) & 0x01) printf("\tFT Mode\n");
+	std::stringstream raw_val;
+	raw_val << "0x" << std::hex << dev;
+	printSuccess("Register raw value: " + raw_val.str());
+
+	const std::list<reg_struct_t> regs = reg->second;
+	for (reg_struct_t r: regs) {
+		uint8_t offset = r.offset;
+		uint8_t size = r.size;
+		uint32_t mask = (1 << size) - 1;
+		uint32_t val = (dev >> offset) & mask;
+		std::stringstream ss, desc;
+		desc << r.description;
+		ss << std::setw(24) << std::left << r.description;
+		if (r.reg_cnt.size() != 0) {
+			ss << r.reg_cnt[val];
+		} else {
+			std::stringstream hex_val;
+			hex_val << "0x" << std::hex << val;
+			ss << hex_val.str();
+		}
+
+		printInfo(ss.str());
+	}
 }
