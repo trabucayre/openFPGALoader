@@ -380,7 +380,10 @@ int main(int argc, char **argv)
 
 				delete bit;
 			} else if (args.prg_type == Device::RD_FLASH) {
-				flash.dump(args.bit_file, args.offset, args.file_size);
+				if (args.file_size == 0)
+					printError("Error: 0 size for dump");
+				else
+					flash.dump(args.bit_file, args.offset, args.file_size);
 			}
 
 			if (args.unprotect_flash && args.bit_file.empty())
