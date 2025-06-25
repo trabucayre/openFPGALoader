@@ -49,7 +49,7 @@ openFPGALoader -c cmsisdap fpga_bitstream.bit
 ## Usage
 
 ```
-Usage: openFPGALoader [OPTION...] BIT_FILE
+Usage: ./openFPGALoader [OPTION...] BIT_FILE
 openFPGALoader -- a program to flash FPGA
 
       --altsetting arg          DFU interface altsetting (only for DFU mode)
@@ -89,7 +89,8 @@ openFPGALoader -- a program to flash FPGA
                                 with dump-flash
       --file-type arg           provides file type instead of let's deduced
                                 by using extension
-      --flash-sector arg        flash sector (Lattice and Altera MAX10 parts only)
+      --flash-sector arg        flash sector (Lattice and Altera MAX10 parts
+                                only)
       --fpga-part arg           fpga model flavor + package
       --freq arg                jtag frequency (Hz)
   -f, --write-flash             write bitstream in flash (default: false)
@@ -102,7 +103,8 @@ openFPGALoader -- a program to flash FPGA
   -m, --write-sram              write bitstream in SRAM (default: true)
   -o, --offset arg              Start address (in bytes) for read/write into
                                 non volatile memory (default: 0)
-      --pins arg                pin config TDI:TDO:TCK:TMS
+      --pins arg                pin config TDI:TDO:TCK:TMS or
+                                MOSI:MISO:SCK:CS[:HOLDN:WPN]
       --probe-firmware arg      firmware for JTAG probe (usbBlasterII)
       --protect-flash arg       protect SPI flash area
       --quiet                   Produce quiet output (no progress bar)
@@ -127,6 +129,7 @@ openFPGALoader -- a program to flash FPGA
   -D, --read-dna                Read DNA (Xilinx FPGA only)
   -X, --read-xadc               Read XADC (Xilinx FPGA only)
       --read-register arg       Read Status Register(Xilinx FPGA only)
+      --user-flash arg          User flash file (Gowin LittleBee FPGA only)
   -V, --Version                 Print program version
 
 Mandatory or optional arguments to long options are also mandatory or optional

@@ -114,7 +114,7 @@ int main(int argc, char **argv)
 {
 	cable_t cable;
 	target_board_t *board = NULL;
-	jtag_pins_conf_t pins_config = {0, 0, 0, 0};
+	jtag_pins_conf_t pins_config = {0, 0, 0, 0, 0, 0};
 
 	/* command line args. */
 	struct arguments args = {0,
@@ -265,12 +265,22 @@ int main(int argc, char **argv)
 			args.prg_type = Device::WR_FLASH;
 
 		FtdiSpi *spi = NULL;
-		spi_pins_conf_t pins_config;
-		if (board)
-			pins_config = board->spi_pins_config;
+		spi_pins_conf_t spi_pins_config;
+		if (board && !args.pin_config)
+			spi_pins_config = board->spi_pins_config;
+		if (args.pin_config) {
+			printInfo("Board default pins configuration overridden");
+			spi_pins_config.cs_pin = (1 << pins_config.tms_pin);
+			spi_pins_config.sck_pin = (1 << pins_config.tck_pin);
+			spi_pins_config.mosi_pin = (1 << pins_config.tdi_pin);
+			spi_pins_config.miso_pin = (1 << pins_config.tdo_pin);
+			spi_pins_config.miso_pin = (1 << pins_config.tdo_pin);
+			spi_pins_config.holdn_pin = (1 << pins_config.ext0_pin);
+			spi_pins_config.wpn_pin = (1 << pins_config.ext1_pin);
+		}
 
 		try {
-			spi = new FtdiSpi(cable, pins_config, args.freq, args.verbose);
+			spi = new FtdiSpi(cable, spi_pins_config, args.freq, args.verbose);
 		} catch (std::exception &e) {
 			printError("Error: Failed to claim cable");
 			return EXIT_FAILURE;
@@ -844,7 +854,7 @@ int parse_opt(int argc, char **argv, struct arguments *args,
 				"write bitstream in SRAM (default: true)")
 			("o,offset", "Start address (in bytes) for read/write into non volatile memory (default: 0)",
 				cxxopts::value<unsigned int>(args->offset))
-			("pins", "pin config TDI:TDO:TCK:TMS",
+			("pins", "pin config TDI:TDO:TCK:TMS or MOSI:MISO:SCK:CS[:HOLDN:WPN]",
 				cxxopts::value<vector<string>>(pins))
 			("probe-firmware", "firmware for JTAG probe (usbBlasterII)",
 				cxxopts::value<string>(args->probe_firmware))
@@ -1006,8 +1016,8 @@ int parse_opt(int argc, char **argv, struct arguments *args,
 		}
 
 		if (result.count("pins")) {
-			if (pins.size() != 4) {
-				printError("Error: pin_config need 4 pins");
+			if (pins.size() < 4 || pins.size() > 6) {
+				printError("Error: pin_config need 4 pins in JTAG mode or 6 pins in SPI Mode");
 				throw std::exception();
 			}
 
@@ -1021,7 +1031,7 @@ int parse_opt(int argc, char **argv, struct arguments *args,
 				{"DCD", FT232RL_DCD},
 				{"RI" , FT232RL_RI}};
 
-			for (int i = 0; i < 4; i++) {
+			for (size_t i = 0; i < pins.size(); i++) {
 				int pin_num;
 				try {
 					pin_num = std::stoi(pins[i], nullptr, 0);
@@ -1045,6 +1055,12 @@ int parse_opt(int argc, char **argv, struct arguments *args,
 						break;
 					case 3:
 						pins_config->tms_pin = pin_num;
+						break;
+					case 4:
+						pins_config->ext0_pin = pin_num;
+						break;
+					case 5:
+						pins_config->ext1_pin = pin_num;
 						break;
 				}
 			}

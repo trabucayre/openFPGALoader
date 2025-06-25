@@ -50,6 +50,8 @@ typedef struct {
 	uint8_t tck_pin; /*! TCK pin value */
 	uint8_t tdi_pin; /*! TDI pin value */
 	uint8_t tdo_pin; /*! TDO pin value */
+	uint8_t ext0_pin; /* Compat with spi_pins_conf_t */
+	uint8_t ext1_pin; /* Compat with spi_pins_conf_t */
 } jtag_pins_conf_t;
 
 typedef struct {
@@ -93,7 +95,7 @@ typedef struct {
 #define JTAG_BOARD(_name, _fpga_part, _cable, _rst, _done, _freq) \
 	{_name, {"", _cable, _fpga_part, _rst, _done, 0, COMM_JTAG, {}, {}, _freq, 0, 0, -1}}
 #define JTAG_BITBANG_BOARD(_name, _fpga_part, _cable, _rst, _done, _tms, _tck, _tdi, _tdo, _freq) \
-	{_name, {"", _cable, _fpga_part, _rst, _done, 0, COMM_JTAG, { _tms, _tck, _tdi, _tdo }, {}, \
+	{_name, {"", _cable, _fpga_part, _rst, _done, 0, COMM_JTAG, { _tms, _tck, _tdi, _tdo, 0, 0 }, {}, \
 	_freq, 0, 0, -1}}
 #define SPI_BOARD(_name, _manufacturer, _fpga_part, _cable, _rst, _done, _oe, _cs, _sck, _si, _so, _holdn, _wpn, _freq) \
 	{_name, {_manufacturer, _cable, _fpga_part, _rst, _done, _oe, COMM_SPI, {}, \
