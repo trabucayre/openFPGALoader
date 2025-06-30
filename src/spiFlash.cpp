@@ -353,20 +353,21 @@ int SPIFlash::erase_and_prog(int base_addr, const uint8_t *data, int len)
 
 	bool must_relock = false;  // used to relock after write;
 
-	/* microchip SST26VF032B have global lock set
-	 * at powerup. global unlock must be send unconditionally
-	 * with or without block protection
-	 */
-	if (_jedec_id == 0xbf2642bf) {  // microchip SST26VF032B
-		if (!global_unlock())
-			return -1;
-	}
 	/* check Block Protect Bits (hide WIP/WEN bits) */
 	uint8_t status = read_status_reg() & ~0x03;
 	if (_verbose > 0)
 		display_status_reg(status);
 	/* if known chip */
 	if (_flash_model) {
+		/* microchip SST26VF032B/64B have global lock set
+		 * at powerup. global unlock must be send unconditionally
+		 * with or without block protection
+		 */
+		if (_flash_model->global_lock) {
+			if (!global_unlock())
+				return -1;
+		}
+
 		/* check if offset + len fit in flash */
 		if ((unsigned int)(base_addr + len) > (_flash_model->nr_sector * 0x10000)) {
 			printError("flash overflow");
