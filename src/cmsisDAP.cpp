@@ -561,7 +561,7 @@ int CmsisDAP::xfer(int tx_len, uint8_t *rx_buff, int rx_len)
 		return ret;
 	}
 	if (rx_len)
-		memcpy(rx_buff, _ll_buffer, rx_len);
+		memmove(rx_buff, _ll_buffer, rx_len);
 
 
 	return ret;
