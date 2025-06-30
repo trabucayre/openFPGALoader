@@ -43,6 +43,7 @@ currDir    = os.path.abspath(os.path.curdir) + '/'
 files      = []
 parameters = {}
 pkg_name   = None
+model      = ""
 
 subpart = part[0:4].lower()
 if subpart == '10cl':
