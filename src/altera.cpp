@@ -323,7 +323,7 @@ struct Altera::max10_mem_t {
 const std::map<uint32_t, Altera::max10_mem_t> Altera::max10_memory_map = {
 	{0x031820dd, { // 10M08SAU
 		.check_addr0 = 0x80005,  // check_addr0
-		.dsm_addr = 0x0000, 512,  // DSM
+		.dsm_addr = 0x0000, .dsm_len = 512,  // DSM
 		.ufm_addr = 0x0200, .ufm_len = {4096, 4096},  // UFM
 		.cfm_addr = 0x2200, .cfm_len = {35840, 14848, 20992},  // CFM
 		.sectors_erase_addr = {0x17ffff, 0x27ffff, 0x37ffff, 0x47ffff, 0x57ffff}, // sectors erase address
@@ -332,7 +332,7 @@ const std::map<uint32_t, Altera::max10_mem_t> Altera::max10_memory_map = {
 	},
 	{0x031830dd, { // 10M16SA
 		.check_addr0 = 0x80009,  // check_addr0
-		.dsm_addr = 0x0000, 1024,  // DSM
+		.dsm_addr = 0x0000, .dsm_len = 1024,  // DSM
 		.ufm_addr = 0x0400, .ufm_len = {4096, 4096},  // UFM
 		.cfm_addr = 0x2400, .cfm_len = {67584, 28672, 38912},  // CFM
 		.sectors_erase_addr = {0x17ffff, 0x27ffff, 0x37ffff, 0x47ffff, 0x57ffff}, // sectors erase address
