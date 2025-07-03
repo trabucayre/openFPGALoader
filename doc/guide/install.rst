@@ -24,6 +24,14 @@ openFPGALoader is available in the default repositories:
 
     guix install openfpgaloader
 
+To use openFPGALoader under GuixSystem without root privileges it is necessary to install the necessary udev rules. This can be done by extending ``udev-service-type`` in the ``operating-system`` configuration file with this package
+
+.. code-block:: bash
+
+    (udev-rules-service 'openfpgaloader openfpgaloader #:groups '(\"plugdev\")
+
+Additionally, ``plugdev`` group should be registered in the ``supplementary-groups`` field of your ``user-account``declaration.  Refer to ``Base Services`` section in the manual for examples.
+
 Arch Linux
 ----------
 
