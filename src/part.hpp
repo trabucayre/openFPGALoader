@@ -208,11 +208,14 @@ static std::map <uint32_t, fpga_model> fpga_list = {
 	{0x02d120dd, {"altera", "cyclone V Soc", "5CSE*A5/5CST*5/5CSX*5", 10}},
 
 	/* Altera Max 10 */
-	{0x031820dd, {"altera", "MAX 10", "10M08SAU169C8G",    10}},
-	{0x031050dd, {"altera", "MAX 10", "10M50DAF484",       10}},
-	{0x0318d0dd, {"altera", "MAX 10", "10M40SCE144C8G",    10}},
-	{0x031830dd, {"altera", "MAX 10", "10M16SAU169C8G",    10}},
-	{0x031810dd, {"altera", "MAX 10", "10M02SCM153C8G",    10}},
+	/** single-supply **/
+	{0x031810dd, {"altera", "MAX 10", "10M02S", 10}},
+	{0x031820dd, {"altera", "MAX 10", "10M08S", 10}},
+	{0x031830dd, {"altera", "MAX 10", "10M16S", 10}},
+	{0x0318d0dd, {"altera", "MAX 10", "10M40S", 10}},
+	{0x031850dd, {"altera", "MAX 10", "10M50S", 10}},
+	/** dual-supply **/
+	{0x031050dd, {"altera", "MAX 10", "10M50D", 10}},
 
 	/* Altera Cyclone 10 */
 	{0x020f30dd, {"altera", "cyclone 10 LP", "10CL025", 10}},
