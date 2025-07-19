@@ -895,6 +895,13 @@
   Memory: NA
   Flash: OK
 
+- ID: ulx4m_dfu
+  Description: Radiona ULX4M LD/LS DFU mode
+  URL: https://github.com/intergalaktik/ulx4m-ls
+  FPGA: ECP5 LFE5U
+  Memory: NA
+  Flash: OK
+
 - ID: vec_v6
   Description: Xilinx VCU118
   URL: https://vmm-srs.docs.cern.ch/
