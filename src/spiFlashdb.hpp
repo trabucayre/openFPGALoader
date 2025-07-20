@@ -28,7 +28,7 @@ typedef struct {
 	bool subsector_erase;     /**< 4KB erase support */
 	bool has_extended;
 	bool tb_otp;              /**< TOP/BOTTOM One Time Programming */
-	uint8_t tb_offset;        /**< TOP/BOTTOM bit offset */
+	uint16_t tb_offset;       /**< TOP/BOTTOM bit offset */
 	tb_loc_t tb_register;     /**< TOP/BOTTOM location (register) */
 	uint8_t bp_len;           /**< BPx length */
 	uint8_t bp_offset[4];     /**< BP[0:3] bit offset */
@@ -129,6 +129,23 @@ static std::map <uint32_t, flash_t> flash_list = {
 		.has_extended = true,
 		.tb_otp = false,
 		.tb_offset = (1 << 6),
+		.tb_register = STATR,
+		.bp_len = 4,
+		.bp_offset = {(1 << 2), (1 << 3), (1 << 4), (1 << 5)},
+		.quad_register = NONER,
+		.quad_mask = 0,
+		.global_lock = false,
+	}},
+	{0x0b4016, {
+		/* https://datasheet.lcsc.com/lcsc/2005251035_XTX-XT25F32BSOIGU-S_C558851.pdf */
+		.manufacturer = "XTX",
+		.model = "XT25F32B-S",
+		.nr_sector = 1024,
+		.sector_erase = true,
+		.subsector_erase = true,
+		.has_extended = false,
+		.tb_otp = false,
+		.tb_offset = (1 << 14),
 		.tb_register = STATR,
 		.bp_len = 4,
 		.bp_offset = {(1 << 2), (1 << 3), (1 << 4), (1 << 5)},
