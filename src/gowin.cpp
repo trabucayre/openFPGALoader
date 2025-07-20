@@ -922,7 +922,10 @@ bool Gowin::eraseSRAM()
 		send_command(READ_IDCODE);
 		send_command(NOOP);
 		_jtag->toggleClk(125 * 8);
+	} else if (is_gw2a) {
+		gw2a_force_state();
 	}
+
 	do {
 
 		if (!enableCfg()) {
@@ -960,6 +963,7 @@ bool Gowin::eraseSRAM()
 				must_loop = false;
 			loop++;
 		}
+
 	} while(must_loop);
 
 	if (_mode == Device::FLASH_MODE) {
@@ -1188,6 +1192,31 @@ bool Gowin::dumpFlash(uint32_t base_addr, uint32_t len)
 	return post_flash_access() && ret;
 }
 
+void Gowin::gw2a_force_state()
+{
+	/* undocumented sequence but required when
+	 * flash failure
+	 */
+	uint32_t state = readStatusReg();
+	if ((state & STATUS_CRC_ERROR) == 0)
+		return;
+	send_command(CONFIG_DISABLE);
+	send_command(0);
+	idCode();
+	state = readStatusReg();
+	send_command(CONFIG_DISABLE);
+	send_command(0);
+	state = readStatusReg();
+	idCode();
+	send_command(CONFIG_ENABLE);
+	reset();
+	send_command(CONFIG_DISABLE);
+	send_command(NOOP);
+	idCode();
+	send_command(NOOP);
+	idCode();
+}
+
 bool Gowin::prepare_flash_access()
 {
 	/* Work around FPGA stuck in Bad Command status */
@@ -1196,6 +1225,7 @@ bool Gowin::prepare_flash_access()
 		_jtag->set_state(Jtag::RUN_TEST_IDLE);
 		_jtag->toggleClk(1000000);
 	}
+
 	if (!eraseSRAM()) {
 		printError("Error: fail to erase SRAM");
 		return false;

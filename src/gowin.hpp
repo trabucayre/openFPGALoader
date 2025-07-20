@@ -52,6 +52,14 @@ class Gowin: public Device, SPIInterface {
 		int spi_wait(uint8_t cmd, uint8_t mask, uint8_t cond,
 			uint32_t timeout, bool verbose) override;
 
+		/* -------------- */
+		/* Arora specific */
+		/* -------------- */
+		/*!
+		 * \brief undocumented sequence required after an SPI flash failure (CRC Bit set)
+		 */
+		void gw2a_force_state();
+
 		/* ---------------- */
 		/* Arora V specific */
 		/* ---------------- */
