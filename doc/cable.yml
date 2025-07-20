@@ -295,6 +295,13 @@ usb-blasterII:
     URL: https://www.intel.com/content/dam/www/programmable/us/en/pdfs/literature/ug/ug_usb_blstr_ii_cable.pdf
 
 
+usb-blasterIII:
+
+  - Name: intel USB Blaster III interface
+    Description: JTAG programmer cable from intel/altera (FTDI2232 with custom VID/PID)
+    URL: https://www.intel.com/content/dam/www/programmable/us/en/pdfs/literature/ug/ug_usb_blstr_ii_cable.pdf
+
+
 xvc-client:
 
   - Name: Xilinx Virtual Cable
