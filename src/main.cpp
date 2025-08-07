@@ -1163,8 +1163,14 @@ void displaySupported(const struct arguments &args)
 		for (auto b = board_list.begin(); b != board_list.end(); b++) {
 			stringstream ss;
 			target_board_t c = (*b).second;
-			ss << setw(26) << left << (*b).first << setw(19) << c.cable_name;
-			ss << setw(25)<< c.fpga_part;
+			std::string cable_name = c.cable_name;
+			std::string fpga_part = c.fpga_part;
+			if (cable_name.size() == 0)
+				cable_name = "Undefined";
+			if (fpga_part.size() == 0)
+				fpga_part = "Undefined";
+			ss << setw(26) << left << (*b).first << setw(19) << cable_name;
+			ss << setw(25)<< fpga_part;
 			printInfo(ss.str());
 		}
 		cout << endl;
