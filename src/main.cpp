@@ -1157,12 +1157,14 @@ void displaySupported(const struct arguments &args)
 
 	if (args.list_boards) {
 		stringstream t;
-		t << setw(25) << left << "board name" << "cable_name";
+		t << setw(26) << left << "board name" << setw(19) << "cable_name";
+		t << setw(25) << "fpga_part";
 		printSuccess(t.str());
 		for (auto b = board_list.begin(); b != board_list.end(); b++) {
 			stringstream ss;
 			target_board_t c = (*b).second;
-			ss << setw(25) << left << (*b).first << c.cable_name;
+			ss << setw(26) << left << (*b).first << setw(19) << c.cable_name;
+			ss << setw(25)<< c.fpga_part;
 			printInfo(ss.str());
 		}
 		cout << endl;
