@@ -5,6 +5,8 @@
 
 /* To prepare the cable see:
  * https://github.com/emard/esp32s3-jtag
+ * or
+ * https://github.com/espressif/esp-usb-bridge
  */
 
 /*
@@ -117,7 +119,7 @@ using namespace std;
 #define ESPUSBJTAG_PID 0x1001
 
 #define ESPUSBJTAG_INTF		  2
-#define ESPUSBJTAG_WRITE_EP    0x02
+//#define ESPUSBJTAG_WRITE_EP    0x02
 #define ESPUSBJTAG_READ_EP     0x83
 
 #define ESPUSBJTAG_TIMEOUT_MS  1000
@@ -240,17 +242,19 @@ struct esp_usb_jtag_s {
 static struct esp_usb_jtag_s esp_usb_jtag_priv;
 static struct esp_usb_jtag_s *priv = &esp_usb_jtag_priv;
 
-static uint16_t esp_usb_jtag_caps = 0x2000; /* capabilites descriptor ID, different esp32 chip may need different value */
 static uint16_t esp_usb_target_chip_id = 0; /* not applicable for FPGA, they have chip id 32-bit wide */
 
 /* end copy from openocd */
 
-
 esp_usb_jtag::esp_usb_jtag(uint32_t clkHZ, int8_t verbose, int vid = ESPUSBJTAG_VID, int pid = ESPUSBJTAG_PID):
 			_verbose(verbose > 1),
-			dev_handle(NULL), usb_ctx(NULL), _tdi(0), _tms(0)
+			dev_handle(NULL), usb_ctx(NULL), _tdi(0), _tms(0),
+			/* Default for emard firmware. */
+			_esp_usb_jtag_caps(0x2000), _write_ep(0x02),
+			_vid(ESPUSBJTAG_VID), _pid(ESPUSBJTAG_PID)
 {
 	int ret;
+	char mess[256];
 
 	if (libusb_init(&usb_ctx) < 0) {
 		cerr << "libusb init failed" << endl;
@@ -258,12 +262,23 @@ esp_usb_jtag::esp_usb_jtag(uint32_t clkHZ, int8_t verbose, int vid = ESPUSBJTAG_
 	}
 
 	dev_handle = libusb_open_device_with_vid_pid(usb_ctx,
-					ESPUSBJTAG_VID, ESPUSBJTAG_PID);
+		_vid, _pid);
 	if (!dev_handle) {
-		cerr << "fails to open esp_usb_jtag device vid:pid 0x" << std::hex << vid << ":0x" << std::hex << endl;
+		_esp_usb_jtag_caps = 0x030A;
+		_write_ep = 0x03;
+		_pid = 0x1002;
+		dev_handle = libusb_open_device_with_vid_pid(usb_ctx,
+			_vid, _pid);
+	}
+	if (!dev_handle) {
+		snprintf(mess, 256, "fails to open esp_usb_jtag device");
+		printError(mess);
 		libusb_exit(usb_ctx);
 		throw std::exception();
 	}
+
+	snprintf(mess, 256, "Open Success with vid: 0x%04x pid 0x%04x", _vid, _pid);
+	printSuccess(mess);
 
 	ret = libusb_claim_interface(dev_handle, ESPUSBJTAG_INTF);
 	if (ret) {
@@ -301,15 +316,20 @@ bool esp_usb_jtag::getVersion()
 	int jtag_caps_read_len = libusb_control_transfer(dev_handle,
 	/*type*/	LIBUSB_ENDPOINT_IN | LIBUSB_REQUEST_TYPE_STANDARD | LIBUSB_RECIPIENT_DEVICE,
 	/*brequest*/	LIBUSB_REQUEST_GET_DESCRIPTOR,
-	/*wvalue*/	esp_usb_jtag_caps,
+	/*wvalue*/	_esp_usb_jtag_caps,
 	/*interface*/	0,
 	/*data*/	(unsigned char *)jtag_caps_desc,
 	/*length*/	JTAG_PROTO_CAPS_DATA_LEN,
 	/*timeout ms*/	ESPUSBJTAG_TIMEOUT_MS);
+
 	if (jtag_caps_read_len <= 0) {
-		cerr << "esp_usb_jtag: could not retrieve jtag_caps descriptor! len=" << jtag_caps_read_len << endl;
-		// goto out;
+		char mess[256];
+		snprintf(mess, 256, "esp_usb_jtag: could not retrieve jtag_caps descriptor! len=%d Error: %s\n",
+			jtag_caps_read_len, libusb_error_name(jtag_caps_read_len));
+		printError(mess);
+		return false;
 	}
+
 	for(int i = 0; i < jtag_caps_read_len; i++)
 	  cerr << " 0x" << std::hex << (int)(jtag_caps_desc[i]);
 	cerr << endl;
@@ -318,7 +338,7 @@ bool esp_usb_jtag::getVersion()
 	_div_min = 1;
 	_div_max = 1;
 
-	int p = esp_usb_jtag_caps ==
+	int p = _esp_usb_jtag_caps ==
 		VEND_DESCR_BUILTIN_JTAG_CAPS ? JTAG_BUILTIN_DESCR_START_OFF : JTAG_EUB_DESCR_START_OFF;
 
 	if (p + sizeof(struct jtag_proto_caps_hdr) > (unsigned int)jtag_caps_read_len) {
@@ -391,7 +411,9 @@ int esp_usb_jtag::setClkFreq(uint32_t clkHZ)
 	uint32_t base_speed_Hz = _base_speed_khz * 1000; // TODO read base speed from caps
 
 	if (clkHZ > base_speed_Hz) {
-		printWarn("esp_usb_jtag probe limited to %d kHz", _base_speed_khz);
+		char mess[256];
+		snprintf(mess, 256, "esp_usb_jtag probe limited to %d kHz", _base_speed_khz);
+		printWarn(mess);
 		clkHZ = base_speed_Hz;
 	}
 
@@ -603,7 +625,7 @@ int esp_usb_jtag::xfer(const uint8_t *tx, uint8_t *rx, const uint16_t length,
 			is_read ? "True" : "False", is_write ? "True" : "False", length);
 		printInfo(mess);
 	}
-	const unsigned char endpoint = (is_write) ? ESPUSBJTAG_WRITE_EP : ESPUSBJTAG_READ_EP;
+	const unsigned char endpoint = (is_write) ? _write_ep : ESPUSBJTAG_READ_EP;
 	uint8_t *data = (is_write) ? (uint8_t *)tx : rx;
 	if (is_write && _verbose) {
 		printf("xfer: write: ");

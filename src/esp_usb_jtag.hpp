@@ -66,5 +66,9 @@ class esp_usb_jtag : public JtagInterface {
 		uint8_t _version;
 		uint32_t _base_speed_khz;
 		uint8_t _div_min, _div_max;
+		uint16_t _esp_usb_jtag_caps; /* capabilites descriptor ID, different esp32 chip may need different value */
+		uint32_t _write_ep; /* ESP32 Write endpoint */
+		int _vid;
+		int _pid;
 };
 #endif  // SRC_ESPUSBJTAG_HPP_
