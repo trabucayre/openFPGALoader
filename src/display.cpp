@@ -28,7 +28,7 @@ void printError(const std::string &err, bool eol)
 		std::cerr << err;
 	std::cerr << std::flush;
 	if (eol)
-		std::cerr << std::endl;
+		std::cerr << "\n";
 }
 
 void printWarn(const std::string &warn, bool eol)
@@ -39,7 +39,7 @@ void printWarn(const std::string &warn, bool eol)
 		std::cout << warn;
 	std::cout << std::flush;
 	if (eol)
-		std::cout << std::endl;
+		std::cout << "\n";
 }
 
 void printInfo(const std::string &info, bool eol)
@@ -50,7 +50,7 @@ void printInfo(const std::string &info, bool eol)
 		std::cout << info;
 	std::cout << std::flush;
 	if (eol)
-		std::cout << std::endl;
+		std::cout << "\n";
 }
 
 void printSuccess(const std::string &success, bool eol)
@@ -61,5 +61,5 @@ void printSuccess(const std::string &success, bool eol)
 		std::cout << success;
 	std::cout << std::flush;
 	if (eol)
-		std::cout << std::endl;
+		std::cout << "\n";
 }
