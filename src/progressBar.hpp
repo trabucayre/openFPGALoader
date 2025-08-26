@@ -23,6 +23,7 @@ class ProgressBar {
 		std::chrono::time_point<std::chrono::system_clock> last_time;
 		bool _quiet;
 		bool _first;
+		bool _is_tty;
 };
 
 #endif

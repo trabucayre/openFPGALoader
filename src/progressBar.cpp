@@ -5,6 +5,7 @@
 
 #include <stdio.h>
 #include <stdlib.h>
+#include <unistd.h>
 #include <chrono>
 #include <string>
 #include "progressBar.hpp"
@@ -13,7 +14,7 @@
 ProgressBar::ProgressBar(const std::string &mess, int maxValue,
 		int progressLen, bool quiet): _mess(mess), _maxValue(maxValue),
 		_progressLen(progressLen), last_time(std::chrono::system_clock::now()),
-		_quiet(quiet), _first(true)
+		_quiet(quiet), _first(true), _is_tty(isatty(STDOUT_FILENO) == 1)
 {
 }
 
@@ -46,7 +47,7 @@ void ProgressBar::display(int value, char force)
 	fprintf(stdout, "%*s", (int)(_progressLen-nbEq), "");
 	char perc_str[11];
 	snprintf(perc_str, sizeof(perc_str), "] %3.2f%%", percent);
-	printInfo(perc_str, false);
+	printInfo(perc_str, !_is_tty);
 }
 void ProgressBar::done()
 {
