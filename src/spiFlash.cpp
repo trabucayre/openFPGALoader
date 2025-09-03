@@ -970,7 +970,7 @@ bool SPIFlash::set_quad_bit(bool set_quad)
 	_spi->spi_put(reg_wr, (uint8_t *)&reg_val, NULL, nb_wr_byte);
 
 	/* Wait for completion */
-	if (_spi->spi_wait(FLASH_RDSR, FLASH_RDSR_WEL, 0x00, 10000) != 0) {
+	if (_spi->spi_wait(FLASH_RDSR, FLASH_RDSR_WIP, 0x00, 10000) != 0) {
 		printError("SPIFlash Error: failed to disable write");
 		return false;
 	}
