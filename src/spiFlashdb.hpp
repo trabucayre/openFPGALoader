@@ -730,6 +730,22 @@ static std::map <uint32_t, flash_t> flash_list = {
 		.quad_mask = 0,
 		.global_lock = false,
 	}},
+	{0x1f4216, {
+		.manufacturer = "Renesas",
+		.model = "AT25QL321",
+		.nr_sector = 64,
+		.sector_erase = true,
+		.subsector_erase = true,
+		.has_extended = false,
+		.tb_otp = false,
+		.tb_offset = 0, // unused
+		.tb_register = NONER,
+		.bp_len = 0, // unused
+		.bp_offset =  {0, 0, 0, 0},
+		.quad_register = CONFR,
+		.quad_mask = (1 << 1),
+		.global_lock = false,
+	}},
 
 };
 
