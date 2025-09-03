@@ -218,22 +218,11 @@ bool CologneChip::dumpFlash(uint32_t base_addr, uint32_t len)
  */
 bool CologneChip::set_quad_bit(bool set_quad)
 {
-	/* prepare SPI access */
-	prepare_flash_access();
-
-	printInfo("Update Quad Enable Bit ", false);
-	try {
-		std::unique_ptr<SPIFlash> flash(_spi ?
-		new SPIFlash(reinterpret_cast<SPIInterface *>(_spi), false, _verbose):
-		new SPIFlash(this, false, _verbose));
-		flash->set_quad_bit(set_quad);
-	} catch (std::exception &e) {
-		printError("Fail");
-		printError(std::string(e.what()));
+	if (!SPIInterface::set_quad_bit(set_quad)) {
 		return false;
 	}
 
-	return post_flash_access();
+	return true;
 }
 
 /**
@@ -241,15 +230,11 @@ bool CologneChip::set_quad_bit(bool set_quad)
  */
 bool CologneChip::bulk_erase_flash()
 {
-	/* prepare SPI access */
-	prepare_flash_access();
-
-	printInfo("Bulk Erase ", false);
 	if (!SPIInterface::bulk_erase_flash()) {
 		return false;
 	}
 
-	return post_flash_access();
+	return true;
 }
 
 /**
