@@ -214,6 +214,30 @@ bool CologneChip::dumpFlash(uint32_t base_addr, uint32_t len)
 }
 
 /**
+ * Set QE bit, if available. Works in both SPI and JTAG-SPI-bypass mode.
+ */
+bool CologneChip::set_quad_bit(bool set_quad)
+{
+	if (!SPIInterface::set_quad_bit(set_quad)) {
+		return false;
+	}
+
+	return true;
+}
+
+/**
+ * Peform bulk erase. Works in both SPI and JTAG-SPI-bypass mode.
+ */
+bool CologneChip::bulk_erase_flash()
+{
+	if (!SPIInterface::bulk_erase_flash()) {
+		return false;
+	}
+
+	return true;
+}
+
+/**
  * Parse bitstream from *.bit or *.cfg and program FPGA in SPI or JTAG mode
  * or write configuration to external flash via SPI or JTAG-SPI-bypass.
  */
@@ -450,15 +474,10 @@ int CologneChip::spi_wait(uint8_t cmd, uint8_t mask, uint8_t cond,
 	_jtag->read_write(&tx, NULL, 8, 0);
 
 	do {
-		if (count == 0) {
-			_jtag->read_write(dummy, rx, 16, 0);
-			uint8_t b0 = ConfigBitstreamParser::reverseByte(rx[0]);
-			uint8_t b1 = ConfigBitstreamParser::reverseByte(rx[1]);
-			tmp = (b0 << 1) | ((b1 >> 7) & 0x01);
-		} else {
-			_jtag->read_write(dummy, rx, 8, 0);
-			tmp = ConfigBitstreamParser::reverseByte(rx[0]);
-		}
+		_jtag->read_write(dummy, rx, 16, 0);
+		uint8_t b0 = ConfigBitstreamParser::reverseByte(rx[0]);
+		uint8_t b1 = ConfigBitstreamParser::reverseByte(rx[1]);
+		tmp = (b0 << 1) | ((b1 >> 7) & 0x01);
 
 		count++;
 		if (count == timeout) {
