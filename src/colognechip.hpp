@@ -42,8 +42,8 @@ class CologneChip: public Device, SPIInterface {
 			printError("protect flash not supported"); return false;}
 		virtual bool unprotect_flash() override {
 			printError("unprotect flash not supported"); return false;}
-		virtual bool bulk_erase_flash() override {
-			printError("bulk erase flash not supported"); return false;}
+		bool set_quad_bit(bool set_quad) override;
+		bool bulk_erase_flash() override;
 		void program(unsigned int offset, bool unprotect_flash) override;
 
 		uint32_t idCode() override {return 0;}
