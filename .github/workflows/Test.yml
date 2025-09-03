@@ -158,7 +158,7 @@ jobs:
       jobs: ${{ steps.matrix.outputs.jobs }}
     steps:
     - id: matrix
-      uses: msys2/setup-msys2/matrix@main
+      uses: msys2/setup-msys2/matrix@a5d2c5a565c520efa5f477391e4e3f87c2e08f46
       with:
         systems: >-
           mingw64
@@ -167,7 +167,7 @@ jobs:
 
   win:
     needs: win-jobs
-    uses: msys2/setup-msys2/.github/workflows/PKGBUILD.yml@main
+    uses: msys2/setup-msys2/.github/workflows/PKGBUILD.yml@a5d2c5a565c520efa5f477391e4e3f87c2e08f46
     with:
       name: openFPGALoader
       matrix: ${{ needs.win-jobs.outputs.jobs }}
