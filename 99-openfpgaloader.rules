@@ -36,6 +36,9 @@ ATTRS{idVendor}=="09fb", ATTRS{idProduct}=="6810", MODE="664", GROUP="plugdev", 
 # altera usb-blasterII - initialized
 ATTRS{idVendor}=="09fb", ATTRS{idProduct}=="6010", MODE="664", GROUP="plugdev", TAG+="uaccess"
 
+# altera usb-blasterIII
+ATTRS{idVendor}=="09fb", ATTRS{idProduct}=="6022", MODE="664", GROUP="plugdev", TAG+="uaccess"
+
 # dirtyJTAG
 ATTRS{idVendor}=="1209", ATTRS{idProduct}=="c0ca", MODE="664", GROUP="plugdev", TAG+="uaccess"
 
