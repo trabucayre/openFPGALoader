@@ -185,12 +185,15 @@ static std::map <uint32_t, fpga_model> fpga_list = {
 	{0x020a10dd, {"altera", "max II", "EPM240T100C5N", 10}},
 
 	/* Altera Cyclone II/III/IV/10 LP */
-	{0x020b10dd, {"altera", "cyclone II",           "EP2C5",                    10}},
-	{0x020f10dd, {"altera", "cyclone III/IV/10 LP", "EP4CE6/EP4CE10",           10}},
-	{0x020f20dd, {"altera", "cyclone III/IV/10 LP", "EP3C16/EP4CE15/10CL016",   10}},
-	{0x020f40dd, {"altera", "cyclone III/IV/10 LP", "EP3C25/EP4CE30/10CL025",   10}},
-	{0x020f70dd, {"altera", "cyclone III/IV/10 LP", "EP3C120/EP4CE115/10CL120", 10}},
-	{0x028040dd, {"altera", "cyclone IV GX",        "EP4CGX150",                10}},
+	{0x020b10dd, {"altera", "cyclone II",           "EP2C5",                         10}},
+	{0x020f10dd, {"altera", "cyclone III/IV/10 LP", "EP3C5/EP3C10/EP4CE6/EP4CE10",   10}},
+	{0x020f20dd, {"altera", "cyclone III/IV/10 LP", "EP3C16/EP4CE15/10CL016",        10}},
+	{0x020f30dd, {"altera", "cyclone III/IV/10 LP", "EP3C25/EP4CE22/10CL025",        10}},
+	{0x020f40dd, {"altera", "cyclone III/IV/10 LP", "EP3C40/EP4CE30/EP4C40/10CL025", 10}},
+	{0x020f50dd, {"altera", "cyclone III/IV/10 LP", "EP3C55/EP4CE55/10CL055",        10}},
+	{0x020f60dd, {"altera", "cyclone III/IV/10 LP", "EP3C80/EP4CE75/10CL080",        10}},
+	{0x020f70dd, {"altera", "cyclone III/IV/10 LP", "EP3C120/EP4CE115/10CL120",      10}},
+	{0x028040dd, {"altera", "cyclone IV GX",        "EP4CGX150",                     10}},
 
 	/* Altera Cyclone V */
 	{0x02b010dd, {"altera", "cyclone V",     "5CGX*3",                10}},
@@ -217,11 +220,6 @@ static std::map <uint32_t, fpga_model> fpga_list = {
 	{0x031850dd, {"altera", "MAX 10", "10M50S", 10}},
 	/** dual-supply **/
 	{0x031050dd, {"altera", "MAX 10", "10M50D", 10}},
-
-	/* Altera Cyclone 10 */
-	{0x020f30dd, {"altera", "cyclone 10 LP", "10CL025", 10}},
-	{0x020f50dd, {"altera", "cyclone 10 LP", "10CL055", 10}},
-	{0x020f60dd, {"altera", "cyclone 10 LP", "10CL080", 10}},
 
 	/* Altera Stratix V */
 	{0x029070dd, {"altera", "stratix V GS", "5SGSD5", 10}},
