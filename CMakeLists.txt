@@ -1,7 +1,7 @@
 cmake_minimum_required(VERSION 3.5)
 
 # set the project name
-project(openFPGALoader VERSION "0.13.1" LANGUAGES CXX)
+project(openFPGALoader VERSION "1.0.0" LANGUAGES CXX)
 add_definitions(-DVERSION=\"v${PROJECT_VERSION}\")
 option(ENABLE_OPTIM "Enable build with -O3 optimization level" ON)
 option(BUILD_STATIC "Whether or not to build with static libraries" OFF)
