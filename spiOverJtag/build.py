@@ -254,7 +254,7 @@ backend = get_edatool(tool)(edam=edam, work_root=build_dir)
 backend.configure()
 backend.build()
 
-if tool == "vivado":
+if tool in ["vivado", "ise"]:
     import shutil
     import subprocess
     import gzip
