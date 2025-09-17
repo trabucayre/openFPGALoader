@@ -130,8 +130,8 @@ module spiOverJtag
 	assign hldn_dq3 = 1'b1;
 	// jtag -> spi flash
 	assign sdi_dq0 = tdi;
-	wire tdo = (sel) ? sdo_dq1 : tdi;
-	assign  csn = fsm_csn;
+	assign tdo     = (sel) ? sdo_dq1 : tdi;
+	assign csn     = fsm_csn;
 
 	wire tmp_cap_s = capture && sel;
 	wire tmp_up_s = update && sel;
