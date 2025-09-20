@@ -365,9 +365,6 @@ Xilinx::Xilinx(Jtag *jtag, const std::string &filename,
 		_ircode_map = ircode_mapping.at("virtexusp");
 	} else if (family.substr(0, 8) == "spartan3") {
 		_fpga_family = SPARTAN3_FAMILY;
-		if (_mode != Device::MEM_MODE) {
-			throw std::runtime_error("Error: Only load to mem is supported");
-		}
 	} else if (family == "xcf") {
 		_fpga_family = XCF_FAMILY;
 		if (_mode == Device::MEM_MODE) {
