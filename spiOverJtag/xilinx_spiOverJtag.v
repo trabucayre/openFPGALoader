@@ -27,11 +27,11 @@ module spiOverJtag
 
 	wire capture, drck, sel, update, shift;
 	wire tdi, tdo;
-	wire spi_clk;
 
 `ifndef spartan3e
 	/* Version Interface. */
 	wire ver_sel, ver_cap, ver_shift, ver_drck, ver_tdi, ver_tdo;
+	wire spi_clk;
 
 	spiOverJtag_core spiOverJtag_core_prim (
 		/* JTAG state/controls */
@@ -65,7 +65,7 @@ module spiOverJtag
 	assign sck = spi_clk;
 `else // !spartan6
 `ifdef spartan3e
-	assign sck = spi_clk;
+	assign sck = spi_drck;
 `else // !spartan6 && !spartan3e
 `ifdef xilinxultrascale
 	assign sck = drck;
