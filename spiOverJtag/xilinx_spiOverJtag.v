@@ -10,10 +10,14 @@ module spiOverJtag
 `ifdef spartan3e
 	output wire sck,
 `endif
+`ifdef virtex6
+	output wire sdi_dq0
+`else
 	output wire sdi_dq0,
 	input  wire sdo_dq1,
 	output wire wpn_dq2,
 	output wire hldn_dq3
+`endif
 `endif // xilinxultrascale
 
 `ifdef secondaryflash
@@ -29,6 +33,7 @@ module spiOverJtag
 	wire tdi, tdo;
 
 `ifndef spartan3e
+`ifndef virtex6
 	/* Version Interface. */
 	wire ver_sel, ver_cap, ver_shift, ver_drck, ver_tdi, ver_tdo;
 	wire spi_clk;
@@ -59,7 +64,8 @@ module spiOverJtag
 		.wpn_dq2(wpn_dq2),
 		.hldn_dq3(hldn_dq3)
 	);
-`endif
+`endif /* !virtex6 */
+`endif /* !spartan3e */
 
 `ifdef spartan6
 	assign sck = spi_clk;
@@ -100,7 +106,52 @@ module spiOverJtag
 		.USRDONEO (1'b1), // 1-bit input: User DONE pin output control.
 		.USRDONETS(1'b1)  // 1-bit input: User DONE 3-state enable output.
 	);
-`else // !spartan6 && !spartan3e && !xilinxultrascale
+`elsif virtex6 // !spartan6 && !spartan3e && !xilinxultrascale
+	wire di;
+
+	wire runtest;
+	reg fsm_csn;
+	// jtag -> spi flash
+	assign sdi_dq0 = tdi;
+	assign tdo     = (sel) ? di : tdi;
+	assign csn     = fsm_csn;
+
+	wire tmp_cap_s = capture && sel;
+	wire tmp_up_s  = update && sel;
+
+	always @(posedge drck, posedge runtest) begin
+		if (runtest) begin
+			fsm_csn <= 1'b1;
+		end else begin
+			if (tmp_cap_s) begin
+				fsm_csn <= 1'b0;
+			end else if (tmp_up_s) begin
+				fsm_csn <= 1'b1;
+			end else begin
+				fsm_csn <= fsm_csn;
+			end
+		end
+	end
+	STARTUP_VIRTEX6 #(
+			.PROG_USR("FALSE")
+	) startup_virtex6_inst (
+			.CFGCLK(),        // unused
+			.CFGMCLK(),       // unused
+			.CLK(1'b0),       // unused
+			.DINSPI(di),      // data from SPI flash
+			.EOS(),
+			.GSR(1'b0),       // unused
+			.GTS(1'b0),       // unused
+			.KEYCLEARB(1'b0),  // not used
+			.PACK(1'b1),      // tied low for 'safe' operations
+			.PREQ(),          // unused
+			.TCKSPI(),        // echo of CCLK from TCK pin
+			.USRCCLKO (drck), // user FPGA -> CCLK pin
+			.USRCCLKTS(1'b0), // drive CCLK not in high-Z
+			.USRDONEO (1'b1), // why both USRDONE are high?
+			.USRDONETS(1'b1)  // ??
+	);
+`else // !spartan6 && !spartan3e && !xilinxultrascale && !virtex6
 	STARTUPE2 #(
 		.PROG_USR("FALSE"),  // Activate program event security feature. Requires encrypted bitstreams.
 		.SIM_CCLK_FREQ(0.0)  // Set the Configuration Clock Frequency(ns) for simulation.
@@ -169,7 +220,9 @@ module spiOverJtag
 		.TDO2   ()         // 1-bit input: USER2 function
 	);
 `else
-`ifdef spartan6
+`ifdef virtex6
+	BSCAN_VIRTEX6 #(
+`elsif spartan6
 	BSCAN_SPARTAN6 #(
 `else
 	BSCANE2 #(
@@ -181,8 +234,12 @@ module spiOverJtag
 						   //               is asserted, DRCK toggles when
 						   //               CAPTURE or SHIFT are asserted.
 		.RESET  (),        // 1-bit output: Reset output for TAP controller.
+`ifdef virtex6
+		.RUNTEST(runtest),
+`else
 		.RUNTEST(),        // 1-bit output: Output asserted when TAP
 						   //               controller is in Run Test/Idle state.
+`endif
 		.SEL	 (sel),    // 1-bit output: USER instruction active output.
 		.SHIFT   (shift),  // 1-bit output: SHIFT output from TAP controller.
 		.TCK     (),       // 1-bit output: Test Clock output.
@@ -197,6 +254,7 @@ module spiOverJtag
 	);
 
 /* BSCAN for Version Interface. */
+`ifndef virtex6
 `ifdef spartan6
 	BSCAN_SPARTAN6 #(
 `else
@@ -217,6 +275,7 @@ module spiOverJtag
 		.TDO     (ver_tdo)
 	);
 `endif
+`endif /* !virtex6 */
 
 `ifdef secondaryflash
 	wire drck_sec;
