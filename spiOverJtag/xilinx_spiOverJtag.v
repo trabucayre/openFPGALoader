@@ -71,7 +71,7 @@ module spiOverJtag
 	assign sck = spi_clk;
 `else // !spartan6
 `ifdef spartan3e
-	assign sck = spi_drck;
+	assign sck = drck;
 `else // !spartan6 && !spartan3e
 `ifdef xilinxultrascale
 	assign sck = drck;
