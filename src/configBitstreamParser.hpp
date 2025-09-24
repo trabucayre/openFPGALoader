@@ -24,6 +24,11 @@ class ConfigBitstreamParser {
 		int getLength() {return _bit_length;}
 
 		/**
+		 * \brief return bitstream file name
+		 */
+		std::string getFilename() const {return _filename;}
+
+		/**
 		 * \brief display header informations
 		 */
 		virtual void displayHeader();
