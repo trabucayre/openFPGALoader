@@ -712,11 +712,11 @@ bool Xilinx::load_bridge()
 	bitname = PathHelper::absolutePath(bitname);
 #endif
 
-	std::cout << "use: " << bitname << std::endl;
-
 	/* first: load spi over jtag */
 	try {
 		BitParser bridge(bitname, true, _verbose);
+		printSuccess("Use: " + bridge.getFilename());
+
 		bridge.parse();
 		if (_fpga_family == SPARTAN3_FAMILY)
 			xc3s_flow_program(&bridge);
