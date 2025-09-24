@@ -179,6 +179,7 @@ static std::map <std::string, target_board_t> board_list = {
 	JTAG_BOARD("genesys2",        "xc7k325tffg900", "digilent_b", 0, 0, CABLE_DEFAULT),
 	JTAG_BOARD("gr740-mini",      "", "ft4232hp_b",       0, 0, CABLE_MHZ(1)),
 	JTAG_BOARD("hseda-xc6slx16",  "xc6slx16ftg256", "",           0, 0, CABLE_DEFAULT),
+	JTAG_BOARD("hyvision_opt01",  "xc7k70tfbg676",  "",           0, 0, CABLE_DEFAULT),
 	/* most ice40 boards uses the same pinout */
 	SPI_BOARD("ice40_generic",    "lattice", "ice40", "ft2232",
 			DBUS7, DBUS6, 0,

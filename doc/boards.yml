@@ -401,6 +401,13 @@
   Memory: OK
   Flash: NA
 
+- ID: hyvision_opt01
+  Description: HyVision PCIe OPT01 rev.F
+  URL: NA
+  FPGA: Kintex7 xc7k70tfbg676
+  Memory: OK
+  Flash: OK
+
 - ID: honeycomb
   Description: honeycomb
   URL: https://github.com/Disasm/honeycomb-pcb
