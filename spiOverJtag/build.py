@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
 
 import os
+import re
 
 from edalize.edatool import get_edatool
 
@@ -14,6 +15,17 @@ packages = {
         "xc7a75t"  : ["csg324", "ftg256", "fgg484", "fgg676"],
         "xc7a100t" : ["csg324", "ftg256", "fgg484", "fgg676"],
         "xc7a200t" : ["sbg484", "fbg484", "fbg676", "ffg1156"],
+    },
+    # Added but seems not possible to use same bitstream
+    # for all Kintex with the same size but different package.
+    "Kintex 7": {
+        "xc7k70t"  : ["fbg484", "fbg676"],
+        "xc7k160t" : ["fbg484", "fbg676", "ffg676"],
+        "xc7k325t" : ["fbg676", "ffg676", "fbg900", "ffg900"],
+        "xc7k355t" : ["ffg901"],
+        "xc7k410t" : ["fbg676", "ffg676", "fbg900", "ffg900"],
+        "xc7k420t" : ["ffg901", "ffg1156"],
+        "xc7k480t" : ["ffg901", "ffg1156"],
     },
     "Spartan 7": {
         "xc7s6"   : ["ftgb196", "cpga196", "csga225"],
@@ -78,6 +90,7 @@ elif subpart == "xc7k":
         family = "Kintex7"
         tool = "ise"
     speed = -2
+    model = subpart
 elif subpart == "xc7s":
     family = "Spartan 7"
     tool   = "vivado"
@@ -104,6 +117,10 @@ else:
 if model in ["xc7a", "xc7s"]:
     pkg      = packages[family][part][0]
     pkg_name = f"{model}_{pkg}"
+if model in ["xc7k"]:
+    m        = re.match(r"(xc7k\d+t)(\w+)", part)
+    pkg      = m.group(2)
+    pkg_name = f"{model}_{pkg}"
 
 if tool in ["ise", "vivado"]:
     pkg_name = {
@@ -120,12 +137,6 @@ if tool in ["ise", "vivado"]:
         "xc6slx150tcsg484" : "xc6s_csg484",
         "xc6slx150tfgg484" : "xc6s_t_fgg484",
         "xc6vlx130tff784"  : "xc6v_ff784",
-        "xc7k70tfbg484"    : "xc7k_fbg484",
-        "xc7k70tfbg676"    : "xc7k_fbg676",
-        "xc7k160tffg676"   : "xc7k_ffg676",
-        "xc7k325tffg676"   : "xc7k_ffg676",
-        "xc7k325tffg900"   : "xc7k_ffg900",
-        "xc7k420tffg901"   : "xc7k_ffg901",
         "xc7vx330tffg1157" : "xc7v_ffg1157",
         "xcku040-ffva1156" : "xcku040_ffva1156",
         "xcku060-ffva1156" : "xcku060_ffva1156",
@@ -152,10 +163,7 @@ if tool in ["ise", "vivado"]:
                             "xc6slx150tcsg484": "xc6slx150t",
                             "xc6slx150tfgg484": "xc6slx150t",
                             "xc6vlx130tff784":  "xc6vlx130t",
-                            "xc7k325tffg676":   "xc7k325t",
-                            "xc7k325tffg900":   "xc7k325t",
-                            "xc7k420tffg901":   "xc7k420t",
-                            }[part],
+                            }.get(part, model),
                         'package': {
                             "xc3s500evq100":    "vq100",
                             "xc6slx9tqg144":    "tqg144",
@@ -173,7 +181,7 @@ if tool in ["ise", "vivado"]:
                             "xc7k325tffg676":   "ffg676",
                             "xc7k325tffg900":   "ffg900",
                             "xc7k420tffg901":   "ffg901",
-                            }[part],
+                            }.get(part, pkg),
                         'speed' : speed
                 }
     else:
