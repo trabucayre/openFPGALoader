@@ -26,7 +26,8 @@ SPIInterface::SPIInterface(const std::string &filename, int8_t verbose,
 bool SPIInterface::detect_flash()
 {
 	bool ret = true;
-	printInfo("protect_flash: ", false);
+
+	printInfo("Detect flash:");
 
 	/* move device to spi access */
 	if (!prepare_flash_access()) {
@@ -55,7 +56,7 @@ bool SPIInterface::detect_flash()
 bool SPIInterface::protect_flash(uint32_t len)
 {
 	bool ret = true;
-	printInfo("protect_flash: ", false);
+	printInfo("protect_flash:");
 
 	/* move device to spi access */
 	if (!prepare_flash_access()) {
@@ -98,7 +99,7 @@ bool SPIInterface::unprotect_flash()
 		SPIFlash flash(this, false, _spif_verbose);
 
 		/* configure flash protection */
-		printInfo("unprotect_flash: ", false);
+		printInfo("unprotect_flash:");
 		ret = (flash.disable_protection() == 0);
 		if (!ret)
 			printError("Fail");
@@ -129,7 +130,7 @@ bool SPIInterface::set_quad_bit(bool set_quad)
 		SPIFlash flash(this, false, _spif_verbose);
 
 		/* configure flash protection */
-		printInfo("set_quad_bit: ", false);
+		printInfo("set_quad_bit:");
 		ret = flash.set_quad_bit(set_quad);
 		if (!ret)
 			printError("Fail");
@@ -148,7 +149,7 @@ bool SPIInterface::set_quad_bit(bool set_quad)
 bool SPIInterface::bulk_erase_flash()
 {
 	bool ret = true;
-	printInfo("bulk_erase: ", false);
+	printInfo("bulk_erase:");
 
 	/* move device to spi access */
 	if (!prepare_flash_access()) {
