@@ -55,6 +55,7 @@ currDir    = os.path.abspath(os.path.curdir) + '/'
 files      = []
 parameters = {}
 pkg_name   = None
+pkg        = None
 model      = ""
 
 subpart = part[0:4].lower()
