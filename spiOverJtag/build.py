@@ -122,6 +122,8 @@ if model in ["xc7k"]:
     m        = re.match(r"(xc7k\d+t)(\w+)", part)
     pkg      = m.group(2)
     pkg_name = f"{model}_{pkg}"
+    if tool == "ise":
+        model = m.group(1)
 
 if tool in ["ise", "vivado"]:
     pkg_name = {
@@ -179,9 +181,6 @@ if tool in ["ise", "vivado"]:
                             "xc6slx150tcsg484": "csg484",
                             "xc6slx150tfgg484": "fgg484",
                             "xc6vlx130tff784":  "ff784",
-                            "xc7k325tffg676":   "ffg676",
-                            "xc7k325tffg900":   "ffg900",
-                            "xc7k420tffg901":   "ffg901",
                             }.get(part, pkg),
                         'speed' : speed
                 }
