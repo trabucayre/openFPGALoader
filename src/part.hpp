@@ -301,6 +301,7 @@ static std::map <uint32_t, fpga_model> fpga_list = {
 
 	/* Lattice ECP3 */
 	{0x01014043, {"lattice", "ECP3", "LFE3-70E",    8}},
+	{0x01015043, {"lattice", "ECP3", "LFE3-150EA",  8}},
 
 	/* Lattice ECP5 */
 	{0x21111043, {"lattice", "ECP5", "LFE5U-12",    8}},
