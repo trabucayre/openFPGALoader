@@ -85,8 +85,6 @@ int McsParser::parse()
 			_bit_length += (byteLen * 8);
 			break;
 		case 1:
-			if (_bit_data.size() * 8 != (size_t)_bit_length)
-				_bit_length = _bit_data.size() * 8;
 			return EXIT_SUCCESS;
 			break;
 		case 4:
