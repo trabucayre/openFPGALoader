@@ -45,13 +45,17 @@ UsbBlaster::UsbBlaster(const cable_t &cable, const std::string &firmware_path,
 			_curr_tms(0), _buffer_size(64)
 {
 	if (cable.pid == 0x6001)
-#ifdef USE_LIBFTDI
+#ifdef ENABLE_USB_BLASTERI
 		ll_driver = new UsbBlasterI();
 #else
 		throw std::runtime_error("usb-blasterI: Not build");
 #endif
+#ifdef ENABLE_USB_BLASTERII
 	else if (cable.pid == 0x6810)
 		ll_driver = new UsbBlasterII(firmware_path);
+#else
+		throw std::runtime_error("usb-blasterII: Not build");
+#endif
 	else
 		throw std::runtime_error("usb-blaster: unknown VID/PID");
 
@@ -64,7 +68,7 @@ UsbBlaster::UsbBlaster(const cable_t &cable, const std::string &firmware_path,
 	_nb_bit = 0;
 	memset(_in_buf, 0, _buffer_size);
 
-#ifdef USE_LIBFTDI
+#ifdef ENABLE_USB_BLASTERI
 	/* Force flush internal FT245 internal buffer */
 	if (cable.pid == 0x6001) {
 		uint8_t val = DEFAULT | DO_WRITE | DO_BITBB | _tms_pin;
@@ -345,7 +349,7 @@ int UsbBlaster::write(bool read, int rd_len)
 	return ret;
 }
 
-#ifdef USE_LIBFTDI
+#ifdef ENABLE_USB_BLASTERI
 /*
  * USB Blash I specific implementation
  */
@@ -437,6 +441,7 @@ int UsbBlasterI::write(uint8_t *wr_buf, int wr_len,
 }
 #endif
 
+#ifdef ENABLE_USB_BLASTERII
 /*
  * USB Blash II specific implementation
  */
@@ -522,3 +527,4 @@ int UsbBlasterII::write(uint8_t *wr_buf, int wr_len,
 	}
 	return ret;
 }
+#endif

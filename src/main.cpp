@@ -413,6 +413,7 @@ int main(int argc, char **argv)
 	/* DFU access          */
 	/* ------------------- */
 	if (args.dfu || (board && board->mode == COMM_DFU)) {
+#ifdef ENABLE_DFU 
 		/* try to init DFU probe */
 		DFU *dfu = NULL;
 		uint16_t vid = 0, pid = 0;
@@ -462,6 +463,10 @@ int main(int argc, char **argv)
 		}
 
 		return EXIT_SUCCESS;
+#else
+		throw std::runtime_error("DFU support: disabled at build time");
+		return EXIT_FAILURE;
+#endif
 	}
 
 #ifdef ENABLE_XVC

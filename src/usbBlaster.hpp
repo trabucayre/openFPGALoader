@@ -99,7 +99,7 @@ class UsbBlaster : public JtagInterface {
 	uint16_t _buffer_size;
 };
 
-#ifdef USE_LIBFTDI
+#ifdef ENABLE_USB_BLASTERI
 /*!
  * \file UsbBlaster.hpp
  * \class UsbBlasterI
@@ -120,6 +120,7 @@ class UsbBlasterI: public UsbBlaster_ll {
 };
 #endif
 
+#ifdef ENABLE_USB_BLASTERII
 /*!
  * \file UsbBlaster.hpp
  * \class UsbBlasterII
@@ -138,4 +139,5 @@ class UsbBlasterII: public UsbBlaster_ll {
 	private:
 		FX2_ll *fx2;
 };
+#endif
 #endif  // SRC_USBBLASTER_HPP_

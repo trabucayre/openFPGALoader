@@ -42,7 +42,9 @@
 #ifdef ENABLE_REMOTEBITBANG
 #include "remoteBitbang_client.hpp"
 #endif
+#ifdef ENABLE_USBBLASTER
 #include "usbBlaster.hpp"
+#endif
 #ifdef ENABLE_XVC
 #include "xvc_client.hpp"
 #endif
@@ -133,8 +135,13 @@ Jtag::Jtag(const cable_t &cable, const jtag_pins_conf_t *pin_conf,
 		_jtag = new esp_usb_jtag(clkHZ, verbose, 0x303a, 0x1001);
 		break;
 	case MODE_USBBLASTER:
+#ifdef ENABLE_USBBLASTER
 		_jtag = new UsbBlaster(cable, firmware_path, verbose);
 		break;
+#else
+		std::cerr << "Jtag: support for usb-blaster was not enabled at compile time" << std::endl;
+		throw std::exception();
+#endif
 	case MODE_CMSISDAP:
 #ifdef ENABLE_CMSISDAP
 		_jtag = new CmsisDAP(cable, cable.config.index, verbose);

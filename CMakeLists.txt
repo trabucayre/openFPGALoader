@@ -4,6 +4,9 @@ cmake_minimum_required(VERSION 3.5)
 project(openFPGALoader VERSION "1.0.0" LANGUAGES CXX)
 add_definitions(-DVERSION=\"v${PROJECT_VERSION}\")
 
+option(ENABLE_OPTIM "Enable build with -O3 optimization level" ON)
+option(BUILD_STATIC "Whether or not to build with static libraries" OFF)
+
 # set all cable on by default
 option(ENABLE_CABLE_ALL "Enable all cables" ON)
 
@@ -11,30 +14,36 @@ option(ENABLE_CABLE_ALL "Enable all cables" ON)
 set(USE_LIBUSB OFF)
 set(USE_LIBFTDI OFF)
 
+option(ENABLE_CMSISDAP         "enable cmsis DAP interface (requires hidapi)" ${ENABLE_CABLE_ALL})
+option(ENABLE_DFU              ${ENABLE_CABLE_ALL})
 option(ENABLE_FTDI_BASED_CABLE ${ENABLE_CABLE_ALL})
+option(ENABLE_GOWIN_GWU2X      "enable Gowin GWU2X interface"                 ${ENABLE_CABLE_ALL})
+option(ENABLE_USB_BLASTERI     ${ENABLE_CABLE_ALL})
+option(ENABLE_USB_BLASTERII    ${ENABLE_CABLE_ALL})
 
-if (ENABLE_FTDI_BASED_CABLE)
+if (${CMAKE_SYSTEM_NAME} MATCHES "Linux")
+	option(ENABLE_LIBGPIOD      "enable libgpiod bitbang driver (requires libgpiod)" ${ENABLE_CABLE_ALL})
+	option(ENABLE_REMOTEBITBANG "enable remote bitbang driver"                       ${ENABLE_CABLE_ALL})
+else()
+	set(ENABLE_LIBGPIOD OFF)
+	set(ENABLE_REMOTEBITBANG OFF)
+endif()
+
+# Only adds libftdi as dependency when a cable
+# need this library.
+if (ENABLE_FTDI_BASED_CABLE OR ENABLE_USB_BLASTERI)
 	set(USE_LIBFTDI ON)
 else()
 	message("disabled all cables based on FTDI devices")
-endif(ENABLE_FTDI_BASED_CABLE)
+endif(ENABLE_FTDI_BASED_CABLE OR ENABLE_USB_BLASTERI)
 
-option(ENABLE_OPTIM "Enable build with -O3 optimization level" ON)
-option(BUILD_STATIC "Whether or not to build with static libraries" OFF)
 if (${CMAKE_SYSTEM_NAME} MATCHES "Windows")
 	set(ENABLE_UDEV OFF)
 else()
 	option(ENABLE_UDEV "use udev to search JTAG adapter from /dev/xx" ON)
 endif()
-option(ENABLE_CMSISDAP "enable cmsis DAP interface (requires hidapi)" ON)
-option(ENABLE_GOWIN_GWU2X "enable Gowin GWU2X interface" ON)
-if (${CMAKE_SYSTEM_NAME} MATCHES "Linux")
-	option(ENABLE_LIBGPIOD "enable libgpiod bitbang driver (requires libgpiod)" ON)
-	option(ENABLE_REMOTEBITBANG "enable remote bitbang driver" ON)
-else()
-	set(ENABLE_LIBGPIOD OFF)
-	set(ENABLE_REMOTEBITBANG OFF)
-endif()
+
+
 option(USE_PKGCONFIG "Use pkgconfig to find libraries" ON)
 option(LINK_CMAKE_THREADS "Use CMake find_package to link the threading library" OFF)
 set(BLASTERII_PATH "" CACHE STRING "usbBlasterII firmware directory")
@@ -58,7 +67,6 @@ include(GNUInstallDirs)
 add_definitions(-DDATA_DIR=\"${CMAKE_INSTALL_FULL_DATAROOTDIR}\")
 
 add_definitions(-DISE_DIR=\"${ISE_PATH}\")
-add_definitions(-DBLASTERII_DIR=\"${BLASTERII_PATH}\")
 
 if (USE_PKGCONFIG)
 	find_package(PkgConfig REQUIRED)
@@ -72,13 +80,16 @@ if (USE_PKGCONFIG)
 	endif(USE_LIBFTDI)
 
 	pkg_check_modules(LIBUSB REQUIRED libusb-1.0)
+
+	if(ENABLE_CMSISDAP)
 	pkg_check_modules(HIDAPI hidapi-libusb)
-	# if libusb not found try with hidraw
-	if (NOT HIDAPI_FOUND)
-		pkg_check_modules(HIDAPI hidapi-hidraw)
-	endif()
-	if (NOT HIDAPI_FOUND)
-		pkg_check_modules(HIDAPI hidapi)
+		# if libusb not found try with hidraw
+		if (NOT HIDAPI_FOUND)
+			pkg_check_modules(HIDAPI hidapi-hidraw)
+		endif()
+		if (NOT HIDAPI_FOUND)
+			pkg_check_modules(HIDAPI hidapi)
+		endif()
 	endif()
 	# zlib support (gzip)
 	pkg_check_modules(ZLIB zlib)
@@ -114,6 +125,8 @@ endif()
 # Core Classes
 set(OPENFPGALOADER_SOURCE
 	src/common.cpp
+	src/configBitstreamParser.cpp
+	src/device.cpp
 	src/display.cpp
 	src/main.cpp
 	src/progressBar.cpp
@@ -123,6 +136,7 @@ set(OPENFPGALOADER_HEADERS
 	src/board.hpp
 	src/cable.hpp
 	src/common.hpp
+	src/configBitstreamParser.hpp
 	src/cxxopts.hpp
 	src/device.hpp
 	src/display.hpp
@@ -134,8 +148,6 @@ list(APPEND OPENFPGALOADER_SOURCE
 	src/anlogic.cpp
 	src/anlogicBitParser.cpp
 	src/anlogicCable.cpp
-	src/dfu.cpp
-	src/dfuFileParser.cpp
 	src/dirtyJtag.cpp
 	src/ch347jtag.cpp
 	src/fx2_ll.cpp
@@ -144,14 +156,11 @@ list(APPEND OPENFPGALOADER_SOURCE
 	src/rawParser.cpp
 	src/spiFlash.cpp
 	src/spiInterface.cpp
-	src/usbBlaster.cpp
 	src/epcq.cpp
 	src/svf_jtag.cpp
 	src/jtag.cpp
-	src/configBitstreamParser.cpp
 	src/libusb_ll.cpp
 	src/gowin.cpp
-	src/device.cpp
 	src/jlink.cpp
 	src/fsparser.cpp
 	src/mcsParser.cpp
@@ -167,15 +176,12 @@ list(APPEND OPENFPGALOADER_HEADERS
 	src/anlogic.hpp
 	src/anlogicBitParser.hpp
 	src/anlogicCable.hpp
-	src/dfu.hpp
-	src/dfuFileParser.hpp
 	src/dirtyJtag.hpp
 	src/ch347jtag.hpp
 	src/fx2_ll.hpp
 	src/ihexParser.hpp
 	src/pofParser.hpp
 	src/rawParser.hpp
-	src/usbBlaster.hpp
 	src/bitparser.hpp
 	src/jlink.hpp
 	src/jtag.hpp
@@ -188,7 +194,6 @@ list(APPEND OPENFPGALOADER_HEADERS
 	src/epcq.hpp
 	src/spiInterface.hpp
 	src/svf_jtag.hpp
-	src/configBitstreamParser.hpp
 	src/gowin.hpp
 	src/xilinx.hpp
 	src/xilinxMapParser.hpp
@@ -263,6 +268,43 @@ list(APPEND OPENFPGALOADER_HEADERS
 	src/feaparser.hpp
 	src/latticeBitParser.hpp
 )
+
+# Cables select
+
+# DFU
+if (ENABLE_DFU)
+list(APPEND OPENFPGALOADER_SOURCE
+	src/dfu.cpp
+	src/dfuFileParser.cpp
+)
+
+list(APPEND OPENFPGALOADER_HEADERS
+	src/dfu.hpp
+	src/dfuFileParser.hpp
+)
+endif(ENABLE_DFU)
+
+# Altera USB Blaster (I & II).
+if (ENABLE_USB_BLASTERI OR ENABLE_USB_BLASTERII)
+	add_definitions(-DENABLE_USBBLASTER)
+
+	if (ENABLE_USB_BLASTERI)
+		add_definitions(-DENABLE_USB_BLASTERI)
+	endif()
+
+	if (ENABLE_USB_BLASTERII)
+		add_definitions(-DBLASTERII_DIR=\"${BLASTERII_PATH}\")
+		add_definitions(-DENABLE_USB_BLASTERII)
+	endif (ENABLE_USB_BLASTERII)
+
+	list(APPEND OPENFPGALOADER_SOURCE
+		src/usbBlaster.cpp
+	)
+
+	list(APPEND OPENFPGALOADER_HEADERS
+		src/usbBlaster.hpp
+	)
+endif(ENABLE_USB_BLASTERI OR ENABLE_USB_BLASTERII)
 
 link_directories(
 	${LIBUSB_LIBRARY_DIRS}
