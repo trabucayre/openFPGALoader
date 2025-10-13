@@ -21,7 +21,9 @@
 #include "common.hpp"
 #include "cxxopts.hpp"
 #include "device.hpp"
+#ifdef ENABLE_DFU
 #include "dfu.hpp"
+#endif
 #include "display.hpp"
 #include "efinix.hpp"
 #include "ftdispi.hpp"
@@ -29,7 +31,9 @@
 #include "ice40.hpp"
 #include "lattice.hpp"
 #include "latticeSSPI.hpp"
+#ifdef ENABLE_USB_SCAN
 #include "libusb_ll.hpp"
+#endif
 #include "jtag.hpp"
 #include "part.hpp"
 #include "spiFlash.hpp"
@@ -217,6 +221,7 @@ int main(int argc, char **argv)
 	}
 	cable = select_cable->second;
 
+#ifdef USE_LIBFTDI
 	if (args.ftdi_channel != -1) {
 		if (cable.type != MODE_FTDI_SERIAL && cable.type != MODE_FTDI_BITBANG){
 			printError("Error: FTDI channel param is for FTDI cables.");
@@ -241,6 +246,7 @@ int main(int argc, char **argv)
 			return EXIT_FAILURE;
 		}
 	}
+#endif
 
 	if (args.vid != 0) {
 		printInfo("Cable VID overridden");
@@ -258,6 +264,7 @@ int main(int argc, char **argv)
 	cable.config.index = args.cable_index;
 	cable.config.status_pin = args.status_pin;
 
+#ifdef USE_LIBFTDI
 	/* FLASH direct access */
 	if (args.spi || (board && board->mode == COMM_SPI)) {
 		/* if no instruction from user -> select flash mode */
@@ -404,11 +411,13 @@ int main(int argc, char **argv)
 
 		return spi_ret;
 	}
+#endif
 
 	/* ------------------- */
 	/* DFU access          */
 	/* ------------------- */
 	if (args.dfu || (board && board->mode == COMM_DFU)) {
+#ifdef ENABLE_DFU
 		/* try to init DFU probe */
 		DFU *dfu = NULL;
 		uint16_t vid = 0, pid = 0;
@@ -458,6 +467,10 @@ int main(int argc, char **argv)
 		}
 
 		return EXIT_SUCCESS;
+#else
+		throw std::runtime_error("DFU support: disabled at build time");
+		return EXIT_FAILURE;
+#endif
 	}
 
 #ifdef ENABLE_XVC
@@ -604,19 +617,23 @@ int main(int argc, char **argv)
 		} else if (fab == "anlogic") {
 			fpga = new Anlogic(jtag, args.bit_file, args.file_type,
 				args.prg_type, args.verify, args.verbose);
+#ifdef USE_LIBFTDI
 		} else if (fab == "efinix") {
 			fpga = new Efinix(jtag, args.bit_file, args.file_type,
 				args.prg_type, args.board, args.fpga_part, args.bridge_path,
 				args.verify, args.verbose);
+#endif
 		} else if (fab == "Gowin") {
 			fpga = new Gowin(jtag, args.bit_file, args.file_type, args.mcufw,
 				args.prg_type, args.external_flash, args.verify, args.verbose, args.user_flash);
 		} else if (fab == "lattice") {
 			fpga = new Lattice(jtag, args.bit_file, args.file_type,
 				args.prg_type, args.flash_sector, args.verify, args.verbose, args.skip_load_bridge, args.skip_reset);
+#ifdef USE_LIBFTDI
 		} else if (fab == "colognechip") {
 			fpga = new CologneChip(jtag, args.bit_file, args.file_type,
 				args.prg_type, args.board, args.cable, args.verify, args.verbose);
+#endif
 		} else {
 			printError("Error: manufacturer " + fab + " not supported");
 			delete(jtag);
@@ -1193,9 +1210,11 @@ void displaySupported(const struct arguments &args)
 		cout << endl;
 	}
 
+#ifdef ENABLE_USB_SCAN
 	if (args.scan_usb) {
 		libusb_ll usb(0, 0, args.verbose);
 		usb.scan();
 	}
+#endif
 }
 

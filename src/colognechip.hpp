@@ -12,7 +12,9 @@
 #include <string>
 
 #include "device.hpp"
+#ifdef ENABLE_DIRTYJTAG
 #include "dirtyJtag.hpp"
+#endif
 #include "jtag.hpp"
 #include "ftdispi.hpp"
 #include "ftdiJtagMPSSE.hpp"
@@ -70,7 +72,9 @@ class CologneChip: public Device, SPIInterface {
 
 		FtdiSpi *_spi = NULL;
 		FtdiJtagMPSSE *_ftdi_jtag = NULL;
+#ifdef ENABLE_DIRTYJTAG
 		DirtyJtag *_dirtyjtag = NULL;
+#endif
 		uint16_t _rstn_pin;
 		uint16_t _done_pin;
 		uint16_t _fail_pin;

@@ -12,12 +12,18 @@
 #include <vector>
 #include <string>
 
+#ifdef ENABLE_ANLOGIC_CABLE
 #include "anlogicCable.hpp"
+#endif
+#ifdef USE_LIBFTDI
 #include "ch552_jtag.hpp"
+#endif
 #include "display.hpp"
 #include "jtag.hpp"
+#ifdef USE_LIBFTDI
 #include "ftdiJtagBitbang.hpp"
 #include "ftdiJtagMPSSE.hpp"
+#endif
 #ifdef ENABLE_GOWIN_GWU2X
 #include "gwu2x_jtag.hpp"
 #endif
@@ -27,18 +33,28 @@
 #ifdef ENABLE_JETSONNANOGPIO
 #include "jetsonNanoJtagBitbang.hpp"
 #endif
+#ifdef ENABLE_JLINK
 #include "jlink.hpp"
+#endif
 #ifdef ENABLE_CMSISDAP
 #include "cmsisDAP.hpp"
 #endif
+#ifdef ENABLE_DIRTYJTAG
 #include "dirtyJtag.hpp"
+#endif
+#ifdef ENABLE_ESP_USB_JTAG
 #include "esp_usb_jtag.hpp"
+#endif
+#ifdef ENABLE_CH347
 #include "ch347jtag.hpp"
+#endif
 #include "part.hpp"
 #ifdef ENABLE_REMOTEBITBANG
 #include "remoteBitbang_client.hpp"
 #endif
+#ifdef ENABLE_USBBLASTER
 #include "usbBlaster.hpp"
+#endif
 #ifdef ENABLE_XVC
 #include "xvc_client.hpp"
 #endif
@@ -92,8 +108,14 @@ Jtag::Jtag(const cable_t &cable, const jtag_pins_conf_t *pin_conf,
 {
 	switch (cable.type) {
 	case MODE_ANLOGICCABLE:
+#ifdef ENABLE_ANLOGIC_CABLE
 		_jtag = new AnlogicCable(clkHZ);
+#else
+		std::cerr << "Jtag: support for Anlogic cable was not enabled at compile time" << std::endl;
+		throw std::exception();
+#endif
 		break;
+#ifdef USE_LIBFTDI
 	case MODE_FTDI_BITBANG:
 		if (pin_conf == NULL)
 			throw std::exception();
@@ -106,29 +128,55 @@ Jtag::Jtag(const cable_t &cable, const jtag_pins_conf_t *pin_conf,
 	case MODE_CH552_JTAG:
 		_jtag = new CH552_jtag(cable, dev, serial, clkHZ, verbose);
 		break;
+#endif
 	case MODE_CH347:
+#ifdef ENABLE_CH347
 		_jtag = new CH347Jtag(clkHZ, verbose, cable.vid, cable.pid, cable.bus_addr, cable.device_addr);
+#else
+		std::cerr << "Jtag: support for CH347 cable was not enabled at compile time" << std::endl;
+		throw std::exception();
+#endif
 		break;
 	case MODE_DIRTYJTAG:
+#ifdef ENABLE_DIRTYJTAG
 		_jtag = new DirtyJtag(clkHZ, verbose);
+#else
+		std::cerr << "Jtag: support for dirtyJtag cable was not enabled at compile time" << std::endl;
+		throw std::exception();
+#endif
 		break;
-#ifdef ENABLE_GOWIN_GWU2X
 	case MODE_GWU2X:
+#ifdef ENABLE_GOWIN_GWU2X
 		_jtag = new GowinGWU2x((cable_t *)&cable, clkHZ, verbose);
-		break;
 #else
 		std::cerr << "Jtag: support for Gowin GWU2X was not enabled at compile time" << std::endl;
 		throw std::exception();
 #endif
+		break;
 	case MODE_JLINK:
+#ifdef ENABLE_JLINK
 		_jtag = new Jlink(clkHZ, verbose, cable.vid, cable.pid);
+#else
+		std::cerr << "Jtag: support for JLink cable was not enabled at compile time" << std::endl;
+		throw std::exception();
+#endif
 		break;
 	case MODE_ESP:
+#ifdef ENABLE_ESP_USB_JTAG
 		_jtag = new esp_usb_jtag(clkHZ, verbose, 0x303a, 0x1001);
+#else
+		std::cerr << "Jtag: support for esp32s3 cable was not enabled at compile time" << std::endl;
+		throw std::exception();
+#endif
 		break;
 	case MODE_USBBLASTER:
+#ifdef ENABLE_USBBLASTER
 		_jtag = new UsbBlaster(cable, firmware_path, verbose);
 		break;
+#else
+		std::cerr << "Jtag: support for usb-blaster was not enabled at compile time" << std::endl;
+		throw std::exception();
+#endif
 	case MODE_CMSISDAP:
 #ifdef ENABLE_CMSISDAP
 		_jtag = new CmsisDAP(cable, cable.config.index, verbose);
