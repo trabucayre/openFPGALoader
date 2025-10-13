@@ -5,13 +5,17 @@
 
 #ifndef SRC_USBBLASTER_HPP_
 #define SRC_USBBLASTER_HPP_
+#ifdef USE_LIBFTDI
 #include <ftdi.h>
+#endif
 #include <iostream>
 #include <string>
 #include <vector>
 
 #include "cable.hpp"
+#ifdef USE_LIBFTDI
 #include "ftdipp_mpsse.hpp"
+#endif
 #include "fx2_ll.hpp"
 #include "jtagInterface.hpp"
 
@@ -95,6 +99,7 @@ class UsbBlaster : public JtagInterface {
 	uint16_t _buffer_size;
 };
 
+#ifdef USE_LIBFTDI
 /*!
  * \file UsbBlaster.hpp
  * \class UsbBlasterI
@@ -113,6 +118,7 @@ class UsbBlasterI: public UsbBlaster_ll {
 	private:
 		struct ftdi_context *_ftdi; /*!< ftdi_context */
 };
+#endif
 
 /*!
  * \file UsbBlaster.hpp

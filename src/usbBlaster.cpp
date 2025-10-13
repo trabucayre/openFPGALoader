@@ -13,7 +13,9 @@
 #include <vector>
 
 #include "display.hpp"
+#ifdef USE_LIBFTDI
 #include "ftdipp_mpsse.hpp"
+#endif
 #include "fx2_ll.hpp"
 #include "usbBlaster.hpp"
 
@@ -43,7 +45,11 @@ UsbBlaster::UsbBlaster(const cable_t &cable, const std::string &firmware_path,
 			_curr_tms(0), _buffer_size(64)
 {
 	if (cable.pid == 0x6001)
+#ifdef USE_LIBFTDI
 		ll_driver = new UsbBlasterI();
+#else
+		throw std::runtime_error("usb-blasterI: Not build");
+#endif
 	else if (cable.pid == 0x6810)
 		ll_driver = new UsbBlasterII(firmware_path);
 	else
@@ -58,6 +64,7 @@ UsbBlaster::UsbBlaster(const cable_t &cable, const std::string &firmware_path,
 	_nb_bit = 0;
 	memset(_in_buf, 0, _buffer_size);
 
+#ifdef USE_LIBFTDI
 	/* Force flush internal FT245 internal buffer */
 	if (cable.pid == 0x6001) {
 		uint8_t val = DEFAULT | DO_WRITE | DO_BITBB | _tms_pin;
@@ -70,6 +77,7 @@ UsbBlaster::UsbBlaster(const cable_t &cable, const std::string &firmware_path,
 		ll_driver->write(tmp_buf, _nb_bit, NULL, 0);
 		_nb_bit = 0;
 	}
+#endif
 }
 
 UsbBlaster::~UsbBlaster()
@@ -337,6 +345,7 @@ int UsbBlaster::write(bool read, int rd_len)
 	return ret;
 }
 
+#ifdef USE_LIBFTDI
 /*
  * USB Blash I specific implementation
  */
@@ -426,6 +435,7 @@ int UsbBlasterI::write(uint8_t *wr_buf, int wr_len,
 	}
 	return ret;
 }
+#endif
 
 /*
  * USB Blash II specific implementation

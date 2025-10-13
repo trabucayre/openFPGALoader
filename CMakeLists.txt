@@ -3,6 +3,22 @@ cmake_minimum_required(VERSION 3.5)
 # set the project name
 project(openFPGALoader VERSION "1.0.0" LANGUAGES CXX)
 add_definitions(-DVERSION=\"v${PROJECT_VERSION}\")
+
+# set all cable on by default
+option(ENABLE_CABLE_ALL "Enable all cables" ON)
+
+# set dependencies
+set(USE_LIBUSB OFF)
+set(USE_LIBFTDI OFF)
+
+option(ENABLE_FTDI_BASED_CABLE ${ENABLE_CABLE_ALL})
+
+if (ENABLE_FTDI_BASED_CABLE)
+	set(USE_LIBFTDI ON)
+else()
+	message("disabled all cables based on FTDI devices")
+endif(ENABLE_FTDI_BASED_CABLE)
+
 option(ENABLE_OPTIM "Enable build with -O3 optimization level" ON)
 option(BUILD_STATIC "Whether or not to build with static libraries" OFF)
 if (${CMAKE_SYSTEM_NAME} MATCHES "Windows")
@@ -46,7 +62,15 @@ add_definitions(-DBLASTERII_DIR=\"${BLASTERII_PATH}\")
 
 if (USE_PKGCONFIG)
 	find_package(PkgConfig REQUIRED)
-	pkg_check_modules(LIBFTDI REQUIRED libftdi1)
+
+	if (USE_LIBFTDI)
+		pkg_check_modules(LIBFTDI REQUIRED libftdi1)
+	else()
+		set(LIBFTDI_LIBRARY_DIRS "")
+		set(LIBFTDI_INCLUDE_DIRS "")
+		set(LIBFTDI_LIBRARIES    "")
+	endif(USE_LIBFTDI)
+
 	pkg_check_modules(LIBUSB REQUIRED libusb-1.0)
 	pkg_check_modules(HIDAPI hidapi-libusb)
 	# if libusb not found try with hidraw
@@ -87,18 +111,33 @@ if (USE_PKGCONFIG)
 	endif()
 endif()
 
+# Core Classes
 set(OPENFPGALOADER_SOURCE
+	src/common.cpp
+	src/display.cpp
+	src/main.cpp
+	src/progressBar.cpp
+)
+
+set(OPENFPGALOADER_HEADERS
+	src/board.hpp
+	src/cable.hpp
+	src/common.hpp
+	src/cxxopts.hpp
+	src/device.hpp
+	src/display.hpp
+	src/part.hpp
+	src/progressBar.hpp
+)
+
+list(APPEND OPENFPGALOADER_SOURCE
 	src/anlogic.cpp
 	src/anlogicBitParser.cpp
 	src/anlogicCable.cpp
-	src/ch552_jtag.cpp
-	src/common.cpp
 	src/dfu.cpp
 	src/dfuFileParser.cpp
 	src/dirtyJtag.cpp
 	src/ch347jtag.cpp
-	src/efinix.cpp
-	src/efinixHexParser.cpp
 	src/fx2_ll.cpp
 	src/ihexParser.cpp
 	src/pofParser.cpp
@@ -108,94 +147,118 @@ set(OPENFPGALOADER_SOURCE
 	src/usbBlaster.cpp
 	src/epcq.cpp
 	src/svf_jtag.cpp
-	src/display.cpp
 	src/jtag.cpp
-	src/ftdiJtagBitbang.cpp
-	src/ftdiJtagMPSSE.cpp
 	src/configBitstreamParser.cpp
-	src/ftdipp_mpsse.cpp
-	src/main.cpp
 	src/libusb_ll.cpp
 	src/gowin.cpp
 	src/device.cpp
 	src/jlink.cpp
-	src/progressBar.cpp
 	src/fsparser.cpp
 	src/mcsParser.cpp
-	src/ftdispi.cpp
 	src/altera.cpp
 	src/bitparser.cpp
 	src/xilinx.cpp
 	src/xilinxMapParser.cpp
-	src/colognechip.cpp
-	src/colognechipCfgParser.cpp
 	src/esp_usb_jtag.cpp
 )
 
-set(OPENFPGALOADER_HEADERS
+list(APPEND OPENFPGALOADER_HEADERS
 	src/altera.hpp
 	src/anlogic.hpp
 	src/anlogicBitParser.hpp
 	src/anlogicCable.hpp
-	src/ch552_jtag.hpp
-	src/common.hpp
-	src/cxxopts.hpp
 	src/dfu.hpp
 	src/dfuFileParser.hpp
 	src/dirtyJtag.hpp
 	src/ch347jtag.hpp
-	src/efinix.hpp
-	src/efinixHexParser.hpp
 	src/fx2_ll.hpp
 	src/ihexParser.hpp
 	src/pofParser.hpp
-	src/progressBar.hpp
 	src/rawParser.hpp
 	src/usbBlaster.hpp
 	src/bitparser.hpp
-	src/ftdiJtagBitbang.hpp
-	src/ftdiJtagMPSSE.hpp
 	src/jlink.hpp
 	src/jtag.hpp
 	src/jtagInterface.hpp
 	src/libusb_ll.hpp
 	src/fsparser.hpp
-	src/part.hpp
-	src/board.hpp
-	src/display.hpp
 	src/mcsParser.hpp
-	src/ftdipp_mpsse.hpp
 	src/spiFlash.hpp
 	src/spiFlashdb.hpp
 	src/epcq.hpp
 	src/spiInterface.hpp
 	src/svf_jtag.hpp
 	src/configBitstreamParser.hpp
-	src/device.hpp
 	src/gowin.hpp
-	src/cable.hpp
-	src/ftdispi.hpp
 	src/xilinx.hpp
 	src/xilinxMapParser.hpp
-	src/colognechip.hpp
-	src/colognechipCfgParser.hpp
 	src/esp_usb_jtag.hpp
 )
 
+# FTDI Based cables
+if (${USE_LIBFTDI})
+	add_definitions(-DUSE_LIBFTDI)
+
+	list(APPEND OPENFPGALOADER_SOURCE
+		src/ch552_jtag.cpp
+		src/ftdiJtagBitbang.cpp
+		src/ftdiJtagMPSSE.cpp
+		src/ftdipp_mpsse.cpp
+		src/ftdispi.cpp
+	)
+
+	list(APPEND OPENFPGALOADER_HEADERS
+		src/ch552_jtag.hpp
+		src/ftdiJtagBitbang.hpp
+		src/ftdiJtagMPSSE.hpp
+		src/ftdipp_mpsse.hpp
+		src/ftdispi.hpp
+	)
+
+	# CologneChip Drivers / Files parsers.
+	list(APPEND OPENFPGALOADER_SOURCE
+		src/colognechip.cpp
+		src/colognechipCfgParser.cpp
+	)
+
+	list(APPEND OPENFPGALOADER_HEADERS
+		src/colognechip.hpp
+		src/colognechipCfgParser.hpp
+	)
+
+	# Efinix Drivers / Files parsers.
+	list(APPEND OPENFPGALOADER_SOURCE
+		src/efinix.cpp
+		src/efinixHexParser.cpp
+	)
+
+	list(APPEND OPENFPGALOADER_HEADERS
+		src/efinix.hpp
+		src/efinixHexParser.hpp
+	)
+
+	# Lattice Drivers / Files parsers.
+	list(APPEND OPENFPGALOADER_SOURCE
+		src/ice40.cpp
+		src/latticeSSPI.cpp
+	)
+	list(APPEND OPENFPGALOADER_HEADERS
+		src/ice40.hpp
+		src/latticeSSPI.hpp
+	)
+
+endif()
+
 # Lattice Drivers / Files parsers.
 list(APPEND OPENFPGALOADER_SOURCE
-	src/ice40.cpp
 	src/lattice.cpp
-	src/latticeSSPI.cpp
 	src/feaparser.cpp
 	src/jedParser.cpp
 	src/latticeBitParser.cpp
 )
 
 list(APPEND OPENFPGALOADER_HEADERS
-	src/ice40.hpp
 	src/lattice.hpp
-	src/latticeSSPI.hpp
 	src/jedParser.hpp
 	src/feaparser.hpp
 	src/latticeBitParser.hpp
@@ -299,7 +362,7 @@ if (ENABLE_CMSISDAP)
 	endif()
 endif(ENABLE_CMSISDAP)
 
-if (${CMAKE_SYSTEM_NAME} MATCHES "Linux")
+if ((${CMAKE_SYSTEM_NAME} MATCHES "Linux") AND USE_LIBFTDI)
 	add_definitions(-DENABLE_XVC=1)
 	target_sources(openFPGALoader PRIVATE src/xvc_client.cpp src/xvc_server.cpp)
 	list (APPEND OPENFPGALOADER_HEADERS src/xvc_client.hpp src/xvc_server.hpp)
@@ -331,12 +394,14 @@ if (LINK_CMAKE_THREADS)
 	target_link_libraries(openFPGALoader Threads::Threads)
 endif()
 
-# libftdi < 1.4 as no usb_addr
-# libftdi >= 1.5 as purge_buffer obsolete
-string(REPLACE "." ";" VERSION_LIST ${LIBFTDI_VERSION})
-list(GET VERSION_LIST 0 LIBFTDI_VERSION_MAJOR)
-list(GET VERSION_LIST 1 LIBFTDI_VERSION_MINOR)
-math(EXPR FTDI_VAL "${LIBFTDI_VERSION_MAJOR} * 100 + ${LIBFTDI_VERSION_MINOR}")
+if (USE_LIBFTDI)
+	# libftdi < 1.4 as no usb_addr
+	# libftdi >= 1.5 as purge_buffer obsolete
+	string(REPLACE "." ";" VERSION_LIST ${LIBFTDI_VERSION})
+	list(GET VERSION_LIST 0 LIBFTDI_VERSION_MAJOR)
+	list(GET VERSION_LIST 1 LIBFTDI_VERSION_MINOR)
+	math(EXPR FTDI_VAL "${LIBFTDI_VERSION_MAJOR} * 100 + ${LIBFTDI_VERSION_MINOR}")
+endif()
 
 add_definitions(-DFTDI_VERSION=${FTDI_VAL})
 

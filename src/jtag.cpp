@@ -13,11 +13,15 @@
 #include <string>
 
 #include "anlogicCable.hpp"
+#ifdef USE_LIBFTDI
 #include "ch552_jtag.hpp"
+#endif
 #include "display.hpp"
 #include "jtag.hpp"
+#ifdef USE_LIBFTDI
 #include "ftdiJtagBitbang.hpp"
 #include "ftdiJtagMPSSE.hpp"
+#endif
 #ifdef ENABLE_GOWIN_GWU2X
 #include "gwu2x_jtag.hpp"
 #endif
@@ -94,6 +98,7 @@ Jtag::Jtag(const cable_t &cable, const jtag_pins_conf_t *pin_conf,
 	case MODE_ANLOGICCABLE:
 		_jtag = new AnlogicCable(clkHZ);
 		break;
+#ifdef USE_LIBFTDI
 	case MODE_FTDI_BITBANG:
 		if (pin_conf == NULL)
 			throw std::exception();
@@ -106,6 +111,7 @@ Jtag::Jtag(const cable_t &cable, const jtag_pins_conf_t *pin_conf,
 	case MODE_CH552_JTAG:
 		_jtag = new CH552_jtag(cable, dev, serial, clkHZ, verbose);
 		break;
+#endif
 	case MODE_CH347:
 		_jtag = new CH347Jtag(clkHZ, verbose, cable.vid, cable.pid, cable.bus_addr, cable.device_addr);
 		break;
