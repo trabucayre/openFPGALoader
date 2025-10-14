@@ -150,6 +150,7 @@ static std::map<std::string, std::map<std::string, std::vector<uint8_t>>>
 				{ "JSHUTDOWN",   {0x0D} },
 				{ "ISC_PROGRAM", {0x11} },
 				{ "ISC_DISABLE", {0x16} },
+				{ "STATUS", 	 {0x1F} },
 				{ "BYPASS",      {0xff} },
 			}
 		},
@@ -294,7 +295,9 @@ Xilinx::Xilinx(Jtag *jtag, const std::string &filename,
 				_mode = Device::SPI_MODE;
 		} else if (_file_extension == "jed") {
 			_mode = Device::FLASH_MODE;
-		} else {
+		} else if (_file_extension == "pdi") {
+			_mode = Device::MEM_MODE;
+		}  else {
 			_mode = Device::SPI_MODE;
 		}
 	}
@@ -358,6 +361,14 @@ Xilinx::Xilinx(Jtag *jtag, const std::string &filename,
 		_fpga_family = KINTEXUSP_FAMILY;
 	} else if (family == "artixusp") {
 		_fpga_family = ARTIXUSP_FAMILY;
+	} else if (family == "spartanusp") {		
+		if (_file_extension != "pdi") {
+			char mess[256];
+			snprintf(mess, 256, "Error: only volatile PDI programing for "
+				"Spartan Ultrascale+ devices\n");
+			throw std::runtime_error(mess);
+		}
+		_fpga_family = SPARTANUSP_FAMILY;
 	} else if (family == "virtexus") {
 		_fpga_family = VIRTEXUS_FAMILY;
 	} else if (family == "virtexusp") {
@@ -609,6 +620,9 @@ void Xilinx::program(unsigned int offset, bool unprotect_flash)
 	if (_mode == Device::MEM_MODE || _fpga_family == XCF_FAMILY)
 		reverse = true;
 
+	if (_file_extension == "pdi")
+		reverse = false;
+
 	try {
 		if (_flash_chips & PRIMARY_FLASH) {
 			open_bitfile(_filename, _file_extension, &bit, reverse, _verbose);
@@ -849,41 +863,60 @@ void Xilinx::program_mem(ConfigBitstreamParser *bitfile)
 	 * 16: Move into RTI state.                           X     0   1
 	 */
 	_jtag->set_state(Jtag::RUN_TEST_IDLE);
-	/*
-	 * 17: Enter the SELECT-IR state.                     X     1   2
-	 * 18: Move to the SHIFT-IR state.                    X     0   2
-	 * 19: Start loading the JSTART instruction
-	 *     (optional). The JSTART instruction           01100   0   5
-	 *     initializes the startup sequence.
-	 * 20: Load the last bit of the JSTART instruction.   0     1   1
-	 * 21: Move to the UPDATE-IR state.                   X     1   1
-	 */
-	_jtag->shiftIR(get_ircode(_ircode_map, "JSTART"), NULL, _irlen, Jtag::UPDATE_IR);
-	/*
-	 * 22: Move to the RTI state and clock the
-	 *     startup sequence by applying a minimum         X     0   2000
-	 *     of 2000 clock cycles to the TCK.
-	 */
-	_jtag->set_state(Jtag::RUN_TEST_IDLE);
-	_jtag->toggleClk(2000);
-	/*
-	 * 23: Move to the TLR state. The device is
-	 * now functional.                                    X     1   3
-	 */
-	_jtag->go_test_logic_reset();
-	/* Some xc7s50 does not detect correct connected flash w/o this shift*/
-	_jtag->shiftIR(tx_buf, rx_buf, _irlen);
-	uint8_t ir_c = rx_buf[0] & 0x03;
-	uint8_t isc_done = ((rx_buf[0] >> 2) & 0x01);
-	uint8_t isc_ena  = ((rx_buf[0] >> 3) & 0x01);
-	uint8_t init     = ((rx_buf[0] >> 4) & 0x01);
-	uint8_t done     = ((rx_buf[0] >> 5) & 0x01);
-	printf("Shift IR %02x\n", rx_buf[0]);
-	printf("ir: %x isc_done %x isc_ena %x init %x done %x\n", ir_c, isc_done, isc_ena,
-		init, done);
 
-	if (!done) {
-		read_register("STAT");
+	if (_file_extension == "pdi") {
+		_jtag->toggleClk(2000);
+		/*
+		* 17: For PDI devices, use the STATUS instruction 
+		*     to verify successful configuration.          
+		*/
+		unsigned char tx_data[6]= {0x00, 0x00, 0x00, 0x00, 0x00, 0x00};
+		unsigned char rx_data[6];
+		_jtag->shiftIR(get_ircode(_ircode_map, "STATUS"), NULL, _irlen);
+		_jtag->shiftDR(tx_data, rx_data, 48);
+		if ((rx_data[4] & 0x04) != 0x04) {
+				printError("PDI programing failed");
+			} else {
+				printSuccess("PDI programing success");
+			}
+		}
+	else {
+		/*
+		* 17: Enter the SELECT-IR state.                     X     1   2
+		* 18: Move to the SHIFT-IR state.                    X     0   2
+		* 19: Start loading the JSTART instruction
+		*     (optional). The JSTART instruction           01100   0   5
+		*     initializes the startup sequence.
+		* 20: Load the last bit of the JSTART instruction.   0     1   1
+		* 21: Move to the UPDATE-IR state.                   X     1   1
+		*/
+		_jtag->shiftIR(get_ircode(_ircode_map, "JSTART"), NULL, _irlen, Jtag::UPDATE_IR);
+		/*
+		* 22: Move to the RTI state and clock the
+		*     startup sequence by applying a minimum         X     0   2000
+		*     of 2000 clock cycles to the TCK.
+		*/
+		_jtag->set_state(Jtag::RUN_TEST_IDLE);
+		_jtag->toggleClk(2000);
+		/*
+		* 23: Move to the TLR state. The device is
+		* now functional.                                    X     1   3
+		*/
+		_jtag->go_test_logic_reset();
+		/* Some xc7s50 does not detect correct connected flash w/o this shift*/
+		_jtag->shiftIR(tx_buf, rx_buf, _irlen);
+		uint8_t ir_c = rx_buf[0] & 0x03;
+		uint8_t isc_done = ((rx_buf[0] >> 2) & 0x01);
+		uint8_t isc_ena  = ((rx_buf[0] >> 3) & 0x01);
+		uint8_t init     = ((rx_buf[0] >> 4) & 0x01);
+		uint8_t done     = ((rx_buf[0] >> 5) & 0x01);
+		printf("Shift IR %02x\n", rx_buf[0]);
+		printf("ir: %x isc_done %x isc_ena %x init %x done %x\n", ir_c, isc_done, isc_ena,
+			init, done);
+
+		if (!done) {
+			read_register("STAT");
+		}
 	}
 }
 
