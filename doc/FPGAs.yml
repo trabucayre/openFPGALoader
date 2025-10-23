@@ -329,6 +329,13 @@ Xilinx:
     Memory: OK
     Flash: OK
 
+  - Description: Spartan UltraScale+
+    Model:
+      - xcsu35p
+    URL: https://www.amd.com/en/products/adaptive-socs-and-fpgas/fpga/spartan-ultrascale-plus.html#productTable
+    Memory: OK
+    Flash: TBD
+
   - Description: Spartan 3
     Model:
       - xc3s200

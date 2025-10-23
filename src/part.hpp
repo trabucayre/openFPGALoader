@@ -125,6 +125,9 @@ static std::map <uint32_t, fpga_model> fpga_list = {
 	{0x04b31093, {"xilinx", "virtexusp", "xcvu9p",  18}},
 	{0x14b79093, {"xilinx", "virtexusp", "xcvu37p", 18}},
 
+	/* Xilinx Ultrascale+ / Spartan */
+	{0x04e80093, {"xilinx", "spartanusp", "xcsu35p", 6}},
+
 	/* Xilinx Ultrascale+ / ZynqMP */
 	/* When powering a zynq ultrascale+ MPSoC, PL Tap and ARM dap
 	 * are disabled and only PS tap with a specific IDCODE is seen.
