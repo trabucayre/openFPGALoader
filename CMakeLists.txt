@@ -198,7 +198,6 @@ set(OPENFPGALOADER_HEADERS
 	src/cxxopts.hpp
 	src/device.hpp
 	src/display.hpp
-	src/gpio_ll.hpp
 	src/part.hpp
 	src/progressBar.hpp
 )
