@@ -29,7 +29,9 @@
 #include "ice40.hpp"
 #include "lattice.hpp"
 #include "latticeSSPI.hpp"
+#ifdef ENABLE_USB_SCAN
 #include "libusb_ll.hpp"
+#endif
 #include "jtag.hpp"
 #include "part.hpp"
 #include "spiFlash.hpp"
@@ -1206,9 +1208,11 @@ void displaySupported(const struct arguments &args)
 		cout << endl;
 	}
 
+#ifdef ENABLE_USB_SCAN
 	if (args.scan_usb) {
 		libusb_ll usb(0, 0, args.verbose);
 		usb.scan();
 	}
+#endif
 }
 
