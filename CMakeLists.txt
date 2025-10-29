@@ -4,15 +4,27 @@ cmake_minimum_required(VERSION 3.5)
 project(openFPGALoader VERSION "1.0.0" LANGUAGES CXX)
 add_definitions(-DVERSION=\"v${PROJECT_VERSION}\")
 
-option(ENABLE_OPTIM "Enable build with -O3 optimization level" ON)
-option(BUILD_STATIC "Whether or not to build with static libraries" OFF)
+####################################################################################################
+# Generics Options
+####################################################################################################
+
+option(ENABLE_OPTIM       "Enable build with -O3 optimization level"             ON)
+option(BUILD_STATIC       "Whether or not to build with static libraries"        OFF)
+option(USE_PKGCONFIG      "Use pkgconfig to find libraries"                      ON)
+option(LINK_CMAKE_THREADS "Use CMake find_package to link the threading library" OFF)
+
+if (${CMAKE_SYSTEM_NAME} MATCHES "Windows")
+	set(ENABLE_UDEV OFF)
+else()
+	option(ENABLE_UDEV "use udev to search JTAG adapter from /dev/xx" ON)
+endif()
+
+####################################################################################################
+# CABLES Options
+####################################################################################################
 
 # set all cable on by default
-option(ENABLE_CABLE_ALL "Enable all cables" ON)
-
-# set dependencies
-set(USE_LIBUSB OFF)
-set(USE_LIBFTDI OFF)
+option(ENABLE_CABLE_ALL        "Enable all cables"                            ON)
 
 option(ENABLE_CMSISDAP         "enable cmsis DAP interface (requires hidapi)" ${ENABLE_CABLE_ALL})
 option(ENABLE_DFU              ${ENABLE_CABLE_ALL})
@@ -21,33 +33,46 @@ option(ENABLE_GOWIN_GWU2X      "enable Gowin GWU2X interface"                 ${
 option(ENABLE_USB_BLASTERI     ${ENABLE_CABLE_ALL})
 option(ENABLE_USB_BLASTERII    ${ENABLE_CABLE_ALL})
 
+set(BLASTERII_PATH           "" CACHE STRING "usbBlasterII firmware directory")
+set(ISE_PATH "/opt/Xilinx/14.7" CACHE STRING "ise root directory (default: /opt/Xilinx/14.7)")
+
+# Libgpiod, XVC and RemoteBitbang are only available on Linux OS.
 if (${CMAKE_SYSTEM_NAME} MATCHES "Linux")
 	option(ENABLE_LIBGPIOD      "enable libgpiod bitbang driver (requires libgpiod)" ${ENABLE_CABLE_ALL})
 	option(ENABLE_REMOTEBITBANG "enable remote bitbang driver"                       ${ENABLE_CABLE_ALL})
+	option(ENABLE_XILINX_VIRTUAL_CABLE "enable Xilinx Virtual Cable (XVC) support"   ${ENABLE_CABLE_ALL})
 else()
 	set(ENABLE_LIBGPIOD OFF)
 	set(ENABLE_REMOTEBITBANG OFF)
+	set(ENABLE_XILINX_VIRTUAL_CABLE OFF)
 endif()
+
+####################################################################################################
+# Variables
+####################################################################################################
+
+# set dependencies
+set(USE_LIBUSB OFF)
+set(USE_LIBFTDI OFF)
 
 # Only adds libftdi as dependency when a cable
 # need this library.
-if (ENABLE_FTDI_BASED_CABLE OR ENABLE_USB_BLASTERI)
+if (ENABLE_FTDI_BASED_CABLE OR ENABLE_USB_BLASTERI OR ENABLE_XILINX_VIRTUAL_CABLE)
 	set(USE_LIBFTDI ON)
 else()
 	message("disabled all cables based on FTDI devices")
-endif(ENABLE_FTDI_BASED_CABLE OR ENABLE_USB_BLASTERI)
+endif(ENABLE_FTDI_BASED_CABLE OR ENABLE_USB_BLASTERI OR ENABLE_XILINX_VIRTUAL_CABLE)
 
-if (${CMAKE_SYSTEM_NAME} MATCHES "Windows")
-	set(ENABLE_UDEV OFF)
+# Only adds libusb as dependency when a cable need this library
+if (ENABLE_DFU)
+	set(ENABLE_LIBUSB ON)
 else()
-	option(ENABLE_UDEV "use udev to search JTAG adapter from /dev/xx" ON)
-endif()
+	message("disabled all cables using libUSB.")
+endif(ENABLE_DFU)
 
-
-option(USE_PKGCONFIG "Use pkgconfig to find libraries" ON)
-option(LINK_CMAKE_THREADS "Use CMake find_package to link the threading library" OFF)
-set(BLASTERII_PATH "" CACHE STRING "usbBlasterII firmware directory")
-set(ISE_PATH "/opt/Xilinx/14.7" CACHE STRING "ise root directory (default: /opt/Xilinx/14.7)")
+####################################################################################################
+# Build options
+####################################################################################################
 
 ## specify the C++ standard
 set(CMAKE_CXX_STANDARD 11)
@@ -67,6 +92,10 @@ include(GNUInstallDirs)
 add_definitions(-DDATA_DIR=\"${CMAKE_INSTALL_FULL_DATAROOTDIR}\")
 
 add_definitions(-DISE_DIR=\"${ISE_PATH}\")
+
+####################################################################################################
+# Dependencies check/search
+####################################################################################################
 
 if (USE_PKGCONFIG)
 	find_package(PkgConfig REQUIRED)
@@ -122,7 +151,13 @@ if (USE_PKGCONFIG)
 	endif()
 endif()
 
+####################################################################################################
+# FILES
+####################################################################################################
+
+# ===========================
 # Core Classes
+# ===========================
 set(OPENFPGALOADER_SOURCE
 	src/common.cpp
 	src/configBitstreamParser.cpp
@@ -140,20 +175,45 @@ set(OPENFPGALOADER_HEADERS
 	src/cxxopts.hpp
 	src/device.hpp
 	src/display.hpp
+	src/gpio_ll.hpp
 	src/part.hpp
 	src/progressBar.hpp
 )
 
+# ===========================
+# Parsers classes
+# ===========================
+list(APPEND OPENFPGALOADER_SOURCE
+	src/anlogicBitParser.cpp
+	src/bitparser.cpp
+	src/fsparser.cpp
+	src/ihexParser.cpp
+	src/mcsParser.cpp
+	src/pofParser.cpp
+	src/rawParser.cpp
+	src/xilinxMapParser.cpp
+)
+
+list(APPEND OPENFPGALOADER_HEADERS
+	src/anlogicBitParser.hpp
+	src/bitparser.hpp
+	src/fsparser.hpp
+	src/ihexParser.hpp
+	src/mcsParser.hpp
+	src/pofParser.hpp
+	src/rawParser.hpp
+	src/xilinxMapParser.hpp
+)
+
+# ===========================
+# To be sorted
+# ===========================
 list(APPEND OPENFPGALOADER_SOURCE
 	src/anlogic.cpp
-	src/anlogicBitParser.cpp
 	src/anlogicCable.cpp
 	src/dirtyJtag.cpp
 	src/ch347jtag.cpp
 	src/fx2_ll.cpp
-	src/ihexParser.cpp
-	src/pofParser.cpp
-	src/rawParser.cpp
 	src/spiFlash.cpp
 	src/spiInterface.cpp
 	src/epcq.cpp
@@ -162,33 +222,22 @@ list(APPEND OPENFPGALOADER_SOURCE
 	src/libusb_ll.cpp
 	src/gowin.cpp
 	src/jlink.cpp
-	src/fsparser.cpp
-	src/mcsParser.cpp
 	src/altera.cpp
-	src/bitparser.cpp
 	src/xilinx.cpp
-	src/xilinxMapParser.cpp
 	src/esp_usb_jtag.cpp
 )
 
 list(APPEND OPENFPGALOADER_HEADERS
 	src/altera.hpp
 	src/anlogic.hpp
-	src/anlogicBitParser.hpp
 	src/anlogicCable.hpp
 	src/dirtyJtag.hpp
 	src/ch347jtag.hpp
 	src/fx2_ll.hpp
-	src/ihexParser.hpp
-	src/pofParser.hpp
-	src/rawParser.hpp
-	src/bitparser.hpp
 	src/jlink.hpp
 	src/jtag.hpp
 	src/jtagInterface.hpp
 	src/libusb_ll.hpp
-	src/fsparser.hpp
-	src/mcsParser.hpp
 	src/spiFlash.hpp
 	src/spiFlashdb.hpp
 	src/epcq.hpp
@@ -196,7 +245,6 @@ list(APPEND OPENFPGALOADER_HEADERS
 	src/svf_jtag.hpp
 	src/gowin.hpp
 	src/xilinx.hpp
-	src/xilinxMapParser.hpp
 	src/esp_usb_jtag.hpp
 )
 
@@ -404,7 +452,7 @@ if (ENABLE_CMSISDAP)
 	endif()
 endif(ENABLE_CMSISDAP)
 
-if ((${CMAKE_SYSTEM_NAME} MATCHES "Linux") AND USE_LIBFTDI)
+if (ENABLE_XILINX_VIRTUAL_CABLE)
 	add_definitions(-DENABLE_XVC=1)
 	target_sources(openFPGALoader PRIVATE src/xvc_client.cpp src/xvc_server.cpp)
 	list (APPEND OPENFPGALOADER_HEADERS src/xvc_client.hpp src/xvc_server.hpp)
@@ -443,11 +491,15 @@ if (USE_LIBFTDI)
 	list(GET VERSION_LIST 0 LIBFTDI_VERSION_MAJOR)
 	list(GET VERSION_LIST 1 LIBFTDI_VERSION_MINOR)
 	math(EXPR FTDI_VAL "${LIBFTDI_VERSION_MAJOR} * 100 + ${LIBFTDI_VERSION_MINOR}")
+	add_definitions(-DFTDI_VERSION=${FTDI_VAL})
 endif()
 
-add_definitions(-DFTDI_VERSION=${FTDI_VAL})
 
 install(TARGETS openFPGALoader DESTINATION bin)
+
+####################################################################################################
+# SPIOverJtag bitstreams install
+####################################################################################################
 
 file(GLOB GZ_FILES spiOverJtag/spiOverJtag_*.*.gz)
 
