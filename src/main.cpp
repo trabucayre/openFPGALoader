@@ -21,7 +21,9 @@
 #include "common.hpp"
 #include "cxxopts.hpp"
 #include "device.hpp"
+#ifdef ENABLE_DFU
 #include "dfu.hpp"
+#endif
 #include "display.hpp"
 #include "efinix.hpp"
 #include "ftdispi.hpp"

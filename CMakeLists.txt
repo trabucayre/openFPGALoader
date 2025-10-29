@@ -510,6 +510,14 @@ if (ENABLE_CMSISDAP)
 	endif()
 endif(ENABLE_CMSISDAP)
 
+# DFU
+if (ENABLE_DFU)
+	add_definitions(-DENABLE_DFU=1)
+	message("DFU support enabled")
+else()
+	message("DFU support disabled")
+endif()
+
 # dirtyJtag
 if (ENABLE_DIRTYJTAG)
 	add_definitions(-DENABLE_DIRTYJTAG=1)
