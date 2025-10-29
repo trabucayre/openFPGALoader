@@ -19,6 +19,8 @@ else()
 	option(ENABLE_UDEV "use udev to search JTAG adapter from /dev/xx" ON)
 endif()
 
+option(ENABLE_USB_SCAN "Enable USB Scan option" ON)
+
 ####################################################################################################
 # CABLES Options
 ####################################################################################################
@@ -26,7 +28,12 @@ endif()
 # set all cable on by default
 option(ENABLE_CABLE_ALL        "Enable all cables"                            ON)
 
+option(ENABLE_ANLOGIC_CABLE    "enable Anlogic cable (requires libUSB)"       ${ENABLE_CABLE_ALL})
+option(ENABLE_CH347            "enable CH347 cable (requires libUSB)"         ${ENABLE_CABLE_ALL})
 option(ENABLE_CMSISDAP         "enable cmsis DAP interface (requires hidapi)" ${ENABLE_CABLE_ALL})
+option(ENABLE_DIRTYJTAG        "enable dirtyJtag cable (requires libUSB)"     ${ENABLE_CABLE_ALL})
+option(ENABLE_ESP_USB          "enable ESP32S3 cable (requires libUSB)"       ${ENABLE_CABLE_ALL})
+option(ENABLE_JLINK            "enable JLink cable (requires libUSB)"         ${ENABLE_CABLE_ALL})
 option(ENABLE_DFU              ${ENABLE_CABLE_ALL})
 option(ENABLE_FTDI_BASED_CABLE ${ENABLE_CABLE_ALL})
 option(ENABLE_GOWIN_GWU2X      "enable Gowin GWU2X interface"                 ${ENABLE_CABLE_ALL})
@@ -42,8 +49,8 @@ if (${CMAKE_SYSTEM_NAME} MATCHES "Linux")
 	option(ENABLE_REMOTEBITBANG "enable remote bitbang driver"                       ${ENABLE_CABLE_ALL})
 	option(ENABLE_XILINX_VIRTUAL_CABLE "enable Xilinx Virtual Cable (XVC) support"   ${ENABLE_CABLE_ALL})
 else()
-	set(ENABLE_LIBGPIOD OFF)
-	set(ENABLE_REMOTEBITBANG OFF)
+	set(ENABLE_LIBGPIOD             OFF)
+	set(ENABLE_REMOTEBITBANG        OFF)
 	set(ENABLE_XILINX_VIRTUAL_CABLE OFF)
 endif()
 
@@ -52,8 +59,10 @@ endif()
 ####################################################################################################
 
 # set dependencies
-set(USE_LIBUSB OFF)
-set(USE_LIBFTDI OFF)
+set(USE_FX2_LL    OFF)
+set(USE_LIBFTDI   OFF)
+set(USE_LIBUSB    OFF)
+set(USE_LIBUSB_LL OFF)
 
 # Only adds libftdi as dependency when a cable
 # need this library.
@@ -64,11 +73,19 @@ else()
 endif(ENABLE_FTDI_BASED_CABLE OR ENABLE_USB_BLASTERI OR ENABLE_XILINX_VIRTUAL_CABLE)
 
 # Only adds libusb as dependency when a cable need this library
-if (ENABLE_DFU)
-	set(ENABLE_LIBUSB ON)
-else()
-	message("disabled all cables using libUSB.")
-endif(ENABLE_DFU)
+if (ENABLE_DFU OR ENABLE_ANLOGIC_CABLE OR ENABLE_CH347 OR ENABLE_DIRTYJTAG
+		OR ENABLE_ESP_USB OR ENABLE_JLINK OR ENABLE_GOWIN_GWU2X OR ENABLE_USB_BLASTERII OR ENABLE_USB_SCAN)
+	set(USE_LIBUSB ON)
+endif()
+
+if (ENABLE_USB_SCAN OR ENABLE_GOWIN_GWU2X)
+	set(USE_LIBUSB_LL ON)
+endif()
+
+# Only enable fx2_ll when cable using it
+if (ENABLE_USB_BLASTERII)
+	set(USE_FX2_LL ON)
+endif()
 
 ####################################################################################################
 # Build options
@@ -108,7 +125,13 @@ if (USE_PKGCONFIG)
 		set(LIBFTDI_LIBRARIES    "")
 	endif(USE_LIBFTDI)
 
-	pkg_check_modules(LIBUSB REQUIRED libusb-1.0)
+	if (USE_LIBUSB)
+		pkg_check_modules(LIBUSB REQUIRED libusb-1.0)
+	else()
+		set(LIBUSB_LIBRARY_DIRS "")
+		set(LIBUSB_INCLUDE_DIRS "")
+		set(LIBUSB_LIBRARIES    "")
+	endif(USE_LIBUSB)
 
 	if(ENABLE_CMSISDAP)
 	pkg_check_modules(HIDAPI hidapi-libusb)
@@ -210,34 +233,21 @@ list(APPEND OPENFPGALOADER_HEADERS
 # ===========================
 list(APPEND OPENFPGALOADER_SOURCE
 	src/anlogic.cpp
-	src/anlogicCable.cpp
-	src/dirtyJtag.cpp
-	src/ch347jtag.cpp
-	src/fx2_ll.cpp
 	src/spiFlash.cpp
 	src/spiInterface.cpp
 	src/epcq.cpp
 	src/svf_jtag.cpp
 	src/jtag.cpp
-	src/libusb_ll.cpp
 	src/gowin.cpp
-	src/jlink.cpp
 	src/altera.cpp
 	src/xilinx.cpp
-	src/esp_usb_jtag.cpp
 )
 
 list(APPEND OPENFPGALOADER_HEADERS
 	src/altera.hpp
 	src/anlogic.hpp
-	src/anlogicCable.hpp
-	src/dirtyJtag.hpp
-	src/ch347jtag.hpp
-	src/fx2_ll.hpp
-	src/jlink.hpp
 	src/jtag.hpp
 	src/jtagInterface.hpp
-	src/libusb_ll.hpp
 	src/spiFlash.hpp
 	src/spiFlashdb.hpp
 	src/epcq.hpp
@@ -245,7 +255,6 @@ list(APPEND OPENFPGALOADER_HEADERS
 	src/svf_jtag.hpp
 	src/gowin.hpp
 	src/xilinx.hpp
-	src/esp_usb_jtag.hpp
 )
 
 # FTDI Based cables
@@ -299,7 +308,6 @@ if (${USE_LIBFTDI})
 		src/ice40.hpp
 		src/latticeSSPI.hpp
 	)
-
 endif()
 
 # Lattice Drivers / Files parsers.
@@ -332,6 +340,66 @@ list(APPEND OPENFPGALOADER_HEADERS
 )
 endif(ENABLE_DFU)
 
+# Anlogic Cable
+if (ENABLE_ANLOGIC_CABLE)
+list(APPEND OPENFPGALOADER_SOURCE  src/anlogicCable.cpp)
+list(APPEND OPENFPGALOADER_HEADERS src/anlogicCable.hpp)
+endif()
+
+# CH347
+if (ENABLE_CH347)
+list(APPEND OPENFPGALOADER_SOURCE  src/ch347jtag.cpp)
+list(APPEND OPENFPGALOADER_HEADERS src/ch347jtag.hpp)
+endif()
+
+# dirtyJtag
+if (ENABLE_DIRTYJTAG)
+list(APPEND OPENFPGALOADER_SOURCE  src/dirtyJtag.cpp)
+list(APPEND OPENFPGALOADER_HEADERS src/dirtyJtag.hpp)
+endif()
+
+# ESP32S3
+if (ENABLE_ESP_USB)
+list(APPEND OPENFPGALOADER_SOURCE  src/esp_usb_jtag.cpp)
+list(APPEND OPENFPGALOADER_HEADERS src/esp_usb_jtag.hpp)
+endif()
+
+# Gowin GWU2X JTAG interface
+if(ENABLE_GOWIN_GWU2X)
+list(APPEND OPENFPGALOADER_SOURCE  src/gwu2x_jtag.cpp)
+list(APPEND OPENFPGALOADER_HEADERS src/gwu2x_jtag.hpp)
+endif()
+
+# Jetson Nano (libGPIO based)
+if (ENABLE_JETSONNANOGPIO)
+list(APPEND OPENFPGALOADER_SOURCE  src/jetsonNanoJtagBitbang.cpp)
+list(APPEND OPENFPGALOADER_HEADERS src/jetsonNanoJtagBitbang.hpp)
+endif()
+
+# JLINK
+if (ENABLE_JLINK)
+list(APPEND OPENFPGALOADER_SOURCE  src/jlink.cpp)
+list(APPEND OPENFPGALOADER_HEADERS src/jlink.hpp)
+endif()
+
+# libGPIOD support
+if (ENABLE_LIBGPIOD)
+list(APPEND OPENFPGALOADER_SOURCE  src/libgpiodJtagBitbang.cpp)
+list(APPEND OPENFPGALOADER_HEADERS src/libgpiodJtagBitbang.hpp)
+endif()
+
+# RemoteBitbang
+if (ENABLE_REMOTEBITBANG)
+list (APPEND OPENFPGALOADER_SOURCE  src/remoteBitbang_client.cpp)
+list (APPEND OPENFPGALOADER_HEADERS src/remoteBitbang_client.hpp)
+endif()
+
+# Xilinx Virtual Cable
+if (ENABLE_XILINX_VIRTUAL_CABLE)
+list (APPEND OPENFPGALOADER_SOURCE  src/xvc_client.cpp src/xvc_server.cpp)
+list (APPEND OPENFPGALOADER_HEADERS src/xvc_client.hpp src/xvc_server.hpp)
+endif()
+
 # Altera USB Blaster (I & II).
 if (ENABLE_USB_BLASTERI OR ENABLE_USB_BLASTERII)
 	add_definitions(-DENABLE_USBBLASTER)
@@ -345,13 +413,8 @@ if (ENABLE_USB_BLASTERI OR ENABLE_USB_BLASTERII)
 		add_definitions(-DENABLE_USB_BLASTERII)
 	endif (ENABLE_USB_BLASTERII)
 
-	list(APPEND OPENFPGALOADER_SOURCE
-		src/usbBlaster.cpp
-	)
-
-	list(APPEND OPENFPGALOADER_HEADERS
-		src/usbBlaster.hpp
-	)
+	list(APPEND OPENFPGALOADER_SOURCE  src/usbBlaster.cpp)
+	list(APPEND OPENFPGALOADER_HEADERS src/usbBlaster.hpp)
 endif(ENABLE_USB_BLASTERI OR ENABLE_USB_BLASTERII)
 
 link_directories(
@@ -365,6 +428,16 @@ endif()
 
 if (ENABLE_CMSISDAP AND HIDAPI_FOUND)
 	link_directories(${HIDAPI_LIBRARY_DIRS})
+endif()
+
+if (USE_LIBUSB_LL)
+list(APPEND OPENFPGALOADER_SOURCE  src/libusb_ll.cpp)
+list(APPEND OPENFPGALOADER_HEADERS src/libusb_ll.hpp)
+endif()
+
+if (USE_FX2_LL)
+list(APPEND OPENFPGALOADER_SOURCE  src/fx2_ll.cpp)
+list(APPEND OPENFPGALOADER_HEADERS src/fx2_ll.hpp)
 endif()
 
 add_executable(openFPGALoader
@@ -381,16 +454,6 @@ target_link_libraries(openFPGALoader
 	${LIBUSB_LIBRARIES}
 	${LIBFTDI_LIBRARIES}
 )
-
-# Gowin GWU2X JTAG interface
-if(ENABLE_GOWIN_GWU2X)
-	target_sources(openFPGALoader PRIVATE src/gwu2x_jtag.cpp)
-	list (APPEND OPENFPGALOADER_HEADERS src/gwu2x_jtag.hpp)
-	add_definitions(-DENABLE_GOWIN_GWU2X=1)
-	message("Gowin GWU2X support enabled")
-else()
-	message("Gowin GWU2X support disabled")
-endif()
 
 if (${CMAKE_SYSTEM_NAME} MATCHES "Windows")
 	# winsock provides ntohs
@@ -410,33 +473,28 @@ if (ENABLE_UDEV)
 	target_link_libraries(openFPGALoader ${LIBUDEV_LIBRARIES})
 endif()
 
-if (ENABLE_LIBGPIOD)
-	include_directories(${LIBGPIOD_INCLUDE_DIRS})
-	target_link_libraries(openFPGALoader ${LIBGPIOD_LIBRARIES})
-	add_definitions(-DENABLE_LIBGPIOD=1)
-	target_sources(openFPGALoader PRIVATE src/libgpiodJtagBitbang.cpp)
-	list (APPEND OPENFPGALOADER_HEADERS src/libgpiodJtagBitbang.hpp)
-	if (LIBGPIOD_VERSION VERSION_GREATER_EQUAL 2)
-		message("libgpiod v2 support enabled")
-		add_definitions(-DGPIOD_APIV2)
-	else()
-		message("libgpiod v1 support enabled")
-	endif()
-endif(ENABLE_LIBGPIOD)
-
-if (ENABLE_JETSONNANOGPIO)
-	add_definitions(-DENABLE_JETSONNANOGPIO=1)
-	target_sources(openFPGALoader PRIVATE src/jetsonNanoJtagBitbang.cpp)
-	list (APPEND OPENFPGALOADER_HEADERS src/jetsonNanoJtagBitbang.hpp)
-	message("Jetson Nano GPIO support enabled")
-endif(ENABLE_JETSONNANOGPIO)
-
 if (ENABLE_UDEV OR ENABLE_LIBGPIOD OR ENABLE_JETSONNANOGPIO)
 	add_definitions(-DUSE_DEVICE_ARG)
 endif(ENABLE_UDEV OR ENABLE_LIBGPIOD OR ENABLE_JETSONNANOGPIO)
 
 if (BUILD_STATIC)
 	set_target_properties(openFPGALoader PROPERTIES LINK_SEARCH_END_STATIC 1)
+endif()
+
+# Anlogic Cable
+if (ENABLE_ANLOGIC_CABLE)
+	add_definitions(-DENABLE_ANLOGIC_CABLE=1)
+	message("Anlogic Cable support enabled")
+else()
+	message("Anlogic Cable support disabled")
+endif()
+
+# CH347
+if (ENABLE_CH347)
+	add_definitions(-DENABLE_CH347=1)
+	message("CH347 support enabled")
+else()
+	message("CH347 support disabled")
 endif()
 
 if (ENABLE_CMSISDAP)
@@ -452,23 +510,75 @@ if (ENABLE_CMSISDAP)
 	endif()
 endif(ENABLE_CMSISDAP)
 
-if (ENABLE_XILINX_VIRTUAL_CABLE)
-	add_definitions(-DENABLE_XVC=1)
-	target_sources(openFPGALoader PRIVATE src/xvc_client.cpp src/xvc_server.cpp)
-	list (APPEND OPENFPGALOADER_HEADERS src/xvc_client.hpp src/xvc_server.hpp)
-	set(CMAKE_EXE_LINKER_FLAGS "-pthread ${CMAKE_EXE_LINKER_FLAGS}")
-	message("Xilinx Virtual Server support enabled")
+# dirtyJtag
+if (ENABLE_DIRTYJTAG)
+	add_definitions(-DENABLE_DIRTYJTAG=1)
+	message("dirtyJtag support enabled")
 else()
-		message("Xilinx Virtual Server support disabled")
+	message("dirtyJtag support disabled")
 endif()
+
+# ESP32S3
+if (ENABLE_ESP_USB)
+	add_definitions(-DENABLE_ESP_USB=1)
+	message("ESP32S3 support enabled")
+else()
+	message("ESP32S3 support disabled")
+endif()
+
+# Gowin GWU2X JTAG interface
+if(ENABLE_GOWIN_GWU2X)
+	add_definitions(-DENABLE_GOWIN_GWU2X=1)
+	message("Gowin GWU2X support enabled")
+else()
+	message("Gowin GWU2X support disabled")
+endif()
+
+# Jetson Nano (libGPIO based)
+if (ENABLE_JETSONNANOGPIO)
+	add_definitions(-DENABLE_JETSONNANOGPIO=1)
+	message("Jetson Nano GPIO support enabled")
+endif(ENABLE_JETSONNANOGPIO)
+
+# JLINK
+if (ENABLE_JLINK)
+	add_definitions(-DENABLE_JLINK=1)
+	message("JLink support enabled")
+else()
+	message("JLink support disabled")
+endif()
+
+# libGPIOD support
+if (ENABLE_LIBGPIOD)
+	include_directories(${LIBGPIOD_INCLUDE_DIRS})
+	target_link_libraries(openFPGALoader ${LIBGPIOD_LIBRARIES})
+	add_definitions(-DENABLE_LIBGPIOD=1)
+	if (LIBGPIOD_VERSION VERSION_GREATER_EQUAL 2)
+		message("libgpiod v2 support enabled")
+		add_definitions(-DGPIOD_APIV2)
+	else()
+		message("libgpiod v1 support enabled")
+	endif()
+endif(ENABLE_LIBGPIOD)
 
 if (ENABLE_REMOTEBITBANG)
 	add_definitions(-DENABLE_REMOTEBITBANG=1)
-	target_sources(openFPGALoader PRIVATE src/remoteBitbang_client.cpp)
-	list (APPEND OPENFPGALOADER_HEADERS src/remoteBitbang_client.hpp)
 	message("Remote bitbang client support enabled")
 else()
 	message("Remote bitbang client support disabled")
+endif()
+
+if (ENABLE_XILINX_VIRTUAL_CABLE)
+	add_definitions(-DENABLE_XVC=1)
+	set(CMAKE_EXE_LINKER_FLAGS "-pthread ${CMAKE_EXE_LINKER_FLAGS}")
+	message("Xilinx Virtual Server support enabled")
+else()
+	message("Xilinx Virtual Server support disabled")
+endif()
+
+# USB Devices Scan
+if (ENABLE_USB_SCAN)
+	add_definitions("-DENABLE_USB_SCAN=1")
 endif()
 
 if (ZLIB_FOUND)
