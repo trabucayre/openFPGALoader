@@ -47,11 +47,16 @@ CologneChip::CologneChip(Jtag* jtag, const std::string &filename,
 	} else if (cable_name == "gatemate_pgm") {
 		ftdi_board_name = "gatemate_pgm_spi";
 	} else if (cable_name == "dirtyJtag") {
+#ifdef ENABLE_DIRTYJTAG
 		_dirtyjtag = reinterpret_cast<DirtyJtag *>(_jtag->_jtag);
 		_rstn_pin = (1 << 6);
 		_done_pin = 0;
 		_fail_pin = 0;
 		_oen_pin  = 0;
+#else
+		std::cerr << "Jtag: support for dirtyJtag cable was not enabled at compile time" << std::endl;
+		throw std::exception();
+#endif
 	}
 
 	if (ftdi_board_name != "") {
@@ -90,10 +95,12 @@ void CologneChip::reset()
 		_ftdi_jtag->gpio_clear(_rstn_pin | _oen_pin);
 		usleep(SLEEP_US);
 		_ftdi_jtag->gpio_set(_rstn_pin);
+#ifdef ENABLE_DIRTYJTAG
 	} else if (_dirtyjtag) {
 		_dirtyjtag->gpio_clear(_rstn_pin);
 		_dirtyjtag->gpio_set(_rstn_pin);
 		usleep(SLEEP_US);
+#endif
 	}
 }
 
@@ -142,10 +149,12 @@ bool CologneChip::prepare_flash_access()
 		/* enable output and disable reset */
 		_ftdi_jtag->gpio_clear(_oen_pin);
 		_ftdi_jtag->gpio_set(_rstn_pin);
+#ifdef ENABLE_DIRTYJTAG
 	} else if (_dirtyjtag) {
 		_dirtyjtag->gpio_clear(_rstn_pin);
 		_dirtyjtag->gpio_set(_rstn_pin);
 		usleep(SLEEP_US);
+#endif
 	}
 
 	return true;
