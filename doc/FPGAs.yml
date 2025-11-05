@@ -308,6 +308,14 @@ Xilinx:
     Memory: OK
     Flash: OK (primary)
 
+  - Description: Kintex UltraScale+
+    Model:
+      - xcku3p
+      - xcku5p
+    URL: https://www.xilinx.com/products/silicon-devices/fpga/kintex-ultrascale-plus.html#productTable
+    Memory: OK
+    Flash: OK
+
   - Description: Virtex 6
     Model:
       - xc6vlx130t
