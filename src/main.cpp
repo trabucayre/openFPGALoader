@@ -149,6 +149,16 @@ int main(int argc, char **argv)
 		return EXIT_SUCCESS;
 	}
 
+    // Check if file exists and is readable
+	{
+		std::ifstream file(args.bit_file);
+	    if (!args.bit_file.empty() && !file.good()) {
+            printError("Error: cannot open file '" + args.bit_file + "'");
+            return EXIT_FAILURE;
+        }
+        file.close();
+    }
+
 	if (args.prg_type == Device::WR_SRAM)
 		cout << "write to ram" << endl;
 	if (args.prg_type == Device::WR_FLASH)
