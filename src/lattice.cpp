@@ -746,13 +746,19 @@ bool Lattice::prepare_flash_access()
 	/* clear SRAM before SPI access */
 	if (!clearSRAM())
 		return false;
-	/*IR = 0h3A, DR=0hFE,0h68. Enter RUNTESTIDLE.
-	 * thank @GregDavill
-	 * https://twitter.com/GregDavill/status/1251786406441086977
-	 */
-	_jtag->shiftIR(0x3A, 8, Jtag::EXIT1_IR);
-	uint8_t tmp[2] = {0xFE, 0x68};
-	_jtag->shiftDR(tmp, NULL, 16);
+	if (_fpga_family == ECP3_FAMILY) {
+		if (!wr_rd(0x3A, 0, 0, 0, 0, false))
+			return false;
+		_jtag->set_state(Jtag::RUN_TEST_IDLE);
+	} else {
+		/*IR = 0h3A, DR=0hFE,0h68. Enter RUNTESTIDLE.
+		 * thank @GregDavill
+		 * https://twitter.com/GregDavill/status/1251786406441086977
+		 */
+		_jtag->shiftIR(0x3A, 8, Jtag::EXIT1_IR);
+		uint8_t tmp[2] = {0xFE, 0x68};
+		_jtag->shiftDR(tmp, NULL, 16);
+	}
 	return true;
 }
 
@@ -763,50 +769,55 @@ bool Lattice::post_flash_access()
 		printInfo("Skip resetting device");
 		return true;
 	}
-	/* ISC REFRESH 0x79 */
-	if (loadConfiguration() == false) {
-		/* when flash is blank status displays failure:
-		 * try to check flash first sector
-		 */
-		_skip_reset = true;  // avoid infinite loop
-		/* read flash 0 -> 255 */
-		uint8_t buffer[256];
-		ret = SPIInterface::read(buffer, 0, 256);
-		loadConfiguration(); // reset again
-
-		/* read ok? check if everything == 0xff */
-		if (ret) {
-			for (int i = 0; i < 256; i++) {
-				/* not blank: fail */
-				if (buffer[i] != 0xFF) {
-					ret = false;
-					break;
-				}
-			}
-			/* to add a note */
-			flash_blank = true;
-		}
-	}
-
-	printInfo("Refresh: ", false);
-	if (!ret) {
-		printError("FAIL");
-		displayReadReg(readStatusReg());
-		return false;
+	if (_fpga_family == ECP3_FAMILY) {
+		_jtag->shiftIR(0xFF, 8, Jtag::RUN_TEST_IDLE);
+		_jtag->shiftIR(0x23, 8, Jtag::RUN_TEST_IDLE);
 	} else {
-		printSuccess("DONE");
-		if (flash_blank)
-			printWarn("Flash is blank");
-	}
+		/* ISC REFRESH 0x79 */
+		if (loadConfiguration() == false) {
+			/* when flash is blank status displays failure:
+			 * try to check flash first sector
+			 */
+			_skip_reset = true;  // avoid infinite loop
+			/* read flash 0 -> 255 */
+			uint8_t buffer[256];
+			ret = SPIInterface::read(buffer, 0, 256);
+			loadConfiguration(); // reset again
 
-	/* bypass */
-	wr_rd(0xff, NULL, 0, NULL, 0);
-	_jtag->go_test_logic_reset();
+			/* read ok? check if everything == 0xff */
+			if (ret) {
+				for (int i = 0; i < 256; i++) {
+					/* not blank: fail */
+					if (buffer[i] != 0xFF) {
+						ret = false;
+						break;
+					}
+				}
+				/* to add a note */
+				flash_blank = true;
+			}
+		}
+
+		printInfo("Refresh: ", false);
+		if (!ret) {
+			printError("FAIL");
+			displayReadReg(readStatusReg());
+			return false;
+		} else {
+			printSuccess("DONE");
+			if (flash_blank)
+				printWarn("Flash is blank");
+		}
+
+		/* bypass */
+		wr_rd(0xff, NULL, 0, NULL, 0);
+		_jtag->go_test_logic_reset();
+	}
 	return true;
 }
 void Lattice::reset()
 {
-	if (_fpga_family == ECP5_FAMILY)
+	if (_fpga_family == ECP5_FAMILY || _fpga_family == ECP3_FAMILY)
 		post_flash_access();
 	else
 		printError("Lattice Reset only tested on ECP5 Family.");
@@ -1670,9 +1681,13 @@ uint16_t Lattice::getUFMStartPageFromJEDEC(JedParser *_jed, int id)
 
 int Lattice::spi_put(uint8_t cmd, const uint8_t *tx, uint8_t *rx, uint32_t len)
 {
-	int xfer_len = len + 1;
+	const uint32_t xfer_len = len + 1 + ((rx != NULL) && ((_fpga_family == ECP3_FAMILY)) ? 1 : 0);
+	const uint32_t xfer_bit_len = (len + 1) * 8 + ((rx != NULL) && ((_fpga_family == ECP3_FAMILY)) ? 1 : 0);
 	uint8_t jtx[xfer_len];
 	uint8_t jrx[xfer_len];
+
+	memset(jrx, 0, xfer_len);
+	memset(jtx, 0, xfer_len);
 
 	jtx[0] = LatticeBitParser::reverseByte(cmd);
 
@@ -1685,11 +1700,18 @@ int Lattice::spi_put(uint8_t cmd, const uint8_t *tx, uint8_t *rx, uint32_t len)
 	 * in the same time store each byte
 	 * to next
 	 */
-	_jtag->shiftDR(jtx, (rx == NULL)? NULL: jrx, 8*xfer_len);
+	_jtag->shiftDR(jtx, (!rx)? NULL: jrx, xfer_bit_len);
 
-	if (rx != NULL) {
-		for (uint32_t i=0; i < len; i++)
-			rx[i] = LatticeBitParser::reverseByte(jrx[i+1]);
+	if (rx) {
+		if (_fpga_family == ECP3_FAMILY) {
+			for (uint32_t i = 0; i < len; ++i) {
+				const uint8_t tmp = LatticeBitParser::reverseByte((jrx[i+1] >> 1) & 0x7f);
+				rx[i] = tmp | (jrx[i + 2] & 0x01);
+			}
+		} else {
+			for (uint32_t i=0; i < len; i++)
+				rx[i] = LatticeBitParser::reverseByte(jrx[i+1]);
+		}
 	}
 	return 0;
 }
@@ -1725,11 +1747,12 @@ int Lattice::spi_put(const uint8_t *tx, uint8_t *rx, uint32_t len)
 int Lattice::spi_wait(uint8_t cmd, uint8_t mask, uint8_t cond,
 		uint32_t timeout, bool verbose)
 {
-	uint8_t rx;
+	uint8_t rx[2];
 	uint8_t dummy[2] = {0xff};
 	uint8_t tmp;
 	uint8_t tx = LatticeBitParser::reverseByte(cmd);
 	uint32_t count = 0;
+	uint32_t nb_byte = (_fpga_family == ECP3_FAMILY) ? 2 : 1;
 
 	/* CS is low until state goes to EXIT1_IR
 	 * so manually move to state machine to stay is this
@@ -1738,11 +1761,14 @@ int Lattice::spi_wait(uint8_t cmd, uint8_t mask, uint8_t cond,
 	_jtag->shiftDR(&tx, NULL, 8, Jtag::SHIFT_DR);
 
 	do {
-		_jtag->shiftDR(dummy, &rx, 8, Jtag::SHIFT_DR);
-		tmp = (LatticeBitParser::reverseByte(rx));
+		_jtag->shiftDR(dummy, rx, 8 * nb_byte, Jtag::SHIFT_DR);
+		if (_fpga_family == ECP3_FAMILY)
+			tmp = LatticeBitParser::reverseByte(rx[0] >> 1) | (rx[1] & 0x01);
+		else
+			tmp = (LatticeBitParser::reverseByte(rx[0]));
 		count++;
 		if (count == timeout){
-			printf("timeout: %x %x %u\n", tmp, rx, count);
+			printf("timeout: %x %x %u\n", tmp, rx[0], count);
 			break;
 		}
 
@@ -1750,7 +1776,7 @@ int Lattice::spi_wait(uint8_t cmd, uint8_t mask, uint8_t cond,
 			printf("%x %x %x %u\n", tmp, mask, cond, count);
 		}
 	} while ((tmp & mask) != cond);
-	_jtag->shiftDR(dummy, &rx, 8, Jtag::RUN_TEST_IDLE);
+	_jtag->shiftDR(dummy, rx, 8, Jtag::RUN_TEST_IDLE);
 	if (count == timeout) {
 		printf("%x\n", tmp);
 		std::cout << "wait: Error" << std::endl;
