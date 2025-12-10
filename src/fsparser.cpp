@@ -195,6 +195,7 @@ int FsParser::parse()
 			nb_line = 2038;
 			break;
 		case 0x0001281b: /* GW5A-25 */
+		case 0x0001681b: /* GW5AT-15 */
 		case 0x0001481b: /* GW5AT-60 */
 		case 0x0001081b: /* GW5AST-138 */
 			/*
