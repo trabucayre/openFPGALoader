@@ -21,7 +21,7 @@ ALTERA_PARTS := 10cl025256 10cl016484 10cl055484 \
 	ep4ce622 ep4ce1017 ep4ce2217 ep4ce1523 ep4ce11523 ep4cgx15027 5ce215 5ce223 5ce423 5ce523 5ce927 5sgsd5
 ALTERA_BIT_FILES := $(addsuffix .rbf.gz, $(addprefix spiOverJtag_, $(ALTERA_PARTS)))
 
-EFINIX_PARTS := t8f81 t13f256 ti180j484
+EFINIX_PARTS := t8f81 t13f256 t120f324 ti180j484
 EFINIX_BIT_FILES := $(addsuffix .bit.gz, $(addprefix spiOverJtag_efinix_, $(EFINIX_PARTS)))
 
 BIT_FILES := $(ALTERA_BIT_FILES) $(EFINIX_BIT_FILES) $(XILINX_BIT_FILES)
