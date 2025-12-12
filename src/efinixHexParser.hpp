@@ -28,6 +28,9 @@ class EfinixHexParser: public ConfigBitstreamParser {
 		 * \return EXIT_SUCCESS is file is fully read, EXIT_FAILURE otherwise
 		 */
 		int parse() override;
+	
+	private:
+		int parseHeader();
 };
 
 #endif  // SRC_EFINIXHEXPARSER_HPP_

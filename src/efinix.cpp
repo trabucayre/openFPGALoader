@@ -8,6 +8,7 @@
 #include <string.h>
 #include <unistd.h>
 
+#include <algorithm>
 #include <iostream>
 #include <stdexcept>
 #include <string>
@@ -204,6 +205,29 @@ void Efinix::program(unsigned int offset, bool unprotect_flash)
 
 	if (_verbose)
 		bit->displayHeader();
+
+	if (_mode == FLASH_MODE) {
+		try {
+			if (!_device_package.empty()) {
+				std::string device = bit->getHeaderVal("device");
+				std::transform(device.begin(), device.end(), device.begin(), ::tolower);
+				std::string target = _device_package;
+				std::transform(target.begin(), target.end(), target.begin(), ::tolower);
+				if (!device.empty() && device != target) {
+					delete bit;
+					throw std::runtime_error("device mismatch: " + device + " != " + target);
+				}
+			}
+			std::string mode = bit->getHeaderVal("mode");
+			if (mode.find("passive") != std::string::npos) {
+				delete bit;
+				throw std::runtime_error("passive mode not supported for flash");
+			}
+		} catch (std::runtime_error& e) {
+			throw;
+		} catch (...) {
+		}
+	}
 
 	switch (_mode) {
 		case MEM_MODE:
