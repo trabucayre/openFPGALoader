@@ -29,7 +29,7 @@ Anlogic::Anlogic(Jtag *jtag, const std::string &filename,
 	const std::string &file_type,
 	Device::prog_type_t prg_type, bool verify, int8_t verbose):
 	Device(jtag, filename, file_type, verify, verbose),
-	SPIInterface(filename, verbose, 0, verify)
+	SPIInterface(filename, verbose, 0, verify), _target_freq(0)
 {
 	if (prg_type == Device::RD_FLASH) {
 		_mode = Device::READ_MODE;
@@ -157,6 +157,11 @@ uint32_t Anlogic::idCode()
 
 bool Anlogic::prepare_flash_access()
 {
+	_target_freq = _jtag->getClkFreq();
+	if (_target_freq > 6000000) {
+		_jtag->setClkFreq(6000000);
+	}
+
 	for (int i = 0; i < 5; i++)
 		_jtag->shiftIR(BYPASS, IRLENGTH);
 	//Verify Device id.
@@ -172,6 +177,13 @@ bool Anlogic::prepare_flash_access()
 	for (int i = 0; i < 4; i++)
 		_jtag->toggleClk(50000);
 	return true;
+}
+
+void Anlogic::restore_flash_access_frequency()
+{
+	if (_target_freq > 6000000) {
+		_jtag->setClkFreq(_target_freq);
+	}
 }
 
 /* SPI wrapper

@@ -69,9 +69,16 @@ class Anlogic: public Device, SPIInterface {
 		 */
 		virtual bool prepare_flash_access() override;
 		/*!
+		 * \brief restore frequency after flash ID read
+		 */
+		virtual void restore_flash_access_frequency() override;
+		/*!
 		 * \brief end of device to SPI access
 		 */
 		virtual bool post_flash_access() override {reset(); return true;}
+
+private:
+		uint32_t _target_freq; /*< target JTAG frequency */
 
 };
 
