@@ -109,6 +109,10 @@ class SPIInterface {
 	 */
 	virtual bool prepare_flash_access() {return false;}
 	/*!
+	 * \brief restore frequency after flash ID read
+	 */
+	virtual void restore_flash_access_frequency() {}
+	/*!
 	 * \brief end of SPI flash access
 	 */
 	virtual bool post_flash_access() {return false;}

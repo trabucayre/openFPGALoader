@@ -187,6 +187,7 @@ bool SPIInterface::write(uint32_t offset, const uint8_t *data, uint32_t len,
 	/* test SPI */
 	try {
 		SPIFlash flash(this, unprotect_flash, _spif_verbose);
+		restore_flash_access_frequency();
 		flash.read_status_reg();
 		if (flash.erase_and_prog(offset, data, len) == -1)
 			ret = false;
