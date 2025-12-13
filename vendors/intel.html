@@ -1,0 +1,339 @@
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" >
+<head>
+  <meta charset="utf-8" /><meta name="viewport" content="width=device-width, initial-scale=1" />
+
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Intel notes &mdash; openFPGALoader: universal utility for programming FPGA latest documentation</title>
+      <link rel="stylesheet" href="../_static/pygments.css" type="text/css" />
+      <link rel="stylesheet" href="../_static/css/theme.css" type="text/css" />
+  <!--[if lt IE 9]>
+    <script src="../_static/js/html5shiv.min.js"></script>
+  <![endif]-->
+  
+        <script src="../_static/documentation_options.js?v=c6e86fd7"></script>
+        <script src="../_static/doctools.js?v=888ff710"></script>
+        <script src="../_static/sphinx_highlight.js?v=dc90522c"></script>
+    <script src="../_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="../genindex.html" />
+    <link rel="search" title="Search" href="../search.html" />
+    <link rel="next" title="Lattice notes" href="lattice.html" />
+    <link rel="prev" title="Gowin notes" href="gowin.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+            <a href="../index.html" class="icon icon-home"> openFPGALoader: universal utility for programming FPGA
+          </a>
+              <div class="version">
+                latest
+              </div>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <p class="caption" role="heading"><span class="caption-text">User Guide</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../guide/first-steps.html">First steps with openFPGALoader</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../guide/install.html">Installing openFPGALoader</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../guide/troubleshooting.html">Troubleshooting</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../guide/advanced.html">Advanced usage of openFPGALoader</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Compatibility</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../compatibility/fpga.html">FPGAs</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../compatibility/board.html">Boards</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../compatibility/cable.html">Cables</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Vendors</span></p>
+<ul class="current">
+<li class="toctree-l1"><a class="reference internal" href="anlogic.html">Anlogic notes</a></li>
+<li class="toctree-l1"><a class="reference internal" href="colognechip.html">Cologne Chip notes</a></li>
+<li class="toctree-l1"><a class="reference internal" href="efinix.html">Efinix notes</a></li>
+<li class="toctree-l1"><a class="reference internal" href="gowin.html">Gowin notes</a></li>
+<li class="toctree-l1 current"><a class="current reference internal" href="#">Intel notes</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="#intel-altera">Intel/Altera</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="#loading-a-bitstream">Loading a bitstream</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#spi-flash">SPI flash</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="#max10-fpga-programming-guide">MAX10: FPGA Programming Guide</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="#internal-flash-organization">Internal Flash Organization</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#using-svf">Using <code class="docutils literal notranslate"><span class="pre">svf</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#using-pof">Using <code class="docutils literal notranslate"><span class="pre">pof</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#using-an-arbitrary-binary-file">Using an arbitrary binary file</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="#intel-altera-old-boards">Intel/Altera (Old Boards)</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="#loading-a-serial-vector-format-svf">Loading a Serial Vector Format (.svf)</a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="lattice.html">Lattice notes</a></li>
+<li class="toctree-l1"><a class="reference internal" href="xilinx.html">Xilinx notes</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Development</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../todo.html">To Do</a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../index.html">openFPGALoader: universal utility for programming FPGA</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+        
+          
+            <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="../index.html" class="icon icon-home"></a> &raquo;</li>
+      <li>Intel notes</li>
+      <li class="wy-breadcrumbs-aside">
+              <a href="https://github.com/trabucayre/openFPGALoader/blob/master/doc/vendors/intel.rst" class="fa fa-github"> Edit on GitHub</a>
+      </li>
+  </ul>
+  <hr/>
+</div>
+          
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <section id="intel-notes">
+<span id="intel"></span><h1>Intel notes<a class="headerlink" href="#intel-notes" title="Link to this heading">¶</a></h1>
+<section id="intel-altera">
+<h2>Intel/Altera<a class="headerlink" href="#intel-altera" title="Link to this heading">¶</a></h2>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<ul class="simple">
+<li><p>CYC1000</p></li>
+<li><p>C10LP-RefKit</p></li>
+<li><p>DE0</p></li>
+<li><p>de0nano</p></li>
+</ul>
+</div>
+<section id="loading-a-bitstream">
+<h3>Loading a bitstream<a class="headerlink" href="#loading-a-bitstream" title="Link to this heading">¶</a></h3>
+<p>SVF and RBF files are supported.</p>
+<p><code class="docutils literal notranslate"><span class="pre">sof</span></code> to <code class="docutils literal notranslate"><span class="pre">svf</span></code> generation:</p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>quartus_cpf<span class="w"> </span>-c<span class="w"> </span>-q<span class="w"> </span><span class="m">12</span>.0MHz<span class="w"> </span>-g<span class="w"> </span><span class="m">3</span>.3<span class="w"> </span>-n<span class="w"> </span>p<span class="w"> </span>project_name.sof<span class="w"> </span>project_name.svf
+</pre></div>
+</div>
+<p><code class="docutils literal notranslate"><span class="pre">sof</span></code> to <code class="docutils literal notranslate"><span class="pre">rbf</span></code> generation:</p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>quartus_cpf<span class="w">  </span>--option<span class="o">=</span><span class="nv">bitstream_compression</span><span class="o">=</span>off<span class="w"> </span>-c<span class="w"> </span>project_name.sof<span class="w"> </span>project_name.rbf
+</pre></div>
+</div>
+<div class="admonition warning">
+<p class="admonition-title">Warning</p>
+<p>As mentioned in <code class="docutils literal notranslate"><span class="pre">cyclone</span></code> handbooks, real-time decompression is not supported by FPGA in JTAG mode.
+Keep in mind to disable this option.</p>
+</div>
+<p>You can have Quartus automatically generate SVF and RBF files by adding these lines to the <code class="docutils literal notranslate"><span class="pre">qsf</span></code> file, or include them in a <code class="docutils literal notranslate"><span class="pre">tcl</span></code> file in FuseSoC</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">set_global_assignment</span> <span class="o">-</span><span class="n">name</span> <span class="n">ON_CHIP_BITSTREAM_DECOMPRESSION</span> <span class="n">OFF</span>
+<span class="n">set_global_assignment</span> <span class="o">-</span><span class="n">name</span> <span class="n">GENERATE_RBF_FILE</span> <span class="n">ON</span>
+<span class="n">set_global_assignment</span> <span class="o">-</span><span class="n">name</span> <span class="n">GENERATE_SVF_FILE</span> <span class="n">ON</span>
+</pre></div>
+</div>
+<p>file load:</p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>openFPGALoader<span class="w"> </span>-b<span class="w"> </span>boardname<span class="w"> </span>project_name.svf
+<span class="c1"># or</span>
+openFPGALoader<span class="w"> </span>-b<span class="w"> </span>boardname<span class="w"> </span>project_name.rbf
+</pre></div>
+</div>
+<p>with <code class="docutils literal notranslate"><span class="pre">boardname</span></code> = <code class="docutils literal notranslate"><span class="pre">de0</span></code>, <code class="docutils literal notranslate"><span class="pre">cyc1000</span></code>, <code class="docutils literal notranslate"><span class="pre">c10lp-refkit</span></code>, <code class="docutils literal notranslate"><span class="pre">de0nano</span></code>, <code class="docutils literal notranslate"><span class="pre">de0nanoSoc</span></code> or <code class="docutils literal notranslate"><span class="pre">qmtechCycloneV</span></code>.</p>
+</section>
+<section id="spi-flash">
+<h3>SPI flash<a class="headerlink" href="#spi-flash" title="Link to this heading">¶</a></h3>
+<p>RPD and RBF are supported. POF is only supported for MAX10 (internal flash).</p>
+<p><code class="docutils literal notranslate"><span class="pre">pof</span></code> to <code class="docutils literal notranslate"><span class="pre">rpd</span></code>:</p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>quartus_cpf<span class="w"> </span>-c<span class="w"> </span>project_name.pof<span class="w"> </span>project_name.rpd
+</pre></div>
+</div>
+<p><code class="docutils literal notranslate"><span class="pre">sof</span></code> to <code class="docutils literal notranslate"><span class="pre">rpd</span></code>:</p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span><span class="c1"># CYC1000</span>
+quartus_cpf<span class="w"> </span>-o<span class="w"> </span><span class="nv">auto_create_rpd</span><span class="o">=</span>on<span class="w"> </span>-c<span class="w"> </span>-d<span class="w"> </span>EPCQ16A<span class="w"> </span>-s<span class="w"> </span>10CL025YU256C8G<span class="w"> </span>project_name.svf<span class="w"> </span>project_name.jic
+<span class="c1"># C10LP-RefKit</span>
+quartus_cpf<span class="w"> </span>-o<span class="w"> </span><span class="nv">auto_create_rpd</span><span class="o">=</span>on<span class="w"> </span>-c<span class="w"> </span>-d<span class="w"> </span>EPCQ16A<span class="w"> </span>-s<span class="w"> </span>10CL055YU484C8G<span class="w"> </span>project_name.svf<span class="w"> </span>project_name.jic
+</pre></div>
+</div>
+<p>file load:</p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>openFPGALoader<span class="w"> </span>-b<span class="w"> </span>boardname<span class="w"> </span>-r<span class="w"> </span>project_name_auto.rpd
+<span class="c1"># or</span>
+openFPGALoader<span class="w"> </span>-b<span class="w"> </span>boardname<span class="w"> </span>-r<span class="w"> </span>project_name.rbf
+</pre></div>
+</div>
+<p>with <code class="docutils literal notranslate"><span class="pre">boardname</span></code> = <code class="docutils literal notranslate"><span class="pre">cyc1000</span></code>, <code class="docutils literal notranslate"><span class="pre">c10lp-refkit</span></code>.</p>
+</section>
+</section>
+<section id="max10-fpga-programming-guide">
+<h2>MAX10: FPGA Programming Guide<a class="headerlink" href="#max10-fpga-programming-guide" title="Link to this heading">¶</a></h2>
+<p>Supported Boards:</p>
+<ul class="simple">
+<li><p>step-max10_v1</p></li>
+<li><p>analogMax</p></li>
+</ul>
+<p>Supported File Types:</p>
+<ul class="simple">
+<li><p><code class="docutils literal notranslate"><span class="pre">svf</span></code></p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">pof</span></code></p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">bin</span></code> (arbitrary binary files)</p></li>
+</ul>
+<section id="internal-flash-organization">
+<h3>Internal Flash Organization<a class="headerlink" href="#internal-flash-organization" title="Link to this heading">¶</a></h3>
+<p>The internal flash is divided into five sections:</p>
+<ul class="simple">
+<li><p><code class="docutils literal notranslate"><span class="pre">UFM1</span></code> and <code class="docutils literal notranslate"><span class="pre">UFM0</span></code> for user data</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">CFM2</span></code>, <code class="docutils literal notranslate"><span class="pre">CFM1</span></code>, and <code class="docutils literal notranslate"><span class="pre">CFM0</span></code> for storing one or two bitstreams</p></li>
+</ul>
+<img alt="max10 internal flash memory structure" src="../_images/max10_flash-memory.png" />
+<p>Flash usage depends on the configuration mode. In all modes:</p>
+<ul class="simple">
+<li><p><code class="docutils literal notranslate"><span class="pre">CFM0</span></code> is used to store a bitstream</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">UFM0</span></code> and <code class="docutils literal notranslate"><span class="pre">UFM1</span></code> are available for user data</p></li>
+<li><p>The remaining <code class="docutils literal notranslate"><span class="pre">CFMx</span></code> sections (<code class="docutils literal notranslate"><span class="pre">CFM1</span></code>, <code class="docutils literal notranslate"><span class="pre">CFM2</span></code>) can be used for
+additional bitstreams or user data</p></li>
+</ul>
+</section>
+<section id="using-svf">
+<h3>Using <code class="docutils literal notranslate"><span class="pre">svf</span></code><a class="headerlink" href="#using-svf" title="Link to this heading">¶</a></h3>
+<p>This method is the <strong>simplest</strong> (and slowest) way to load or write a bitstream.</p>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p>This method is required to load a bitstream into <em>SRAM</em>.</p>
+</div>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>openFPGALoader<span class="w"> </span><span class="o">[</span>-b<span class="w"> </span>boardname<span class="o">]</span><span class="w"> </span>-c<span class="w"> </span>cablename<span class="w"> </span>the_svf_file.svf
+</pre></div>
+</div>
+<p><strong>Parameters:</strong></p>
+<ul class="simple">
+<li><p><code class="docutils literal notranslate"><span class="pre">boardname</span></code>: One of the boards supported by <code class="docutils literal notranslate"><span class="pre">openFPGALoader</span></code> (optional).</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">cablename</span></code>: One of the supported cables (see <code class="docutils literal notranslate"><span class="pre">--list-cables</span></code>).</p></li>
+</ul>
+</section>
+<section id="using-pof">
+<h3>Using <code class="docutils literal notranslate"><span class="pre">pof</span></code><a class="headerlink" href="#using-pof" title="Link to this heading">¶</a></h3>
+<p>To write a bitstream into the internal flash, using a <code class="docutils literal notranslate"><span class="pre">pof</span></code> file is the
+<strong>fastest</strong> approach.</p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>openFPGALoader<span class="w"> </span><span class="o">[</span>-b<span class="w"> </span>boardname<span class="o">]</span><span class="w"> </span><span class="o">[</span>--flash-sector<span class="o">]</span><span class="w"> </span>-c<span class="w"> </span>cablename<span class="w"> </span>the_pof_file.pof
+</pre></div>
+</div>
+<p><strong>Parameters:</strong></p>
+<ul class="simple">
+<li><p><code class="docutils literal notranslate"><span class="pre">boardname</span></code>: A board supported by <code class="docutils literal notranslate"><span class="pre">openFPGALoader</span></code> (optional).</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">cablename</span></code>: One of the supported cables (see <code class="docutils literal notranslate"><span class="pre">--list-cables</span></code>).</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">--flash-sector</span></code>: Optional. Comma-separated list of sectors to update.
+If omitted, the entire flash is erased and reprogrammed.</p></li>
+</ul>
+<p>Accepted Flash Sectors:</p>
+<ul class="simple">
+<li><p><code class="docutils literal notranslate"><span class="pre">UFM0</span></code>, <code class="docutils literal notranslate"><span class="pre">UFM1</span></code>: User Flash Memory sections.</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">CFM0</span></code>, <code class="docutils literal notranslate"><span class="pre">CFM1</span></code>, <code class="docutils literal notranslate"><span class="pre">CFM2</span></code>: Configuration Flash Memory sectors.</p></li>
+</ul>
+<p><strong>Example:</strong></p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>openFPGALoader<span class="w"> </span>-c<span class="w"> </span>usb-blaster<span class="w"> </span>--flash-sector<span class="w"> </span>UFM1,CFM0,CFM2<span class="w"> </span>the_pof_file.pof
+</pre></div>
+</div>
+<p>This command updates <code class="docutils literal notranslate"><span class="pre">UFM1</span></code>, <code class="docutils literal notranslate"><span class="pre">CFM0</span></code>, and <code class="docutils literal notranslate"><span class="pre">CFM2</span></code>, leaving all other
+sectors unchanged.</p>
+</section>
+<section id="using-an-arbitrary-binary-file">
+<h3>Using an arbitrary binary file<a class="headerlink" href="#using-an-arbitrary-binary-file" title="Link to this heading">¶</a></h3>
+<p>Unlike Altera Quartus, it supports any binary format without limitations
+(not limited to a <code class="docutils literal notranslate"><span class="pre">.bin</span></code>).
+With this feature, it’s not required to provides the file at gateware build
+time: it may be updated at any time without gateware modification/rebuild.</p>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p>This approach is useful to updates, for example, a softcore CPU firmware.</p>
+</div>
+<p><strong>Basic usage:</strong></p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>openFPGALoader<span class="w"> </span><span class="o">[</span>-b<span class="w"> </span>boardname<span class="o">]</span><span class="w"> </span>-c<span class="w"> </span>cablename<span class="w"> </span><span class="o">[</span>--offset<span class="w"> </span><span class="nv">$OFFSET</span><span class="o">]</span><span class="w"> </span>the_bin_file.bin
+</pre></div>
+</div>
+<ul class="simple">
+<li><p><code class="docutils literal notranslate"><span class="pre">boardname</span></code>: a boards supported by <code class="docutils literal notranslate"><span class="pre">openFPGALoader</span></code> (optional).</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">cablename</span></code>: One of the supported cables (see <code class="docutils literal notranslate"><span class="pre">--list-cables</span></code>).</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">$OFFSET</span></code>: To start writing <code class="docutils literal notranslate"><span class="pre">$OFFSET</span></code> bytes after <em>User Flash memory</em>
+start address (optional, default: 0x00).</p></li>
+</ul>
+<p>This command erases and writes the contents of <code class="docutils literal notranslate"><span class="pre">the_bin_file.bin</span></code> into
+<code class="docutils literal notranslate"><span class="pre">UFM1</span></code> and <code class="docutils literal notranslate"><span class="pre">UFM0</span></code>. If <code class="docutils literal notranslate"><span class="pre">--offset</span></code> is specified, the binary content is
+written starting from that offset.</p>
+<p>Depending on the max10 configuration mode (see picture), it’s possible to
+extend <em>User Flash Memory</em> area by using <cite>CFM2</cite> and <cite>CFM1</cite>. This is not the
+default behavior and user must explictly change this by using
+<cite>–flash-sector</cite> argument:</p>
+<ul class="simple">
+<li><p><code class="docutils literal notranslate"><span class="pre">--flash-sector</span> <span class="pre">UFMx</span></code> or <code class="docutils literal notranslate"><span class="pre">--flash-sector</span> <span class="pre">CFMy</span></code> (with x= 1 or 0 and
+y = 2 or 1) to specify only one sector</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">--flash-sector</span> <span class="pre">UFM1,UFM0</span></code> is equivalent to the default behavior</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">--flash-sector</span> <span class="pre">UFM1,CFM2</span></code> to erase and update <code class="docutils literal notranslate"><span class="pre">UFM1</span></code>, <code class="docutils literal notranslate"><span class="pre">UFM0</span></code>
+and <code class="docutils literal notranslate"><span class="pre">CFM2</span></code> (equivalent to <code class="docutils literal notranslate"><span class="pre">--flash-sector</span> <span class="pre">UFM1,UFM0,CFM2</span></code>)</p></li>
+</ul>
+</section>
+</section>
+<section id="intel-altera-old-boards">
+<h2>Intel/Altera (Old Boards)<a class="headerlink" href="#intel-altera-old-boards" title="Link to this heading">¶</a></h2>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<ul class="simple">
+<li><p>Cyclone II (FPGA) (Tested OK: EP2C5T144C8N)</p></li>
+<li><p>Max II (CPLD) (Tested OK: EPM240T100C5N)</p></li>
+</ul>
+</div>
+<section id="loading-a-serial-vector-format-svf">
+<h3>Loading a Serial Vector Format (.svf)<a class="headerlink" href="#loading-a-serial-vector-format-svf" title="Link to this heading">¶</a></h3>
+<p>SVF files are supported.</p>
+<p>To load the file:</p>
+<blockquote>
+<div><div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>openFPGALoader<span class="w"> </span>-c<span class="w"> </span>usb-blaster<span class="w"> </span>project_name.svf
+</pre></div>
+</div>
+</div></blockquote>
+</section>
+</section>
+</section>
+
+
+           </div>
+          </div>
+          <footer><div class="rst-footer-buttons" role="navigation" aria-label="Footer">
+        <a href="gowin.html" class="btn btn-neutral float-left" title="Gowin notes" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left" aria-hidden="true"></span> Previous</a>
+        <a href="lattice.html" class="btn btn-neutral float-right" title="Lattice notes" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right" aria-hidden="true"></span></a>
+    </div>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2019-2022, Gwenhael Goavec-Merou and contributors.</p>
+  </div>Built with <a href="http://sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/buildthedocs/sphinx.theme">theme</a>
+    provided by <a href="https://buildthedocs.github.io">Build the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>
