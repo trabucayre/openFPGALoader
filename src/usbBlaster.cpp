@@ -44,14 +44,14 @@ UsbBlaster::UsbBlaster(const cable_t &cable, const std::string &firmware_path,
 			_verbose(verbose > 1), _nb_bit(0),
 			_curr_tms(0), _buffer_size(64)
 {
-	if (cable.pid == 0x6001)
+	if (cable.pid == 0x6001 || cable.pid == 0x6002 || cable.pid == 0x6003)
 #ifdef ENABLE_USB_BLASTERI
 		ll_driver = new UsbBlasterI();
 #else
 		throw std::runtime_error("usb-blasterI: Not build");
 #endif
 #ifdef ENABLE_USB_BLASTERII
-	else if (cable.pid == 0x6810)
+	else if (cable.pid == 0x6810 || cable.pid == 0x6010)
 		ll_driver = new UsbBlasterII(firmware_path);
 #else
 		throw std::runtime_error("usb-blasterII: Not build");
