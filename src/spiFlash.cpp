@@ -93,29 +93,54 @@ SPIFlash::SPIFlash(SPIInterface *spi, bool unprotect, int8_t verbose):
 	read_id();
 }
 
-int SPIFlash::bulk_erase()
+int SPIFlash::bulk_erase(bool verbose, bool skip_bp_check)
 {
-	int ret, ret2 = 0;
+	int ret = 0, ret2 = 0;
+	uint8_t bp = 0;
 	uint32_t timeout=1000000;
-	uint8_t bp = get_bp();
-	if (bp != 0) {
-		if (!_unprotect) {
-			printError("Error: Can't erase flash: block protection is set");
-			printError("       can't unlock without --unprotect-flash");
-			return -1;
+	if (!skip_bp_check) {
+		if (verbose)
+			printInfo("Check Flash Protection: ", false);
+		bp = get_bp();
+		if (bp != 0) {
+			if (!_unprotect) {
+				printError("FAIL");
+				printError("Error: Can't erase flash: block protection is set");
+				printError("       can't unlock without --unprotect-flash");
+				return -1;
+			}
+
+			ret = disable_protection();
 		}
 
-		if ((ret = disable_protection()) != 0)
+		if (verbose) {
+			if (ret == 0)
+				printSuccess("DONE");
+			else
+				printError("FAIL");
+		}
+
+		if (ret != 0)
 			return ret;
 	}
 
-	if ((ret = write_enable()) != 0)
+	if (verbose)
+		printInfo("Bulk erase: ", false);
+	if ((ret = write_enable()) != 0) {
+		printError("FAIL");
 		return ret;
+	}
 	ret2 = _spi->spi_put(FLASH_CE, NULL, NULL, 0);
 	if (ret2 == 0)
 		ret2 = _spi->spi_wait(FLASH_RDSR, FLASH_RDSR_WIP, 0x00, timeout);
+	if (verbose) {
+		if (ret2 == 0)
+			printSuccess("DONE");
+		else
+			printError("FAIL");
+	}
 
-	if (bp != 0)
+	if (!skip_bp_check && (bp != 0))
 		ret = enable_protection(bp);
 
 	return ret | ret2;

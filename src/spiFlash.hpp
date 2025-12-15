@@ -71,8 +71,14 @@ class SPIFlash {
 		 * \return false if unlock fail
 		 */
 		bool global_unlock();
-		/* erase */
-		int bulk_erase();
+		/*!
+		 * \brief bulk_erase: full Flash erase
+		 * \param[in] verbose: display message for each steps
+		 * \param[in] skip_bp_check: check if the flash is protected
+		 *            before erase, re-apply protect after.
+		 * \return 0 for success, -1 otherwise
+		 */
+		int bulk_erase(bool verbose=false, bool skip_bp_check=false);
 		/*!
 		 * \brief erase one sector (4Kb)
 		 */
