@@ -12,6 +12,32 @@
 #include "spiInterface.hpp"
 #include "spiFlashdb.hpp"
 
+/* Flash memory section record
+ * one instance per section when the bitstream contains gap
+ */
+class FlashDataSection {
+	public:
+		explicit FlashDataSection(uint32_t start_addr):_start_addr(start_addr) {}
+
+		/* append data set to existing */
+		void append(const uint8_t *data, size_t length) {
+			if (data && length > 0)
+				_record.insert(_record.end(), data, data + length);
+		}
+		/* Return section start addr */
+		uint32_t getStartAddr() const noexcept { return _start_addr; }
+		/* Return last data addr */
+		uint32_t getCurrentAddr() const noexcept { return _start_addr + static_cast<uint32_t>(_record.size()); }
+		/* Return section length */
+		size_t getLength() const noexcept { return _record.size(); }
+		/* Return section data set */
+		const std::vector<uint8_t> &getRecord() const noexcept { return _record; }
+
+	private:
+		uint32_t _start_addr; // Section Start Address
+		std::vector<uint8_t> _record; // Data set
+};
+
 class SPIFlash {
 	public:
 		SPIFlash(SPIInterface *spi, bool unprotect, int8_t verbose);
