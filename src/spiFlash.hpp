@@ -153,6 +153,9 @@ class SPIFlash {
 		 */
 		uint8_t get_bp_mask();
 
+	private:
+		bool prepare_flash(const int base_addr, const int len);
+
 	public:
 		/*!
 		 * \brief convert block protect to len in byte
@@ -174,6 +177,8 @@ class SPIFlash {
 		uint32_t _jedec_id; /**< CHIP ID */
 		flash_t *_flash_model; /**< detect flash model */
 		bool _unprotect; /**< allows to unprotect memory before write */
+		bool _must_relock;
+		uint8_t _status;
 };
 
 #endif  // SRC_SPIFLASH_HPP_
