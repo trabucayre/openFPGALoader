@@ -461,6 +461,68 @@ bool SPIFlash::prepare_flash(const int base_addr, const int len)
 	return true;
 }
 
+bool SPIFlash::erase_and_prog(const std::vector<FlashDataSection> &sections, bool full_erase)
+{
+	uint32_t len = 0, flash_len;
+	uint32_t base_addr = 0;
+	/* For full erase and to check BP: consider the full flash size */
+	if (full_erase) {
+		flash_len = _flash_model->nr_sector * 0x10000;
+	} else { /* not a full erase: consider bottom base_addr and upper address */
+		base_addr = sections.front().getStartAddr();
+		flash_len = sections.back().getCurrentAddr() - base_addr;
+	}
+
+	/* Compute real length to be written */
+	for (const FlashDataSection &sec: sections)
+		len += sec.getLength();
+
+	/* Sanity check / disables protection */
+	if (!prepare_flash(base_addr, flash_len))
+		return false;
+
+	/* instead of sector erase => perform a full flash erase */
+	if (full_erase) {
+		if (bulk_erase(true, true) == -1)
+			return false;
+	} else {
+		printInfo("Erase Flash: ", false);
+		if (sectors_erase(base_addr, len) == -1) {
+			printError("FAIL");
+			return -1;
+		} else {
+			printSuccess("DONE");
+		}
+	}
+
+	ProgressBar progress("Writing", len, 50, _verbose < 0);
+	uint32_t len_done = 0;
+	for (const FlashDataSection &sec: sections) {
+		int size = 0;
+		/* prepare section write */
+		const uint32_t base_addr = sec.getStartAddr(); // start address
+		const uint32_t sec_len = sec.getLength(); // section length
+		const uint8_t *ptr = sec.getRecord().data(); // data
+		for (uint32_t addr = 0; addr < sec_len; addr += size, ptr+=size, len_done+=size) {
+			size = (addr + 256 > sec_len) ? (sec_len - addr) : 256;
+			if ((_jedec_id >> 8) == 0xbf258d) {
+				size = 1;
+			}
+			if (write_page(base_addr + addr, ptr, size) == -1)
+				return -1;
+			progress.display(len_done);
+		}
+	}
+	progress.done();
+
+	/* and if required: relock blocks */
+	if (_must_relock) {
+		enable_protection(_status);
+		if (_verbose > 0)
+			display_status_reg(read_status_reg());
+	}
+	return true;
+}
 
 int SPIFlash::erase_and_prog(int base_addr, const uint8_t *data, int len)
 {

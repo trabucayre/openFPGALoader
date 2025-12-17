@@ -111,6 +111,7 @@ class SPIFlash {
 		bool dump(const std::string &filename, const int &base_addr,
 				const int &len, int rd_burst = 0);
 		/* combo flash + erase */
+		bool erase_and_prog(const std::vector<FlashDataSection> &sections, bool full_erase=false);
 		int erase_and_prog(int base_addr, const uint8_t *data, int len);
 		/*!
 		 * \brief check if area base_addr to base_addr + len match
