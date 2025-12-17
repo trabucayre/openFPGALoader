@@ -891,7 +891,6 @@ bool Lattice::program_extFlash(unsigned int offset, bool unprotect_flash)
 		return false;
 	}
 
-
 	printInfo("Parse file ", false);
 	if (_bit->parse() == EXIT_FAILURE) {
 		printError("FAIL");
@@ -917,8 +916,13 @@ bool Lattice::program_extFlash(unsigned int offset, bool unprotect_flash)
 		}
 	}
 
-	ret = SPIInterface::write(offset, _bit->getData(), _bit->getLength() / 8,
+	if (_file_extension == "mcs") {
+		McsParser *parser = (McsParser *)_bit;
+		ret = SPIInterface::write(parser->getRecords(), unprotect_flash, true);
+	} else {
+		ret = SPIInterface::write(offset, _bit->getData(), _bit->getLength() / 8,
 			unprotect_flash);
+	}
 
 	delete _bit;
 	return ret;
