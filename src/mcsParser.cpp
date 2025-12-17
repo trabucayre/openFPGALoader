@@ -3,6 +3,7 @@
  * Copyright (C) 2019 Gwenhael Goavec-Merou <gwenhael.goavec-merou@trabucayre.com>
  */
 
+#include <array>
 #include <sstream>
 #include <string>
 
@@ -43,13 +44,16 @@ int McsParser::parse()
 {
 	string str;
 	istringstream lineStream(_raw_data);
-	_bit_data.resize(_file_size);
 
-	while (std::getline(lineStream, str, '\n')) {
-		char *ptr;
-		uint8_t sum = 0;
-		uint16_t tmp, byteLen, type, checksum;
-		uint32_t addr, loc_addr;
+	FlashDataSection *rec = nullptr;
+
+	bool must_stop = false;
+	std::array<uint8_t, 255> tmp_buf{}; // max size for one data line
+
+	while (std::getline(lineStream, str, '\n') && !must_stop) {
+		uint8_t sum = 0, tmp, byteLen, type, checksum;
+		uint16_t addr;
+		uint32_t loc_addr;
 
 		/* if '\r' is present -> drop */
 		if (str.back() == '\r')
@@ -60,42 +64,45 @@ int McsParser::parse()
 			return EXIT_FAILURE;
 		}
 		/* len */
-		sscanf((char *)&str[LEN_BASE], "%2hx", &byteLen);
+		sscanf((char *)&str[LEN_BASE], "%2hhx", &byteLen);
 		/* address */
-		sscanf((char *)&str[ADDR_BASE], "%4x", &addr);
+		sscanf((char *)&str[ADDR_BASE], "%4hx", &addr);
 		/* type */
-		sscanf((char *)&str[TYPE_BASE], "%2hx", &type);
+		sscanf((char *)&str[TYPE_BASE], "%2hhx", &type);
 		/* checksum */
-		sscanf((char *)&str[DATA_BASE + byteLen * 2], "%2hx", &checksum);
+		sscanf((char *)&str[DATA_BASE + byteLen * 2], "%2hhx", &checksum);
 
 		sum = byteLen + type + (addr & 0xff) + ((addr >> 8) & 0xff);
 
 		switch (type) {
-		case 0:
+		case 0: { /* Data + addr */
 			loc_addr = _base_addr + addr;
-			ptr = (char *)&str[DATA_BASE];
-			if ((loc_addr + byteLen) > _bit_data.size())
-				_bit_data.resize(loc_addr + byteLen);
 
-			for (int i = 0; i < byteLen; i++, ptr += 2) {
-				sscanf(ptr, "%2hx", &tmp);
-				_bit_data[loc_addr + i] = (_reverseOrder)? reverseByte(tmp):tmp;
+			/* Check current record:
+			 * Create if null
+			 * Create when a jump in address range
+			 */
+			if (!rec || (rec->getLength() > 0 && rec->getCurrentAddr() != loc_addr)) {
+				_records.emplace_back(loc_addr);
+				rec = &_records.back();
+			}
+
+			const char *ptr = (char *)&str[DATA_BASE];
+
+			for (uint16_t i = 0; i < byteLen; i++, ptr += 2) {
+				sscanf(ptr, "%2hhx", &tmp);
+				tmp_buf[i] = _reverseOrder ? reverseByte(tmp) : tmp;
 				sum += tmp;
 			}
-			_bit_length += (byteLen * 8);
+			rec->append(tmp_buf.data(), byteLen);
 			break;
-		case 1:
-			if (_bit_data.size() * 8 != (size_t)_bit_length)
-				_bit_length = _bit_data.size() * 8;
-			return EXIT_SUCCESS;
+		}
+		case 1: /* End Of File */
+			must_stop = true;
 			break;
-		case 4:
+		case 4: /* Extended linear addr */
 			sscanf((char*)&str[DATA_BASE], "%4x", &loc_addr);
 			_base_addr = (loc_addr << 16);
-			if (_base_addr * 8 > _bit_length)
-				_bit_length = _base_addr * 8;
-			if ((size_t)_bit_length > _bit_data.size() * 8)
-				_bit_data.resize(_bit_length / 8);
 			sum += (loc_addr & 0xff) + ((loc_addr >> 8) & 0xff);
 			break;
 		default:
@@ -103,10 +110,23 @@ int McsParser::parse()
 			return EXIT_FAILURE;
 		}
 
-		if (checksum != (0xff&((~sum)+1))) {
+		if (checksum != (0xff & ((~sum) + 1))) {
 			printError("Error: wrong checksum");
 			return EXIT_FAILURE;
 		}
+	}
+
+	const uint32_t nbRecord = getRecordCount();
+	const uint32_t record_base = getRecordBaseAddr(nbRecord - 1);
+	const uint32_t record_length = getRecordLength(nbRecord - 1);
+	const uint32_t flash_size = record_base + record_length;
+
+	_bit_data.assign(flash_size, 0xff);
+	_bit_length = flash_size * 8;
+	for (uint32_t i = 0; i < nbRecord; i++) {
+		const uint32_t record_base = getRecordBaseAddr(i);
+		const std::vector<uint8_t> rec = getRecordData(i);
+		std::copy(rec.begin(), rec.end(), _bit_data.begin() + record_base);
 	}
 
 	return EXIT_SUCCESS;
