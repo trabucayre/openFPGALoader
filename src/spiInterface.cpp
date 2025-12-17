@@ -177,6 +177,31 @@ bool SPIInterface::bulk_erase_flash()
 	return post_flash_access() && ret;
 }
 
+bool SPIInterface::write(const std::vector<FlashDataSection>&sections,
+		bool unprotect_flash, bool full_erase)
+{
+	bool ret = true;
+	if (!prepare_flash_access())
+		return false;
+
+	/* test SPI */
+	try {
+		SPIFlash flash(this, unprotect_flash, _spif_verbose);
+		flash.read_status_reg();
+		if (!flash.erase_and_prog(sections, full_erase))
+			ret = false;
+		if (_spif_verify && ret)
+			printInfo("Verify not supported in this mode");
+			//ret = flash.verify(offset, data, len, _spif_rd_burst);
+	} catch (std::exception &e) {
+		printError(e.what());
+		ret = false;
+	}
+
+	bool ret2 = post_flash_access();
+	return ret && ret2;
+}
+
 bool SPIInterface::write(uint32_t offset, const uint8_t *data, uint32_t len,
 		bool unprotect_flash)
 {

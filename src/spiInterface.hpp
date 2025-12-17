@@ -18,6 +18,8 @@
  * \author Gwenhael Goavec-Merou
  */
 
+class FlashDataSection;
+
 class SPIInterface {
  public:
 	SPIInterface();
@@ -48,6 +50,9 @@ class SPIInterface {
 	 */
 	bool write(uint32_t offset, const uint8_t *data, uint32_t len,
 		bool unprotect_flash);
+
+	bool write(const std::vector<FlashDataSection>&sections,
+		bool unprotect_flash, bool full_erase=false);
 
 	/*!
 	 * \brief read flash offset byte starting at base_addr and
