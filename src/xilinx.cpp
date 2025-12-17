@@ -656,11 +656,11 @@ void Xilinx::program(unsigned int offset, bool unprotect_flash)
 	if (_mode == Device::SPI_MODE) {
 		if (_flash_chips & PRIMARY_FLASH) {
 			select_flash_chip(PRIMARY_FLASH);
-			program_spi(bit, offset, unprotect_flash);
+			program_spi(bit, _file_extension, offset, unprotect_flash);
 		}
 		if (_flash_chips & SECONDARY_FLASH) {
 			select_flash_chip(SECONDARY_FLASH);
-			program_spi(secondary_bit, offset, unprotect_flash);
+			program_spi(secondary_bit, _secondary_file_extension, offset, unprotect_flash);
 		}
 
 		reset();
@@ -766,14 +766,19 @@ float Xilinx::get_spiOverJtag_version()
 	return version;
 }
 
-void Xilinx::program_spi(ConfigBitstreamParser * bit, unsigned int offset,
-		bool unprotect_flash)
+void Xilinx::program_spi(ConfigBitstreamParser * bit, std::string extention,
+		unsigned int offset, bool unprotect_flash)
 {
 	if (!bit)
 		throw std::runtime_error("called with null bitstream");
-	const uint8_t *data = bit->getData();
-	int length = bit->getLength() / 8;
-	SPIInterface::write(offset, data, length, unprotect_flash);
+	if (extention == "mcs") {
+		McsParser *parser = (McsParser *)bit;
+		SPIInterface::write(parser->getRecords(), unprotect_flash, true);
+	} else {
+		const uint8_t *data = bit->getData();
+		int length = bit->getLength() / 8;
+		SPIInterface::write(offset, data, length, unprotect_flash);
+	}
 }
 
 void Xilinx::program_mem(ConfigBitstreamParser *bitfile)
