@@ -1,120 +1,110 @@
 name: Test
 
 on:
-  push:
-  pull_request:
   workflow_dispatch:
 
 jobs:
-
-
   doc:
     runs-on: ubuntu-latest
-    name: '📓 Docs'
+    name: "📓 Docs"
     steps:
+      - name: "🧰 Checkout"
+        uses: actions/checkout@v4
 
-    - name: '🧰 Checkout'
-      uses: actions/checkout@v4
+      - name: "📓 BuildTheDocs (BTD)"
+        uses: buildthedocs/btd@v0
+        with:
+          token: ${{ github.token }}
+          skip-deploy: ${{ github.event_name == 'pull_request' }}
 
-    - name: '📓 BuildTheDocs (BTD)'
-      uses: buildthedocs/btd@v0
-      with:
-        token: ${{ github.token }}
-        skip-deploy: ${{ github.event_name == 'pull_request' }}
+      - name: "🧹 Clean HTML build"
+        if: ${{ github.event_name != 'pull_request' }}
+        run: sudo rm -rf doc/_build/html/.git
 
-    - name: '🧹 Clean HTML build'
-      if: ${{ github.event_name != 'pull_request' }}
-      run: sudo rm -rf doc/_build/html/.git
-
-    - name: '📤 Upload artifact: HTML'
-      uses: actions/upload-artifact@v4
-      with:
-        name: openFPGALoader-Documentation
-        path: doc/_build/html
-
+      - name: "📤 Upload artifact: HTML"
+        uses: actions/upload-artifact@v4
+        with:
+          name: openFPGALoader-Documentation
+          path: doc/_build/html
 
   lin-build:
     strategy:
       fail-fast: false
       matrix:
         os:
-        - 22
-        - 24
-    name: '🚧🐧 Ubuntu ${{ matrix.os }} | build'
+          - 22
+          - 24
+    name: "🚧🐧 Ubuntu ${{ matrix.os }} | build"
     runs-on: ubuntu-${{ matrix.os }}.04
     steps:
+      - name: "🧰 Checkout"
+        uses: actions/checkout@v4
 
-    - name: '🧰 Checkout'
-      uses: actions/checkout@v4
+      - name: "⚙️ Install dependencies"
+        run: |
+          sudo apt update -qq
+          sudo apt install -y \
+            cmake \
+            gzip \
+            libftdi1-2 \
+            libftdi1-dev \
+            libhidapi-libusb0 \
+            libhidapi-dev \
+            libudev-dev \
+            pkg-config \
+            tree \
+            zlib1g-dev
 
-    - name: '⚙️ Install dependencies'
-      run: |
-        sudo apt update -qq
-        sudo apt install -y \
-          cmake \
-          gzip \
-          libftdi1-2 \
-          libftdi1-dev \
-          libhidapi-libusb0 \
-          libhidapi-dev \
-          libudev-dev \
-          pkg-config \
-          tree \
-          zlib1g-dev
+      - name: "🚧 Build tarball"
+        run: |
+          mkdir build
+          cd build
+          cmake ..
+          cmake --build .
 
-    - name: '🚧 Build tarball'
-      run: |
-        mkdir build
-        cd build
-        cmake ..
-        cmake --build .
+          make DESTDIR=$(pwd)/dist install
+          _rulesdir='dist/etc/udev/rules.d/'
+          mkdir -p "${_rulesdir}"
+          cp ../99-openfpgaloader.rules "${_rulesdir}"
+          _licenses="dist/usr/local/share/licenses/openFPGALoader"
+          mkdir -p "${_licenses}"
+          install -m 644 ../LICENSE "${_licenses}"
 
-        make DESTDIR=$(pwd)/dist install
-        _rulesdir='dist/etc/udev/rules.d/'
-        mkdir -p "${_rulesdir}"
-        cp ../99-openfpgaloader.rules "${_rulesdir}"
-        _licenses="dist/usr/local/share/licenses/openFPGALoader"
-        mkdir -p "${_licenses}"
-        install -m 644 ../LICENSE "${_licenses}"
+          tar -cvzf ../ubtuntu${{ matrix.os }}.04-openFPGALoader.tgz -C dist .
 
-        tar -cvzf ../ubtuntu${{ matrix.os }}.04-openFPGALoader.tgz -C dist .
+      - name: "📤 Upload artifact: tarball"
+        uses: actions/upload-artifact@v4
+        with:
+          name: ubtuntu${{ matrix.os }}.04-openFPGALoader
+          path: ubtuntu${{ matrix.os }}.04-openFPGALoader.tgz
 
-    - name: '📤 Upload artifact: tarball'
-      uses: actions/upload-artifact@v4
-      with:
-        name: ubtuntu${{ matrix.os }}.04-openFPGALoader
-        path: ubtuntu${{ matrix.os }}.04-openFPGALoader.tgz
-
-    - name: '🔍 Show package content'
-      run: |
-        mkdir tmp
-        cd tmp
-        tar -xf ../ubtuntu${{ matrix.os }}.04-openFPGALoader.tgz
-        tree .
-
+      - name: "🔍 Show package content"
+        run: |
+          mkdir tmp
+          cd tmp
+          tar -xf ../ubtuntu${{ matrix.os }}.04-openFPGALoader.tgz
+          tree .
 
   mac-build:
     strategy:
       fail-fast: false
-    name: '🚧🐧 macOS latest | build'
+    name: "🚧🐧 macOS latest | build"
     runs-on: macos-latest
     steps:
+      - name: "🧰 Checkout"
+        uses: actions/checkout@v4
 
-    - name: '🧰 Checkout'
-      uses: actions/checkout@v4
+      - name: "⚙️ Install dependencies"
+        run: |
+          #brew update
+          brew install --only-dependencies openFPGALoader
 
-    - name: '⚙️ Install dependencies'
-      run: |
-        #brew update
-        brew install --only-dependencies openFPGALoader
-
-    - name: '🚧 Build tarball'
-      run: |
-        mkdir build
-        cd build
-        cmake ..
-        cmake --build .
-
+      - name: "🚧 Build tarball"
+        run: |
+          mkdir build
+          cd build
+          cmake ..
+          cmake --build .
 
   lin-test:
     needs: lin-build
@@ -122,34 +112,32 @@ jobs:
       fail-fast: false
       matrix:
         os:
-        - 22
-        - 24
-    name: '🚦🐧 Ubuntu ${{ matrix.os }} | test'
+          - 22
+          - 24
+    name: "🚦🐧 Ubuntu ${{ matrix.os }} | test"
     runs-on: ubuntu-${{ matrix.os }}.04
     steps:
+      - name: "⚙️ Install dependencies"
+        run: |
+          sudo apt update -qq
+          sudo apt install -y \
+            libftdi1-2 \
+            libhidapi-libusb0 \
+            udev \
+            zlib1g
 
-    - name: '⚙️ Install dependencies'
-      run: |
-        sudo apt update -qq
-        sudo apt install -y \
-          libftdi1-2 \
-          libhidapi-libusb0 \
-          udev \
-          zlib1g
+      - name: "📥 Download artifact: package"
+        uses: actions/download-artifact@v4.1.7
+        with:
+          name: ubtuntu${{ matrix.os }}.04-openFPGALoader
 
-    - name: '📥 Download artifact: package'
-      uses: actions/download-artifact@v4.1.7
-      with:
-        name: ubtuntu${{ matrix.os }}.04-openFPGALoader
+      - name: "🛠️ Install package"
+        run: sudo tar -xvzf *.tgz -C /
 
-    - name: '🛠️ Install package'
-      run: sudo tar -xvzf *.tgz -C /
-
-    - name: '🚦 Test package'
-      run: |
-        openFPGALoader --help
-        openFPGALoader --detect || true
-
+      - name: "🚦 Test package"
+        run: |
+          openFPGALoader --help
+          openFPGALoader --detect || true
 
   win-jobs:
     name: ⬜ Generate list of MSYS2 jobs
@@ -157,13 +145,13 @@ jobs:
     outputs:
       jobs: ${{ steps.matrix.outputs.jobs }}
     steps:
-    - id: matrix
-      uses: msys2/setup-msys2/matrix@a5d2c5a565c520efa5f477391e4e3f87c2e08f46
-      with:
-        systems: >-
-          mingw64
-          ucrt64
-          clang64
+      - id: matrix
+        uses: msys2/setup-msys2/matrix@a5d2c5a565c520efa5f477391e4e3f87c2e08f46
+        with:
+          systems: >-
+            mingw64
+            ucrt64
+            clang64
 
   win:
     needs: win-jobs
@@ -178,29 +166,27 @@ jobs:
         openFPGALoader --help
         openFPGALoader --detect || true
 
-
   Release:
     if: github.event_name != 'pull_request' && (github.ref == 'refs/heads/master' || contains(github.ref, 'refs/tags/'))
-    needs: [ lin-test, win ]
+    needs: [lin-test, win]
     runs-on: ubuntu-latest
-    name: '📦 Release'
+    name: "📦 Release"
     steps:
+      - name: "📥 Download artifacts"
+        uses: actions/download-artifact@v4.1.7
+        with:
+          path: artifact
 
-    - name: '📥 Download artifacts'
-      uses: actions/download-artifact@v4.1.7
-      with:
-        path: artifact
+      - name: "✉️ Package Documentation"
+        run: |
+          cd artifact
+          tar cvzf openFPGALoader-Documentation.tar.gz openFPGALoader-Documentation
+          rm -rf openFPGALoader-Documentation
 
-    - name: '✉️ Package Documentation'
-      run: |
-        cd artifact
-        tar cvzf openFPGALoader-Documentation.tar.gz openFPGALoader-Documentation
-        rm -rf openFPGALoader-Documentation
-
-    # Tagged: create a pre-release or a release (semver)
-    # Untagged: update the assets of pre-release 'nightly'
-    - uses: pyTooling/Actions/releaser@r0
-      with:
-        token: ${{ github.token }}
-        tag: 'nightly'
-        files: artifact/**/*
+      # Tagged: create a pre-release or a release (semver)
+      # Untagged: update the assets of pre-release 'nightly'
+      - uses: pyTooling/Actions/releaser@r0
+        with:
+          token: ${{ github.token }}
+          tag: "nightly"
+          files: artifact/**/*

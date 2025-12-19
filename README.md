@@ -31,6 +31,53 @@ Also checkout the vendor-specific documentation:
 
 OpenFPGALoader has a dedicated channel: [#openFPGALoader at libera.chat](https://web.libera.chat/#openFPGALoader).
 
+## Building with Pixi
+
+This project supports [Pixi](https://pixi.sh) for cross-platform dependency management and building.
+
+### Prerequisites
+
+Install Pixi from https://pixi.sh
+
+### Quick Start
+
+```bash
+# Install dependencies
+pixi install
+
+# Build the project
+pixi run build
+
+# Run tests
+pixi run test
+
+# List all available tasks
+pixi task list
+```
+
+### Available Tasks
+
+- `pixi run configure` - Configure the build with CMake
+- `pixi run build` - Build the project (runs configure automatically)
+- `pixi run test` - Run help command to verify build
+- `pixi run clean` - Clean build artifacts
+- `pixi run all` - Build and test
+- `pixi run rebuild` - Clean and build from scratch
+- `pixi run list-boards` - List all supported boards
+- `pixi run list-cables` - List all supported cables
+- `pixi run list-fpga` - List all supported FPGAs
+
+### Optional Features
+
+```bash
+# Use dev environment with debugging tools (gdb, valgrind on Linux)
+pixi shell -e dev
+
+# Use libgpiod environment (Linux only)
+pixi shell -e gpiod
+pixi run build-with-gpiod
+```
+
 ## Quick Usage
 
 `arty` in the example below is one of the many FPGA board configurations listed [here](https://trabucayre.github.io/openFPGALoader/compatibility/board.html).

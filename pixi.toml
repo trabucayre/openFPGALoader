@@ -1,0 +1,75 @@
+[workspace]
+name = "openFPGALoader"
+version = "1.0.0"
+description = "Universal utility for programming FPGAs"
+authors = ["Gwenhael Goavec-Merou <gwenhael.goavec-merou@trabucayre.com>"]
+channels = ["conda-forge"]
+platforms = ["linux-64", "osx-arm64"]
+
+[dependencies]
+cmake = ">=3.5"
+cxx-compiler = "*"
+pkg-config = "*"
+libftdi = "*"
+libusb = ">=1.0"
+zlib = "*"
+libhidapi = "*"
+
+[target.linux-64.dependencies]
+libudev = "*"
+gzip = "*"
+
+[target.osx-arm64.dependencies]
+gzip = "*"
+
+[tasks]
+# Configuration tasks
+configure = "cmake -B build -DCMAKE_BUILD_TYPE=Release"
+configure-debug = "cmake -B build -DCMAKE_BUILD_TYPE=Debug"
+
+# Build tasks
+build = { cmd = "cmake --build build", depends-on = ["configure"] }
+build-verbose = { cmd = "cmake --build build --verbose", depends-on = ["configure"] }
+
+# Clean task
+clean = "rm -rf build"
+
+# Install task (requires sudo on Linux, installs to system directories)
+install = { cmd = "cmake --build build --target install", depends-on = ["build"] }
+
+# Test/run tasks
+test = { cmd = "./build/openFPGALoader --help", depends-on = ["build"] }
+detect = { cmd = "./build/openFPGALoader --detect || true", depends-on = ["build"] }
+list-boards = { cmd = "./build/openFPGALoader --list-boards", depends-on = ["build"] }
+list-cables = { cmd = "./build/openFPGALoader --list-cables", depends-on = ["build"] }
+list-fpga = { cmd = "./build/openFPGALoader --list-fpga", depends-on = ["build"] }
+
+# Combined tasks
+all = { depends-on = ["build", "test"] }
+rebuild = { depends-on = ["clean", "build"] }
+
+[feature.dev.dependencies]
+
+[feature.dev.target.linux-64.dependencies]
+gdb = "*"
+valgrind = "*"
+
+[feature.dev.target.osx-64.dependencies]
+gdb = "*"
+
+[feature.dev.target.osx-arm64.dependencies]
+gdb = "*"
+
+[feature.dev.tasks]
+debug-build = { cmd = "cmake --build build", depends-on = ["configure-debug"] }
+
+[feature.libgpiod.target.linux-64.dependencies]
+libgpiod = ">=1.0"
+
+[feature.libgpiod.tasks]
+configure-with-gpiod = "cmake -B build -DCMAKE_BUILD_TYPE=Release -DENABLE_LIBGPIOD=ON"
+build-with-gpiod = { cmd = "cmake --build build", depends-on = ["configure-with-gpiod"] }
+
+[environments]
+dev = ["dev"]
+gpiod = ["libgpiod"]

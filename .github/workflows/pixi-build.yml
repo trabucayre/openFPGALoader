@@ -1,0 +1,39 @@
+name: Pixi Build
+
+on:
+  workflow_dispatch:
+
+jobs:
+  pixi-build:
+    strategy:
+      fail-fast: false
+      matrix:
+        os:
+          - ubuntu-latest
+          - macos-14 # Apple Silicon
+        include:
+          - os: ubuntu-latest
+            platform: linux-64
+          - os: macos-14
+            platform: osx-arm64
+    name: "🚧 Pixi ${{ matrix.os }} | build"
+    runs-on: ${{ matrix.os }}
+    steps:
+      - name: "🧰 Checkout"
+        uses: actions/checkout@v4
+
+      - name: "⚙️ Setup Pixi"
+        uses: prefix-dev/setup-pixi@v0.9.3
+        with:
+          pixi-version: v0.62.1
+          cache: true
+
+      - name: "🚧 Build with Pixi"
+        run: pixi run build
+
+      - name: "🚦 Test with Pixi"
+        run: |
+          pixi run test
+          pixi run list-boards | head -20
+          pixi run list-cables | head -20
+          pixi run list-fpga | head -20
