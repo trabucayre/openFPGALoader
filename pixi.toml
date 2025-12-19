@@ -14,6 +14,10 @@ libftdi = "*"
 libusb = ">=1.0"
 zlib = "*"
 libhidapi = "*"
+python = ">=3.8"
+pybind11 = "*"
+scikit-build-core = "*"
+pip = "*"
 
 [target.linux-64.dependencies]
 libudev = "*"
@@ -48,14 +52,17 @@ list-fpga = { cmd = "./build/openFPGALoader --list-fpga", depends-on = ["build"]
 all = { depends-on = ["build", "test"] }
 rebuild = { depends-on = ["clean", "build"] }
 
+# Python wheel tasks
+build-python = "cmake -B build -DCMAKE_BUILD_TYPE=Release -DBUILD_PYTHON_BINDINGS=ON && cmake --build build"
+build-wheel = "python -m pip wheel . --no-deps -w dist"
+install-wheel = "python -m pip install dist/*.whl --force-reinstall"
+test-python = "python -c 'import openfpgaloader; print(openfpgaloader.__version__)'"
+
 [feature.dev.dependencies]
 
 [feature.dev.target.linux-64.dependencies]
 gdb = "*"
 valgrind = "*"
-
-[feature.dev.target.osx-64.dependencies]
-gdb = "*"
 
 [feature.dev.target.osx-arm64.dependencies]
 gdb = "*"

@@ -31,6 +31,16 @@ Also checkout the vendor-specific documentation:
 
 OpenFPGALoader has a dedicated channel: [#openFPGALoader at libera.chat](https://web.libera.chat/#openFPGALoader).
 
+## Python Bindings
+
+openFPGALoader can be used from Python! Install via pip:
+
+```bash
+pip install openfpgaloader
+```
+
+See the [Python README](python/README.md) for usage examples.
+
 ## Building with Pixi
 
 This project supports [Pixi](https://pixi.sh) for cross-platform dependency management and building.

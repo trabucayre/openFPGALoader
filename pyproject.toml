@@ -1,0 +1,44 @@
+[build-system]
+requires = ["scikit-build-core", "pybind11"]
+build-backend = "scikit_build_core.build"
+
+[project]
+name = "openfpgaloader"
+version = "1.0.0"
+description = "Python bindings for openFPGALoader - Universal FPGA programming tool"
+readme = "python/README.md"
+authors = [
+    {name = "Gwenhael Goavec-Merou", email = "gwenhael.goavec-merou@trabucayre.com"}
+]
+license = {text = "Apache-2.0"}
+classifiers = [
+    "Development Status :: 4 - Beta",
+    "Intended Audience :: Developers",
+    "License :: OSI Approved :: Apache Software License",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.8",
+    "Programming Language :: Python :: 3.9",
+    "Programming Language :: Python :: 3.10",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
+    "Programming Language :: C++",
+    "Topic :: Software Development",
+    "Topic :: System :: Hardware",
+]
+requires-python = ">=3.8"
+dependencies = []
+
+[project.urls]
+Homepage = "https://github.com/trabucayre/openFPGALoader"
+Documentation = "https://trabucayre.github.io/openFPGALoader"
+Repository = "https://github.com/trabucayre/openFPGALoader"
+Issues = "https://github.com/trabucayre/openFPGALoader/issues"
+
+[tool.scikit-build]
+minimum-version = "0.8"
+build-dir = "build/{wheel_tag}"
+cmake.build-type = "Release"
+wheel.packages = ["python/openfpgaloader"]
+
+[tool.scikit-build.cmake.define]
+BUILD_PYTHON_BINDINGS = "ON"
