@@ -29,7 +29,8 @@ using namespace std;
 #define MHZ(n) (uint32_t)((n)*UINT32_C(1000000))
 #define GHZ(n) (uint32_t)((n)*UINT32_C(1000000000))
 
-#define CH347JTAG_INTF        2
+#define CH347TJTAG_INTF       2
+#define CH347FJTAG_INTF 	  4
 #define CH347JTAG_WRITE_EP    0x06
 #define CH347JTAG_READ_EP     0x86
 
@@ -55,7 +56,7 @@ int CH347Jtag::usb_xfer(unsigned wlen, unsigned rlen, unsigned *ract, bool defer
 {
 	int actual_length = 0;
 	if (_verbose) {
-		fprintf(stderr, "usb_xfer: deferred: %ld\n", obuf - _obuf);
+		fprintf(stderr, "usb_xfer: deferred: %lld\n", obuf - _obuf);
 	}
 	if (defer && !rlen && obuf - _obuf + wlen < (MAX_BUFFER - 12)) {
 		obuf += wlen;
@@ -156,7 +157,7 @@ CH347Jtag::CH347Jtag(uint32_t clkHZ, int8_t verbose, int vid, int pid, uint8_t b
 	while ((dev = devs[i++]) != NULL)  {
 		if (libusb_get_device_descriptor(dev, &desc) < 0)
 			continue;
-		if (desc.idVendor != vid || desc.idProduct != pid)
+		if (desc.idVendor != vid || (desc.idProduct != pid && desc.idProduct != CH347F_JTAG_PID && desc.idProduct != CH347T_JTAG_PID))
     		continue;
 		if (bus_addr != 0 && dev_addr != 0 && (libusb_get_bus_number(dev) != bus_addr || libusb_get_device_address(dev) != dev_addr))
     		continue;
@@ -179,19 +180,22 @@ CH347Jtag::CH347Jtag(uint32_t clkHZ, int8_t verbose, int vid, int pid, uint8_t b
 		printError("failed to get device descriptor");
 		goto usb_exit;
 	}
+	_jtagIntf = (desc.idProduct == CH347T_JTAG_PID) ? CH347TJTAG_INTF : CH347FJTAG_INTF;
 
-	if (desc.bcdDevice < 0x241 && pid == CH347T_JTAG_PID) {
+	if (desc.bcdDevice < 0x241 && desc.idProduct == CH347T_JTAG_PID) {
 		_is_largerPack = false;
 		printWarn("Old version of the chip, JTAG might not work");
 	}else{
 		_is_largerPack = true;
 	}
-
-	if (libusb_set_auto_detach_kernel_driver(dev_handle, true)) {
+	#if (!defined(WIN32) && !defined(_WIN64))
+	//Windows will fails this API call
+	if (libusb_set_auto_detach_kernel_driver(dev_handle, true) != LIBUSB_SUCCESS) {
 		printError("libusb error wrile setting auto-detach of kernel driver");
 		goto usb_exit;
 	}
-	if (libusb_claim_interface(dev_handle, CH347JTAG_INTF)) {
+	#endif
+	if (libusb_claim_interface(dev_handle, _jtagIntf)) {
 		printError("libusb error while claiming CH347JTAG interface");
 		goto usb_close;
 	}
@@ -206,7 +210,7 @@ CH347Jtag::CH347Jtag(uint32_t clkHZ, int8_t verbose, int vid, int pid, uint8_t b
 	_setClkFreq(clkHZ);
 	return;
 usb_release:
-	libusb_release_interface(dev_handle, CH347JTAG_INTF);
+	libusb_release_interface(dev_handle, _jtagIntf);
 usb_close:
 	libusb_close(dev_handle);
 usb_exit:
@@ -221,7 +225,7 @@ CH347Jtag::~CH347Jtag()
 	if (wtrans) libusb_free_transfer(wtrans);
 
 	if (dev_handle) {
-		libusb_release_interface(dev_handle, CH347JTAG_INTF);
+		libusb_release_interface(dev_handle, _jtagIntf);
 		libusb_close(dev_handle);
 		dev_handle = 0;
 	}
