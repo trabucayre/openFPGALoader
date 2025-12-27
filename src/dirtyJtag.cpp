@@ -62,7 +62,7 @@ enum dirtyJtagSig {
 	SIG_SRST = (1 << 6)
 };
 
-DirtyJtag::DirtyJtag(uint32_t clkHZ, int8_t verbose):
+DirtyJtag::DirtyJtag(uint32_t clkHZ, int8_t verbose, uint16_t vid, uint16_t pid):
 			_verbose(verbose),
 			dev_handle(NULL), usb_ctx(NULL), _tdi(0), _tms(0)
 {
@@ -73,8 +73,7 @@ DirtyJtag::DirtyJtag(uint32_t clkHZ, int8_t verbose):
 		throw std::exception();
 	}
 
-	dev_handle = libusb_open_device_with_vid_pid(usb_ctx,
-					DIRTYJTAG_VID, DIRTYJTAG_PID);
+	dev_handle = libusb_open_device_with_vid_pid(usb_ctx, vid, pid);
 	if (!dev_handle) {
 		cerr << "fails to open device" << endl;
 		libusb_exit(usb_ctx);

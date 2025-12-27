@@ -19,7 +19,7 @@
 
 class DirtyJtag : public JtagInterface {
  public:
-	DirtyJtag(uint32_t clkHZ, int8_t verbose);
+	DirtyJtag(uint32_t clkHZ, int8_t verbose, uint16_t vid = 0x1209, uint16_t pid = 0xC0CA);
 	virtual ~DirtyJtag();
 
 	int setClkFreq(uint32_t clkHZ) override;
