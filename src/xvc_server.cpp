@@ -60,7 +60,7 @@ XVC_server::XVC_server(int port, const cable_t & cable,
 			new CH552_jtag(cable.config, dev, serial, clkHZ, _verbose);
 		break;
 	case MODE_DIRTYJTAG:
-		_jtag = new DirtyJtag(clkHZ, _verbose);
+		_jtag = new DirtyJtag(clkHZ, _verbose, cable.vid, cable.pid);
 		break;
 	case MODE_JLINK:
 		_jtag = new Jlink(clkHZ, _verbose);

@@ -139,7 +139,7 @@ Jtag::Jtag(const cable_t &cable, const jtag_pins_conf_t *pin_conf,
 		break;
 	case MODE_DIRTYJTAG:
 #ifdef ENABLE_DIRTYJTAG
-		_jtag = new DirtyJtag(clkHZ, verbose);
+		_jtag = new DirtyJtag(clkHZ, verbose, cable.vid, cable.pid);
 #else
 		std::cerr << "Jtag: support for dirtyJtag cable was not enabled at compile time" << std::endl;
 		throw std::exception();
