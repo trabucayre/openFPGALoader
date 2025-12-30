@@ -8,6 +8,7 @@
 
 #include <stdint.h>
 #include <iostream>
+#include <list>
 #include <string>
 #include <vector>
 
@@ -80,6 +81,15 @@ class Lattice: public Device, SPIInterface {
 		};
 
 		lattice_family_t _fpga_family;
+
+		/* Internal Registers structure */
+		typedef struct {
+			std::string description;
+			uint8_t offset;
+			uint8_t size;
+			std::map<int, std::string> reg_cnt;
+		} reg_struct_t;
+		static const std::map<int, std::map<std::string, std::list<reg_struct_t>>> reg_content;
 
 		int get_statusreg_size();
 

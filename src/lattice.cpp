@@ -1213,45 +1213,136 @@ bool Lattice::wr_rd(uint8_t cmd,
 	return true;
 }
 
-typedef struct {
-	std::string description;
-	uint8_t offset;
-	uint8_t size;
-	std::map<int, std::string> reg_cnt;
-} reg_struct_t;
-
 #define REG_ENTRY(_description, _offset, _size, ...) \
 	{_description, _offset, _size, {__VA_ARGS__}}
 
-static const std::map<std::string, std::list<reg_struct_t>> reg_content = {
-	{"StatusRegister", std::list<reg_struct_t>{
-		REG_ENTRY("CRC Error",            0, 1, {0, "OK"}, {1, "KO"}),
-		REG_ENTRY("ID Verify failed",     1, 1, {0, "No"}, {1, "Yes"}),
-		REG_ENTRY("Invalid Command",      2, 1, {0, "No"}, {1, "Yes"}),
-		REG_ENTRY("SPIm Mode Error",      3, 1, {0, "No"}, {1, "Yes"}),
-		REG_ENTRY("Device locked",        4, 1, {0, "No"}, {1, "Yes"}),
-		REG_ENTRY("Key Fire",             5, 1, {0, "No"}, {1, "Yes"}),
-		REG_ENTRY("Alignement Preamble",  6, 1, {0, "No"}, {1, "Yes"}),
-		REG_ENTRY("Encryption Preamble",  7, 1, {0, "No"}, {1, "Yes"}),
-		REG_ENTRY("Std Preamble",         8, 1, {0, "No"}, {1, "Yes"}),
-		REG_ENTRY("HFC",                  9, 1, {0, "No"}, {1, "Yes"}),
-		REG_ENTRY("Memory Cleared",      15, 1, {0, "No"}, {1, "Yes"}),
-		REG_ENTRY("Device Secured",      16, 1, {0, "No"}, {1, "Yes"}),
-		REG_ENTRY("Device Configured",   17, 1, {0, "No"}, {1, "Yes"}),
-		REG_ENTRY("Non-JTAG Mode",       18, 1, {0, "No"}, {1, "Yes"}),
-		REG_ENTRY("ReadBack Mode",       19, 1, {0, "No"}, {1, "Yes"}),
-		REG_ENTRY("Bypass Mode",         20, 1, {0, "No"}, {1, "Yes"}),
-		REG_ENTRY("Flow Trough",         21, 1, {0, "No"}, {1, "Yes"}),
-		REG_ENTRY("Configuration Mode",  22, 1, {0, "No"}, {1, "Yes"}),
-		REG_ENTRY("Transparent Mode",    23, 1, {0, "No"}, {1, "Yes"}),
+const std::map<int, std::map<std::string, std::list<Lattice::reg_struct_t>>> Lattice::reg_content = {
+	{ECP3_FAMILY, {
+		{"StatusRegister", std::list<reg_struct_t>{
+			REG_ENTRY("CRC Error",            0, 1, {0, "OK"}, {1, "KO"}),
+			REG_ENTRY("ID Verify failed",     1, 1, {0, "No"}, {1, "Yes"}),
+			REG_ENTRY("Invalid Command",      2, 1, {0, "No"}, {1, "Yes"}),
+			REG_ENTRY("SPIm Mode Error",      3, 1, {0, "No"}, {1, "Yes"}),
+			REG_ENTRY("Device locked",        4, 1, {0, "No"}, {1, "Yes"}),
+			REG_ENTRY("Key Fire",             5, 1, {0, "No"}, {1, "Yes"}),
+			REG_ENTRY("Alignement Preamble",  6, 1, {0, "No"}, {1, "Yes"}),
+			REG_ENTRY("Encryption Preamble",  7, 1, {0, "No"}, {1, "Yes"}),
+			REG_ENTRY("Std Preamble",         8, 1, {0, "No"}, {1, "Yes"}),
+			REG_ENTRY("HFC",                  9, 1, {0, "No"}, {1, "Yes"}),
+			REG_ENTRY("Memory Cleared",      15, 1, {0, "No"}, {1, "Yes"}),
+			REG_ENTRY("Device Secured",      16, 1, {0, "No"}, {1, "Yes"}),
+			REG_ENTRY("Device Configured",   17, 1, {0, "No"}, {1, "Yes"}),
+			REG_ENTRY("Non-JTAG Mode",       18, 1, {0, "No"}, {1, "Yes"}),
+			REG_ENTRY("ReadBack Mode",       19, 1, {0, "No"}, {1, "Yes"}),
+			REG_ENTRY("Bypass Mode",         20, 1, {0, "No"}, {1, "Yes"}),
+			REG_ENTRY("Flow Trough",         21, 1, {0, "No"}, {1, "Yes"}),
+			REG_ENTRY("Configuration Mode",  22, 1, {0, "No"}, {1, "Yes"}),
+			REG_ENTRY("Transparent Mode",    23, 1, {0, "No"}, {1, "Yes"}),
+		}},
+	}},
+	{NEXUS_FAMILY, {
+		{"StatusRegister", std::list<reg_struct_t>{
+			REG_ENTRY("Transparent Mode",        0, 1, {0, "No"}, {1, "Yes"}),
+			REG_ENTRY("Cfg Target Select",       1, 3,
+				{0, "SRAM array"},
+				{1, "EFUSE Normal"},
+				{2, "EFUSE Pseudo;"},
+				{3, "EFUSE Safe"}),
+			REG_ENTRY("JTAG Active",             4, 1, {0, "No"}, {1, "Yes"}),
+			REG_ENTRY("PWD Protection",          5, 1, {0, "No"}, {1, "Yes"}),
+			REG_ENTRY("OTP",                     6, 1, {0, "No"}, {1, "Yes"}),
+			/* [7] Reserved */
+			REG_ENTRY("DONE",                    8, 1, {0, "No"}, {1, "Yes"}),
+			REG_ENTRY("ISC Enable",              9, 1, {0, "No"}, {1, "Yes"}),
+			REG_ENTRY("Write Enable",           10, 1,
+				{0, "Not Writable"}, {1, "Writable"}),
+			REG_ENTRY("Read Enable",            11, 1,
+				{0, "Not Readable"}, {1, "Readable"}),
+			REG_ENTRY("Busy Flag",              12, 1, {0, "No"}, {1, "Yes"}),
+			REG_ENTRY("Fail Flag",              13, 1, {0, "No"}, {1, "Yes"}),
+			/* [14] Reserved */
+			REG_ENTRY("Decrypt Only",           15, 1, {0, "No"}, {1, "Yes"}),
+			REG_ENTRY("PWD Enable",             16, 1, {0, "No"}, {1, "Yes"}),
+			REG_ENTRY("PWD All",                17, 1, {0, "No"}, {1, "Yes"}),
+			REG_ENTRY("CID EN",                 18, 1, {0, "No"}, {1, "Yes"}),
+			/* [19] Unused */
+			/* [20] Reserved */
+			REG_ENTRY("Encrypt Preamble",       21, 1, {0, "No"}, {1, "Yes"}),
+			REG_ENTRY("STD Preamble",           22, 1, {0, "No"}, {1, "Yes"}),
+			REG_ENTRY("SPIm Fail 1",            23, 1, {0, "No"}, {1, "Yes"}),
+			REG_ENTRY("BSE Error Code",         24, 4,
+				{ 0, "No error"},
+				{ 1, "ID error"},
+				{ 2, "CMD error - illegal command detected"},
+				{ 3, "CRC error"},
+				{ 4, "PRMB error - preamble error.         "},
+				{ 5, "ABRT error - configuration is aborted"},
+				{ 6, "OVFL error - data overflow error.     "},
+				{ 7, "SDM error - bitstream pass the size of the SRAM array"},
+				{ 8, "Authentication Error1"},
+				{ 9, "Authentication Setup Error1"},
+				{10, "Bitstream Engine Timeout Error"}),
+			REG_ENTRY("Execution Error",        28, 1, {0, "No"}, {1, "Yes"}),
+			REG_ENTRY("ID Error",               29, 1, {0, "No"}, {1, "Yes"}),
+			REG_ENTRY("Invalid Command",        30, 1, {0, "No"}, {1, "Yes"}),
+			REG_ENTRY("WDT Busy",               31, 1, {0, "No"}, {1, "Yes"}),
+			/* [32] Reserved */
+			REG_ENTRY("Dry Run DONE",           33, 1, {0, "No"}, {1, "Yes"}),
+			REG_ENTRY("BSE Error 1 Code",       34, 4,
+				{ 0, "No error"},
+				{ 1, "ID error"},
+				{ 2, "CMD error - illegal command detected"},
+				{ 3, "CRC error"},
+				{ 4, "PRMB error - preamble error"},
+				{ 5, "ABRT error - configuration is aborted"},
+				{ 6, "OVFL error - data overflow error"},
+				{ 7, "SDM error - bitstream pass the size of the SRAM array"},
+				{ 8, "Authentication Error1"},
+				{ 9, "Authentication Setup Error1"},
+				{10, "Bitstream Engine Timeout Error"}),
+			REG_ENTRY("Bypass Mode",            38, 1, {0, "No"}, {1, "Yes"}),
+			REG_ENTRY("Flow Through Mode",      39, 1, {0, "No"}, {1, "Yes"}),
+			/* [40-41] Reserved */
+			REG_ENTRY("SFDP Timeout",           42, 1, {0, "No"},  {1, "Yes"}),
+			REG_ENTRY("Key Destroy Pass",       43, 1, {0, "No"},  {1, "Yes"}),
+			REG_ENTRY("INITN",                  44, 1, {0, "Low"}, {1, "High"}),
+			REG_ENTRY("I3C Parity Error 2",     45, 1, {0, "No"},  {1, "Yes"}),
+			REG_ENTRY("INIT Bus ID Error",      46, 1, {0, "No"},  {1, "Yes"}),
+			REG_ENTRY("I3C Parity Error 1",     47, 1, {0, "No"},  {1, "Yes"}),
+
+			REG_ENTRY("Authentication Mode",    48, 2,
+				{0, "No Auth"},
+				{1, "ECDSA"},
+				{2, "HMAC"},
+				{3, "No Auth"}),
+			REG_ENTRY("Authentication Done",    50, 1, {0, "No"}, {1, "Yes"}),
+			REG_ENTRY("Dry Run Auth Done",      51, 1, {0, "No"}, {1, "Yes"}),
+			REG_ENTRY("JTAG Locked",            52, 1, {0, "No"}, {1, "Yes"}),
+			REG_ENTRY("SSPI Locked",            53, 1, {0, "No"}, {1, "Yes"}),
+			REG_ENTRY("I2C/I3C Locked",         54, 1, {0, "No"}, {1, "Yes"}),
+			REG_ENTRY("PUB Read Lock",          55, 1, {0, "No"}, {1, "Yes"}),
+			REG_ENTRY("PUB Write Lock",         56, 1, {0, "No"}, {1, "Yes"}),
+			REG_ENTRY("FEA Read Lock",          57, 1, {0, "No"}, {1, "Yes"}),
+			REG_ENTRY("FEA Write Lock",         58, 1, {0, "No"}, {1, "Yes"}),
+			REG_ENTRY("AES Read Lock",          59, 1, {0, "No"}, {1, "Yes"}),
+			REG_ENTRY("AES Write Lock",         60, 1, {0, "No"}, {1, "Yes"}),
+			REG_ENTRY("PWD Read Lock",          61, 1, {0, "No"}, {1, "Yes"}),
+			REG_ENTRY("PWD Write Lock",         62, 1, {0, "No"}, {1, "Yes"}),
+			REG_ENTRY("Global Lock",            63, 1, {0, "No"}, {1, "Yes"}),
+		}},
 	}},
 };
 
 void Lattice::displayReadReg(uint64_t dev)
 {
-	if (_fpga_family == ECP3_FAMILY) {
-		auto reg = reg_content.find("StatusRegister");
-		if (reg == reg_content.end()) {
+	if (_fpga_family == ECP3_FAMILY || _fpga_family == NEXUS_FAMILY) {
+		auto rc = reg_content.find(_fpga_family);
+		if (rc == reg_content.end()) {
+			printError("Unknown family");
+			return;
+		}
+		auto reg = rc->second.find("StatusRegister");
+		if (reg == rc->second.end()) {
 			printError("Unknown register StatusRegister");
 			return;
 		}
@@ -1260,7 +1351,7 @@ void Lattice::displayReadReg(uint64_t dev)
 		raw_val << "0x" << std::hex << dev;
 		printSuccess("Register raw value: " + raw_val.str());
 
-		const std::list<reg_struct_t> regs = reg->second;
+		const std::list<reg_struct_t> &regs = reg->second;
 		for (reg_struct_t r: regs) {
 			uint8_t offset = r.offset;
 			uint8_t size = r.size;
@@ -1299,23 +1390,13 @@ void Lattice::displayReadReg(uint64_t dev)
 	if (dev & 1 << 14) printf("\tFFEA OTP\n");
 	if (dev & 1 << 15) printf("\tDecrypt Only\n");
 	if (dev & 1 << 16) printf("\tPWD Enable\n");
-	if (_fpga_family == NEXUS_FAMILY) {
-		if (dev & 1 << 17) printf("\tPWD All\n");
-		if (dev & 1 << 18) printf("\tCID En\n");
-		if (dev & 1 << 19) printf("\tinternal use\n");
-		if (dev & 1 << 21) printf("\tEncryption PreAmble\n");
-		if (dev & 1 << 22) printf("\tStd PreAmble\n");
-		if (dev & 1 << 23) printf("\tSPIm Fail1\n");
-		err = (dev >> 24)&0x0f;
-	} else {
-		if (dev & 1 << 17) printf("\tUFM OTP\n");
-		if (dev & 1 << 18) printf("\tASSP\n");
-		if (dev & 1 << 19) printf("\tSDM Enable\n");
-		if (dev & 1 << 20) printf("\tEncryption PreAmble\n");
-		if (dev & 1 << 21) printf("\tStd PreAmble\n");
-		if (dev & 1 << 22) printf("\tSPIm Fail1\n");
-		err = (dev >> 23)&0x07;
-	}
+	if (dev & 1 << 17) printf("\tUFM OTP\n");
+	if (dev & 1 << 18) printf("\tASSP\n");
+	if (dev & 1 << 19) printf("\tSDM Enable\n");
+	if (dev & 1 << 20) printf("\tEncryption PreAmble\n");
+	if (dev & 1 << 21) printf("\tStd PreAmble\n");
+	if (dev & 1 << 22) printf("\tSPIm Fail1\n");
+	err = (dev >> 23)&0x07;
 
 	printf("\tBSE Error Code\n");
 	printf("\t\t");
@@ -1357,88 +1438,12 @@ void Lattice::displayReadReg(uint64_t dev)
 			printf("unknown error: %x\n", err);
 	}
 
-	if (_fpga_family == NEXUS_FAMILY) {
-		if ((dev >> 28) & 0x01) printf("\tEXEC Error\n");
-		if ((dev >> 29) & 0x01) printf("\tID Error\n");
-		if ((dev >> 30) & 0x01) printf("\tInvalid Command\n");
-		if ((dev >> 31) & 0x01) printf("\tWDT Busy\n");
-	} else {
-		if (dev & REG_STATUS_EXEC_ERR) printf("\tEXEC Error\n");
-		if ((dev >> 27) & 0x01) printf("\tDevice failed to verify\n");
-		if ((dev >> 28) & 0x01) printf("\tInvalid Command\n");
-		if ((dev >> 29) & 0x01) printf("\tSED Error\n");
-		if ((dev >> 30) & 0x01) printf("\tBypass Mode\n");
-		if ((dev >> 31) & 0x01) printf("\tFT Mode\n");
-	}
-
-	if (_fpga_family == NEXUS_FAMILY) {
-		if ((dev >> 33) & 0x01) printf("\tDry Run Done\n");
-		err = (dev >> 34)&0x0f;
-		printf("\tBSE Error 1 Code for previous bitstream execution\n");
-		printf("\t\t");
-		switch (err) {
-			case 0:
-				printf("No err\n");
-				break;
-			case 1:
-				printf("ID ERR\n");
-				break;
-			case 2:
-				printf("CMD ERR\n");
-				break;
-			case 3:
-				printf("CRC ERR\n");
-				break;
-			case 4:
-				printf("Preamble ERR\n");
-				break;
-			case 5:
-				printf("Abort ERR\n");
-				break;
-			case 6:
-				printf("Overflow ERR\n");
-				break;
-			case 7:
-				printf("SDM EOF\n");
-				break;
-			case 8:
-				printf("Authentication ERR\n");
-				break;
-			case 9:
-				printf("Authentication Setup ERR\n");
-				break;
-			case 10:
-				printf("Bitstream Engine Timeout ERR\n");
-				break;
-			default:
-				printf("unknown error: %x\n", err);
-		}
-		if ((dev >> 38) & 0x01) printf("\tBypass Mode\n");
-		if ((dev >> 39) & 0x01) printf("\tFlow Through Mode\n");
-		if ((dev >> 42) & 0x01) printf("\tSFDP Timeout\n");
-		if ((dev >> 43) & 0x01) printf("\tKey Destroy pass\n");
-		if ((dev >> 44) & 0x01) printf("\tINITN\n");
-		if ((dev >> 45) & 0x01) printf("\tI3C Parity Error2\n");
-		if ((dev >> 46) & 0x01) printf("\tINIT Bus ID Error\n");
-		if ((dev >> 47) & 0x01) printf("\tI3C Parity Error1\n");
-		err = (dev >> 48) & 0x03;
-		printf("\tAuthentication mode:\n");
-		printf("\t\t");
-		switch (err) {
-			case 3:
-			case 0:
-				printf("No Auth\n");
-				break;
-			case 1:
-				printf("ECDSA\n");
-				break;
-			case 2:
-				printf("HMAC\n");
-				break;
-		}
-		if ((dev >> 50) & 0x01) printf("\tAuthentication Done\n");
-		if ((dev >> 51) & 0x01) printf("\tDry Run Authentication Done\n");
-  }
+	if (dev & REG_STATUS_EXEC_ERR) printf("\tEXEC Error\n");
+	if ((dev >> 27) & 0x01) printf("\tDevice failed to verify\n");
+	if ((dev >> 28) & 0x01) printf("\tInvalid Command\n");
+	if ((dev >> 29) & 0x01) printf("\tSED Error\n");
+	if ((dev >> 30) & 0x01) printf("\tBypass Mode\n");
+	if ((dev >> 31) & 0x01) printf("\tFT Mode\n");
 }
 
 bool Lattice::pollBusyFlag(bool verbose)
