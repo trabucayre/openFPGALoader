@@ -137,9 +137,11 @@ using namespace std;
 #define READ_ECDSA_PUBKEY2				0x62		/* This command is used to read the third 128 bits of the ECDSA Public Key. */
 #define PROG_ECDSA_PUBKEY3				0x63		/* This command is used to program the fourth 128 bits of the ECDSA Public Key. */
 #define READ_ECDSA_PUBKEY3				0x64		/* This command is used to read the fourth 128 bits of the ECDSA Public Key. */
+#define ISC_ENABLE_X					0x74
 #define ISC_NOOP						0xff		/* This command is no operation command (NOOP) or null operation. */
 #define LSC_DEVICE_CONTROL  0x7D    /* Multiple commands. Bit 3: configuration reset */
 #define PRELOAD_SAMPLE      0x1C    /* PRELOAD/SAMPLE jtag opcode. Nexus family has Bscan register 362 bits-long => 45.25 => 46 bytes */
+#define BYPASS              0xFF
 
 #define PUBKEY_LENGTH_BYTES				64			/* length of the public key (MachXO3D) in bytes */
 
@@ -817,7 +819,8 @@ bool Lattice::post_flash_access()
 }
 void Lattice::reset()
 {
-	if (_fpga_family == ECP5_FAMILY || _fpga_family == ECP3_FAMILY)
+	if (_fpga_family == ECP5_FAMILY || _fpga_family == ECP3_FAMILY
+			|| _fpga_family == NEXUS_FAMILY)
 		post_flash_access();
 	else
 		printError("Lattice Reset only tested on ECP5 Family.");
@@ -834,14 +837,24 @@ bool Lattice::clearSRAM()
 	uint8_t tx_buf[46];
 	memset(tx_buf, 0xff, 46);
 	int tx_len;
+	int tx_bit_len;
 	if(_fpga_family == NEXUS_FAMILY){
 		tx_len = 46;
+		tx_bit_len = 362;
+		uint8_t cmd = PRELOAD_SAMPLE;
+		_jtag->shiftIR(&cmd, NULL, 8, Jtag::RUN_TEST_IDLE);
+		_jtag->shiftDR(tx_buf, NULL, tx_bit_len,
+			Jtag::RUN_TEST_IDLE);
+		wr_rd(REFRESH, NULL, 0, NULL, 0);
+		_jtag->set_state(Jtag::RUN_TEST_IDLE);
+		_jtag->toggleClk(2);
 	} else {
 		tx_len = 26;
-	}
-	wr_rd(PRELOAD_SAMPLE, tx_buf, tx_len, NULL, 0);
+		tx_bit_len = 26 * 8;
+		wr_rd(PRELOAD_SAMPLE, tx_buf, tx_len, NULL, 0);
 
-	wr_rd(0xFF, NULL, 0, NULL, 0);
+		wr_rd(BYPASS, NULL, 0, NULL, 0);
+	}
 
 	/* ISC Enable 0xC6 */
 	printInfo("Enable configuration: ", false);
@@ -1015,15 +1028,20 @@ void Lattice::program(unsigned int offset, bool unprotect_flash)
  */
 bool Lattice::EnableISC(uint8_t flash_mode)
 {
+	uint8_t cmd = ISC_ENABLE;
+
 	if (_fpga_family == ECP3_FAMILY) {
 		wr_rd(ECP3_ISC_ENABLE, NULL, 0, NULL, 0);
 		_jtag->set_state(Jtag::RUN_TEST_IDLE);
 		_jtag->toggleClk(5, 1);
 		usleep_ecp3(20000); // 0.20s
 		return true;
+	} else if (_fpga_family == NEXUS_FAMILY) {
+		cmd = (_mode == FLASH_MODE) ? ISC_ENABLE: ISC_ENABLE_X;
+		flash_mode = 0;
 	}
 
-	wr_rd(ISC_ENABLE, &flash_mode, 1, NULL, 0);
+	wr_rd(cmd, &flash_mode, 1, NULL, 0);
 
 	_jtag->set_state(Jtag::RUN_TEST_IDLE);
 	_jtag->toggleClk(1000);
@@ -1045,7 +1063,14 @@ bool Lattice::DisableISC()
 	}
 	wr_rd(ISC_DISABLE, NULL, 0, NULL, 0);
 	_jtag->set_state(Jtag::RUN_TEST_IDLE);
-	_jtag->toggleClk(1000);
+	if (_fpga_family == NEXUS_FAMILY) {
+		_jtag->toggleClk(2);
+		wr_rd(BYPASS, NULL, 0, NULL, 0);
+		_jtag->set_state(Jtag::RUN_TEST_IDLE);
+		_jtag->toggleClk(100);
+	} else {
+		_jtag->toggleClk(1000);
+	}
 	if (!pollBusyFlag())
 		return false;
 	if (!checkStatus(0, REG_STATUS_ISC_EN))
