@@ -110,6 +110,7 @@ class Lattice: public Device, SPIInterface {
 		 * \brief erase SRAM
 		 */
 		bool clearSRAM();
+		bool preload();
 		void unlock();
 		bool EnableISC(uint8_t flash_mode);
 		bool DisableISC();

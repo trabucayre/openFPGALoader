@@ -33,6 +33,9 @@ using namespace std;
 #  define ISC_ENABLE_FLASH_MODE		(1 << 3)
 #  define ISC_ENABLE_SRAM_MODE		(0 << 3)
 #define ISC_ENABLE_TRANSPARENT		0x74		/* ISC_ENABLE_X This command is used to put the device in transparent mode */
+#define LSC_BITSTREAM_BURST			0x7A        /* Program the device with the */
+                                                /* bitstream sent in through the */
+                                                /* JTAG port. */
 #define ISC_DISABLE					0x26		/* ISC_DISABLE */
 #define READ_DEVICE_ID_CODE			0xE0		/* IDCODE_PUB */
 #define FLASH_ERASE					0x0E		/* ISC_ERASE */
@@ -155,6 +158,9 @@ using namespace std;
 #define ECP3_RESET_ADDRESS        0x21
 #define ECP3_LSCC_REFRESH         0x23
 #define ECP3_READ_STATUS_REGISTER 0x53
+
+/* Nexus */
+#define REG_NEXUS_STATUS_BSE_ERR_MASK (0x0f << 24)
 
 Lattice::Lattice(Jtag *jtag, const string filename, const string &file_type,
 	Device::prog_type_t prg_type, std::string flash_sector, bool verify, int8_t verbose, bool skip_load_bridge, bool skip_reset):
@@ -284,6 +290,43 @@ bool Lattice::checkStatus(uint64_t val, uint64_t mask)
 	return ((reg & mask) == val) ? true : false;
 }
 
+/* PRELOAD/SAMPLE 0x1C
+ * For NEXUS family fpgas, the Bscan register is 362 bits long or
+ * 45.25 bytes => 46 bytes
+ * For ECP3 family fpgas, the Bscan register is 1077 bits long or
+ * 134.62 bytes => 135 bytes
+ */
+bool Lattice::preload()
+{
+    uint8_t tx_buf[135];
+    memset(tx_buf, 0xff, 135);
+    int tx_len;
+    int tx_bit_len;
+	switch (_fpga_family) {
+		case ECP3_FAMILY:
+			tx_len = 135;
+			tx_bit_len = 1077;
+			break;
+		case NEXUS_FAMILY:
+			tx_len = 46;
+			tx_bit_len = 362;
+			break;
+		default:
+			tx_len = 26;
+			tx_bit_len = tx_len * 8;
+	}
+    if(_fpga_family == NEXUS_FAMILY){
+        uint8_t cmd = PRELOAD_SAMPLE;
+        _jtag->shiftIR(&cmd, NULL, 8, Jtag::RUN_TEST_IDLE);
+        _jtag->shiftDR(tx_buf, NULL, tx_bit_len,
+            Jtag::RUN_TEST_IDLE);
+    } else {
+        wr_rd(PRELOAD_SAMPLE, tx_buf, tx_len, NULL, 0);
+    }
+
+	return true;
+}
+
 bool Lattice::program_mem()
 {
 	bool err;
@@ -329,20 +372,7 @@ bool Lattice::program_mem()
 	 * For ECP3 family fpgas, the Bscan register is 1077 bits long or
 	 * 134.62 bytes => 135 bytes
 	 */
-	uint8_t tx_buf[135];
-	memset(tx_buf, 0xff, 135);
-	int tx_len;
-	switch (_fpga_family) {
-		case NEXUS_FAMILY:
-			tx_len = 46;
-			break;
-		case ECP3_FAMILY:
-			tx_len = 135;
-			break;
-		default:
-			tx_len = 26;
-	}
-	wr_rd(PRELOAD_SAMPLE, tx_buf, tx_len, NULL, 0);
+	preload();
 
 	/* LSC_REFRESH 0x79 -- "Equivalent to toggle PROGRAMN pin"
 	 * We REFRESH only if the fpga is in a status of error due to
@@ -353,29 +383,29 @@ bool Lattice::program_mem()
 	bool was_refreshed;
 	switch (_fpga_family) {
 		case NEXUS_FAMILY:
-			if (!checkStatus(0, REG_STATUS_PRV_CNF_CHK_MASK)) {
-				printInfo("Error in previous bitstream execution. REFRESH: ", false);
-				wr_rd(REFRESH, NULL, 0, NULL, 0);
-				_jtag->set_state(Jtag::RUN_TEST_IDLE);
-				_jtag->toggleClk(1000);
-				/* In Lattice FPGA-TN-02099 document in a note it's reported that there
-					 is a delay time after LSC_REFRESH where "Duration could be in
-					 seconds". Without whis waiting time, busy flag can't be cleared.*/
-				sleep(5);
-				was_refreshed = true;
-				if (!checkStatus(0, REG_STATUS_PRV_CNF_CHK_MASK)) {
-					printError("FAIL");
-					displayReadReg(readStatusReg());
-					return false;
-				} else {
-					printSuccess("DONE");
-				}
-			} else {
-				was_refreshed = false;
-				if (_verbose){
-					printInfo("No error in previous bitstream execution.", true);
-				}
-			}
+			//if (!checkStatus(0, REG_STATUS_PRV_CNF_CHK_MASK)) {
+			//	printInfo("Error in previous bitstream execution. REFRESH: ", false);
+			//	wr_rd(REFRESH, NULL, 0, NULL, 0);
+			//	_jtag->set_state(Jtag::RUN_TEST_IDLE);
+			//	_jtag->toggleClk(1000);
+			//	/* In Lattice FPGA-TN-02099 document in a note it's reported that there
+			//		 is a delay time after LSC_REFRESH where "Duration could be in
+			//		 seconds". Without whis waiting time, busy flag can't be cleared.*/
+			//	sleep(5);
+			//	was_refreshed = true;
+			//	if (!checkStatus(0, REG_STATUS_PRV_CNF_CHK_MASK)) {
+			//		printError("FAIL");
+			//		displayReadReg(readStatusReg());
+			//		return false;
+			//	} else {
+			//		printSuccess("DONE");
+			//	}
+			//} else {
+			//	was_refreshed = false;
+			//	if (_verbose){
+			//		printInfo("No error in previous bitstream execution.", true);
+			//	}
+			//}
 			break;
 		case ECP3_FAMILY:
 			wr_rd(ECP3_LSCC_REFRESH, NULL, 0, NULL, 0);
@@ -398,7 +428,11 @@ bool Lattice::program_mem()
 		printSuccess("DONE");
 	}
 
-	if (was_refreshed) {
+	if (_fpga_family == NEXUS_FAMILY) {
+		wr_rd(REFRESH, NULL, 0, NULL, 0);
+		_jtag->set_state(Jtag::RUN_TEST_IDLE);
+		_jtag->toggleClk(2);
+
 		/* LSC_DEVICE_CONTROL 0x7D -- configuration reset */
 		printInfo("Configuration Logic Reset: ", false);
 		uint8_t tx_tmp[1] = {0x08};
@@ -442,6 +476,17 @@ bool Lattice::program_mem()
 		printSuccess("DONE");
 	}
 
+	if (_fpga_family == NEXUS_FAMILY) {
+		printInfo("SRAM erase check: ", false);
+		uint64_t status = readStatusReg();
+		if ((status & 0x000000000002100) != 0) {
+			printError("FAIL");
+			return false;
+		} else {
+			printSuccess("DONE");
+		}
+	}
+
 	/* LSC_INIT_ADDRESS */
 	if (_fpga_family == ECP3_FAMILY) {
 		wr_rd(ECP3_RESET_ADDRESS, NULL, 0, NULL, 0);
@@ -460,7 +505,7 @@ bool Lattice::program_mem()
 			return false;
 		}
 	} else {
-		wr_rd(0x46, NULL, 0, NULL, 0);
+		wr_rd(RESET_CFG_ADDR, NULL, 0, NULL, 0); // LSC_INIT_ADDRESS
 		_jtag->set_state(Jtag::RUN_TEST_IDLE);
 		_jtag->toggleClk(1000);
 	}
@@ -476,7 +521,7 @@ bool Lattice::program_mem()
 
 		wr_rd(ECP3_LSCC_BITSTREAM_BURST, NULL, 0, NULL, 0);
 	} else {
-		wr_rd(0x7A, NULL, 0, NULL, 0);
+		wr_rd(LSC_BITSTREAM_BURST, NULL, 0, NULL, 0);
 		_jtag->set_state(Jtag::RUN_TEST_IDLE);
 		_jtag->toggleClk(2);
 	}
@@ -521,12 +566,18 @@ bool Lattice::program_mem()
 		_jtag->toggleClk(1000);
 
 		uint32_t status_mask;
+		uint32_t status_val = 0;
 		if (_fpga_family == MACHXO3D_FAMILY)
 			status_mask = REG_STATUS_MACHXO3D_CNF_CHK_MASK;
+		else if (_fpga_family == NEXUS_FAMILY) {
+			status_val = REG_STATUS_DONE;
+			status_mask = REG_STATUS_DONE | REG_STATUS_BUSY | REG_STATUS_FAIL
+				| REG_NEXUS_STATUS_BSE_ERR_MASK;
+		}
 		else
 			status_mask = REG_STATUS_CNF_CHK_MASK;
 
-		if (checkStatus(0, status_mask)) {
+		if (checkStatus(status_val, status_mask)) {
 			progress.done();
 		} else {
 			progress.fail();
@@ -577,6 +628,11 @@ bool Lattice::program_mem()
 
 	/* bypass */
 	wr_rd(0xff, NULL, 0, NULL, 0);
+	if (_fpga_family == NEXUS_FAMILY) {
+		_jtag->set_state(Jtag::RUN_TEST_IDLE);
+		_jtag->toggleClk(100);
+		usleep_ecp3(1000000);
+	}
 	_jtag->go_test_logic_reset();
 	return true;
 }
@@ -1036,9 +1092,6 @@ bool Lattice::EnableISC(uint8_t flash_mode)
 		_jtag->toggleClk(5, 1);
 		usleep_ecp3(20000); // 0.20s
 		return true;
-	} else if (_fpga_family == NEXUS_FAMILY) {
-		cmd = (_mode == FLASH_MODE) ? ISC_ENABLE: ISC_ENABLE_X;
-		flash_mode = 0;
 	}
 
 	wr_rd(cmd, &flash_mode, 1, NULL, 0);
@@ -1516,7 +1569,12 @@ bool Lattice::flashErase(uint32_t  mask)
 		wr_rd(FLASH_ERASE, tx, 1, NULL, 0);
 	}
 	_jtag->set_state(Jtag::RUN_TEST_IDLE);
-	_jtag->toggleClk(1000);
+	if (_fpga_family == NEXUS_FAMILY) {
+		_jtag->toggleClk(100);
+		usleep_ecp3(1000000);
+	} else {
+		_jtag->toggleClk(1000);
+	}
 
 	if (!pollBusyFlag())
 		return false;
