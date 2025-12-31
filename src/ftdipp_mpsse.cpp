@@ -377,6 +377,17 @@ int FTDIpp_MPSSE::setClkFreq(uint32_t clkHZ)
 	float real_freq = 0;
 	uint16_t presc;
 
+#if (FTDI_VERSION < 105)
+	ftdi_usb_purge_buffers(_ftdi);
+#else
+	if ((ret = ftdi_tcioflush(_ftdi)) < 0) {
+		printError("selfClkFreq: fail to flush buffers: " +
+				string(ftdi_get_error_string(_ftdi)));
+		return ret;
+	}
+
+#endif
+
 	_clkHZ = clkHZ;
 
 	/* FT2232C has no divide by 5 instruction
@@ -445,17 +456,6 @@ int FTDIpp_MPSSE::setClkFreq(uint32_t clkHZ)
 				string(ftdi_get_error_string(_ftdi)));
 		return ret;
 	}
-
-#if (FTDI_VERSION < 105)
-	ftdi_usb_purge_buffers(_ftdi);
-#else
-	if ((ret = ftdi_tcioflush(_ftdi)) < 0) {
-		printError("selfClkFreq: fail to flush buffers: " +
-				string(ftdi_get_error_string(_ftdi)));
-		return ret;
-	}
-
-#endif
 
 	_clkHZ = real_freq;
 
