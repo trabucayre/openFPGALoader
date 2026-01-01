@@ -514,11 +514,14 @@ int esp_usb_jtag::writeTMS(const uint8_t *tms, uint32_t len, bool flush_buffer,
  *     the full sequence
  * when len > OUT_BUF_SZ we have to sent OUT_BUF_SZ x n + remaining bits
  *     here is_high_nibble must be re-computed more than one time
+ * tms and tdi are ignored: current pins state are kept, only the clock
+ * is toggled.
  */
 
 /* Here we have to write len bit or 2xlen Bytes
  */
-int esp_usb_jtag::toggleClk(uint8_t tms, uint8_t tdi, uint32_t len)
+int esp_usb_jtag::toggleClk(__attribute__((unused))uint8_t tms,
+	uint8_t __attribute__((unused))tdi, uint32_t len)
 {
 	uint8_t buf[OUT_BUF_SZ];
 	char mess[256];
@@ -529,9 +532,6 @@ int esp_usb_jtag::toggleClk(uint8_t tms, uint8_t tdi, uint32_t len)
 
 	if (len == 0)
 		return 0;
-
-	_tms = tms;  // store tms as new default tms state
-	_tdi = tdi;  // store tdi as new default tdi state
 
 	const uint8_t cmd = CMD_CLK(0, _tdi, _tms);  // cmd is constant
 	const uint8_t prev_high_nibble = (cmd << 4) | cmd;
