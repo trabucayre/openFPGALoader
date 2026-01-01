@@ -7,11 +7,11 @@
 #include <stdio.h>
 #include <string.h>
 
+#include <cassert>
 #include <iostream>
 #include <map>
-#include <vector>
 #include <string>
-#include <cassert>
+#include <vector>
 
 #include "dirtyJtag.hpp"
 #include "display.hpp"
@@ -64,7 +64,7 @@ enum dirtyJtagSig {
 
 DirtyJtag::DirtyJtag(uint32_t clkHZ, int8_t verbose, uint16_t vid, uint16_t pid):
 			_verbose(verbose),
-			dev_handle(NULL), usb_ctx(NULL), _tdi(0), _tms(0)
+			dev_handle(NULL), usb_ctx(NULL), _tdi(0), _tms(0), _version(0)
 {
 	int ret;
 
@@ -88,7 +88,6 @@ DirtyJtag::DirtyJtag(uint32_t clkHZ, int8_t verbose, uint16_t vid, uint16_t pid)
 		throw std::exception();
 	}
 
-	_version = 0;
 	if (!getVersion())
 		throw std::runtime_error("Fail to get version");
 
@@ -141,8 +140,6 @@ bool DirtyJtag::getVersion()
 	return true;
 }
 
-
-
 int DirtyJtag::setClkFreq(uint32_t clkHZ)
 {
 	int actual_length;
@@ -181,13 +178,14 @@ int DirtyJtag::writeTMS(const uint8_t *tms, uint32_t len,
 	if (len == 0)
 		return 0;
 
-	uint8_t mask = SIG_TCK | SIG_TMS | SIG_TDI;
+	_tdi = (tdi) ? SIG_TDI : 0;
+
+	const uint8_t mask = SIG_TCK | SIG_TMS | SIG_TDI;
 	uint8_t buf[64];
-	u_int buffer_idx = 0;
-	for (uint32_t i = 0; i < len; i++)
-	{
-		uint8_t val = (tms[i >> 3] & (1 << (i & 0x07))) ? SIG_TMS : 0;
-		val |= tdi ? SIG_TDI : 0;
+	uint32_t buffer_idx = 0;
+	for (uint32_t i = 0; i < len; i++) {
+		_tms = ((tms[i >> 3] & (1 << (i & 0x07))) ? SIG_TMS : 0);
+		const uint8_t val = _tdi | _tms;
 		buf[buffer_idx++] = CMD_SETSIG;
 		buf[buffer_idx++] = mask;
 		buf[buffer_idx++] = val;
@@ -216,13 +214,15 @@ int DirtyJtag::writeTMS(const uint8_t *tms, uint32_t len,
 	return len;
 }
 
-int DirtyJtag::toggleClk(uint8_t tms, uint8_t tdi, uint32_t clk_len)
+int DirtyJtag::toggleClk(uint8_t tms, __attribute__((unused)) uint8_t tdi,
+	uint32_t clk_len)
 {
 	int actual_length;
+	_tms = tms ? SIG_TMS : 0;
 	uint8_t buf[] = {CMD_CLK,
-				static_cast<uint8_t>(((tms) ? SIG_TMS : 0) | ((tdi) ? SIG_TDI : 0)),
-				0,
-				CMD_STOP};
+		static_cast<uint8_t>(_tms | _tdi),
+		0,
+		CMD_STOP};
 	while (clk_len > 0) {
 		buf[2] = (clk_len > 64) ? 64 : (uint8_t)clk_len;
 
@@ -247,7 +247,7 @@ int DirtyJtag::writeTDI(const uint8_t *tx, uint8_t *rx, uint32_t len, bool end)
 {
 	int actual_length;
 	uint32_t real_bit_len = len - (end ? 1 : 0);
-	uint32_t kRealByteLen = (len + 7) / 8;
+	const uint32_t kRealByteLen = (len + 7) / 8;
 
 	uint8_t tx_cpy[kRealByteLen];
 	uint8_t tx_buf[512], rx_buf[512];
@@ -263,10 +263,11 @@ int DirtyJtag::writeTDI(const uint8_t *tx, uint8_t *rx, uint32_t len, bool end)
 	uint16_t max_bit_transfer_length = v_options[_version].max_bits;
 	// need to cut the bits on byte size.
 	assert(max_bit_transfer_length % 8 == 0);
+	uint32_t rx_cnt = 0;
 	while (real_bit_len != 0) {
-		uint16_t bit_to_send = (real_bit_len > max_bit_transfer_length) ?
+		const uint16_t bit_to_send = (real_bit_len > max_bit_transfer_length) ?
 			max_bit_transfer_length : real_bit_len;
-		size_t byte_to_send = (bit_to_send + 7) / 8;
+		const size_t byte_to_send = (bit_to_send + 7) / 8;
 		size_t header_offset = 0;
 		if (_version == 3) {
 			tx_buf[1] = (bit_to_send >> 8) & 0xFF;
@@ -276,21 +277,24 @@ int DirtyJtag::writeTDI(const uint8_t *tx, uint8_t *rx, uint32_t len, bool end)
 			tx_buf[0] |= EXTEND_LENGTH;
 			tx_buf[1] = bit_to_send - 256;
 			header_offset = 2;
-		}else {
+		} else {
 			tx_buf[0] &= ~EXTEND_LENGTH;
 			tx_buf[1] = bit_to_send;
 			header_offset = 2;
 		}
 		memset(tx_buf + header_offset, 0, byte_to_send);
-		for (int i = 0; i < bit_to_send; i++)
-			if (tx_ptr[i >> 3] & (1 << (i & 0x07)))
+		for (int i = 0; i < bit_to_send; i++) {
+			_tdi = (tx_ptr[i >> 3] & (1 << (i & 0x07))) ? SIG_TDI : 0;
+			if (_tdi == SIG_TDI)
 				tx_buf[header_offset + (i >> 3)] |= (0x80 >> (i & 0x07));
+		}
 
 		actual_length = 0;
+		const int xfer_len = byte_to_send + header_offset;
 		int ret = libusb_bulk_transfer(dev_handle, DIRTYJTAG_WRITE_EP,
-				(unsigned char *)tx_buf, (byte_to_send + header_offset),
+				(unsigned char *)tx_buf, xfer_len,
 				&actual_length, DIRTYJTAG_TIMEOUT);
-		if ((ret < 0) || (actual_length != (int)(byte_to_send + header_offset))) {
+		if ((ret < 0) || (actual_length != xfer_len)) {
 			cerr << "writeTDI: fill: usb bulk write failed " << ret <<
 				"actual length: " << actual_length << endl;
 			return EXIT_FAILURE;
@@ -298,7 +302,7 @@ int DirtyJtag::writeTDI(const uint8_t *tx, uint8_t *rx, uint32_t len, bool end)
 		// cerr << actual_length << ", " << bit_to_send << endl;
 
 		if (rx || (_version <= 1)) {
-			int transfer_length = (bit_to_send > 255) ? byte_to_send :32;
+			const int transfer_length = (bit_to_send > 255) ? byte_to_send : 32;
 			do {
 				ret = libusb_bulk_transfer(dev_handle, DIRTYJTAG_READ_EP,
 					rx_buf, transfer_length, &actual_length, DIRTYJTAG_TIMEOUT);
@@ -307,14 +311,14 @@ int DirtyJtag::writeTDI(const uint8_t *tx, uint8_t *rx, uint32_t len, bool end)
 					return EXIT_FAILURE;
 				}
 			} while (actual_length == 0);
-			assert((size_t)actual_length >= byte_to_send);
+			assert(static_cast<size_t>(actual_length) >= byte_to_send);
 		}
 
 		if (rx) {
-			for (int i = 0; i < bit_to_send; i++)
-				rx_ptr[i >> 3] = (rx_ptr[i >> 3] >> 1) |
+			for (int i = 0; i < bit_to_send; i++, rx_cnt++) {
+				rx_ptr[rx_cnt >> 3] = (rx_ptr[rx_cnt >> 3] >> 1) |
 						(((rx_buf[i >> 3] << (i&0x07)) & 0x80));
-			rx_ptr += byte_to_send;
+			}
 		}
 
 		real_bit_len -= bit_to_send;
@@ -325,15 +329,13 @@ int DirtyJtag::writeTDI(const uint8_t *tx, uint8_t *rx, uint32_t len, bool end)
 	if (end) {
 		int pos = len-1;
 		uint8_t sig;
-		unsigned char last_bit =
-				(tx_cpy[pos >> 3] & (1 << (pos & 0x07))) ? SIG_TDI: 0;
+		_tdi = (tx_cpy[pos >> 3] & (1 << (pos & 0x07))) ? SIG_TDI: 0;
+		_tms = SIG_TMS;
 
-		uint8_t mask = SIG_TMS | SIG_TDI;
-		uint8_t val = SIG_TMS | (last_bit);
+		if (rx) {
+			const uint8_t mask = SIG_TMS | SIG_TDI | SIG_TCK;
+			const uint8_t val = _tms | _tdi;
 
-		if (rx)
-		{
-			mask |= SIG_TCK;
 			uint8_t buf[] = {
 				CMD_SETSIG,
 				static_cast<uint8_t>(mask),
@@ -345,39 +347,36 @@ int DirtyJtag::writeTDI(const uint8_t *tx, uint8_t *rx, uint32_t len, bool end)
 				CMD_STOP,
 			};
 			if (libusb_bulk_transfer(dev_handle, DIRTYJTAG_WRITE_EP,
-									 buf, sizeof(buf), &actual_length,
-									 DIRTYJTAG_TIMEOUT) < 0)
-			{
+									 buf, 8, &actual_length,
+									 DIRTYJTAG_TIMEOUT) < 0) {
 				cerr << "writeTDI: last bit error: usb bulk write failed 1" << endl;
 				return -EXIT_FAILURE;
 			}
-			do
-			{
+
+			do {
 				if (libusb_bulk_transfer(dev_handle, DIRTYJTAG_READ_EP,
 											&sig, 1, &actual_length,
-											DIRTYJTAG_TIMEOUT) < 0)
-				{
+											DIRTYJTAG_TIMEOUT) < 0) {
 					cerr << "writeTDI: last bit error: usb bulk read failed" << endl;
 					return -EXIT_FAILURE;
 				}
 			} while (actual_length == 0);
-			rx[pos >> 3] >>= 1;
+
+			rx[rx_cnt >> 3] >>= 1;
 			if (sig & SIG_TDO)
-			{
-				rx[pos >> 3] |= (1 << (pos & 0x07));
-			}
+				rx[rx_cnt >> 3] |= (1 << (rx_cnt & 0x07));
+
 			buf[2] &= ~SIG_TCK;
 			buf[3] = CMD_STOP;
 			if (libusb_bulk_transfer(dev_handle, DIRTYJTAG_WRITE_EP,
 									 buf, 4, &actual_length,
-									 DIRTYJTAG_TIMEOUT) < 0)
-			{
+									 DIRTYJTAG_TIMEOUT) < 0) {
 				cerr << "writeTDI: last bit error: usb bulk write failed 2" << endl;
 				return -EXIT_FAILURE;
 			}
 
 		} else {
-			if (toggleClk(SIG_TMS, last_bit, 1)) {
+			if (toggleClk(_tms, _tdi, 1)) {
 				cerr << "writeTDI: last bit error" << endl;
 				return -EXIT_FAILURE;
 			}
@@ -415,8 +414,8 @@ bool DirtyJtag::_set_gpio_level(uint8_t gpio, uint8_t val)
 	int actual_length;
 	uint8_t buf[] = {
 		CMD_SETSIG,
-		static_cast<uint8_t>(gpio), // mask
-		static_cast<uint8_t>(val), // bit set
+		static_cast<uint8_t>(gpio),  // mask
+		static_cast<uint8_t>(val),  // bit set
 		CMD_STOP,
 	};
 	if (libusb_bulk_transfer(dev_handle, DIRTYJTAG_WRITE_EP, buf, 4,
