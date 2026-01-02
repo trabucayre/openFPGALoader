@@ -42,7 +42,7 @@
 #ifdef ENABLE_DIRTYJTAG
 #include "dirtyJtag.hpp"
 #endif
-#ifdef ENABLE_ESP_USB_JTAG
+#ifdef ENABLE_ESP_USB
 #include "esp_usb_jtag.hpp"
 #endif
 #ifdef ENABLE_CH347
@@ -162,7 +162,7 @@ Jtag::Jtag(const cable_t &cable, const jtag_pins_conf_t *pin_conf,
 #endif
 		break;
 	case MODE_ESP:
-#ifdef ENABLE_ESP_USB_JTAG
+#ifdef ENABLE_ESP_USB
 		_jtag = new esp_usb_jtag(clkHZ, verbose, 0x303a, 0x1001);
 #else
 		std::cerr << "Jtag: support for esp32s3 cable was not enabled at compile time" << std::endl;
