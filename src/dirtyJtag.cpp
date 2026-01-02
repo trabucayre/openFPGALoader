@@ -214,11 +214,10 @@ int DirtyJtag::writeTMS(const uint8_t *tms, uint32_t len,
 	return len;
 }
 
-int DirtyJtag::toggleClk(uint8_t tms, __attribute__((unused)) uint8_t tdi,
-	uint32_t clk_len)
+int DirtyJtag::toggleClk(__attribute__((unused)) uint8_t tms,
+	__attribute__((unused)) uint8_t tdi, uint32_t clk_len)
 {
 	int actual_length;
-	_tms = tms ? SIG_TMS : 0;
 	uint8_t buf[] = {CMD_CLK,
 		static_cast<uint8_t>(_tms | _tdi),
 		0,
@@ -318,6 +317,18 @@ int DirtyJtag::writeTDI(const uint8_t *tx, uint8_t *rx, uint32_t len, bool end)
 			for (int i = 0; i < bit_to_send; i++, rx_cnt++) {
 				rx_ptr[rx_cnt >> 3] = (rx_ptr[rx_cnt >> 3] >> 1) |
 						(((rx_buf[i >> 3] << (i&0x07)) & 0x80));
+			}
+			/* Last xfer:
+			 * if bit_to_send is not a multiple of 8bits a shift must
+			 * be applied to align rigth the last Byte
+			 */
+			if (bit_to_send < max_bit_transfer_length) {
+				const uint32_t b = (bit_to_send >> 3) << 3; // floor
+				if (b < bit_to_send) { // difference ?
+					const uint32_t diff = bit_to_send - b;
+					const uint8_t t = rx_ptr[(rx_cnt-1) >> 3] >> (8 - diff);
+					rx_ptr[(rx_cnt - 1) >> 3] = t;
+				}
 			}
 		}
 
