@@ -373,7 +373,6 @@ int DirtyJtag::writeTDI(const uint8_t *tx, uint8_t *rx, uint32_t len, bool end)
 				}
 			} while (actual_length == 0);
 
-			rx[rx_cnt >> 3] >>= 1;
 			if (sig & SIG_TDO)
 				rx[rx_cnt >> 3] |= (1 << (rx_cnt & 0x07));
 
