@@ -56,7 +56,7 @@ int CH347Jtag::usb_xfer(unsigned wlen, unsigned rlen, unsigned *ract, bool defer
 {
 	int actual_length = 0;
 	if (_verbose) {
-		fprintf(stderr, "usb_xfer: deferred: %lld\n", obuf - _obuf);
+		fprintf(stderr, "usb_xfer: deferred: %ld\n", obuf - _obuf);
 	}
 	if (defer && !rlen && obuf - _obuf + wlen < (MAX_BUFFER - 12)) {
 		obuf += wlen;
