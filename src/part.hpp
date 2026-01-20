@@ -72,11 +72,13 @@ static std::map <uint32_t, fpga_model> fpga_list = {
 	{0x037c4093, {"xilinx", "spartan7", "xc7s25",          6}},
 	{0x0362f093, {"xilinx", "spartan7", "xc7s50",          6}},
 	{0x037c8093, {"xilinx", "spartan7", "xc7s75",          6}},
+	{0x037c7093, {"xilinx", "spartan7", "xc7s100",         6}},
 
 	/* Xilinx Virtex6 */
 	{0x8424a093, {"xilinx", "virtex6", "xc6vlx130t", 10}},
 
 	/* Xilinx 7-Series / Artix7 */
+	{0x037c3093, {"xilinx", "artix a7 12t",  "xc7a12t", 6}},
 	{0x0362e093, {"xilinx", "artix a7 15t",  "xc7a15",  6}},
 	{0x037c2093, {"xilinx", "artix a7 25t",  "xc7a25",  6}},
 	{0x0362D093, {"xilinx", "artix a7 35t",  "xc7a35",  6}},
@@ -89,13 +91,26 @@ static std::map <uint32_t, fpga_model> fpga_list = {
 	{0x03647093, {"xilinx", "kintex7", "xc7k70t",  6}},
 	{0x0364c093, {"xilinx", "kintex7", "xc7k160t", 6}},
 	{0x03651093, {"xilinx", "kintex7", "xc7k325t", 6}},
+	{0x03747093, {"xilinx", "kintex7", "xc7k355t", 6}},
 	{0x03656093, {"xilinx", "kintex7", "xc7k410t", 6}},
 	{0x23752093, {"xilinx", "kintex7", "xc7k420t", 6}},
 	{0x23751093, {"xilinx", "kintex7", "xc7k480t", 6}},
 
 	/* Xilinx 7-Series / Virtex7 */
-	{0x03667093, {"xilinx", "virtex7", "xc7vx330t",  6}},
-	{0x33691093, {"xilinx", "virtex7", "xc7vx690t",  6}},
+	{0x03671093, {"xilinx", "virtex7", "xc7v585t",    6}},
+	{0x03667093, {"xilinx", "virtex7", "xc7vx330t",   6}},
+	{0x03682093, {"xilinx", "virtex7", "xc7vx415t",   6}},
+	{0x03687093, {"xilinx", "virtex7", "xc7vx485t",   6}},
+	{0x03692093, {"xilinx", "virtex7", "xc7vx550t",   6}},
+	{0x33691093, {"xilinx", "virtex7", "xc7vx690t",   6}},
+	{0x03696093, {"xilinx", "virtex7", "xc7vx980t",   6}},
+
+	{0x036d9093, {"xilinx", "virtex7", "xc7vh580t",  22}},
+
+	{0x036b3093, {"xilinx", "virtex7", "xc7v2000t",  24}},
+	{0x036d5093, {"xilinx", "virtex7", "xc7vx1140t", 24}},
+
+	{0x036db093, {"xilinx", "virtex7", "xc7vh870t",  38}},
 
 	/* Xilinx 7-Series / Zynq */
 	{0x03722093, {"xilinx", "zynq",     "xc7z010", 6}},
