@@ -114,16 +114,46 @@ static std::map <uint32_t, fpga_model> fpga_list = {
 	{0x03842093, {"xilinx", "virtexus", "xcvu095", 6}},
 
 	/* Xilinx Ultrascale+ / Artix */
-	{0x04AC2093, {"xilinx", "artixusp", "xcau15p", 6}},
-	{0x04A64093, {"xilinx", "artixusp", "xcau25p", 6}},
+	{0x04AC4033, {"xilinx", "artixusp",  "xcau10p", 6}},
+	{0x04AC4093, {"xilinx", "artixusp",  "xcau10p", 6}},
+	{0x04AC2093, {"xilinx", "artixusp",  "xcau15p", 6}},
+	{0x04A65093, {"xilinx", "artixusp",  "xcau20p", 6}},
+	{0x04A64093, {"xilinx", "artixusp",  "xcau25p", 6}},
 
 	/* Xilinx Ultrascale+ / Kintex */
-	{0x04a63093, {"xilinx", "kintexusp", "xcku3p", 6}},
-	{0x04a62093, {"xilinx", "kintexusp", "xcku5p", 6}},
+	{0x04A63093, {"xilinx", "kintexusp", "xcku3p",  6}},
+	{0x04A62093, {"xilinx", "kintexusp", "xcku5p",  6}},
+	{0x0484A093, {"xilinx", "kintexusp", "xcku9p",  6}},
+	{0x04A4E093, {"xilinx", "kintexusp", "xcku11p", 6}},
+	{0x04A51093, {"xilinx", "kintexusp", "xcku11p", 6}},
+	{0x04A52093, {"xilinx", "kintexusp", "xcku13p", 6}},
+	{0x04A56093, {"xilinx", "kintexusp", "xcku15p", 6}},
+	{0x04A59093, {"xilinx", "kintexusp", "xcku15p", 6}},
+	{0x04ACF093, {"xilinx", "kintexusp", "xcku19p", 6}},
+	{0x04AD3093, {"xilinx", "kintexusp", "xcku19p", 6}},
 
 	/* Xilinx Ultrascale+ / Virtex */
-	{0x04b31093, {"xilinx", "virtexusp", "xcvu9p",  18}},
-	{0x14b79093, {"xilinx", "virtexusp", "xcvu37p", 18}},
+	{0x04AEA093, {"xilinx", "virtexusp", "xcvu2p",  6}},
+	{0x04B39093, {"xilinx", "virtexusp", "xcvu3p",  6}},
+	{0x04B3D093, {"xilinx", "virtexusp", "xcvu3p",  6}},
+
+	{0x04B2B093, {"xilinx", "virtexusp", "xcvu5p",  12}},
+	{0x04B2F093, {"xilinx", "virtexusp", "xcvu5p",  12}},
+	{0x04B29093, {"xilinx", "virtexusp", "xcvu7p",  12}},
+	{0x04B2D093, {"xilinx", "virtexusp", "xcvu7p",  12}},
+
+	{0x04B31093, {"xilinx", "virtexusp", "xcvu9p",  18}},
+	{0x04B35093, {"xilinx", "virtexusp", "xcvu9p",  18}},
+	{0x14B79093, {"xilinx", "virtexusp", "xcvu37p", 18}},
+	{0x04B49093, {"xilinx", "virtexusp", "xcvu11p", 18}},
+	{0x04B4F093, {"xilinx", "virtexusp", "xcvu11p", 18}},
+
+	{0x04B51093, {"xilinx", "virtexusp", "xcvu13p", 24}},
+	{0x04B55093, {"xilinx", "virtexusp", "xcvu13p", 24}},
+
+	{0x04BA3093, {"xilinx", "virtexusp", "xcvu15p", 24}},
+	{0x04BA1093, {"xilinx", "virtexusp", "xcvu19p", 24}},
+	{0x04BA5093, {"xilinx", "virtexusp", "xcvu19p", 24}},
 
 	/* Xilinx Ultrascale+ / Spartan */
 	{0x04e80093, {"xilinx", "spartanusp", "xcsu35p", 6}},
