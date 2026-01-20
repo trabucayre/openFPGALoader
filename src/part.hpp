@@ -156,7 +156,16 @@ static std::map <uint32_t, fpga_model> fpga_list = {
 	{0x04BA5093, {"xilinx", "virtexusp", "xcvu19p", 24}},
 
 	/* Xilinx Ultrascale+ / Spartan */
-	{0x04e80093, {"xilinx", "spartanusp", "xcsu35p", 6}},
+	{0x04E81093, {"xilinx", "spartanusp", "xcsu10p",  6}},
+	{0x04E82093, {"xilinx", "spartanusp", "xcsu25p",  6}},
+	{0x04E80093, {"xilinx", "spartanusp", "xcsu35p",  6}},
+	{0x04EB1093, {"xilinx", "spartanusp", "xcsu45p",  6}},
+	{0x04E90093, {"xilinx", "spartanusp", "xcsu55p",  6}},
+	{0x04EB2093, {"xilinx", "spartanusp", "xcsu60p",  6}},
+	{0x04E99093, {"xilinx", "spartanusp", "xcsu65p",  6}},
+	{0x04E98093, {"xilinx", "spartanusp", "xcsu100p", 6}},
+	{0x04EA1093, {"xilinx", "spartanusp", "xcsu150p", 6}},
+	{0x04EA0093, {"xilinx", "spartanusp", "xcsu200p", 6}},
 
 	/* Xilinx Ultrascale+ / ZynqMP */
 	/* When powering a zynq ultrascale+ MPSoC, PL Tap and ARM dap
