@@ -17,7 +17,9 @@
 #include "anlogic.hpp"
 #include "board.hpp"
 #include "cable.hpp"
+#ifdef USE_LIBFTDI
 #include "colognechip.hpp"
+#endif
 #include "common.hpp"
 #include "cxxopts.hpp"
 #include "device.hpp"
@@ -25,12 +27,16 @@
 #include "dfu.hpp"
 #endif
 #include "display.hpp"
+#ifdef USE_LIBFTDI
 #include "efinix.hpp"
 #include "ftdispi.hpp"
+#endif
 #include "gowin.hpp"
-#include "ice40.hpp"
 #include "lattice.hpp"
+#ifdef USE_LIBFTDI
+#include "ice40.hpp"
 #include "latticeSSPI.hpp"
+#endif
 #ifdef ENABLE_USB_SCAN
 #include "libusb_ll.hpp"
 #endif
