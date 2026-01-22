@@ -114,11 +114,23 @@ add_definitions(-DISE_DIR=\"${ISE_PATH}\")
 # Dependencies check/search
 ####################################################################################################
 
+if (USE_LIBFTDI)
+	# Try to find the LibFTDI1 with cmake
+	find_package(LibFTDI1 QUIET)
+endif()
+
 if (USE_PKGCONFIG)
 	find_package(PkgConfig REQUIRED)
 
+	# Backward compat when the libftdi is not found
+	# by using cmake
 	if (USE_LIBFTDI)
-		pkg_check_modules(LIBFTDI REQUIRED libftdi1)
+		if (NOT LIBFTDI_FOUND)
+			pkg_check_modules(LIBFTDI REQUIRED libftdi1)
+			string(REPLACE "." ";" VERSION_LIST ${LIBFTDI_VERSION})
+			list(GET VERSION_LIST 0 LIBFTDI_VERSION_MAJOR)
+			list(GET VERSION_LIST 1 LIBFTDI_VERSION_MINOR)
+		endif()
 	else()
 		set(LIBFTDI_LIBRARY_DIRS "")
 		set(LIBFTDI_INCLUDE_DIRS "")
@@ -604,9 +616,6 @@ endif()
 if (USE_LIBFTDI)
 	# libftdi < 1.4 as no usb_addr
 	# libftdi >= 1.5 as purge_buffer obsolete
-	string(REPLACE "." ";" VERSION_LIST ${LIBFTDI_VERSION})
-	list(GET VERSION_LIST 0 LIBFTDI_VERSION_MAJOR)
-	list(GET VERSION_LIST 1 LIBFTDI_VERSION_MINOR)
 	math(EXPR FTDI_VAL "${LIBFTDI_VERSION_MAJOR} * 100 + ${LIBFTDI_VERSION_MINOR}")
 	add_definitions(-DFTDI_VERSION=${FTDI_VAL})
 endif()
