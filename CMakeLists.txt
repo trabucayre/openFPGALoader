@@ -221,7 +221,6 @@ list(APPEND OPENFPGALOADER_SOURCE
 	src/anlogicBitParser.cpp
 	src/bitparser.cpp
 	src/fsparser.cpp
-	src/ihexParser.cpp
 	src/mcsParser.cpp
 	src/pofParser.cpp
 	src/rawParser.cpp
@@ -232,7 +231,6 @@ list(APPEND OPENFPGALOADER_HEADERS
 	src/anlogicBitParser.hpp
 	src/bitparser.hpp
 	src/fsparser.hpp
-	src/ihexParser.hpp
 	src/mcsParser.hpp
 	src/pofParser.hpp
 	src/rawParser.hpp
@@ -447,8 +445,8 @@ list(APPEND OPENFPGALOADER_HEADERS src/libusb_ll.hpp)
 endif()
 
 if (USE_FX2_LL)
-list(APPEND OPENFPGALOADER_SOURCE  src/fx2_ll.cpp)
-list(APPEND OPENFPGALOADER_HEADERS src/fx2_ll.hpp)
+list(APPEND OPENFPGALOADER_SOURCE  src/fx2_ll.cpp src/ihexParser.cpp)
+list(APPEND OPENFPGALOADER_HEADERS src/fx2_ll.hpp src/ihexParser.hpp)
 endif()
 
 add_executable(openFPGALoader
