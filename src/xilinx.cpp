@@ -843,6 +843,9 @@ void Xilinx::program_mem(ConfigBitstreamParser *bitfile)
 	Jtag::tapState_t tx_end;
 	int burst_len = byte_length / 100;
 
+        if (burst_len == 0)
+		burst_len = byte_length;
+
 	ProgressBar progress("Load SRAM", byte_length, 50, _quiet);
 
 	for (int i=0; i < byte_length; i+=burst_len) {
