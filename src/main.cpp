@@ -13,11 +13,15 @@
 #include <sstream>
 #include <vector>
 
+#ifdef ENABLE_ALTERA_SUPPORT
 #include "altera.hpp"
+#endif
+#ifdef ENABLE_ANLOGIC_SUPPORT
 #include "anlogic.hpp"
+#endif
 #include "board.hpp"
 #include "cable.hpp"
-#ifdef USE_LIBFTDI
+#ifdef ENABLE_COLOGNECHIP_SUPPORT
 #include "colognechip.hpp"
 #endif
 #include "common.hpp"
@@ -27,14 +31,22 @@
 #include "dfu.hpp"
 #endif
 #include "display.hpp"
-#ifdef USE_LIBFTDI
+#ifdef ENABLE_EFINIX_SUPPORT
 #include "efinix.hpp"
+#endif
+#ifdef USE_LIBFTDI
 #include "ftdispi.hpp"
 #endif
+#ifdef ENABLE_GOWIN_SUPPORT
 #include "gowin.hpp"
+#endif
+#ifdef ENABLE_LATTICE_SUPPORT
 #include "lattice.hpp"
-#ifdef USE_LIBFTDI
+#endif
+#ifdef ENABLE_ICE40_SUPPORT
 #include "ice40.hpp"
+#endif
+#ifdef ENABLE_LATTICESSPI_SUPPORT
 #include "latticeSSPI.hpp"
 #endif
 #ifdef ENABLE_USB_SCAN
@@ -44,7 +56,9 @@
 #include "part.hpp"
 #include "spiFlash.hpp"
 #include "rawParser.hpp"
+#ifdef ENABLE_XILINX_SUPPORT
 #include "xilinx.hpp"
+#endif
 #include "svf_jtag.hpp"
 #ifdef ENABLE_XVC
 #include "xvc_server.hpp"
@@ -304,25 +318,45 @@ int main(int argc, char **argv)
 		if (board && board->manufacturer != "none") {
 			Device *target;
 			if (board->manufacturer == "efinix") {
+#ifdef ENABLE_EFINIX_SUPPORT
 				target = new Efinix(spi, args.bit_file, args.file_type,
 					board->reset_pin, board->done_pin, board->oe_pin,
 					args.verify, args.verbose);
+#else
+				printError("Support for Efinix FPGAs was not enabled at compile time");
+				return EXIT_FAILURE;
+#endif
 			} else if (board->manufacturer == "lattice") {
 				if (board->fpga_part == "ice40") {
+#ifdef ENABLE_ICE40_SUPPORT
 					target = new Ice40(spi, args.bit_file, args.file_type,
 						args.prg_type,
 						board->reset_pin, board->done_pin, args.verify, args.verbose);
+#else
+					printError("Support for ICE40 FPGAs was not enabled at compile time");
+					return EXIT_FAILURE;
+#endif
 				} else if (board->fpga_part == "ecp5") {
+#ifdef ENABLE_LATTICESSPI_SUPPORT
 					target = new LatticeSSPI(spi, args.bit_file, args.file_type, args.verbose);
+#else
+					printError("Support for Lattice FPGAs (SSPI mode) was not enabled at compile time");
+					return EXIT_FAILURE;
+#endif
 				} else {
 					printError("Error (SPI mode): " + board->fpga_part +
 						" is an unsupported/unknown Lattice Model");
 					return EXIT_FAILURE;
 				}
 			} else if (board->manufacturer == "colognechip") {
+#ifdef ENABLE_COLOGNECHIP_SUPPORT
 				target = new CologneChip(spi, args.bit_file, args.file_type, args.prg_type,
 					board->reset_pin, board->done_pin, DBUS6, board->oe_pin,
 					args.verify, args.verbose);
+#else
+				printError("Support for Gowin FPGAs was not enabled at compile time");
+				return EXIT_FAILURE;
+#endif
 			} else {
 				printError("Error (SPI mode): " + board->manufacturer +
 					" is an unsupported/unknown target");
@@ -474,7 +508,7 @@ int main(int argc, char **argv)
 
 		return EXIT_SUCCESS;
 #else
-		throw std::runtime_error("DFU support: disabled at build time");
+		printError("DFU support: disabled at build time");
 		return EXIT_FAILURE;
 #endif
 	}
@@ -612,33 +646,71 @@ int main(int argc, char **argv)
 	Device *fpga;
 	try {
 		if (fab == "xilinx") {
+#ifdef ENABLE_XILINX_SUPPORT
 			fpga = new Xilinx(jtag, args.bit_file, args.secondary_bit_file,
 				args.file_type, args.prg_type, args.fpga_part, args.bridge_path,
 				args.target_flash, args.verify, args.verbose, args.skip_load_bridge, args.skip_reset,
 				args.read_dna, args.read_xadc);
+#else
+			printError("Support for Xilinx FPGAs was not enabled at compile time");
+			delete(jtag);
+			return EXIT_FAILURE;
+#endif
 		} else if (fab == "altera") {
+#ifdef ENABLE_ALTERA_SUPPORT
 			fpga = new Altera(jtag, args.bit_file, args.file_type,
 				args.prg_type, args.fpga_part, args.bridge_path, args.verify,
 				args.verbose, args.flash_sector, args.skip_load_bridge, args.skip_reset);
+#else
+			printError("Support for Altera FPGAs was not enabled at compile time");
+			delete(jtag);
+			return EXIT_FAILURE;
+#endif
 		} else if (fab == "anlogic") {
+#ifdef ENABLE_ANLOGIC_SUPPORT
 			fpga = new Anlogic(jtag, args.bit_file, args.file_type,
 				args.prg_type, args.verify, args.verbose);
-#ifdef USE_LIBFTDI
+#else
+			printError("Support for Anlogic FPGAs was not enabled at compile time");
+			delete(jtag);
+			return EXIT_FAILURE;
+#endif
 		} else if (fab == "efinix") {
+#ifdef ENABLE_EFINIX_SUPPORT
 			fpga = new Efinix(jtag, args.bit_file, args.file_type,
 				args.prg_type, args.board, args.fpga_part, args.bridge_path,
 				args.verify, args.verbose);
+#else
+			printError("Support for Efinix FPGAs was not enabled at compile time");
+			delete(jtag);
+			return EXIT_FAILURE;
 #endif
 		} else if (fab == "Gowin") {
+#ifdef ENABLE_GOWIN_SUPPORT
 			fpga = new Gowin(jtag, args.bit_file, args.file_type, args.mcufw,
 				args.prg_type, args.external_flash, args.verify, args.verbose, args.user_flash);
+#else
+			printError("Support for Gowin FPGAs was not enabled at compile time");
+			delete(jtag);
+			return EXIT_FAILURE;
+#endif
 		} else if (fab == "lattice") {
+#ifdef ENABLE_LATTICE_SUPPORT
 			fpga = new Lattice(jtag, args.bit_file, args.file_type,
 				args.prg_type, args.flash_sector, args.verify, args.verbose, args.skip_load_bridge, args.skip_reset);
-#ifdef USE_LIBFTDI
+#else
+			printError("Support for Lattice FPGAs was not enabled at compile time");
+			delete(jtag);
+			return EXIT_FAILURE;
+#endif
 		} else if (fab == "colognechip") {
+#ifdef ENABLE_COLOGNECHIP_SUPPORT
 			fpga = new CologneChip(jtag, args.bit_file, args.file_type,
 				args.prg_type, args.board, args.cable, args.verify, args.verbose);
+#else
+			printError("Support for Gowin FPGAs was not enabled at compile time");
+			delete(jtag);
+			return EXIT_FAILURE;
 #endif
 		} else {
 			printError("Error: manufacturer " + fab + " not supported");
