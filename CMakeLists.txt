@@ -55,6 +55,23 @@ else()
 endif()
 
 ####################################################################################################
+# VENDORS Options
+####################################################################################################
+
+# set all vendor on by default
+option(ENABLE_VENDORS_ALL         "Enable all vendors support"                             ON)
+
+option(ENABLE_ALTERA_SUPPORT      "enable Altera FPGAs Support"                            ${ENABLE_VENDORS_ALL})
+option(ENABLE_ANLOGIC_SUPPORT     "enable Anlogic FPGAs Support"                           ${ENABLE_VENDORS_ALL})
+option(ENABLE_COLOGNECHIP_SUPPORT "enable CologneChip FPGAs Support (requires libftdi)"    ${ENABLE_VENDORS_ALL})
+option(ENABLE_EFINIX_SUPPORT      "enable Efinix FPGAs Support (requires libftdi)"         ${ENABLE_VENDORS_ALL})
+option(ENABLE_GOWIN_SUPPORT       "enable Gowin FPGAs Support"                             ${ENABLE_VENDORS_ALL})
+option(ENABLE_ICE40_SUPPORT       "enable Ice40 FPGAs Support (requires libftdi)"          ${ENABLE_VENDORS_ALL})
+option(ENABLE_LATTICE_SUPPORT     "enable Lattice FPGAs Support"                           ${ENABLE_VENDORS_ALL})
+option(ENABLE_LATTICESSPI_SUPPORT "enable Lattice FPGAs Support (SSPI / requires libftdi)" ${ENABLE_VENDORS_ALL})
+option(ENABLE_XILINX_SUPPORT      "enable Xilinx FPGAs Support"                            ${ENABLE_VENDORS_ALL})
+
+####################################################################################################
 # Variables
 ####################################################################################################
 
@@ -146,7 +163,7 @@ if (USE_PKGCONFIG)
 	endif(USE_LIBUSB)
 
 	if(ENABLE_CMSISDAP)
-	pkg_check_modules(HIDAPI hidapi-libusb)
+		pkg_check_modules(HIDAPI hidapi-libusb)
 		# if libusb not found try with hidraw
 		if (NOT HIDAPI_FOUND)
 			pkg_check_modules(HIDAPI hidapi-hidraw)
@@ -155,6 +172,7 @@ if (USE_PKGCONFIG)
 			pkg_check_modules(HIDAPI hidapi)
 		endif()
 	endif()
+
 	# zlib support (gzip)
 	pkg_check_modules(ZLIB zlib)
 	if (NOT ZLIB_FOUND)
@@ -217,44 +235,33 @@ set(OPENFPGALOADER_HEADERS
 # ===========================
 # Parsers classes
 # ===========================
-list(APPEND OPENFPGALOADER_SOURCE
-	src/anlogicBitParser.cpp
-	src/bitparser.cpp
-	src/fsparser.cpp
-	src/mcsParser.cpp
-	src/pofParser.cpp
-	src/rawParser.cpp
-	src/xilinxMapParser.cpp
-)
+list(APPEND OPENFPGALOADER_SOURCE  src/rawParser.cpp)
+list(APPEND OPENFPGALOADER_HEADERS src/rawParser.hpp)
 
-list(APPEND OPENFPGALOADER_HEADERS
-	src/anlogicBitParser.hpp
-	src/bitparser.hpp
-	src/fsparser.hpp
-	src/mcsParser.hpp
-	src/pofParser.hpp
-	src/rawParser.hpp
-	src/xilinxMapParser.hpp
-)
+if (${ENABLE_LATTICE_SUPPORT} OR ${ENABLE_XILINX_SUPPORT})
+	list(APPEND OPENFPGALOADER_SOURCE
+		src/jedParser.cpp
+		src/mcsParser.cpp
+	)
+
+	list(APPEND OPENFPGALOADER_HEADERS
+		src/jedParser.hpp
+		src/mcsParser.hpp
+	)
+endif()
 
 # ===========================
 # To be sorted
 # ===========================
 list(APPEND OPENFPGALOADER_SOURCE
-	src/anlogic.cpp
 	src/spiFlash.cpp
 	src/spiInterface.cpp
 	src/epcq.cpp
 	src/svf_jtag.cpp
 	src/jtag.cpp
-	src/gowin.cpp
-	src/altera.cpp
-	src/xilinx.cpp
 )
 
 list(APPEND OPENFPGALOADER_HEADERS
-	src/altera.hpp
-	src/anlogic.hpp
 	src/jtag.hpp
 	src/jtagInterface.hpp
 	src/spiFlash.hpp
@@ -262,8 +269,6 @@ list(APPEND OPENFPGALOADER_HEADERS
 	src/epcq.hpp
 	src/spiInterface.hpp
 	src/svf_jtag.hpp
-	src/gowin.hpp
-	src/xilinx.hpp
 )
 
 # FTDI Based cables
@@ -287,52 +292,148 @@ if (${USE_LIBFTDI})
 	)
 
 	# CologneChip Drivers / Files parsers.
-	list(APPEND OPENFPGALOADER_SOURCE
-		src/colognechip.cpp
-		src/colognechipCfgParser.cpp
-	)
+	if (ENABLE_COLOGNECHIP_SUPPORT)
+		list(APPEND OPENFPGALOADER_SOURCE
+			src/colognechip.cpp
+			src/colognechipCfgParser.cpp
+		)
 
-	list(APPEND OPENFPGALOADER_HEADERS
-		src/colognechip.hpp
-		src/colognechipCfgParser.hpp
-	)
+		list(APPEND OPENFPGALOADER_HEADERS
+			src/colognechip.hpp
+			src/colognechipCfgParser.hpp
+		)
+		add_definitions(-DENABLE_COLOGNECHIP_SUPPORT=1)
+		message("CologneChip support enabled")
+	else()
+		message("CologneChip support disabled")
+	endif(ENABLE_COLOGNECHIP_SUPPORT)
 
 	# Efinix Drivers / Files parsers.
-	list(APPEND OPENFPGALOADER_SOURCE
-		src/efinix.cpp
-		src/efinixHexParser.cpp
-	)
+	if (ENABLE_EFINIX_SUPPORT)
+		list(APPEND OPENFPGALOADER_SOURCE
+			src/efinix.cpp
+			src/efinixHexParser.cpp
+		)
 
-	list(APPEND OPENFPGALOADER_HEADERS
-		src/efinix.hpp
-		src/efinixHexParser.hpp
-	)
+		list(APPEND OPENFPGALOADER_HEADERS
+			src/efinix.hpp
+			src/efinixHexParser.hpp
+		)
+		add_definitions(-DENABLE_EFINIX_SUPPORT=1)
+		message("Efinix support enabled")
+	else()
+		message("Efinix support disabled")
+	endif(ENABLE_EFINIX_SUPPORT)
 
-	# Lattice Drivers / Files parsers.
-	list(APPEND OPENFPGALOADER_SOURCE
-		src/ice40.cpp
-		src/latticeSSPI.cpp
-	)
-	list(APPEND OPENFPGALOADER_HEADERS
-		src/ice40.hpp
-		src/latticeSSPI.hpp
-	)
+	# ICE40 Driver.
+	if (ENABLE_ICE40_SUPPORT)
+		list(APPEND OPENFPGALOADER_SOURCE  src/ice40.cpp)
+		list(APPEND OPENFPGALOADER_HEADERS src/ice40.hpp)
+		add_definitions(-DENABLE_ICE40_SUPPORT=1)
+		message("ICE40 support enabled")
+	else()
+		message("ICE40 support disabled")
+	endif(ENABLE_ICE40_SUPPORT)
+
+	# Lattice SSPI Driver.
+	if (ENABLE_LATTICESSPI_SUPPORT)
+		list(APPEND OPENFPGALOADER_SOURCE  src/latticeSSPI.cpp)
+		list(APPEND OPENFPGALOADER_HEADERS src/latticeSSPI.hpp)
+		add_definitions(-DENABLE_LATTICESSPI_SUPPORT=1)
+		message("Lattice SSPI support enabled")
+	else()
+		message("Lattice SSPI support disabled")
+	endif(ENABLE_LATTICESSPI_SUPPORT)
 endif()
 
-# Lattice Drivers / Files parsers.
-list(APPEND OPENFPGALOADER_SOURCE
-	src/lattice.cpp
-	src/feaparser.cpp
-	src/jedParser.cpp
-	src/latticeBitParser.cpp
-)
+# Altera Drivers / Files parsers.
+if (ENABLE_ALTERA_SUPPORT)
+	list(APPEND OPENFPGALOADER_SOURCE
+		src/altera.cpp
+		src/pofParser.cpp
+	)
 
-list(APPEND OPENFPGALOADER_HEADERS
-	src/lattice.hpp
-	src/jedParser.hpp
-	src/feaparser.hpp
-	src/latticeBitParser.hpp
-)
+	list(APPEND OPENFPGALOADER_HEADERS
+		src/altera.hpp
+		src/pofParser.hpp
+	)
+	add_definitions(-DENABLE_ALTERA_SUPPORT=1)
+	message("Altera support enabled")
+else()
+	message("Altera support disabled")
+endif(ENABLE_ALTERA_SUPPORT)
+
+# Anlogic Drivers / Files parsers.
+if (ENABLE_ANLOGIC_SUPPORT)
+	list(APPEND OPENFPGALOADER_SOURCE
+		src/anlogic.cpp
+		src/anlogicBitParser.cpp
+	)
+
+	list(APPEND OPENFPGALOADER_HEADERS
+		src/anlogic.hpp
+		src/anlogicBitParser.hpp
+	)
+	add_definitions(-DENABLE_ANLOGIC_SUPPORT=1)
+	message("Anlogic support enabled")
+else()
+	message("Anlogic support disabled")
+endif(ENABLE_ANLOGIC_SUPPORT)
+
+# Gowin Drivers / Files parsers.
+if (ENABLE_GOWIN_SUPPORT)
+	list(APPEND OPENFPGALOADER_SOURCE
+		src/gowin.cpp
+		src/fsparser.cpp
+	)
+
+	list(APPEND OPENFPGALOADER_HEADERS
+		src/gowin.hpp
+		src/fsparser.hpp
+	)
+	add_definitions(-DENABLE_GOWIN_SUPPORT=1)
+	message("Gowin support enabled")
+else()
+	message("Gowin support disabled")
+endif(ENABLE_GOWIN_SUPPORT)
+
+# Xilinx Drivers / Files parsers.
+if (ENABLE_XILINX_SUPPORT)
+	list(APPEND OPENFPGALOADER_SOURCE
+		src/bitparser.cpp
+		src/xilinx.cpp
+		src/xilinxMapParser.cpp
+	)
+
+	list(APPEND OPENFPGALOADER_HEADERS
+		src/bitparser.hpp
+		src/xilinx.hpp
+		src/xilinxMapParser.hpp
+	)
+	add_definitions(-DENABLE_XILINX_SUPPORT=1)
+	message("Xilinx support enabled")
+else()
+	message("Xilinx support disabled")
+endif(ENABLE_XILINX_SUPPORT)
+
+# Lattice Drivers / Files parsers.
+if (ENABLE_LATTICE_SUPPORT)
+	list(APPEND OPENFPGALOADER_SOURCE
+		src/lattice.cpp
+		src/feaparser.cpp
+		src/latticeBitParser.cpp
+	)
+
+	list(APPEND OPENFPGALOADER_HEADERS
+		src/lattice.hpp
+		src/feaparser.hpp
+		src/latticeBitParser.hpp
+	)
+	add_definitions(-DENABLE_LATTICE_SUPPORT=1)
+	message("Lattice support enabled")
+else()
+	message("Lattice support disabled")
+endif(ENABLE_LATTICE_SUPPORT)
 
 # Cables select
 
