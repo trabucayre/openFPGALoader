@@ -37,6 +37,7 @@ option(ENABLE_JLINK            "enable JLink cable (requires libUSB)"         ${
 option(ENABLE_DFU              "enable DFU support (requires libUSB)"         ${ENABLE_CABLE_ALL})
 option(ENABLE_FTDI_BASED_CABLE "enable cables based on FTDI (requires libFTDI" ${ENABLE_CABLE_ALL})
 option(ENABLE_GOWIN_GWU2X      "enable Gowin GWU2X interface"                 ${ENABLE_CABLE_ALL})
+option(ENABLE_SVF_JTAG         "enable SVF support"                           ${ENABLE_CABLE_ALL})
 option(ENABLE_USB_BLASTERI     "enable Altera USB Blaster I support"          ${ENABLE_CABLE_ALL})
 option(ENABLE_USB_BLASTERII    "enable Altera USB Blaster II support"         ${ENABLE_CABLE_ALL})
 
@@ -257,7 +258,6 @@ list(APPEND OPENFPGALOADER_SOURCE
 	src/spiFlash.cpp
 	src/spiInterface.cpp
 	src/epcq.cpp
-	src/svf_jtag.cpp
 	src/jtag.cpp
 )
 
@@ -268,7 +268,6 @@ list(APPEND OPENFPGALOADER_HEADERS
 	src/spiFlashdb.hpp
 	src/epcq.hpp
 	src/spiInterface.hpp
-	src/svf_jtag.hpp
 )
 
 # FTDI Based cables
@@ -502,6 +501,13 @@ endif()
 if (ENABLE_REMOTEBITBANG)
 list (APPEND OPENFPGALOADER_SOURCE  src/remoteBitbang_client.cpp)
 list (APPEND OPENFPGALOADER_HEADERS src/remoteBitbang_client.hpp)
+endif()
+
+# SVF JTAG file type support
+if (ENABLE_SVF_JTAG)
+list (APPEND OPENFPGALOADER_SOURCE  src/svf_jtag.cpp)
+list (APPEND OPENFPGALOADER_HEADERS src/svf_jtag.hpp)
+add_definitions(-DENABLE_SVF_JTAG)
 endif()
 
 # Xilinx Virtual Cable

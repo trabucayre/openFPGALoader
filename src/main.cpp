@@ -59,7 +59,9 @@
 #ifdef ENABLE_XILINX_SUPPORT
 #include "xilinx.hpp"
 #endif
+#ifdef ENABLE_SVF_JTAG
 #include "svf_jtag.hpp"
+#endif
 #ifdef ENABLE_XVC
 #include "xvc_server.hpp"
 #endif
@@ -622,6 +624,7 @@ int main(int argc, char **argv)
 	/* detect svf file and program the device */
 	if (!args.file_type.compare("svf") ||
 			args.bit_file.find(".svf") != string::npos) {
+#ifdef ENABLE_SVF_JTAG
 		SVF_jtag *svf = new SVF_jtag(jtag, args.verbose);
 		try {
 			svf->parse(args.bit_file);
@@ -629,6 +632,11 @@ int main(int argc, char **argv)
 			return EXIT_FAILURE;
 		}
 		return EXIT_SUCCESS;
+#else
+		printError("Support for SVF Jtag was not enabled at compile time");
+		delete(jtag);
+		return EXIT_FAILURE;
+#endif
 	}
 
 	/* check if selected device is supported
