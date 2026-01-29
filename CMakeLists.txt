@@ -30,7 +30,12 @@ option(ENABLE_CABLE_ALL        "Enable all cables"                            ON
 
 option(ENABLE_ANLOGIC_CABLE    "enable Anlogic cable (requires libUSB)"       ${ENABLE_CABLE_ALL})
 option(ENABLE_CH347            "enable CH347 cable (requires libUSB)"         ${ENABLE_CABLE_ALL})
-option(ENABLE_CMSISDAP         "enable cmsis DAP interface (requires hidapi)" ${ENABLE_CABLE_ALL})
+# CMSIS-DAP requires hidapi which is complex to cross-compile, disable by default for cross-compilation
+if(CMAKE_SYSTEM_NAME STREQUAL "Windows" AND NOT CMAKE_HOST_SYSTEM_NAME STREQUAL "Windows")
+    option(ENABLE_CMSISDAP     "enable cmsis DAP interface (requires hidapi)" OFF)
+else()
+    option(ENABLE_CMSISDAP     "enable cmsis DAP interface (requires hidapi)" ${ENABLE_CABLE_ALL})
+endif()
 option(ENABLE_DIRTYJTAG        "enable dirtyJtag cable (requires libUSB)"     ${ENABLE_CABLE_ALL})
 option(ENABLE_ESP_USB          "enable ESP32S3 cable (requires libUSB)"       ${ENABLE_CABLE_ALL})
 option(ENABLE_JLINK            "enable JLink cable (requires libUSB)"         ${ENABLE_CABLE_ALL})
@@ -52,6 +57,38 @@ else()
 	set(ENABLE_LIBGPIOD             OFF)
 	set(ENABLE_REMOTEBITBANG        OFF)
 	set(ENABLE_XILINX_VIRTUAL_CABLE OFF)
+endif()
+
+####################################################################################################
+# Cross-compilation support
+####################################################################################################
+
+# Detect cross-compilation for Windows from Linux/macOS
+if(CMAKE_SYSTEM_NAME STREQUAL "Windows" AND NOT CMAKE_HOST_SYSTEM_NAME STREQUAL "Windows")
+    set(CROSS_COMPILING_WINDOWS TRUE)
+    message(STATUS "Cross-compiling for Windows from ${CMAKE_HOST_SYSTEM_NAME}")
+
+    # Option to automatically download and build cross-compile dependencies
+    option(CROSS_COMPILE_DEPS "Download and build Windows dependencies for cross-compilation" ON)
+
+    if(CROSS_COMPILE_DEPS)
+        # Include the cross-compilation module
+        list(INSERT CMAKE_MODULE_PATH 0 ${PROJECT_SOURCE_DIR}/cmake/Modules)
+        include(CrossCompileWindows)
+
+        # Setup the dependencies (downloads libusb, builds libftdi)
+        setup_windows_cross_compile_deps()
+
+        # Update pkg-config path for the dependencies
+        set(ENV{PKG_CONFIG_PATH} "${CROSS_DEPS_INSTALL_DIR}/lib/pkgconfig:$ENV{PKG_CONFIG_PATH}")
+
+        # Add the cross-compiled dependencies to the search path
+        list(APPEND CMAKE_PREFIX_PATH ${CROSS_DEPS_INSTALL_DIR})
+        include_directories(${CROSS_DEPS_INSTALL_DIR}/include)
+        link_directories(${CROSS_DEPS_INSTALL_DIR}/lib)
+    endif()
+else()
+    set(CROSS_COMPILING_WINDOWS FALSE)
 endif()
 
 ####################################################################################################
