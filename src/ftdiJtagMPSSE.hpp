@@ -113,6 +113,7 @@ class FtdiJtagMPSSE : public JtagInterface, public FTDIpp_MPSSE {
 	uint8_t _write_mode; /**< write edge configuration */
 	uint8_t _read_mode; /**< read edge configuration */
 	bool _invert_read_edge; /**< read edge selection (false: pos, true: neg) */
+	bool _msb_first; /**< use MSB first, workaround for sipeed console */
 	/* writeTMSTDI specifics */
 	uint32_t _tdo_pos;
 	uint8_t _curr_tdi;
