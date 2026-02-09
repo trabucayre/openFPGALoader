@@ -37,10 +37,14 @@ packages = {
     },
 }
 
-if len(os.sys.argv) != 2:
-    print("missing board param")
+if len(os.sys.argv) != 3 :
+    print("missing board flash type params")
     os.sys.exit()
-part = os.sys.argv[1]
+part       = os.sys.argv[1]
+flash_type = os.sys.argv[2]
+
+# Check file type keyword
+assert flash_type in ["spi", "bpi"]
 
 build_dir="tmp_" + part
 if not os.path.isdir(build_dir):
@@ -84,7 +88,7 @@ elif subpart == "xc7v":
     tool = "vivado"
 elif subpart == "xc7k":
     device_size = int(part.split('k')[1].split('t')[0])
-    if device_size <= 160:
+    if flash_type == "bpi" or device_size <= 160:
         family = "Kintex 7"
         tool = "vivado"
     else:
@@ -214,10 +218,13 @@ if tool in ["ise", "vivado"]:
             tool_options = {'part': part + '-1'}
 
     cst_file = currDir + "constr_" + pkg_name + "." + cst_type.lower()
-    files.append({'name': currDir + 'xilinx_spiOverJtag.v',
+    files.append({'name': os.path.join(currDir, f"xilinx_{flash_type}OverJtag.v"),
                   'file_type': 'verilogSource'})
     files.append({'name': cst_file, 'file_type': cst_type})
 else:
+    # Altera only support SPI mode.
+    assert flash_type in ["spi"]
+
     full_part = {
         "10cl016484" : "10CL016YU484C8G",
         "10cl025256" : "10CL025YU256C8G",
@@ -245,7 +252,7 @@ else:
                   'file_type': 'SDC'})
     tool_options = {'device': full_part, 'family':family}
 
-files.append({'name': currDir + 'spiOverJtag_core.v',
+files.append({'name': os.path.join(currDir, f"{flash_type}OverJtag_core.v"),
               'file_type': 'verilogSource'})
 
 parameters[family.lower().replace(' ', '')]= {
@@ -254,11 +261,11 @@ parameters[family.lower().replace(' ', '')]= {
     'description': 'fpga family',
     'default': 1}
 
-edam = {'name' : "spiOverJtag",
+edam = {'name' : f"{flash_type}OverJtag",
         'files': files,
         'tool_options': {tool: tool_options},
         'parameters': parameters,
-        'toplevel' : 'spiOverJtag',
+        'toplevel' : f"{flash_type}OverJtag",
 }
 
 backend = get_edatool(tool)(edam=edam, work_root=build_dir)
@@ -271,14 +278,14 @@ if tool in ["vivado", "ise"]:
     import gzip
 
     # Compress bitstream.
-    with open(f"tmp_{part}/spiOverJtag.bit", 'rb') as bit:
-        with gzip.open(f"spiOverJtag_{part}.bit.gz", 'wb', compresslevel=9) as bit_gz:
+    with open(f"tmp_{part}/{flash_type}OverJtag.bit", 'rb') as bit:
+        with gzip.open(f"{flash_type}OverJtag_{part}.bit.gz", 'wb', compresslevel=9) as bit_gz:
             shutil.copyfileobj(bit, bit_gz)
 
     # Create Symbolic links for all supported packages.
     if family in ["Artix", "Spartan 7"]:
-        in_file = f"spiOverJtag_{part}.bit.gz"
+        in_file = f"{flash_type}OverJtag_{part}.bit.gz"
         for pkg in packages[family][part]:
-            out_file = f"spiOverJtag_{part}{pkg}.bit.gz"
+            out_file = f"{flash_type}OverJtag_{part}{pkg}.bit.gz"
             if not os.path.exists(out_file):
                 subprocess.run(["ln", "-s", in_file, out_file])

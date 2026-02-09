@@ -36,7 +36,7 @@ tmp_efinix_%/efinix_spiOverJtag.bit : efinix_spiOverJtag.v
 $(XILINX_BIT_FILES) : spiOverJtag_%.bit.gz : tmp_%/spiOverJtag.bit
 
 tmp_%/spiOverJtag.bit : xilinx_spiOverJtag.v spiOverJtag_core.v
-	./build.py $*
+	./build.py $* spi
 
 $(ALTERA_BIT_FILES): spiOverJtag_%.rbf.gz: tmp_%/spiOverJtag.rbf
 	gzip -9 -c $< > $@
@@ -44,7 +44,7 @@ tmp_%/spiOverJtag.rbf: tmp_%/spiOverJtag.sof
 	quartus_cpf --option=bitstream_compression=off -c $< $@
 
 tmp_%/spiOverJtag.sof: altera_spiOverJtag.v
-	./build.py $*
+	./build.py $* spi
 
 clean:
 	-rm -rf tmp_* *.jou *.log .Xil
