@@ -585,6 +585,23 @@ static std::map <uint32_t, flash_t> flash_list = {
 		.quad_mask = 0,
 		.global_lock = false,
 	}},
+	{0xc22314, {
+		/* https://datasheet4u.com/pdf-down/M/X/2/MX25V8035F-MACRONIX.pdf */
+		.manufacturer = "Macronix",
+		.model = "MX25V8035F",
+		.nr_sector = 16,
+		.sector_erase = true,
+		.subsector_erase = true,
+		.has_extended = false,
+		.tb_otp = true,
+		.tb_offset = (1 << 3),
+		.tb_register = CONFR,
+		.bp_len = 4,
+		.bp_offset = {(1 << 2), (1 << 3), (1 << 4), (1 << 5)},
+		.quad_register = STATR,
+		.quad_mask = (1 << 6),
+		.global_lock = false,
+	}},
 	{0xef4014, {
 		/* https://cdn-shop.adafruit.com/datasheets/W25Q80BV.pdf */
 		.manufacturer = "Winbond",

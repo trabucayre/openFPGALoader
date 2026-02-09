@@ -249,14 +249,17 @@ int CH347Jtag::_setClkFreq(uint32_t clkHZ)
 	uint32_t *ptr = _is_largerPack ? speed_clock_larger_pack : speed_clock_standard_pack;
 	int size = (_is_largerPack?sizeof(speed_clock_larger_pack):sizeof(speed_clock_standard_pack)) / sizeof(uint32_t);
     for (int i = 0; i < size; ++i) {
-		if (clkHZ > ptr[i] && clkHZ <= ptr[i+1]){
-			setClk_index = i + 1;
-		}
+		if (clkHZ >= ptr[i] ){
+			setClk_index = i;
+		} else {
+            break;
+        }
 	}
 	if (setClk(setClk_index)) {
 		printError("failed to set clock rate");
 		return 0;
 	}
+    _clkHZ = ptr[setClk_index];
 	char mess[256];
 	snprintf(mess, 256, "JTAG TCK frequency set to %.3f MHz\n\n", (double)ptr[setClk_index] / MHZ(1));
 	printInfo(mess);
@@ -333,7 +336,7 @@ int CH347Jtag::toggleClk(uint8_t tms, uint8_t tdi, uint32_t len)
 			ptr = obuf;
 		}
 	}
-	return EXIT_SUCCESS;
+	return len;
 }
 
 int CH347Jtag::writeTDI(const uint8_t *tx, uint8_t *rx, uint32_t len, bool end)
@@ -381,7 +384,7 @@ int CH347Jtag::writeTDI(const uint8_t *tx, uint8_t *rx, uint32_t len, bool end)
 	}
 	unsigned actual_length;
 	if (bits == 0)
-		return EXIT_SUCCESS;
+		return len;
 	cmd = (rx) ? CMD_BITS_WR : CMD_BITS_WO;
 	if (get_obuf_length() < (int)(4 + bits * 2)) {
 		flush();
@@ -427,5 +430,5 @@ int CH347Jtag::writeTDI(const uint8_t *tx, uint8_t *rx, uint32_t len, bool end)
 			*rptr &= ~(0x01 << i);
 		}	
 	}
-	return EXIT_SUCCESS;
+	return len;
 }
