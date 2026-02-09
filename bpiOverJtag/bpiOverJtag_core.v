@@ -10,6 +10,7 @@
  *   0x1 = Write word to flash (addr + data)
  *   0x2 = Read word from flash (addr), returns data
  *   0x3 = NOP / get status
+ *   0x4 = Burst write (addr + count + N×data words)
  */
 
 module bpiOverJtag_core (
@@ -46,21 +47,25 @@ wire rst = (capture & sel);
 wire start_header = (tdi & shift & sel);
 
 /* State machine */
-localparam IDLE      = 3'd0,
-           RECV_CMD  = 3'd1,
-           RECV_ADDR = 3'd2,
-           RECV_DATA = 3'd3,
-           EXEC      = 3'd4,
-           SEND_DATA = 3'd5,
-           DONE      = 3'd6;
+localparam IDLE           = 4'd0,
+           RECV_CMD       = 4'd1,
+           RECV_ADDR      = 4'd2,
+           RECV_DATA      = 4'd3,
+           EXEC           = 4'd4,
+           SEND_DATA      = 4'd5,
+           DONE           = 4'd6,
+           BURST_RECV_CNT = 4'd7,
+           BURST_DATA     = 4'd8,
+           BURST_EXEC     = 4'd9;
 
-reg [2:0] state, state_d;
+reg [3:0] state, state_d;
 reg [5:0] bit_cnt, bit_cnt_d;
 reg [3:0] cmd_reg, cmd_reg_d;
 reg [24:0] addr_reg, addr_reg_d;
 reg [15:0] wr_data_reg, wr_data_reg_d;
 reg [15:0] rd_data_reg, rd_data_reg_d;
 reg [7:0] wait_cnt, wait_cnt_d;
+reg [15:0] burst_cnt, burst_cnt_d;
 
 /* Data bus control */
 reg dq_oe;
@@ -71,9 +76,10 @@ assign bpi_dq = dq_oe ? dq_out : 16'hzzzz;
 assign tdo = rd_data_reg[0];
 
 /* Command codes */
-localparam CMD_WRITE = 4'h1,
-           CMD_READ  = 4'h2,
-           CMD_NOP   = 4'h3;
+localparam CMD_WRITE       = 4'h1,
+           CMD_READ        = 4'h2,
+           CMD_NOP         = 4'h3,
+           CMD_BURST_WRITE = 4'h4;
 
 /* Next state logic */
 always @(*) begin
@@ -84,6 +90,7 @@ always @(*) begin
     wr_data_reg_d = wr_data_reg;
     rd_data_reg_d = rd_data_reg;
     wait_cnt_d   = wait_cnt;
+    burst_cnt_d  = burst_cnt;
 
     case (state)
         IDLE: begin
@@ -108,6 +115,9 @@ always @(*) begin
                 if (cmd_reg == CMD_WRITE) begin
                     bit_cnt_d = 15;  /* 16 bits for data */
                     state_d = RECV_DATA;
+                end else if (cmd_reg == CMD_BURST_WRITE) begin
+                    bit_cnt_d = 15;  /* 16 bits for burst count */
+                    state_d = BURST_RECV_CNT;
                 end else begin
                     wait_cnt_d = 8'd20;  /* Wait cycles for read */
                     state_d = EXEC;
@@ -143,6 +153,38 @@ always @(*) begin
                 state_d = DONE;
         end
 
+        BURST_RECV_CNT: begin
+            burst_cnt_d = {tdi, burst_cnt[15:1]};
+            bit_cnt_d = bit_cnt - 1'b1;
+            if (bit_cnt == 0) begin
+                bit_cnt_d = 15;
+                state_d = BURST_DATA;
+            end
+        end
+
+        BURST_DATA: begin
+            wr_data_reg_d = {tdi, wr_data_reg[15:1]};
+            bit_cnt_d = bit_cnt - 1'b1;
+            if (bit_cnt == 0) begin
+                wait_cnt_d = 8'd20;
+                state_d = BURST_EXEC;
+            end
+        end
+
+        BURST_EXEC: begin
+            wait_cnt_d = wait_cnt - 1'b1;
+            if (wait_cnt == 0) begin
+                burst_cnt_d = burst_cnt - 1'b1;
+                if (burst_cnt == 16'd1) begin
+                    state_d = DONE;
+                end else begin
+                    addr_reg_d = addr_reg + 1'b1;
+                    bit_cnt_d = 15;
+                    state_d = BURST_DATA;
+                end
+            end
+        end
+
         DONE: begin
             /* Stay here until reset */
         end
@@ -167,6 +209,7 @@ always @(posedge drck) begin
     wr_data_reg <= wr_data_reg_d;
     rd_data_reg <= rd_data_reg_d;
     wait_cnt    <= wait_cnt_d;
+    burst_cnt   <= burst_cnt_d;
 end
 
 /* Address output */
@@ -175,6 +218,8 @@ always @(posedge drck or posedge rst) begin
         bpi_addr <= 25'd0;
     else if (state == RECV_ADDR && bit_cnt == 0)
         bpi_addr <= {tdi, addr_reg[24:1]};
+    else if (state == BURST_DATA && bit_cnt == 0)
+        bpi_addr <= addr_reg;
 end
 
 /* BPI Flash control signals */
@@ -202,6 +247,14 @@ always @(posedge drck or posedge rst) begin
                     dq_out   <= wr_data_reg;
                 end
             end
+            BURST_EXEC: begin
+                bpi_ce_n  <= 1'b0;
+                bpi_adv_n <= 1'b0;
+                bpi_oe_n  <= 1'b1;
+                bpi_we_n  <= (wait_cnt > 8'd5 && wait_cnt < 8'd15) ? 1'b0 : 1'b1;
+                dq_oe     <= 1'b1;
+                dq_out    <= wr_data_reg;
+            end
             default: begin
                 bpi_ce_n  <= 1'b1;
                 bpi_oe_n  <= 1'b1;
@@ -219,7 +272,7 @@ end
 wire ver_rst = (ver_cap & ver_sel);
 wire ver_start = (ver_tdi & ver_shift & ver_sel);
 
-localparam VER_VALUE = 40'h30_31_2E_30_30; // "01.00"
+localparam VER_VALUE = 40'h30_32_2E_30_30; // "02.00"
 
 reg [6:0] ver_cnt, ver_cnt_d;
 reg [39:0] ver_shft, ver_shft_d;

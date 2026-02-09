@@ -9,6 +9,7 @@
 #include <unistd.h>
 #include <cstring>
 #include <stdexcept>
+#include <vector>
 
 #include "display.hpp"
 #include "progressBar.hpp"
@@ -29,7 +30,8 @@ static inline uint8_t reverseByte(uint8_t b)
 BPIFlash::BPIFlash(Jtag *jtag, int8_t verbose)
 	: _jtag(jtag), _verbose(verbose), _irlen(6),
 	  _capacity(0), _block_size(256 * 1024),
-	  _manufacturer_id(0), _device_id(0)
+	  _manufacturer_id(0), _device_id(0),
+	  _has_burst(false)
 {
 }
 
@@ -46,6 +48,7 @@ BPIFlash::~BPIFlash()
  *   0x1 = Write word
  *   0x2 = Read word
  *   0x3 = NOP
+ *   0x4 = Burst write (addr + count + N×data words)
  */
 
 uint16_t BPIFlash::bpi_read(uint32_t word_addr)
@@ -133,6 +136,94 @@ void BPIFlash::bpi_write(uint32_t word_addr, uint16_t data)
 	_jtag->flush();
 }
 
+void BPIFlash::bpi_write_no_flush(uint32_t word_addr, uint16_t data)
+{
+	/* Same packet as bpi_write() but no shiftIR or flush —
+	 * caller sets IR once before the loop and flushes once after.
+	 */
+	const int total_bits = 1 + 4 + 25 + 16 + 20;
+	const int total_bytes = (total_bits + 7) / 8;
+
+	uint8_t tx[total_bytes];
+	memset(tx, 0, total_bytes);
+
+	uint64_t packet = 1;                           /* start bit */
+	packet |= ((uint64_t)CMD_WRITE) << 1;          /* cmd at bits [4:1] */
+	packet |= ((uint64_t)(word_addr & 0x1FFFFFF)) << 5;  /* addr at bits [29:5] */
+	packet |= ((uint64_t)data) << 30;              /* data at bits [45:30] */
+
+	for (int i = 0; i < 8; i++) {
+		tx[i] = (packet >> (i * 8)) & 0xFF;
+	}
+
+	_jtag->shiftDR(tx, NULL, total_bits);
+}
+
+void BPIFlash::bpi_burst_write(uint32_t word_addr, const uint16_t *data,
+				uint32_t count)
+{
+	if (count == 0)
+		return;
+
+	/* Burst packet: start(1) + cmd(4) + addr(25) + count(16) + N×(data(16) + pad(21))
+	 * Header: 46 bits.  Per word: 37 bits.
+	 */
+	const uint32_t header_bits = 1 + 4 + 25 + 16;  /* 46 */
+	const uint32_t per_word_bits = 16 + 21;          /* 37: 20 exec cycles + 1 transition */
+	const uint32_t total_bits = header_bits + count * per_word_bits;
+	const uint32_t total_bytes = (total_bits + 7) / 8;
+
+	std::vector<uint8_t> tx(total_bytes, 0);
+
+	/* Helper to set a single bit in the tx buffer */
+	auto set_bit = [&](uint32_t bit_pos) {
+		tx[bit_pos / 8] |= (1 << (bit_pos % 8));
+	};
+
+	/* Pack header LSB-first */
+	uint32_t pos = 0;
+
+	/* start bit = 1 */
+	set_bit(pos);
+	pos++;
+
+	/* cmd = CMD_BURST_WRITE (4 bits) */
+	for (int i = 0; i < 4; i++) {
+		if (CMD_BURST_WRITE & (1 << i))
+			set_bit(pos);
+		pos++;
+	}
+
+	/* addr (25 bits) */
+	for (int i = 0; i < 25; i++) {
+		if (word_addr & (1u << i))
+			set_bit(pos);
+		pos++;
+	}
+
+	/* count (16 bits) */
+	for (int i = 0; i < 16; i++) {
+		if (count & (1u << i))
+			set_bit(pos);
+		pos++;
+	}
+
+	/* Pack each data word: 16 data bits + 21 padding bits */
+	for (uint32_t w = 0; w < count; w++) {
+		for (int i = 0; i < 16; i++) {
+			if (data[w] & (1 << i))
+				set_bit(pos);
+			pos++;
+		}
+		pos += 21;  /* 20 exec cycles + 1 transition cycle */
+	}
+
+	uint8_t user1[] = {0x02};
+	_jtag->shiftIR(user1, NULL, _irlen);
+	_jtag->shiftDR(tx.data(), NULL, total_bits);
+	_jtag->flush();
+}
+
 bool BPIFlash::detect()
 {
 	printInfo("Detecting BPI flash...");
@@ -188,6 +279,11 @@ bool BPIFlash::detect()
 	_capacity = 64 * 1024 * 1024;
 	_block_size = 256 * 1024;
 	printInfo("Flash capacity: 64 MB (512 Mbit)");
+
+	/* Enable burst write — assumes v02.00+ JTAG bitstream is loaded.
+	 * Future: could auto-detect via USER4 version readback.
+	 */
+	_has_burst = true;
 
 	return true;
 }
@@ -345,7 +441,6 @@ bool BPIFlash::write(uint32_t addr, const uint8_t *data, uint32_t len)
 	}
 
 	/* Program data using buffered programming (0x00E9)
-	 * MT28GU512AAA has 512-word buffer, we use 32 words for reliability
 	 * Sequence: Setup(0xE9) -> WordCount(N-1) -> N data words -> Confirm(0xD0)
 	 */
 	printInfo("Programming (buffered mode)...");
@@ -374,9 +469,6 @@ bool BPIFlash::write(uint32_t addr, const uint8_t *data, uint32_t len)
 			last_block = current_block;
 		}
 
-		/* Clear any pending status before new buffered program */
-		bpi_write(0, FLASH_CMD_CLEAR_STATUS);
-
 		/* Calculate how many words to write in this buffer */
 		uint32_t remaining_bytes = len - offset;
 		uint32_t chunk_bytes = (remaining_bytes > BUFFER_BYTES) ? BUFFER_BYTES : remaining_bytes;
@@ -395,26 +487,36 @@ bool BPIFlash::write(uint32_t addr, const uint8_t *data, uint32_t len)
 			printInfo(buf);
 		}
 
-		/* Buffered Program Setup - sent to block/colony base address */
-		bpi_write(block_word_addr, FLASH_CMD_BUFFERED_PRG);
-		usleep(10);
-
-		/* Write word count (N-1) - sent to block address per datasheet */
-		bpi_write(block_word_addr, chunk_words - 1);
-
 		/* Write data words for BPI x16 boot.
 		 * Two transformations (same as Vivado write_cfgmem -interface BPIx16):
 		 *  1. Bit reversal within each byte: FPGA D00=MSBit, flash DQ[0]=LSBit
 		 *  2. Byte swap: first bitstream byte → upper flash byte D[15:8]
 		 */
+		std::vector<uint16_t> word_buf(chunk_words);
 		for (uint32_t w = 0; w < chunk_words; w++) {
 			uint32_t data_offset = offset + w * 2;
 			uint8_t b0 = data[data_offset];
 			uint8_t b1 = 0xFF;  /* pad with 0xFF if odd length */
 			if (data_offset + 1 < len)
 				b1 = data[data_offset + 1];
-			uint16_t word = (reverseByte(b0) << 8) | reverseByte(b1);
-			bpi_write(word_addr + w, word);
+			word_buf[w] = (reverseByte(b0) << 8) | reverseByte(b1);
+		}
+
+		/* Buffered Program Setup - sent to block/colony base address */
+		bpi_write(0, FLASH_CMD_CLEAR_STATUS);
+		bpi_write(block_word_addr, FLASH_CMD_BUFFERED_PRG);
+		bpi_write(block_word_addr, chunk_words - 1);
+
+		if (_has_burst) {
+			bpi_burst_write(word_addr, word_buf.data(), chunk_words);
+		} else {
+			/* Software-only fallback: one IR, no per-word flush */
+			uint8_t user1[] = {0x02};
+			_jtag->shiftIR(user1, NULL, _irlen);
+			for (uint32_t w = 0; w < chunk_words; w++) {
+				bpi_write_no_flush(word_addr + w, word_buf[w]);
+			}
+			_jtag->flush();
 		}
 
 		/* Confirm - sent to block address */
@@ -428,9 +530,6 @@ bool BPIFlash::write(uint32_t addr, const uint8_t *data, uint32_t len)
 			progress.fail();
 			return false;
 		}
-
-		/* Small delay before next buffer operation */
-		usleep(100);
 
 		offset += chunk_words * 2;
 

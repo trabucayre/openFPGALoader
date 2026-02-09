@@ -70,9 +70,10 @@ class BPIFlash {
 
  private:
 	/* BPI bridge command codes (match bpiOverJtag_core.v) */
-	static const uint8_t CMD_WRITE = 0x1;
-	static const uint8_t CMD_READ  = 0x2;
-	static const uint8_t CMD_NOP   = 0x3;
+	static const uint8_t CMD_WRITE       = 0x1;
+	static const uint8_t CMD_READ        = 0x2;
+	static const uint8_t CMD_NOP         = 0x3;
+	static const uint8_t CMD_BURST_WRITE = 0x4;
 
 	/* Intel CFI flash commands */
 	static const uint16_t FLASH_CMD_READ_ARRAY   = 0x00FF;
@@ -105,6 +106,17 @@ class BPIFlash {
 	void bpi_write(uint32_t word_addr, uint16_t data);
 
 	/*!
+	 * \brief Write a 16-bit word without IR shift or flush (for batched writes)
+	 */
+	void bpi_write_no_flush(uint32_t word_addr, uint16_t data);
+
+	/*!
+	 * \brief Burst write multiple 16-bit words in a single DR shift
+	 */
+	void bpi_burst_write(uint32_t word_addr, const uint16_t *data,
+			     uint32_t count);
+
+	/*!
 	 * \brief Wait for operation to complete
 	 * \return true if completed successfully
 	 */
@@ -122,6 +134,7 @@ class BPIFlash {
 	uint32_t _block_size;
 	uint16_t _manufacturer_id;
 	uint16_t _device_id;
+	bool _has_burst;
 };
 
 #endif  // SRC_BPIFLASH_HPP_
