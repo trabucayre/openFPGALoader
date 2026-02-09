@@ -357,7 +357,9 @@ bool BPIFlash::erase_block(uint32_t addr)
 
 	/* Verify erase by reading first few words */
 	if (_verbose) {
-		bpi_write(0, FLASH_CMD_READ_ARRAY);
+		/* Send READ_ARRAY to the erased block's address (not addr 0),
+		 * because multi-bank flash requires per-bank mode commands */
+		bpi_write(word_addr, FLASH_CMD_READ_ARRAY);
 		usleep(100);
 		char buf[128];
 		snprintf(buf, sizeof(buf), "Verify erase at 0x%06x:", addr);

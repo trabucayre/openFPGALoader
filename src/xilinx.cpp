@@ -880,11 +880,11 @@ void Xilinx::program_mem(ConfigBitstreamParser *bitfile)
 	 *    the TLR (Test-Logic-Reset) state.
 	 */
 	_jtag->shiftIR(get_ircode(_ircode_map, "JPROGRAM"), NULL, _irlen);
-	/* test */
+	/* Poll INIT_B (bit 4 of IR capture) until config memory is cleared */
 	tx_buf = get_ircode(_ircode_map, "BYPASS");
 	do {
 		_jtag->shiftIR(tx_buf, rx_buf, _irlen);
-	} while (!(rx_buf[0] &0x01));
+	} while (!(rx_buf[0] & 0x10));
 	/*
 	 * 8: Move into the RTI state.                        X     0   10,000(1)
 	 */

@@ -4,6 +4,7 @@
 set_property CFGBVS GND [current_design]
 set_property CONFIG_VOLTAGE 1.8 [current_design]
 set_property BITSTREAM.GENERAL.COMPRESS TRUE [current_design]
+set_property BITSTREAM.CONFIG.UNUSEDPIN PULLNONE [current_design]
 
 ## Address bus [25:1]
 set_property -dict {PACKAGE_PIN AD26 IOSTANDARD LVCMOS18} [get_ports {bpi_addr[1]}]
