@@ -987,6 +987,14 @@
   Memory: OK
   Flash: OK
 
+- ID: ypcb003381p1
+  Description: YPCB-00338-1P1 Kintex-7 Accelerator Card
+  URL: https://www.tiferking.cn/index.php/2024/12/19/650/
+  FPGA: Kintex7 xc7k480tffg1156
+  Memory: OK
+  Flash: OK
+  Note: BPI parallel NOR flash (MT28GU512AAA1EGC)
+
 - ID: zc702
   Description: Xilinx ZC702
   URL: https://www.xilinx.com/products/boards-and-kits/ek-z7-zc702-g.html

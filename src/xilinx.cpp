@@ -281,7 +281,7 @@ Xilinx::Xilinx(Jtag *jtag, const std::string &filename,
 				 skip_reset),
 	_device_package(device_package), _spiOverJtagPath(spiOverJtagPath),
 	_irlen(6), _secondary_filename(secondary_filename), _soj_is_v2(false),
-	_jtag_chain_len(1)
+	_jtag_chain_len(1), _is_bpi_board(false)
 {
 	if (prg_type == Device::RD_FLASH) {
 		_mode = Device::READ_MODE;
@@ -403,6 +403,12 @@ Xilinx::Xilinx(Jtag *jtag, const std::string &filename,
 		}
 	} else {
 		_fpga_family = UNKNOWN_FAMILY;
+	}
+
+	/* Check for BPI flash boards */
+	if (_device_package == "xc7k480tffg1156") {
+		_is_bpi_board = true;
+		printInfo("BPI flash board detected (parallel NOR flash)");
 	}
 
 	if (read_dna) {
@@ -654,17 +660,22 @@ void Xilinx::program(unsigned int offset, bool unprotect_flash)
 	}
 
 	if (_mode == Device::SPI_MODE) {
-		if (_flash_chips & PRIMARY_FLASH) {
-			select_flash_chip(PRIMARY_FLASH);
-			program_spi(bit, _file_extension, offset, unprotect_flash);
-		}
-		if (_flash_chips & SECONDARY_FLASH) {
-			select_flash_chip(SECONDARY_FLASH);
-			program_spi(secondary_bit, _secondary_file_extension, offset, unprotect_flash);
-		}
+		/* Check for BPI flash boards */
+		if (_is_bpi_board) {
+			program_bpi(bit, offset);
+			reset();
+		} else {
+			if (_flash_chips & PRIMARY_FLASH) {
+				select_flash_chip(PRIMARY_FLASH);
+				program_spi(bit, _file_extension, offset, unprotect_flash);
+			}
+			if (_flash_chips & SECONDARY_FLASH) {
+				select_flash_chip(SECONDARY_FLASH);
+				program_spi(secondary_bit, _secondary_file_extension, offset, unprotect_flash);
+			}
 
-		reset();
-
+			reset();
+		}
 	} else {
 		if (_fpga_family == SPARTAN3_FAMILY)
 			xc3s_flow_program(bit);
@@ -742,6 +753,68 @@ bool Xilinx::load_bridge()
 	}
 
 	return true;
+}
+
+bool Xilinx::load_bpi_bridge()
+{
+	std::string bitname;
+
+	if (_device_package.empty()) {
+		printError("Can't program BPI flash: missing device-package information");
+		return false;
+	}
+
+	bitname = get_shell_env_var("OPENFPGALOADER_SOJ_DIR", DATA_DIR "/openFPGALoader");
+	bitname += "/bpiOverJtag_" + _device_package + ".bit.gz";
+
+#if defined (_WIN64) || defined (_WIN32)
+	bitname = PathHelper::absolutePath(bitname);
+#endif
+
+	/* Load BPI over JTAG bridge */
+	try {
+		BitParser bridge(bitname, true, _verbose);
+		printSuccess("Use: " + bridge.getFilename());
+
+		bridge.parse();
+		program_mem(&bridge);
+	} catch (std::exception &e) {
+		printError(e.what());
+		throw std::runtime_error(e.what());
+	}
+
+	/* Initialize BPI flash instance */
+	_bpi_flash.reset(new BPIFlash(_jtag, _verbose));
+
+	return true;
+}
+
+void Xilinx::program_bpi(ConfigBitstreamParser *bit, unsigned int offset)
+{
+	if (!bit)
+		throw std::runtime_error("called with null bitstream");
+
+	/* Load BPI bridge if not already loaded */
+	if (!_bpi_flash) {
+		if (!load_bpi_bridge()) {
+			throw std::runtime_error("Failed to load BPI bridge");
+		}
+	}
+
+	/* Detect flash */
+	if (!_bpi_flash->detect()) {
+		throw std::runtime_error("BPI flash detection failed");
+	}
+
+	/* Program the flash */
+	const uint8_t *data = bit->getData();
+	int length = bit->getLength() / 8;
+
+	if (!_bpi_flash->write(offset, data, length)) {
+		throw std::runtime_error("BPI flash programming failed");
+	}
+
+	printInfo("BPI flash programming complete");
 }
 
 float Xilinx::get_spiOverJtag_version()

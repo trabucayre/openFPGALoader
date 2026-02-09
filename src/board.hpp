@@ -270,6 +270,7 @@ static std::map <std::string, target_board_t> board_list = {
 	SPI_BOARD("xyloni_spi",       "efinix", "trion", "efinix_spi_ft4232",
 			DBUS4, DBUS5, DBUS7, DBUS3, DBUS0, DBUS1, DBUS2, DBUS6, 0, CABLE_DEFAULT),
 	JTAG_BOARD("xtrx",            "xc7a50tcpg236", ""            , 0, 0, CABLE_DEFAULT),
+	JTAG_BOARD("ypcb003381p1",    "xc7k480tffg1156", "", 0, 0, CABLE_DEFAULT),
 	JTAG_BOARD("zc702",           "xc7z020clg484", "digilent", 0, 0, CABLE_DEFAULT),
 	JTAG_BOARD("zc706",           "xc7z045ffg900", "jtag-smt2-nc", 0, 0, CABLE_DEFAULT),
 	JTAG_BOARD("zcu102",          "xczu9egffvb1156", "jtag-smt2-nc", 0, 0, CABLE_DEFAULT),
