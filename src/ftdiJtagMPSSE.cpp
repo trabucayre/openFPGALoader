@@ -74,16 +74,14 @@ void FtdiJtagMPSSE::init_internal(const mpsse_bit_config &cable)
 		_ch552WA = true;
 	}
 
-	// This Sipeed firmware does not support MPSEE 0x8E, 0x8F commands properly
-	if ( (!strncmp((const char *)_imanufacturer, "SIPEED", 6))
-			&& (!strncmp((const char *)_iserialnumber, "2023112818", 10)) ) {
-		_cmd8EWA = true;
-	}
-
-	// This Sipeed firmware is incredibly slow in LSB first mode
-	if ( (!strncmp((const char *)_imanufacturer, "SIPEED", 6))
-			&& (!strncmp((const char *)_iserialnumber, "2025041420", 10)) ) {
-		_msb_first = true;
+	// Sipeed cable Work around
+	if (!strncmp((const char *)_imanufacturer, "SIPEED", 6)) {
+		// This Sipeed firmware does not support MPSEE 0x8E, 0x8F commands properly
+		if (!strncmp((const char *)_iserialnumber, "2023112818", 10))
+			_cmd8EWA  true;
+		// This Sipeed firmware is incredibly slow in LSB first mode
+		if (!strncmp((const char *)_iserialnumber, "2025041420", 10))
+			_msb_first = true;
 	}
 
 
@@ -227,10 +225,10 @@ int FtdiJtagMPSSE::flush()
 }
 
 static unsigned char bit_reverse(unsigned char b) {
-   b = (b & 0xF0) >> 4 | (b & 0x0F) << 4;
-   b = (b & 0xCC) >> 2 | (b & 0x33) << 2;
-   b = (b & 0xAA) >> 1 | (b & 0x55) << 1;
-   return b;
+	b = (b & 0xF0) >> 4 | (b & 0x0F) << 4;
+	b = (b & 0xCC) >> 2 | (b & 0x33) << 2;
+	b = (b & 0xAA) >> 1 | (b & 0x55) << 1;
+	return b;
 }
 
 int FtdiJtagMPSSE::writeTDI(const uint8_t *tdi, uint8_t *tdo, uint32_t len, bool last)
