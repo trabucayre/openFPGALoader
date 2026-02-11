@@ -44,13 +44,18 @@ option(ENABLE_USB_BLASTERII    "enable Altera USB Blaster II support"         ${
 set(BLASTERII_PATH           "" CACHE STRING "usbBlasterII firmware directory")
 set(ISE_PATH "/opt/Xilinx/14.7" CACHE STRING "ise root directory (default: /opt/Xilinx/14.7)")
 
-# Libgpiod, XVC and RemoteBitbang are only available on Linux OS.
+# Libgpiod is only available on Linux OS.
 if (${CMAKE_SYSTEM_NAME} MATCHES "Linux")
-	option(ENABLE_LIBGPIOD      "enable libgpiod bitbang driver (requires libgpiod)" ${ENABLE_CABLE_ALL})
-	option(ENABLE_REMOTEBITBANG "enable remote bitbang driver"                       ${ENABLE_CABLE_ALL})
-	option(ENABLE_XILINX_VIRTUAL_CABLE "enable Xilinx Virtual Cable (XVC) support"   ${ENABLE_CABLE_ALL})
+	option(ENABLE_LIBGPIOD "enable libgpiod bitbang driver (requires libgpiod)" ${ENABLE_CABLE_ALL})
 else()
-	set(ENABLE_LIBGPIOD             OFF)
+	set(ENABLE_LIBGPIOD OFF)
+endif()
+
+# XVC and RemoteBitbang are not available on Windows OS.
+if (NOT ${CMAKE_SYSTEM_NAME} MATCHES "Windows")
+	option(ENABLE_REMOTEBITBANG        "enable remote bitbang driver"              ${ENABLE_CABLE_ALL})
+	option(ENABLE_XILINX_VIRTUAL_CABLE "enable Xilinx Virtual Cable (XVC) support" ${ENABLE_CABLE_ALL})
+else()
 	set(ENABLE_REMOTEBITBANG        OFF)
 	set(ENABLE_XILINX_VIRTUAL_CABLE OFF)
 endif()
