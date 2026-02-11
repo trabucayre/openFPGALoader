@@ -80,6 +80,13 @@ void FtdiJtagMPSSE::init_internal(const mpsse_bit_config &cable)
 		_cmd8EWA = true;
 	}
 
+	// This Sipeed firmware is incredibly slow in LSB first mode
+	if ( (!strncmp((const char *)_imanufacturer, "SIPEED", 6))
+			&& (!strncmp((const char *)_iserialnumber, "2025041420", 10)) ) {
+		_msb_first = true;
+	}
+
+
 	display("%x\n", cable.bit_low_val);
 	display("%x\n", cable.bit_low_dir);
 	display("%x\n", cable.bit_high_val);
@@ -219,6 +226,13 @@ int FtdiJtagMPSSE::flush()
 	return mpsse_write();
 }
 
+static unsigned char bit_reverse(unsigned char b) {
+   b = (b & 0xF0) >> 4 | (b & 0x0F) << 4;
+   b = (b & 0xCC) >> 2 | (b & 0x33) << 2;
+   b = (b & 0xAA) >> 1 | (b & 0x55) << 1;
+   return b;
+}
+
 int FtdiJtagMPSSE::writeTDI(const uint8_t *tdi, uint8_t *tdo, uint32_t len, bool last)
 {
 	/* 3 possible case :
@@ -233,9 +247,11 @@ int FtdiJtagMPSSE::writeTDI(const uint8_t *tdi, uint8_t *tdo, uint32_t len, bool
 	int nb_bit = (real_len & 0x07);  // residual bits
 	int xfer = tx_buff_size - 3;
 	unsigned char c[xfer];
+	unsigned char rev[xfer];
 	unsigned char *rx_ptr = (unsigned char *)tdo;
 	unsigned char *tx_ptr = (unsigned char *)tdi;
-	unsigned char tx_buf[3] = {(unsigned char)(MPSSE_LSB |
+	bool use_msb_first = _msb_first && !tdo;
+	unsigned char tx_buf[3] = {(unsigned char)(((use_msb_first) ? 0 : MPSSE_LSB) |
 						((tdi) ? (MPSSE_DO_WRITE | _write_mode) : 0) |
 						((tdo) ? (MPSSE_DO_READ | _read_mode) : 0)),
 						static_cast<unsigned char>((xfer - 1) & 0xff),            // low
@@ -266,7 +282,12 @@ int FtdiJtagMPSSE::writeTDI(const uint8_t *tdi, uint8_t *tdo, uint32_t len, bool
 		tx_buf[2] = (((xfer_len - 1) >> 8) & 0xff);  // high
 		mpsse_store(tx_buf, 3);
 		if (tdi) {
-			mpsse_store(tx_ptr, xfer_len);
+			if (use_msb_first) {
+				for (int i = 0; i < xfer_len; i++) {
+					rev[i] = bit_reverse(tx_ptr[i]); 
+				}
+			}
+			mpsse_store(use_msb_first ? rev : tx_ptr, xfer_len);
 			tx_ptr += xfer_len;
 		}
 		if (tdo) {
@@ -288,6 +309,7 @@ int FtdiJtagMPSSE::writeTDI(const uint8_t *tdi, uint8_t *tdo, uint32_t len, bool
 	if (nb_bit != 0) {
 		display("%s read/write %d bit\n", __func__, nb_bit);
 		tx_buf[0] |= MPSSE_BITMODE;
+		tx_buf[0] |= MPSSE_LSB;
 		tx_buf[1] = nb_bit - 1;
 		mpsse_store(tx_buf, 2);
 		if (tdi) {
