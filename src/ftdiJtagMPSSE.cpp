@@ -78,7 +78,7 @@ void FtdiJtagMPSSE::init_internal(const mpsse_bit_config &cable)
 	if (!strncmp((const char *)_imanufacturer, "SIPEED", 6)) {
 		// This Sipeed firmware does not support MPSEE 0x8E, 0x8F commands properly
 		if (!strncmp((const char *)_iserialnumber, "2023112818", 10))
-			_cmd8EWA  true;
+			_cmd8EWA = true;
 		// This Sipeed firmware is incredibly slow in LSB first mode
 		if (!strncmp((const char *)_iserialnumber, "2025041420", 10))
 			_msb_first = true;
