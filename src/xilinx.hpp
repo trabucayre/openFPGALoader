@@ -25,6 +25,7 @@ class Xilinx: public Device, SPIInterface {
 				const std::string &file_type,
 				Device::prog_type_t prg_type,
 				const std::string &device_package,
+				const bool spi_flash_type,
 				const std::string &spiOverJtagPath,
 				const std::string &target_flash,
 				bool verify, int8_t verbose,

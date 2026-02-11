@@ -100,6 +100,7 @@ struct arguments {
 	unsigned int file_size;
 	string target_flash;
 	bool external_flash;
+	bool spi_flash_type;
 	int16_t altsetting;
 	uint16_t vid;
 	uint16_t pid;
@@ -150,8 +151,8 @@ int main(int argc, char **argv)
 			-1, 0, false, "-", false, false, false, false, Device::PRG_NONE, false,
 			/* spi dfu    file_type fpga_part bridge_path probe_firmware */
 			false, false, "",       "",       "",         "",
-			/* index_chain file_size target_flash external_flash altsetting */
-			-1,            0,        "primary",   false,         -1,
+			/* index_chain file_size target_flash external_flash spi_flash_type altsetting */
+			-1,            0,        "primary",   false,         true,          -1,
 			/* vid, pid, index bus_addr, device_addr */
 				0,   0,   -1,     0,         0,
 			"127.0.0.1", 0, false, false, false, false, "", false, false,
@@ -223,6 +224,7 @@ int main(int argc, char **argv)
 		 */
 		if (args.freq == 0)
 			args.freq = board->default_freq;
+		args.spi_flash_type = board->spi_bpi == SPI_FLASH;
 	}
 
 	if (args.cable[0] == '-') { /* if no board and no cable */
@@ -656,7 +658,7 @@ int main(int argc, char **argv)
 		if (fab == "xilinx") {
 #ifdef ENABLE_XILINX_SUPPORT
 			fpga = new Xilinx(jtag, args.bit_file, args.secondary_bit_file,
-				args.file_type, args.prg_type, args.fpga_part, args.bridge_path,
+				args.file_type, args.prg_type, args.fpga_part, args.spi_flash_type, args.bridge_path,
 				args.target_flash, args.verify, args.verbose, args.skip_load_bridge, args.skip_reset,
 				args.read_dna, args.read_xadc);
 #else
