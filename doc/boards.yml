@@ -992,8 +992,7 @@
   URL: https://www.tiferking.cn/index.php/2024/12/19/650/
   FPGA: Kintex7 xc7k480tffg1156
   Memory: OK
-  Flash: OK
-  Note: BPI parallel NOR flash (MT28GU512AAA1EGC)
+  Flash: OK. BPI parallel NOR flash (MT28GU512AAA1EGC)
 
 - ID: zc702
   Description: Xilinx ZC702
