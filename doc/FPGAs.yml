@@ -156,6 +156,8 @@ Intel:
     Model: 
       - 10M02
       - 10M08
+      - 10M16
+      - 10M25
     URL: https://www.intel.fr/content/www/fr/fr/products/details/fpga/max/10.html
     Memory: SVF
     Flash: POF

@@ -274,6 +274,7 @@ static std::map <uint32_t, fpga_model> fpga_list = {
 	{0x031810dd, {"altera", "MAX 10", "10M02S", 10}},
 	{0x031820dd, {"altera", "MAX 10", "10M08S", 10}},
 	{0x031830dd, {"altera", "MAX 10", "10M16S", 10}},
+	{0x031840dd, {"altera", "MAX 10", "10M25S", 10}},
 	{0x0318d0dd, {"altera", "MAX 10", "10M40S", 10}},
 	{0x031850dd, {"altera", "MAX 10", "10M50S", 10}},
 	/** dual-supply **/
