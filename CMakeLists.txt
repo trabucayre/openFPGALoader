@@ -72,38 +72,6 @@ else()
 endif()
 
 ####################################################################################################
-# Cross-compilation support
-####################################################################################################
-
-# Detect cross-compilation for Windows from Linux/macOS
-if(windows_crosscompile)
-	set(CROSS_COMPILING_WINDOWS TRUE)
-	message(STATUS "Cross-compiling for Windows from ${CMAKE_HOST_SYSTEM_NAME}")
-
-	# Option to automatically download and build cross-compile dependencies
-	option(CROSS_COMPILE_DEPS "Download and build Windows dependencies for cross-compilation" ON)
-
-	if(CROSS_COMPILE_DEPS)
-		# Include the cross-compilation module
-		list(INSERT CMAKE_MODULE_PATH 0 ${PROJECT_SOURCE_DIR}/cmake/Modules)
-		include(CrossCompileWindows)
-
-		# Setup the dependencies (downloads libusb, builds libftdi)
-		setup_windows_cross_compile_deps()
-
-		# Update pkg-config path for the dependencies
-		set(ENV{PKG_CONFIG_PATH} "${CROSS_DEPS_INSTALL_DIR}/lib/pkgconfig:$ENV{PKG_CONFIG_PATH}")
-
-		# Add the cross-compiled dependencies to the search path
-		list(APPEND CMAKE_PREFIX_PATH ${CROSS_DEPS_INSTALL_DIR})
-		include_directories(${CROSS_DEPS_INSTALL_DIR}/include)
-		link_directories(${CROSS_DEPS_INSTALL_DIR}/lib)
-	endif()
-else()
-	set(CROSS_COMPILING_WINDOWS FALSE)
-endif()
-
-####################################################################################################
 # VENDORS Options
 ####################################################################################################
 
@@ -151,6 +119,38 @@ endif()
 # Only enable fx2_ll when cable using it
 if (ENABLE_USB_BLASTERII)
 	set(USE_FX2_LL ON)
+endif()
+
+####################################################################################################
+# Cross-compilation support
+####################################################################################################
+
+# Detect cross-compilation for Windows from Linux/macOS
+if(windows_crosscompile)
+	set(CROSS_COMPILING_WINDOWS TRUE)
+	message(STATUS "Cross-compiling for Windows from ${CMAKE_HOST_SYSTEM_NAME}")
+
+	# Option to automatically download and build cross-compile dependencies
+	option(CROSS_COMPILE_DEPS "Download and build Windows dependencies for cross-compilation" ON)
+
+	if(CROSS_COMPILE_DEPS)
+		# Include the cross-compilation module
+		list(INSERT CMAKE_MODULE_PATH 0 ${PROJECT_SOURCE_DIR}/cmake/Modules)
+		include(CrossCompileWindows)
+
+		# Setup the dependencies (downloads libusb, builds libftdi)
+		setup_windows_cross_compile_deps()
+
+		# Update pkg-config path for the dependencies
+		set(ENV{PKG_CONFIG_PATH} "${CROSS_DEPS_INSTALL_DIR}/lib/pkgconfig:$ENV{PKG_CONFIG_PATH}")
+
+		# Add the cross-compiled dependencies to the search path
+		list(APPEND CMAKE_PREFIX_PATH ${CROSS_DEPS_INSTALL_DIR})
+		include_directories(${CROSS_DEPS_INSTALL_DIR}/include)
+		link_directories(${CROSS_DEPS_INSTALL_DIR}/lib)
+	endif()
+else()
+	set(CROSS_COMPILING_WINDOWS FALSE)
 endif()
 
 ####################################################################################################
