@@ -303,6 +303,7 @@ endif()
 # To be sorted
 # ===========================
 list(APPEND OPENFPGALOADER_SOURCE
+	src/bpiFlash.cpp
 	src/spiFlash.cpp
 	src/spiInterface.cpp
 	src/epcq.cpp
@@ -310,6 +311,7 @@ list(APPEND OPENFPGALOADER_SOURCE
 )
 
 list(APPEND OPENFPGALOADER_HEADERS
+	src/bpiFlash.hpp
 	src/jtag.hpp
 	src/jtagInterface.hpp
 	src/spiFlash.hpp
@@ -781,6 +783,8 @@ install(TARGETS openFPGALoader DESTINATION bin)
 ####################################################################################################
 
 file(GLOB GZ_FILES spiOverJtag/spiOverJtag_*.*.gz)
+file(GLOB BPI_GZ_FILES bpiOverJtag/bpiOverJtag_*.bit.gz)
+list(APPEND GZ_FILES ${BPI_GZ_FILES})
 
 # Compress rbf and bit files present into repository
 # TODO: test compat with Windows and MacOS
