@@ -284,6 +284,26 @@ static std::map <uint32_t, fpga_model> fpga_list = {
 	/* Altera Stratix V */
 	{0x029070dd, {"altera", "stratix V GS", "5SGSD5", 10}},
 
+	/* Altera/Intel Arria 10 */
+	{0x02ee20dd, {"altera", "arria 10", "GX160",  10}},
+	{0x02e220dd, {"altera", "arria 10", "GX220",  10}},
+	{0x02ee30dd, {"altera", "arria 10", "GX270",  10}},
+	{0x02e230dd, {"altera", "arria 10", "GX320",  10}},
+	{0x02e240dd, {"altera", "arria 10", "GX480",  10}},
+	{0x02ee50dd, {"altera", "arria 10", "GX570",  10}},
+	{0x02e250dd, {"altera", "arria 10", "GX660",  10}},
+	{0x02ee60dd, {"altera", "arria 10", "GX900",  10}},
+	{0x02e660dd, {"altera", "arria 10", "GX1150", 10}},
+	{0x02e260dd, {"altera", "arria 10", "GT900",  10}},
+	{0x02e060dd, {"altera", "arria 10", "GT1150", 10}},
+	{0x02e620dd, {"altera", "arria 10", "SX160",  10}},
+	{0x02e020dd, {"altera", "arria 10", "SX220",  10}},
+	{0x02e630dd, {"altera", "arria 10", "SX270",  10}},
+	{0x02e030dd, {"altera", "arria 10", "SX320",  10}},
+	{0x02e040dd, {"altera", "arria 10", "SX480",  10}},
+	{0x02e650dd, {"altera", "arria 10", "SX570",  10}},
+	{0x02e050dd, {"altera", "arria 10", "SX660",  10}},
+
 	/**************************************************************************/
 	/*                             Efinix                                     */
 	/**************************************************************************/
