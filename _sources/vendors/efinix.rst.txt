@@ -41,7 +41,7 @@ bin file load
     openFPGALoader --cable jlink_base -m  /somewhere/project/outflow/*.bin
 
 hex file flash
--------------
+--------------
 
 Example for ti60f225.
 NOTE: JTAG chains with more than one device (eg --index-chain) are currently not supported for writing to SPI flash

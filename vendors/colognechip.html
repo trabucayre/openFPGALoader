@@ -1,109 +1,38 @@
 <!DOCTYPE html>
-<html class="writer-html5" lang="en" >
-<head>
-  <meta charset="utf-8" /><meta name="viewport" content="width=device-width, initial-scale=1" />
 
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Cologne Chip notes &mdash; openFPGALoader: universal utility for programming FPGA latest documentation</title>
-      <link rel="stylesheet" href="../_static/pygments.css" type="text/css" />
-      <link rel="stylesheet" href="../_static/css/theme.css" type="text/css" />
-  <!--[if lt IE 9]>
-    <script src="../_static/js/html5shiv.min.js"></script>
-  <![endif]-->
-  
-        <script src="../_static/documentation_options.js?v=c6e86fd7"></script>
-        <script src="../_static/doctools.js?v=888ff710"></script>
-        <script src="../_static/sphinx_highlight.js?v=dc90522c"></script>
-    <script src="../_static/js/theme.js"></script>
+<html lang="en" data-content_root="../">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" /><meta name="viewport" content="width=device-width, initial-scale=1" />
+
+    <title>Cologne Chip notes &#8212; openFPGALoader: universal utility for programming FPGA latest documentation</title>
+    <link rel="stylesheet" type="text/css" href="../_static/pygments.css?v=5ecbeea2" />
+    <link rel="stylesheet" type="text/css" href="../_static/basic.css?v=b08954a9" />
+    <link rel="stylesheet" type="text/css" href="../_static/alabaster.css?v=27fed22d" />
+    <script src="../_static/documentation_options.js?v=c6e86fd7"></script>
+    <script src="../_static/doctools.js?v=fd6eb6e6"></script>
+    <script src="../_static/sphinx_highlight.js?v=6ffebe34"></script>
     <link rel="index" title="Index" href="../genindex.html" />
     <link rel="search" title="Search" href="../search.html" />
     <link rel="next" title="Efinix notes" href="efinix.html" />
-    <link rel="prev" title="Anlogic notes" href="anlogic.html" /> 
-</head>
+    <link rel="prev" title="Anlogic notes" href="anlogic.html" />
+   
+  <link rel="stylesheet" href="../_static/custom.css" type="text/css" />
+  
 
-<body class="wy-body-for-nav"> 
-  <div class="wy-grid-for-nav">
-    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
-      <div class="wy-side-scroll">
-        <div class="wy-side-nav-search" >
-            <a href="../index.html" class="icon icon-home"> openFPGALoader: universal utility for programming FPGA
-          </a>
-              <div class="version">
-                latest
-              </div>
-<div role="search">
-  <form id="rtd-search-form" class="wy-form" action="../search.html" method="get">
-    <input type="text" name="q" placeholder="Search docs" />
-    <input type="hidden" name="check_keywords" value="yes" />
-    <input type="hidden" name="area" value="default" />
-  </form>
-</div>
-        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
-              <p class="caption" role="heading"><span class="caption-text">User Guide</span></p>
-<ul>
-<li class="toctree-l1"><a class="reference internal" href="../guide/first-steps.html">First steps with openFPGALoader</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../guide/install.html">Installing openFPGALoader</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../guide/troubleshooting.html">Troubleshooting</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../guide/advanced.html">Advanced usage of openFPGALoader</a></li>
-</ul>
-<p class="caption" role="heading"><span class="caption-text">Compatibility</span></p>
-<ul>
-<li class="toctree-l1"><a class="reference internal" href="../compatibility/fpga.html">FPGAs</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../compatibility/board.html">Boards</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../compatibility/cable.html">Cables</a></li>
-</ul>
-<p class="caption" role="heading"><span class="caption-text">Vendors</span></p>
-<ul class="current">
-<li class="toctree-l1"><a class="reference internal" href="anlogic.html">Anlogic notes</a></li>
-<li class="toctree-l1 current"><a class="current reference internal" href="#">Cologne Chip notes</a><ul>
-<li class="toctree-l2"><a class="reference internal" href="#supported-boards-cables">Supported Boards/Cables</a></li>
-<li class="toctree-l2"><a class="reference internal" href="#programming-modes">Programming Modes</a><ul>
-<li class="toctree-l3"><a class="reference internal" href="#jtag-configuration">JTAG Configuration</a></li>
-<li class="toctree-l3"><a class="reference internal" href="#spi-configuration">SPI Configuration</a></li>
-<li class="toctree-l3"><a class="reference internal" href="#jtag-flash-access">JTAG Flash Access</a></li>
-<li class="toctree-l3"><a class="reference internal" href="#spi-flash-access">SPI Flash Access</a></li>
-</ul>
-</li>
-</ul>
-</li>
-<li class="toctree-l1"><a class="reference internal" href="efinix.html">Efinix notes</a></li>
-<li class="toctree-l1"><a class="reference internal" href="gowin.html">Gowin notes</a></li>
-<li class="toctree-l1"><a class="reference internal" href="intel.html">Intel notes</a></li>
-<li class="toctree-l1"><a class="reference internal" href="lattice.html">Lattice notes</a></li>
-<li class="toctree-l1"><a class="reference internal" href="xilinx.html">Xilinx notes</a></li>
-</ul>
-<p class="caption" role="heading"><span class="caption-text">Development</span></p>
-<ul>
-<li class="toctree-l1"><a class="reference internal" href="../todo.html">To Do</a></li>
-</ul>
+  
+  
 
-        </div>
-      </div>
-    </nav>
+  </head><body>
+  
 
-    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
-          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
-          <a href="../index.html">openFPGALoader: universal utility for programming FPGA</a>
-      </nav>
-
-      <div class="wy-nav-content">
-        <div class="rst-content">
-        
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
           
-            <div role="navigation" aria-label="Page navigation">
-  <ul class="wy-breadcrumbs">
-      <li><a href="../index.html" class="icon icon-home"></a> &raquo;</li>
-      <li>Cologne Chip notes</li>
-      <li class="wy-breadcrumbs-aside">
-              <a href="https://github.com/trabucayre/openFPGALoader/blob/master/doc/vendors/colognechip.rst" class="fa fa-github"> Edit on GitHub</a>
-      </li>
-  </ul>
-  <hr/>
-</div>
-          
-          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
-           <div itemprop="articleBody">
-             
+
+          <div class="body" role="main">
+            
   <section id="cologne-chip-notes">
 <span id="colognechip"></span><h1>Cologne Chip notes<a class="headerlink" href="#cologne-chip-notes" title="Link to this heading">¶</a></h1>
 <section id="supported-boards-cables">
@@ -192,32 +121,104 @@
 </section>
 
 
-           </div>
           </div>
-          <footer><div class="rst-footer-buttons" role="navigation" aria-label="Footer">
-        <a href="anlogic.html" class="btn btn-neutral float-left" title="Anlogic notes" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left" aria-hidden="true"></span> Previous</a>
-        <a href="efinix.html" class="btn btn-neutral float-right" title="Efinix notes" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right" aria-hidden="true"></span></a>
-    </div>
-
-  <hr/>
-
-  <div role="contentinfo">
-    <p>&#169; Copyright 2019-2022, Gwenhael Goavec-Merou and contributors.</p>
-  </div>Built with <a href="http://sphinx-doc.org/">Sphinx</a> using a
-    <a href="https://github.com/buildthedocs/sphinx.theme">theme</a>
-    provided by <a href="https://buildthedocs.github.io">Build the Docs</a>.
-   
-
-</footer>
+          
         </div>
       </div>
-    </section>
-  </div>
-  <script>
-      jQuery(function () {
-          SphinxRtdTheme.Navigation.enable(true);
-      });
-  </script> 
+      <div class="sphinxsidebar" role="navigation" aria-label="Main">
+        <div class="sphinxsidebarwrapper">
+<h1 class="logo"><a href="../index.html">openFPGALoader: universal utility for programming FPGA</a></h1>
 
-</body>
+
+
+
+
+
+
+
+
+<search id="searchbox" style="display: none" role="search">
+    <div class="searchformwrapper">
+    <form class="search" action="../search.html" method="get">
+      <input type="text" name="q" aria-labelledby="searchlabel" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" placeholder="Search"/>
+      <input type="submit" value="Go" />
+    </form>
+    </div>
+</search>
+<script>document.getElementById('searchbox').style.display = "block"</script><h3>Navigation</h3>
+<p class="caption" role="heading"><span class="caption-text">User Guide</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../guide/first-steps.html">First steps with openFPGALoader</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../guide/install.html">Installing openFPGALoader</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../guide/troubleshooting.html">Troubleshooting Guide</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../guide/advanced.html">Advanced usage of openFPGALoader</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Compatibility</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../compatibility/fpga.html">FPGAs</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../compatibility/board.html">Boards</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../compatibility/cable.html">Cables</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Vendors</span></p>
+<ul class="current">
+<li class="toctree-l1"><a class="reference internal" href="anlogic.html">Anlogic notes</a></li>
+<li class="toctree-l1 current"><a class="current reference internal" href="#">Cologne Chip notes</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="#supported-boards-cables">Supported Boards/Cables</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#programming-modes">Programming Modes</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="#jtag-configuration">JTAG Configuration</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#spi-configuration">SPI Configuration</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#jtag-flash-access">JTAG Flash Access</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#spi-flash-access">SPI Flash Access</a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="efinix.html">Efinix notes</a></li>
+<li class="toctree-l1"><a class="reference internal" href="gowin.html">Gowin notes</a></li>
+<li class="toctree-l1"><a class="reference internal" href="intel.html">Intel notes</a></li>
+<li class="toctree-l1"><a class="reference internal" href="lattice.html">Lattice notes</a></li>
+<li class="toctree-l1"><a class="reference internal" href="xilinx.html">Xilinx notes</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Development</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../todo.html">To Do</a></li>
+</ul>
+
+<div class="relations">
+<h3>Related Topics</h3>
+<ul>
+  <li><a href="../index.html">Documentation overview</a><ul>
+      <li>Previous: <a href="anlogic.html" title="previous chapter">Anlogic notes</a></li>
+      <li>Next: <a href="efinix.html" title="next chapter">Efinix notes</a></li>
+  </ul></li>
+</ul>
+</div>
+
+
+
+
+
+
+
+
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="footer">
+      &#169;2019-2022, Gwenhael Goavec-Merou and contributors.
+      
+      |
+      Powered by <a href="https://www.sphinx-doc.org/">Sphinx 9.1.0</a>
+      &amp; <a href="https://alabaster.readthedocs.io">Alabaster 1.0.0</a>
+      
+      |
+      <a href="../_sources/vendors/colognechip.rst.txt"
+          rel="nofollow">Page source</a>
+    </div>
+
+    
+
+    
+  </body>
 </html>

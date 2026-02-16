@@ -7,7 +7,7 @@ Linux
 =====
 
 Debian/Ubuntu
-----------
+-------------
 
 openFPGALoader is available in the default repositories:
 
@@ -193,6 +193,70 @@ Alternatively, if you want to build it by hand:
 
 Windows
 =======
+
+MSYS2 (Native Build)
+--------------------
+
+openFPGALoader can be installed via MSYS2:
+
+.. code-block:: bash
+
+    pacman -S mingw-w64-ucrt-x86_64-openFPGALoader
+
+Cross-compilation from Linux
+----------------------------
+
+openFPGALoader can be cross-compiled for Windows from Linux using MinGW-w64.
+The build system will automatically download and build the required dependencies
+(libusb, libftdi).
+
+**Prerequisites (Debian/Ubuntu):**
+
+.. code-block:: bash
+
+    sudo apt install \
+      mingw-w64 \
+      cmake \
+      pkg-config \
+      p7zip-full
+
+**Prerequisites (Fedora/RHEL/Rocky):**
+
+.. code-block:: bash
+
+    sudo dnf install \
+      mingw64-gcc \
+      mingw64-gcc-c++ \
+      mingw64-zlib \
+      mingw64-zlib-static \
+      cmake \
+      p7zip \
+      p7zip-plugins
+
+**Build:**
+
+.. code-block:: bash
+
+    git clone https://github.com/trabucayre/openFPGALoader
+    cd openFPGALoader
+    mkdir build-win64
+    cd build-win64
+    cmake -DCMAKE_TOOLCHAIN_FILE=../cmake/Toolchain-x86_64-w64-mingw32.cmake ..
+    cmake --build . --parallel
+
+The resulting ``openFPGALoader.exe`` will be a statically-linked executable
+that only depends on standard Windows system DLLs (KERNEL32, msvcrt, WS2_32).
+
+**Optional: Strip debug symbols to reduce size:**
+
+.. code-block:: bash
+
+    x86_64-w64-mingw32-strip openFPGALoader.exe
+
+**Cross-compilation options:**
+
+- ``-DCROSS_COMPILE_DEPS=OFF`` - Disable automatic dependency download (use system libraries)
+- ``-DENABLE_CMSISDAP=ON`` - Enable CMSIS-DAP support (requires manually providing hidapi)
 
 Common
 ======

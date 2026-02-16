@@ -1,7 +1,7 @@
 .. _troubleshooting:
 
-Troubleshooting
-###############
+Troubleshooting Guide
+#####################
 
 I installed openFPGALoader but it says `command not found` when I try to launch it
 ==================================================================================
