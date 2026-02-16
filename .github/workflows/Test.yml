@@ -7,9 +7,8 @@ on:
 
 jobs:
 
-
   doc:
-    if: github.event_name == 'push' && github.ref == 'refs/heads/master'
+    if: github.event_name != 'pull_request' && (github.ref == 'refs/heads/master' || startsWith(github.ref, 'refs/tags/'))
     runs-on: ubuntu-latest
     name: '📓 Docs'
 
@@ -37,6 +36,12 @@ jobs:
           publish_dir: doc/_build/html
           publish_branch: gh-pages
           keep_files: false
+
+      - name: 'Upload docs artifact'
+        uses: actions/upload-artifact@v4
+        with:
+          name: openFPGALoader-Documentation
+          path: doc/_build/html
 
 
   lin-build:
@@ -187,7 +192,7 @@ jobs:
 
   Release:
     if: github.event_name != 'pull_request' && (github.ref == 'refs/heads/master' || contains(github.ref, 'refs/tags/'))
-    needs: [ lin-test, win ]
+    needs: [ doc, lin-test, win ]
     runs-on: ubuntu-latest
     name: '📦 Release'
     steps:
