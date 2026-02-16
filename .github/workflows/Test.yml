@@ -9,28 +9,34 @@ jobs:
 
 
   doc:
+    if: github.event_name == 'push' && github.ref == 'refs/heads/master'
     runs-on: ubuntu-latest
     name: '📓 Docs'
+
     steps:
+      - name: '🧰 Checkout'
+        uses: actions/checkout@v4
 
-    - name: '🧰 Checkout'
-      uses: actions/checkout@v4
+      - name: '🐍 Setup Python'
+        uses: actions/setup-python@v4
+        with:
+          python-version: "3.x"
 
-    - name: '📓 BuildTheDocs (BTD)'
-      uses: buildthedocs/btd@v0
-      with:
-        token: ${{ github.token }}
-        skip-deploy: ${{ github.event_name == 'pull_request' }}
+      - name: '📦 Install dependencies'
+        run: |
+          pip install sphinx PyYAML tabulate
 
-    - name: '🧹 Clean HTML build'
-      if: ${{ github.event_name != 'pull_request' }}
-      run: sudo rm -rf doc/_build/html/.git
+      - name: '📓 Build docs'
+        run: |
+          sphinx-build -b html doc doc/_build/html
 
-    - name: '📤 Upload artifact: HTML'
-      uses: actions/upload-artifact@v4
-      with:
-        name: openFPGALoader-Documentation
-        path: doc/_build/html
+      - name: '⬆️ Deploy to gh-pages'
+        uses: peaceiris/actions-gh-pages@v4
+        with:
+          github_token: ${{ secrets.GITHUB_TOKEN }}
+          publish_dir: doc/_build/html
+          publish_branch: gh-pages
+          keep_files: false
 
 
   lin-build:

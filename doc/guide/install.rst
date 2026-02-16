@@ -7,7 +7,7 @@ Linux
 =====
 
 Debian/Ubuntu
-----------
+-------------
 
 openFPGALoader is available in the default repositories:
 
