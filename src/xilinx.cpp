@@ -272,7 +272,9 @@ Xilinx::Xilinx(Jtag *jtag, const std::string &filename,
 	const std::string &secondary_filename,
 	const std::string &file_type,
 	Device::prog_type_t prg_type,
-	const std::string &device_package, const std::string &spiOverJtagPath,
+	const std::string &device_package,
+	const bool spi_flash_type,
+	const std::string &spiOverJtagPath,
 	const std::string &target_flash,
 	bool verify, int8_t verbose,
 	bool skip_load_bridge, bool skip_reset, bool read_dna, bool read_xadc):
@@ -281,7 +283,7 @@ Xilinx::Xilinx(Jtag *jtag, const std::string &filename,
 				 skip_reset),
 	_device_package(device_package), _spiOverJtagPath(spiOverJtagPath),
 	_irlen(6), _secondary_filename(secondary_filename), _soj_is_v2(false),
-	_jtag_chain_len(1)
+	_jtag_chain_len(1), _is_bpi_board(~spi_flash_type)
 {
 	if (prg_type == Device::RD_FLASH) {
 		_mode = Device::READ_MODE;
@@ -654,17 +656,22 @@ void Xilinx::program(unsigned int offset, bool unprotect_flash)
 	}
 
 	if (_mode == Device::SPI_MODE) {
-		if (_flash_chips & PRIMARY_FLASH) {
-			select_flash_chip(PRIMARY_FLASH);
-			program_spi(bit, _file_extension, offset, unprotect_flash);
-		}
-		if (_flash_chips & SECONDARY_FLASH) {
-			select_flash_chip(SECONDARY_FLASH);
-			program_spi(secondary_bit, _secondary_file_extension, offset, unprotect_flash);
-		}
+		/* Check for BPI flash boards */
+		if (_is_bpi_board) {
+			program_bpi(bit, offset);
+			reset();
+		} else {
+			if (_flash_chips & PRIMARY_FLASH) {
+				select_flash_chip(PRIMARY_FLASH);
+				program_spi(bit, _file_extension, offset, unprotect_flash);
+			}
+			if (_flash_chips & SECONDARY_FLASH) {
+				select_flash_chip(SECONDARY_FLASH);
+				program_spi(secondary_bit, _secondary_file_extension, offset, unprotect_flash);
+			}
 
-		reset();
-
+			reset();
+		}
 	} else {
 		if (_fpga_family == SPARTAN3_FAMILY)
 			xc3s_flow_program(bit);
@@ -744,6 +751,68 @@ bool Xilinx::load_bridge()
 	return true;
 }
 
+bool Xilinx::load_bpi_bridge()
+{
+	std::string bitname;
+
+	if (_device_package.empty()) {
+		printError("Can't program BPI flash: missing device-package information");
+		return false;
+	}
+
+	bitname = get_shell_env_var("OPENFPGALOADER_SOJ_DIR", DATA_DIR "/openFPGALoader");
+	bitname += "/bpiOverJtag_" + _device_package + ".bit.gz";
+
+#if defined (_WIN64) || defined (_WIN32)
+	bitname = PathHelper::absolutePath(bitname);
+#endif
+
+	/* Load BPI over JTAG bridge */
+	try {
+		BitParser bridge(bitname, true, _verbose);
+		printSuccess("Use: " + bridge.getFilename());
+
+		bridge.parse();
+		program_mem(&bridge);
+	} catch (std::exception &e) {
+		printError(e.what());
+		throw std::runtime_error(e.what());
+	}
+
+	/* Initialize BPI flash instance */
+	_bpi_flash.reset(new BPIFlash(_jtag, _verbose));
+
+	return true;
+}
+
+void Xilinx::program_bpi(ConfigBitstreamParser *bit, unsigned int offset)
+{
+	if (!bit)
+		throw std::runtime_error("called with null bitstream");
+
+	/* Load BPI bridge if not already loaded */
+	if (!_bpi_flash) {
+		if (!load_bpi_bridge()) {
+			throw std::runtime_error("Failed to load BPI bridge");
+		}
+	}
+
+	/* Detect flash */
+	if (!_bpi_flash->detect()) {
+		throw std::runtime_error("BPI flash detection failed");
+	}
+
+	/* Program the flash */
+	const uint8_t *data = bit->getData();
+	int length = bit->getLength() / 8;
+
+	if (!_bpi_flash->write(offset, data, length)) {
+		throw std::runtime_error("BPI flash programming failed");
+	}
+
+	printInfo("BPI flash programming complete");
+}
+
 float Xilinx::get_spiOverJtag_version()
 {
 	uint8_t jtx[6] = {0x01, 0x00, 0x00, 0x00, 0x00, 0x00};
@@ -807,11 +876,11 @@ void Xilinx::program_mem(ConfigBitstreamParser *bitfile)
 	 *    the TLR (Test-Logic-Reset) state.
 	 */
 	_jtag->shiftIR(get_ircode(_ircode_map, "JPROGRAM"), NULL, _irlen);
-	/* test */
+	/* Poll INIT_B (bit 4 of IR capture) until config memory is cleared */
 	tx_buf = get_ircode(_ircode_map, "BYPASS");
 	do {
 		_jtag->shiftIR(tx_buf, rx_buf, _irlen);
-	} while (!(rx_buf[0] &0x01));
+	} while (!(rx_buf[0] & 0x10));
 	/*
 	 * 8: Move into the RTI state.                        X     0   10,000(1)
 	 */
