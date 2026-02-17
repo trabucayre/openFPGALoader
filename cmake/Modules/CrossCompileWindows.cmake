@@ -113,18 +113,42 @@ function(setup_libftdi_windows)
         message(STATUS "Building libftdi for Windows...")
         file(MAKE_DIRECTORY ${LIBFTDI_BUILD_DIR})
 
+        set(LIBFTDI_CMAKE_ARGS
+            -DCMAKE_SYSTEM_NAME=Windows
+            -DCMAKE_C_COMPILER=${CMAKE_C_COMPILER}
+            -DCMAKE_CXX_COMPILER=${CMAKE_CXX_COMPILER}
+            -DCMAKE_INSTALL_PREFIX=${CROSS_DEPS_INSTALL_DIR}
+            -DCMAKE_PREFIX_PATH=${CROSS_DEPS_INSTALL_DIR}
+            -DLIBUSB_INCLUDE_DIRS=${CROSS_DEPS_INSTALL_DIR}/include/libusb-1.0
+            -DLIBUSB_LIBRARIES=${CROSS_DEPS_INSTALL_DIR}/lib/libusb-1.0.a
+            -DFTDIPP=OFF -DBUILD_TESTS=OFF -DDOCUMENTATION=OFF
+            -DEXAMPLES=OFF -DFTDI_EEPROM=OFF -DPYTHON_BINDINGS=OFF
+            -DSTATICLIBS=ON
+        )
+
+        if(CMAKE_RC_COMPILER)
+            list(APPEND LIBFTDI_CMAKE_ARGS -DCMAKE_RC_COMPILER=${CMAKE_RC_COMPILER})
+        endif()
+
+        foreach(_lang C CXX RC)
+            if(DEFINED CMAKE_${_lang}_COMPILER_TARGET AND NOT "${CMAKE_${_lang}_COMPILER_TARGET}" STREQUAL "")
+                list(APPEND LIBFTDI_CMAKE_ARGS "-DCMAKE_${_lang}_COMPILER_TARGET=${CMAKE_${_lang}_COMPILER_TARGET}")
+            endif()
+        endforeach()
+
+        foreach(_flags_var CMAKE_C_FLAGS CMAKE_CXX_FLAGS)
+            if(DEFINED ${_flags_var} AND NOT "${${_flags_var}}" STREQUAL "")
+                list(APPEND LIBFTDI_CMAKE_ARGS "-D${_flags_var}=${${_flags_var}}")
+            endif()
+        endforeach()
+
+        if(DEFINED CMAKE_SYSROOT AND NOT "${CMAKE_SYSROOT}" STREQUAL "")
+            list(APPEND LIBFTDI_CMAKE_ARGS -DCMAKE_SYSROOT=${CMAKE_SYSROOT})
+        endif()
+
         execute_process(
             COMMAND ${CMAKE_COMMAND}
-                -DCMAKE_SYSTEM_NAME=Windows
-                -DCMAKE_C_COMPILER=${CMAKE_C_COMPILER}
-                -DCMAKE_CXX_COMPILER=${CMAKE_CXX_COMPILER}
-                -DCMAKE_INSTALL_PREFIX=${CROSS_DEPS_INSTALL_DIR}
-                -DCMAKE_PREFIX_PATH=${CROSS_DEPS_INSTALL_DIR}
-                -DLIBUSB_INCLUDE_DIRS=${CROSS_DEPS_INSTALL_DIR}/include/libusb-1.0
-                -DLIBUSB_LIBRARIES=${CROSS_DEPS_INSTALL_DIR}/lib/libusb-1.0.a
-                -DFTDIPP=OFF -DBUILD_TESTS=OFF -DDOCUMENTATION=OFF
-                -DEXAMPLES=OFF -DFTDI_EEPROM=OFF -DPYTHON_BINDINGS=OFF
-                -DSTATICLIBS=ON
+                ${LIBFTDI_CMAKE_ARGS}
                 ${LIBFTDI_SRC_DIR}
             WORKING_DIRECTORY ${LIBFTDI_BUILD_DIR}
             RESULT_VARIABLE CONFIG_RESULT
