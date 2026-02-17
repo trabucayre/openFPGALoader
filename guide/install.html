@@ -249,6 +249,80 @@ that only depends on standard Windows system DLLs (KERNEL32, msvcrt, WS2_32).</p
 </pre></div>
 </div>
 <p>default: <code class="docutils literal notranslate"><span class="pre">/opt/Xilinx/14.7</span></code>.</p>
+<section id="disabling-enabling-cable-or-vendor-drivers">
+<h3>Disabling/Enabling Cable or Vendor Drivers<a class="headerlink" href="#disabling-enabling-cable-or-vendor-drivers" title="Link to this heading">¶</a></h3>
+<p>With the default <code class="docutils literal notranslate"><span class="pre">cmake</span> <span class="pre">..</span></code> configuration, openFPGALoader enables
+<code class="docutils literal notranslate"><span class="pre">ENABLE_CABLE_ALL=ON</span></code> and <code class="docutils literal notranslate"><span class="pre">ENABLE_VENDORS_ALL=ON</span></code>. This means all cable
+and vendor drivers are enabled by default, then filtered only by OS
+capabilities and available dependencies.</p>
+<p>To reduce binary size, speed up the build, or keep support limited to selected
+cables/vendors, you can explicitly enable or disable options.</p>
+<p>These commands are equivalent:</p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>cmake<span class="w"> </span>-DENABLE_CABLE_ALL<span class="o">=</span>ON<span class="w"> </span>-DENABLE_VENDORS_ALL<span class="o">=</span>ON<span class="w"> </span>..
+<span class="c1"># and</span>
+cmake<span class="w"> </span>..<span class="w">  </span><span class="c1"># Implicit default values</span>
+</pre></div>
+</div>
+<p>To disable all cable and vendor support:</p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>cmake<span class="w"> </span>-DENABLE_CABLE_ALL<span class="o">=</span>OFF<span class="w"> </span>-DENABLE_VENDORS_ALL<span class="o">=</span>OFF<span class="w"> </span>..
+</pre></div>
+</div>
+<p>This produces an <strong>openFPGALoader</strong> binary with no cable/vendor support.
+Then re-enable only what you need by adding one or more options below.</p>
+<p>Each item in the following lists is a CMake option name. Use them with
+<code class="docutils literal notranslate"><span class="pre">-D&lt;OPTION&gt;=ON</span></code> to enable or <code class="docutils literal notranslate"><span class="pre">-D&lt;OPTION&gt;=OFF</span></code> to disable.</p>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p>The default value for each option is provided by <code class="docutils literal notranslate"><span class="pre">ENABLE_CABLE_ALL</span></code> and
+<code class="docutils literal notranslate"><span class="pre">ENABLE_VENDORS_ALL</span></code>.</p>
+</div>
+<p>Example (enable FTDI-based cables and Xilinx devices only):</p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>cmake<span class="w"> </span><span class="se">\</span>
+<span class="w">  </span>-DENABLE_CABLE_ALL<span class="o">=</span>OFF<span class="w"> </span><span class="se">\</span>
+<span class="w">  </span>-DENABLE_VENDORS_ALL<span class="o">=</span>OFF<span class="w"> </span><span class="se">\</span>
+<span class="w">  </span>-DENABLE_FTDI_BASED_CABLE<span class="o">=</span>ON<span class="w"> </span><span class="se">\</span>
+<span class="w">  </span>-DENABLE_XILINX_SUPPORT<span class="o">=</span>ON<span class="w"> </span><span class="se">\</span>
+<span class="w">  </span>..
+</pre></div>
+</div>
+<p><strong>Cable options</strong></p>
+<ul class="simple">
+<li><p><code class="docutils literal notranslate"><span class="pre">ENABLE_USB_SCAN</span></code>: Enable USB cable discovery/scanning support.</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">ENABLE_ANLOGIC_CABLE</span></code>: Enable Anlogic cable support (requires libUSB).</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">ENABLE_CH347</span></code>: Enable CH347 cable support (requires libUSB).</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">ENABLE_CMSISDAP</span></code>: Enable CMSIS-DAP interface support (requires hidapi).</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">ENABLE_DIRTYJTAG</span></code>: Enable DirtyJTAG cable support (requires libUSB).</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">ENABLE_ESP_USB</span></code>: Enable ESP32-S3 USB-JTAG cable support (requires libUSB).</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">ENABLE_JLINK</span></code>: Enable J-Link cable support (requires libUSB).</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">ENABLE_DFU</span></code>: Enable DFU-based cable support (requires libUSB).</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">ENABLE_FTDI_BASED_CABLE</span></code>: Enable FTDI-based cable drivers (requires libftdi).</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">ENABLE_GOWIN_GWU2X</span></code>: Enable Gowin GWU2X interface support.</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">ENABLE_SVF_JTAG</span></code>: Enable SVF JTAG playback support.</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">ENABLE_USB_BLASTERI</span></code>: Enable Altera USB-Blaster I support.</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">ENABLE_USB_BLASTERII</span></code>: Enable Altera USB-Blaster II support.</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">ENABLE_LIBGPIOD</span></code>: Enable libgpiod bitbang driver support (Linux only).</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">ENABLE_REMOTEBITBANG</span></code>: Enable remote-bitbang driver support.</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">ENABLE_XILINX_VIRTUAL_CABLE</span></code>: Enable Xilinx Virtual Cable (XVC) support.</p></li>
+</ul>
+<p><strong>Vendor options</strong></p>
+<ul class="simple">
+<li><p><code class="docutils literal notranslate"><span class="pre">ENABLE_ALTERA_SUPPORT</span></code>: Enable Altera/Intel device family support.</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">ENABLE_ANLOGIC_SUPPORT</span></code>: Enable Anlogic device family support.</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">ENABLE_COLOGNECHIP_SUPPORT</span></code>: Enable Cologne Chip device family support (requires libftdi).</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">ENABLE_EFINIX_SUPPORT</span></code>: Enable Efinix device family support (requires libftdi).</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">ENABLE_GOWIN_SUPPORT</span></code>: Enable Gowin device family support.</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">ENABLE_ICE40_SUPPORT</span></code>: Enable Lattice iCE40 device family support (requires libftdi).</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">ENABLE_LATTICE_SUPPORT</span></code>: Enable Lattice device family support.</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">ENABLE_LATTICESSPI_SUPPORT</span></code>: Enable Lattice SSPI support (requires libftdi).</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">ENABLE_XILINX_SUPPORT</span></code>: Enable Xilinx device family support.</p></li>
+</ul>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p>SPI support is hardcoded to FTDI. When FTDI support is disabled, some
+vendor drivers are also disabled (<em>iCE40</em>, <em>Cologne Chip</em>, <em>Efinix</em>, and
+<em>Lattice SSPI</em>).</p>
+</div>
+</section>
 </section>
 </section>
 
@@ -297,7 +371,10 @@ that only depends on standard Windows system DLLs (KERNEL32, msvcrt, WS2_32).</p
 <li class="toctree-l3"><a class="reference internal" href="#cross-compilation-from-linux">Cross-compilation from Linux</a></li>
 </ul>
 </li>
-<li class="toctree-l2"><a class="reference internal" href="#common">Common</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#common">Common</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="#disabling-enabling-cable-or-vendor-drivers">Disabling/Enabling Cable or Vendor Drivers</a></li>
+</ul>
+</li>
 </ul>
 </li>
 <li class="toctree-l1"><a class="reference internal" href="troubleshooting.html">Troubleshooting</a></li>

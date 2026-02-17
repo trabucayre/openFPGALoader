@@ -269,3 +269,87 @@ Bitstreams for *XC2C (coolrunner-II)* needs to be remapped using ``.map`` shippe
     -DISE_PATH=/somewhere/Xilinx/ISE_VERS/
 
 default: ``/opt/Xilinx/14.7``.
+
+Disabling/Enabling Cable or Vendor Drivers
+------------------------------------------
+
+With the default ``cmake ..`` configuration, openFPGALoader enables
+``ENABLE_CABLE_ALL=ON`` and ``ENABLE_VENDORS_ALL=ON``. This means all cable
+and vendor drivers are enabled by default, then filtered only by OS
+capabilities and available dependencies.
+
+To reduce binary size, speed up the build, or keep support limited to selected
+cables/vendors, you can explicitly enable or disable options.
+
+These commands are equivalent:
+
+.. code-block:: bash
+
+    cmake -DENABLE_CABLE_ALL=ON -DENABLE_VENDORS_ALL=ON ..
+    # and
+    cmake ..  # Implicit default values
+
+To disable all cable and vendor support:
+
+.. code-block:: bash
+
+    cmake -DENABLE_CABLE_ALL=OFF -DENABLE_VENDORS_ALL=OFF ..
+
+This produces an **openFPGALoader** binary with no cable/vendor support.
+Then re-enable only what you need by adding one or more options below.
+
+Each item in the following lists is a CMake option name. Use them with
+``-D<OPTION>=ON`` to enable or ``-D<OPTION>=OFF`` to disable.
+
+.. note::
+
+   The default value for each option is provided by ``ENABLE_CABLE_ALL`` and
+   ``ENABLE_VENDORS_ALL``.
+
+Example (enable FTDI-based cables and Xilinx devices only):
+
+.. code-block:: bash
+
+    cmake \
+      -DENABLE_CABLE_ALL=OFF \
+      -DENABLE_VENDORS_ALL=OFF \
+      -DENABLE_FTDI_BASED_CABLE=ON \
+      -DENABLE_XILINX_SUPPORT=ON \
+      ..
+
+**Cable options**
+
+- ``ENABLE_USB_SCAN``: Enable USB cable discovery/scanning support.
+- ``ENABLE_ANLOGIC_CABLE``: Enable Anlogic cable support (requires libUSB).
+- ``ENABLE_CH347``: Enable CH347 cable support (requires libUSB).
+- ``ENABLE_CMSISDAP``: Enable CMSIS-DAP interface support (requires hidapi).
+- ``ENABLE_DIRTYJTAG``: Enable DirtyJTAG cable support (requires libUSB).
+- ``ENABLE_ESP_USB``: Enable ESP32-S3 USB-JTAG cable support (requires libUSB).
+- ``ENABLE_JLINK``: Enable J-Link cable support (requires libUSB).
+- ``ENABLE_DFU``: Enable DFU-based cable support (requires libUSB).
+- ``ENABLE_FTDI_BASED_CABLE``: Enable FTDI-based cable drivers (requires libftdi).
+- ``ENABLE_GOWIN_GWU2X``: Enable Gowin GWU2X interface support.
+- ``ENABLE_SVF_JTAG``: Enable SVF JTAG playback support.
+- ``ENABLE_USB_BLASTERI``: Enable Altera USB-Blaster I support.
+- ``ENABLE_USB_BLASTERII``: Enable Altera USB-Blaster II support.
+- ``ENABLE_LIBGPIOD``: Enable libgpiod bitbang driver support (Linux only).
+- ``ENABLE_REMOTEBITBANG``: Enable remote-bitbang driver support.
+- ``ENABLE_XILINX_VIRTUAL_CABLE``: Enable Xilinx Virtual Cable (XVC) support.
+
+**Vendor options**
+
+- ``ENABLE_ALTERA_SUPPORT``: Enable Altera/Intel device family support.
+- ``ENABLE_ANLOGIC_SUPPORT``: Enable Anlogic device family support.
+- ``ENABLE_COLOGNECHIP_SUPPORT``: Enable Cologne Chip device family support (requires libftdi).
+- ``ENABLE_EFINIX_SUPPORT``: Enable Efinix device family support (requires libftdi).
+- ``ENABLE_GOWIN_SUPPORT``: Enable Gowin device family support.
+- ``ENABLE_ICE40_SUPPORT``: Enable Lattice iCE40 device family support (requires libftdi).
+- ``ENABLE_LATTICE_SUPPORT``: Enable Lattice device family support.
+- ``ENABLE_LATTICESSPI_SUPPORT``: Enable Lattice SSPI support (requires libftdi).
+- ``ENABLE_XILINX_SUPPORT``: Enable Xilinx device family support.
+
+.. note::
+
+   SPI support is hardcoded to FTDI. When FTDI support is disabled, some
+   vendor drivers are also disabled (*iCE40*, *Cologne Chip*, *Efinix*, and
+   *Lattice SSPI*).
