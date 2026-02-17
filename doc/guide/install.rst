@@ -216,6 +216,7 @@ The build system will automatically download and build the required dependencies
 
     sudo apt install \
       mingw-w64 \
+      libz-mingw-w64-dev \
       cmake \
       pkg-config \
       p7zip-full
@@ -247,6 +248,13 @@ The build system will automatically download and build the required dependencies
 The resulting ``openFPGALoader.exe`` will be a statically-linked executable
 that only depends on standard Windows system DLLs (KERNEL32, msvcrt, WS2_32).
 
+.. NOTE::
+   ``zlib`` for the Windows target is required. Configuration fails if it is
+   missing (install ``libz-mingw-w64-dev`` on Debian/Ubuntu or
+   ``mingw64-zlib`` on Fedora/RHEL/Rocky).
+   ``zlib`` is linked statically by default on Windows builds
+   (``-DWINDOWS_STATIC_ZLIB=ON``).
+
 **Optional: Strip debug symbols to reduce size:**
 
 .. code-block:: bash
@@ -257,6 +265,7 @@ that only depends on standard Windows system DLLs (KERNEL32, msvcrt, WS2_32).
 
 - ``-DCROSS_COMPILE_DEPS=OFF`` - Disable automatic dependency download (use system libraries)
 - ``-DENABLE_CMSISDAP=ON`` - Enable CMSIS-DAP support (requires manually providing hidapi)
+- ``-DWINDOWS_STATIC_ZLIB=OFF`` - Allow dynamic zlib linkage (produces ``zlib1.dll`` runtime dependency)
 
 Common
 ======

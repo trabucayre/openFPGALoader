@@ -18,6 +18,7 @@ option(ENABLE_OPTIM       "Enable build with -O3 optimization level"            
 option(BUILD_STATIC       "Whether or not to build with static libraries"        OFF)
 option(USE_PKGCONFIG      "Use pkgconfig to find libraries"                      ON)
 option(LINK_CMAKE_THREADS "Use CMake find_package to link the threading library" OFF)
+option(WINDOWS_STATIC_ZLIB "Link zlib statically for Windows builds"              ON)
 
 if (${CMAKE_SYSTEM_NAME} MATCHES "Windows")
 	set(ENABLE_UDEV OFF)
@@ -223,16 +224,44 @@ if (USE_PKGCONFIG)
 	endif()
 
 	# zlib support (gzip)
-	pkg_check_modules(ZLIB zlib)
-	if (NOT ZLIB_FOUND)
-		# try zlib-ng
-		pkg_check_modules(ZLIB zlib-ng)
-		if (ZLIB_FOUND)
-			add_definitions(-DHAS_ZLIBNG)
-		else()
-			message(FATAL_ERROR "Could find ZLIB")
+	if (${CMAKE_SYSTEM_NAME} MATCHES "Windows")
+		if (WINDOWS_STATIC_ZLIB)
+			set(ZLIB_USE_STATIC_LIBS ON)
 		endif()
-	endif(NOT ZLIB_FOUND)
+
+		# Use CMake zlib finder for Windows builds to avoid host pkg-config contamination
+		# during cross-compilation and to allow static linking selection.
+		find_package(ZLIB QUIET)
+		if (NOT ZLIB_FOUND)
+			if (windows_crosscompile)
+				message(FATAL_ERROR
+					"zlib for Windows target not found. Install MinGW zlib development files "
+					"(for example: libz-mingw-w64-dev on Debian/Ubuntu or mingw64-zlib on Fedora).")
+			else()
+				message(FATAL_ERROR
+					"zlib for Windows build not found. Install zlib development files for your "
+					"Windows toolchain.")
+			endif()
+		endif()
+
+		if (WINDOWS_STATIC_ZLIB AND ZLIB_LIBRARIES MATCHES "\\.dll\\.a$")
+			message(FATAL_ERROR
+				"Static zlib requested (WINDOWS_STATIC_ZLIB=ON), but CMake selected "
+				"'${ZLIB_LIBRARIES}'. Install static zlib (for example mingw64-zlib-static) "
+				"or set -DWINDOWS_STATIC_ZLIB=OFF.")
+		endif()
+	else()
+		pkg_check_modules(ZLIB zlib)
+		if (NOT ZLIB_FOUND)
+			# try zlib-ng
+			pkg_check_modules(ZLIB zlib-ng)
+			if (ZLIB_FOUND)
+				add_definitions(-DHAS_ZLIBNG)
+			else()
+				message(FATAL_ERROR "Could find ZLIB")
+			endif()
+		endif(NOT ZLIB_FOUND)
+	endif()
 
 	if (ENABLE_UDEV)
 		pkg_check_modules(LIBUDEV libudev)
