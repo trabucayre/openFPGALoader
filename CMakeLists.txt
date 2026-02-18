@@ -4,11 +4,12 @@ cmake_minimum_required(VERSION 3.10)
 project(openFPGALoader VERSION "1.0.0" LANGUAGES CXX)
 add_definitions(-DVERSION=\"v${PROJECT_VERSION}\")
 
-if(CMAKE_SYSTEM_NAME STREQUAL "Windows" AND NOT CMAKE_HOST_SYSTEM_NAME STREQUAL "Windows")
-	set(windows_crosscompile ON)
-else()
-	set(windows_crosscompile OFF)
-endif()
+option(WINDOWS_CROSSCOMPILE "Enable cross-compile on windows" OFF)
+#if(CMAKE_SYSTEM_NAME STREQUAL "Windows" AND NOT CMAKE_HOST_SYSTEM_NAME STREQUAL "Windows")
+#	set(WINDOWS_CROSSCOMPILE ON)
+#else()
+#	set(WINDOWS_CROSSCOMPILE OFF)
+#endif()
 
 ####################################################################################################
 # Generics Options
@@ -38,7 +39,7 @@ option(ENABLE_CABLE_ALL        "Enable all cables"                            ON
 option(ENABLE_ANLOGIC_CABLE    "enable Anlogic cable (requires libUSB)"       ${ENABLE_CABLE_ALL})
 option(ENABLE_CH347            "enable CH347 cable (requires libUSB)"         ${ENABLE_CABLE_ALL})
 # CMSIS-DAP requires hidapi which is complex to cross-compile, disable by default for cross-compilation
-if (NOT windows_crosscompile)
+if (NOT WINDOWS_CROSSCOMPILE)
 	option(ENABLE_CMSISDAP     "enable cmsis DAP interface (requires hidapi)" ${ENABLE_CABLE_ALL})
 else()
 	option(ENABLE_CMSISDAP     "enable cmsis DAP interface (requires hidapi)" OFF)
@@ -127,7 +128,7 @@ endif()
 ####################################################################################################
 
 # Detect cross-compilation for Windows from Linux/macOS
-if(windows_crosscompile)
+if(WINDOWS_CROSSCOMPILE)
 	set(CROSS_COMPILING_WINDOWS TRUE)
 	message(STATUS "Cross-compiling for Windows from ${CMAKE_HOST_SYSTEM_NAME}")
 
@@ -233,7 +234,7 @@ if (USE_PKGCONFIG)
 		# during cross-compilation and to allow static linking selection.
 		find_package(ZLIB QUIET)
 		if (NOT ZLIB_FOUND)
-			if (windows_crosscompile)
+			if (WINDOWS_CROSSCOMPILE)
 				message(FATAL_ERROR
 					"zlib for Windows target not found. Install MinGW zlib development files "
 					"(for example: libz-mingw-w64-dev on Debian/Ubuntu or mingw64-zlib on Fedora).")
