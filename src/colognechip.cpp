@@ -99,7 +99,7 @@ void CologneChip::reset()
 	} else if (_dirtyjtag) {
 		_dirtyjtag->gpio_clear(_rstn_pin);
 		_dirtyjtag->gpio_set(_rstn_pin);
-		usleep(SLEEP_US);
+		usleep(2 * SLEEP_US); // 2x because it fails with windows
 #endif
 	}
 }
