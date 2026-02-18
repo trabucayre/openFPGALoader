@@ -206,9 +206,9 @@ openFPGALoader can be installed via MSYS2:
 Cross-compilation from Linux
 ----------------------------
 
-openFPGALoader can be cross-compiled for Windows from Linux using MinGW-w64.
-The build system will automatically download and build the required dependencies
-(libusb, libftdi).
+openFPGALoader can be cross-compiled for Windows from Linux using MinGW-w64
+toolchains (GCC or Clang). The build system will automatically download and
+build the required dependencies (libusb, libftdi).
 
 **Prerequisites (Debian/Ubuntu):**
 
@@ -216,6 +216,9 @@ The build system will automatically download and build the required dependencies
 
     sudo apt install \
       mingw-w64 \
+      libz-mingw-w64-dev \
+      clang \
+      lld \
       cmake \
       pkg-config \
       p7zip-full
@@ -229,11 +232,13 @@ The build system will automatically download and build the required dependencies
       mingw64-gcc-c++ \
       mingw64-zlib \
       mingw64-zlib-static \
+      clang \
+      lld \
       cmake \
       p7zip \
       p7zip-plugins
 
-**Build:**
+**Build (shared steps):**
 
 .. code-block:: bash
 
@@ -241,22 +246,44 @@ The build system will automatically download and build the required dependencies
     cd openFPGALoader
     mkdir build-win64
     cd build-win64
+
+**Configure + build with GCC (MinGW-w64):**
+
+.. code-block:: bash
+
     cmake -DCMAKE_TOOLCHAIN_FILE=../cmake/Toolchain-x86_64-w64-mingw32.cmake ..
+    cmake --build . --parallel
+
+**Configure + build with Clang (MinGW-w64 target):**
+
+.. code-block:: bash
+
+    cmake -DCMAKE_TOOLCHAIN_FILE=../cmake/Toolchain-x86_64-w64-mingw32-clang.cmake ..
     cmake --build . --parallel
 
 The resulting ``openFPGALoader.exe`` will be a statically-linked executable
 that only depends on standard Windows system DLLs (KERNEL32, msvcrt, WS2_32).
+
+.. NOTE::
+   ``zlib`` for the Windows target is required. Configuration fails if it is
+   missing (install ``libz-mingw-w64-dev`` on Debian/Ubuntu or
+   ``mingw64-zlib`` on Fedora/RHEL/Rocky).
+   ``zlib`` is linked statically by default on Windows builds
+   (``-DWINDOWS_STATIC_ZLIB=ON``).
 
 **Optional: Strip debug symbols to reduce size:**
 
 .. code-block:: bash
 
     x86_64-w64-mingw32-strip openFPGALoader.exe
+    # or
+    llvm-strip openFPGALoader.exe
 
 **Cross-compilation options:**
 
 - ``-DCROSS_COMPILE_DEPS=OFF`` - Disable automatic dependency download (use system libraries)
 - ``-DENABLE_CMSISDAP=ON`` - Enable CMSIS-DAP support (requires manually providing hidapi)
+- ``-DWINDOWS_STATIC_ZLIB=OFF`` - Allow dynamic zlib linkage (produces ``zlib1.dll`` runtime dependency)
 
 Common
 ======

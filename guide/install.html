@@ -197,12 +197,15 @@ make<span class="w"> </span>-j
 </section>
 <section id="cross-compilation-from-linux">
 <h3>Cross-compilation from Linux<a class="headerlink" href="#cross-compilation-from-linux" title="Link to this heading">¶</a></h3>
-<p>openFPGALoader can be cross-compiled for Windows from Linux using MinGW-w64.
-The build system will automatically download and build the required dependencies
-(libusb, libftdi).</p>
+<p>openFPGALoader can be cross-compiled for Windows from Linux using MinGW-w64
+toolchains (GCC or Clang). The build system will automatically download and
+build the required dependencies (libusb, libftdi).</p>
 <p><strong>Prerequisites (Debian/Ubuntu):</strong></p>
 <div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>sudo<span class="w"> </span>apt<span class="w"> </span>install<span class="w"> </span><span class="se">\</span>
 <span class="w">  </span>mingw-w64<span class="w"> </span><span class="se">\</span>
+<span class="w">  </span>libz-mingw-w64-dev<span class="w"> </span><span class="se">\</span>
+<span class="w">  </span>clang<span class="w"> </span><span class="se">\</span>
+<span class="w">  </span>lld<span class="w"> </span><span class="se">\</span>
 <span class="w">  </span>cmake<span class="w"> </span><span class="se">\</span>
 <span class="w">  </span>pkg-config<span class="w"> </span><span class="se">\</span>
 <span class="w">  </span>p7zip-full
@@ -214,30 +217,51 @@ The build system will automatically download and build the required dependencies
 <span class="w">  </span>mingw64-gcc-c++<span class="w"> </span><span class="se">\</span>
 <span class="w">  </span>mingw64-zlib<span class="w"> </span><span class="se">\</span>
 <span class="w">  </span>mingw64-zlib-static<span class="w"> </span><span class="se">\</span>
+<span class="w">  </span>clang<span class="w"> </span><span class="se">\</span>
+<span class="w">  </span>lld<span class="w"> </span><span class="se">\</span>
 <span class="w">  </span>cmake<span class="w"> </span><span class="se">\</span>
 <span class="w">  </span>p7zip<span class="w"> </span><span class="se">\</span>
 <span class="w">  </span>p7zip-plugins
 </pre></div>
 </div>
-<p><strong>Build:</strong></p>
+<p><strong>Build (shared steps):</strong></p>
 <div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>git<span class="w"> </span>clone<span class="w"> </span>https://github.com/trabucayre/openFPGALoader
 <span class="nb">cd</span><span class="w"> </span>openFPGALoader
 mkdir<span class="w"> </span>build-win64
 <span class="nb">cd</span><span class="w"> </span>build-win64
-cmake<span class="w"> </span>-DCMAKE_TOOLCHAIN_FILE<span class="o">=</span>../cmake/Toolchain-x86_64-w64-mingw32.cmake<span class="w"> </span>..
+</pre></div>
+</div>
+<p><strong>Configure + build with GCC (MinGW-w64):</strong></p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>cmake<span class="w"> </span>-DCMAKE_TOOLCHAIN_FILE<span class="o">=</span>../cmake/Toolchain-x86_64-w64-mingw32.cmake<span class="w"> </span>..
+cmake<span class="w"> </span>--build<span class="w"> </span>.<span class="w"> </span>--parallel
+</pre></div>
+</div>
+<p><strong>Configure + build with Clang (MinGW-w64 target):</strong></p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>cmake<span class="w"> </span>-DCMAKE_TOOLCHAIN_FILE<span class="o">=</span>../cmake/Toolchain-x86_64-w64-mingw32-clang.cmake<span class="w"> </span>..
 cmake<span class="w"> </span>--build<span class="w"> </span>.<span class="w"> </span>--parallel
 </pre></div>
 </div>
 <p>The resulting <code class="docutils literal notranslate"><span class="pre">openFPGALoader.exe</span></code> will be a statically-linked executable
 that only depends on standard Windows system DLLs (KERNEL32, msvcrt, WS2_32).</p>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p><code class="docutils literal notranslate"><span class="pre">zlib</span></code> for the Windows target is required. Configuration fails if it is
+missing (install <code class="docutils literal notranslate"><span class="pre">libz-mingw-w64-dev</span></code> on Debian/Ubuntu or
+<code class="docutils literal notranslate"><span class="pre">mingw64-zlib</span></code> on Fedora/RHEL/Rocky).
+<code class="docutils literal notranslate"><span class="pre">zlib</span></code> is linked statically by default on Windows builds
+(<code class="docutils literal notranslate"><span class="pre">-DWINDOWS_STATIC_ZLIB=ON</span></code>).</p>
+</div>
 <p><strong>Optional: Strip debug symbols to reduce size:</strong></p>
 <div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>x86_64-w64-mingw32-strip<span class="w"> </span>openFPGALoader.exe
+<span class="c1"># or</span>
+llvm-strip<span class="w"> </span>openFPGALoader.exe
 </pre></div>
 </div>
 <p><strong>Cross-compilation options:</strong></p>
 <ul class="simple">
 <li><p><code class="docutils literal notranslate"><span class="pre">-DCROSS_COMPILE_DEPS=OFF</span></code> - Disable automatic dependency download (use system libraries)</p></li>
 <li><p><code class="docutils literal notranslate"><span class="pre">-DENABLE_CMSISDAP=ON</span></code> - Enable CMSIS-DAP support (requires manually providing hidapi)</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">-DWINDOWS_STATIC_ZLIB=OFF</span></code> - Allow dynamic zlib linkage (produces <code class="docutils literal notranslate"><span class="pre">zlib1.dll</span></code> runtime dependency)</p></li>
 </ul>
 </section>
 </section>
