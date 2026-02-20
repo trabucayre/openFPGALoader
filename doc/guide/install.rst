@@ -149,25 +149,49 @@ Udev rules
 ----------
 
 By default, users have no access to converters.
-A rule file (:ghsrc:`99-openfpgaloader.rules <99-openfpgaloader.rules>`) for ``udev`` is provided at the root directory
-of this repository.
-These rules set access right and group (``plugdev``) when a converter is plugged.
+Two rule files are provided at the root directory of this repository:
+
+- :ghsrc:`99-openfpgaloader.rules <99-openfpgaloader.rules>` sets the group with ``GROUP="plugdev"``.
+- :ghsrc:`70-openfpgaloader.rules <70-openfpgaloader.rules>` does not set ``GROUP="plugdev"``.
+
+First, check if ``plugdev`` exists:
 
 .. code-block:: bash
 
+    grep -w plugdev /etc/group
+
+Option 1 (recommended): create system group ``plugdev`` (if required) and use ``99-openfpgaloader.rules``:
+
+.. code-block:: bash
+
+    sudo groupadd --system plugdev # only required if plugdev is absent
     sudo cp 99-openfpgaloader.rules /etc/udev/rules.d/
     sudo udevadm control --reload-rules && sudo udevadm trigger # force udev to take new rule
     sudo usermod -a $USER -G plugdev # add user to plugdev group
 
+Option 2: if ``plugdev`` does not exist (or you do not want to create it), use
+``70-openfpgaloader.rules`` and ensure your user is in ``dialout``:
+
+.. code-block:: bash
+
+    sudo cp 70-openfpgaloader.rules /etc/udev/rules.d/
+    sudo udevadm control --reload-rules && sudo udevadm trigger # force udev to take new rule
+    sudo usermod -a $USER -G dialout # add user to dialout group
+
 After that you need to unplug and replug your device.
 
 .. HINT::
-   ``usermod`` is used to add ``$USER`` as a member of ``plugdev`` group.
-   However this update is not taken into account immediately: it's required to
-   logout from current session and login again.
-   Check, by using ``id $USER``, if ``plugdev`` is mentioned after ``groups=``.
-   An alternate (and temporary) solution is to use ``sudo - $USER`` to have
-   your user seen as a member of ``plugdev`` group (works only for the current terminal).
+   ``usermod`` is used to add ``$USER`` as a member of ``plugdev``, or
+   ``dialout`` group. However this update is not taken into account immediately:
+   it's required to logout from current session and login again.
+   Check, by using ``id $USER``, if ``plugdev``, ord ``dialout`` is mentioned after
+   ``groups=``. An alternate (and temporary) solution is to use ``sudo - $USER``
+   to have your user seen as a member of the expected group (works only for the
+   current terminal).
+
+   If the converter still cannot be opened, check access rights on the device
+   node (for example ``ls -l /dev/ttyUSB* /dev/ttyACM*``) and verify
+   the associated group (``plugdev`` or ``dialout``).
 
 macOS
 =====
