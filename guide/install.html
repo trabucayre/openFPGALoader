@@ -148,23 +148,42 @@ make<span class="w"> </span>-j<span class="k">$(</span>nproc<span class="k">)</s
 <section id="udev-rules">
 <h3>Udev rules<a class="headerlink" href="#udev-rules" title="Link to this heading">¶</a></h3>
 <p>By default, users have no access to converters.
-A rule file (<a class="extlink-ghsrc reference external" href="https://github.com/trabucayre/openFPGALoader/blob/master/99-openfpgaloader.rules">99-openfpgaloader.rules</a>) for <code class="docutils literal notranslate"><span class="pre">udev</span></code> is provided at the root directory
-of this repository.
-These rules set access right and group (<code class="docutils literal notranslate"><span class="pre">plugdev</span></code>) when a converter is plugged.</p>
-<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>sudo<span class="w"> </span>cp<span class="w"> </span><span class="m">99</span>-openfpgaloader.rules<span class="w"> </span>/etc/udev/rules.d/
+Two rule files are provided at the root directory of this repository:</p>
+<ul class="simple">
+<li><p><a class="extlink-ghsrc reference external" href="https://github.com/trabucayre/openFPGALoader/blob/master/99-openfpgaloader.rules">99-openfpgaloader.rules</a> sets the group with <code class="docutils literal notranslate"><span class="pre">GROUP=&quot;plugdev&quot;</span></code>.</p></li>
+<li><p><a class="extlink-ghsrc reference external" href="https://github.com/trabucayre/openFPGALoader/blob/master/70-openfpgaloader.rules">70-openfpgaloader.rules</a> does not set <code class="docutils literal notranslate"><span class="pre">GROUP=&quot;plugdev&quot;</span></code>.</p></li>
+</ul>
+<p>First, check if <code class="docutils literal notranslate"><span class="pre">plugdev</span></code> exists:</p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>grep<span class="w"> </span>-w<span class="w"> </span>plugdev<span class="w"> </span>/etc/group
+</pre></div>
+</div>
+<p>Option 1 (recommended): create system group <code class="docutils literal notranslate"><span class="pre">plugdev</span></code> (if required) and use <code class="docutils literal notranslate"><span class="pre">99-openfpgaloader.rules</span></code>:</p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>sudo<span class="w"> </span>groupadd<span class="w"> </span>--system<span class="w"> </span>plugdev<span class="w"> </span><span class="c1"># only required if plugdev is absent</span>
+sudo<span class="w"> </span>cp<span class="w"> </span><span class="m">99</span>-openfpgaloader.rules<span class="w"> </span>/etc/udev/rules.d/
 sudo<span class="w"> </span>udevadm<span class="w"> </span>control<span class="w"> </span>--reload-rules<span class="w"> </span><span class="o">&amp;&amp;</span><span class="w"> </span>sudo<span class="w"> </span>udevadm<span class="w"> </span>trigger<span class="w"> </span><span class="c1"># force udev to take new rule</span>
 sudo<span class="w"> </span>usermod<span class="w"> </span>-a<span class="w"> </span><span class="nv">$USER</span><span class="w"> </span>-G<span class="w"> </span>plugdev<span class="w"> </span><span class="c1"># add user to plugdev group</span>
+</pre></div>
+</div>
+<p>Option 2: if <code class="docutils literal notranslate"><span class="pre">plugdev</span></code> does not exist (or you do not want to create it), use
+<code class="docutils literal notranslate"><span class="pre">70-openfpgaloader.rules</span></code> and ensure your user is in <code class="docutils literal notranslate"><span class="pre">dialout</span></code>:</p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>sudo<span class="w"> </span>cp<span class="w"> </span><span class="m">70</span>-openfpgaloader.rules<span class="w"> </span>/etc/udev/rules.d/
+sudo<span class="w"> </span>udevadm<span class="w"> </span>control<span class="w"> </span>--reload-rules<span class="w"> </span><span class="o">&amp;&amp;</span><span class="w"> </span>sudo<span class="w"> </span>udevadm<span class="w"> </span>trigger<span class="w"> </span><span class="c1"># force udev to take new rule</span>
+sudo<span class="w"> </span>usermod<span class="w"> </span>-a<span class="w"> </span><span class="nv">$USER</span><span class="w"> </span>-G<span class="w"> </span>dialout<span class="w"> </span><span class="c1"># add user to dialout group</span>
 </pre></div>
 </div>
 <p>After that you need to unplug and replug your device.</p>
 <div class="admonition hint">
 <p class="admonition-title">Hint</p>
-<p><code class="docutils literal notranslate"><span class="pre">usermod</span></code> is used to add <code class="docutils literal notranslate"><span class="pre">$USER</span></code> as a member of <code class="docutils literal notranslate"><span class="pre">plugdev</span></code> group.
-However this update is not taken into account immediately: it’s required to
-logout from current session and login again.
-Check, by using <code class="docutils literal notranslate"><span class="pre">id</span> <span class="pre">$USER</span></code>, if <code class="docutils literal notranslate"><span class="pre">plugdev</span></code> is mentioned after <code class="docutils literal notranslate"><span class="pre">groups=</span></code>.
-An alternate (and temporary) solution is to use <code class="docutils literal notranslate"><span class="pre">sudo</span> <span class="pre">-</span> <span class="pre">$USER</span></code> to have
-your user seen as a member of <code class="docutils literal notranslate"><span class="pre">plugdev</span></code> group (works only for the current terminal).</p>
+<p><code class="docutils literal notranslate"><span class="pre">usermod</span></code> is used to add <code class="docutils literal notranslate"><span class="pre">$USER</span></code> as a member of <code class="docutils literal notranslate"><span class="pre">plugdev</span></code>, or
+<code class="docutils literal notranslate"><span class="pre">dialout</span></code> group. However this update is not taken into account immediately:
+it’s required to logout from current session and login again.
+Check, by using <code class="docutils literal notranslate"><span class="pre">id</span> <span class="pre">$USER</span></code>, if <code class="docutils literal notranslate"><span class="pre">plugdev</span></code>, ord <code class="docutils literal notranslate"><span class="pre">dialout</span></code> is mentioned after
+<code class="docutils literal notranslate"><span class="pre">groups=</span></code>. An alternate (and temporary) solution is to use <code class="docutils literal notranslate"><span class="pre">sudo</span> <span class="pre">-</span> <span class="pre">$USER</span></code>
+to have your user seen as a member of the expected group (works only for the
+current terminal).</p>
+<p>If the converter still cannot be opened, check access rights on the device
+node (for example <code class="docutils literal notranslate"><span class="pre">ls</span> <span class="pre">-l</span> <span class="pre">/dev/ttyUSB*</span> <span class="pre">/dev/ttyACM*</span></code>) and verify
+the associated group (<code class="docutils literal notranslate"><span class="pre">plugdev</span></code> or <code class="docutils literal notranslate"><span class="pre">dialout</span></code>).</p>
 </div>
 </section>
 </section>
