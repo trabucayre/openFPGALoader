@@ -71,6 +71,24 @@ To recover you have to pull down this pin (before power up) to recover JTAG inte
 <p>Edit your <cite>/etc/udev/rules.d/99-ftdi.rules</cite> file exchanging your programming device permissions.</p>
 <p>For more information, check the udev section from <a class="reference external" href="install.rst">this guide</a></p>
 </section>
+<section id="converter-cannot-be-opened-fails-to-open-device-issue-626">
+<h2>Converter cannot be opened: <cite>fails to open device</cite> (issue <a class="reference external" href="https://github.com/trabucayre/openFPGALoader/issues/626">#626</a>)<a class="headerlink" href="#converter-cannot-be-opened-fails-to-open-device-issue-626" title="Link to this heading">¶</a></h2>
+<p>This is usually a permissions issue on Linux.</p>
+<p>Check your current groups:</p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>id<span class="w"> </span><span class="nv">$USER</span>
+</pre></div>
+</div>
+<p>Verify device node access rights:</p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>ls<span class="w"> </span>-l<span class="w"> </span>/dev/ttyUSB*<span class="w"> </span>/dev/ttyACM*
+</pre></div>
+</div>
+<p>Then verify udev rules are installed correctly (<code class="docutils literal notranslate"><span class="pre">70-openfpgaloader.rules</span></code> or
+<code class="docutils literal notranslate"><span class="pre">99-openfpgaloader.rules</span></code>), and that your user is in the expected group
+(<code class="docutils literal notranslate"><span class="pre">dialout</span></code> or <code class="docutils literal notranslate"><span class="pre">plugdev</span></code>).</p>
+<p>After changing groups or rules, reload udev rules, then unplug/replug the
+converter and log out/login again.</p>
+<p>Reference: <a class="reference external" href="https://trabucayre.github.io/openFPGALoader/guide/install.html#udev-rules">install guide (udev rules section)</a>.</p>
+</section>
 </section>
 
 
@@ -111,6 +129,7 @@ To recover you have to pull down this pin (before power up) to recover JTAG inte
 <li class="toctree-l2"><a class="reference internal" href="#cannot-flash-tang-nano-20k-issue-251">Cannot flash Tang Nano 20k (issue #251)</a></li>
 <li class="toctree-l2"><a class="reference internal" href="#cannot-flash-tang-nano-9k-issue-251">Cannot flash Tang Nano 9k (issue #251)</a></li>
 <li class="toctree-l2"><a class="reference internal" href="#unable-to-open-ftdi-device-4-usb-open-failed-issue-245">Unable to open FTDI device: -4 (usb_open() failed) (issue #245)</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#converter-cannot-be-opened-fails-to-open-device-issue-626">Converter cannot be opened: <cite>fails to open device</cite> (issue #626)</a></li>
 </ul>
 </li>
 <li class="toctree-l1"><a class="reference internal" href="advanced.html">Advanced usage of openFPGALoader</a></li>

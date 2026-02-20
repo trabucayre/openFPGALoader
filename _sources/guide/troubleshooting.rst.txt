@@ -50,3 +50,29 @@ Unable to open FTDI device: -4 (usb_open() failed) (issue `#245 <https://github.
 Edit your `/etc/udev/rules.d/99-ftdi.rules` file exchanging your programming device permissions.
 
 For more information, check the udev section from `this guide <install.rst>`_
+
+Converter cannot be opened: `fails to open device` (issue `#626 <https://github.com/trabucayre/openFPGALoader/issues/626>`_)
+============================================================================================================================
+
+This is usually a permissions issue on Linux.
+
+Check your current groups:
+
+.. code:: bash
+
+    id $USER
+
+Verify device node access rights:
+
+.. code:: bash
+
+    ls -l /dev/ttyUSB* /dev/ttyACM*
+
+Then verify udev rules are installed correctly (``70-openfpgaloader.rules`` or
+``99-openfpgaloader.rules``), and that your user is in the expected group
+(``dialout`` or ``plugdev``).
+
+After changing groups or rules, reload udev rules, then unplug/replug the
+converter and log out/login again.
+
+Reference: `install guide (udev rules section) <https://trabucayre.github.io/openFPGALoader/guide/install.html#udev-rules>`_.
