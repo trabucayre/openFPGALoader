@@ -138,8 +138,9 @@ int CH347Jtag::setClk(const uint8_t &factor) {
 	return 0;
 }
 
-CH347Jtag::CH347Jtag(uint32_t clkHZ, int8_t verbose, int vid, int pid, uint8_t bus_addr, uint8_t dev_addr):
-      _verbose(verbose>1), dev_handle(NULL), usb_ctx(NULL), obuf(_obuf)
+CH347Jtag::CH347Jtag(uint32_t clkHZ, int8_t verbose, int vid, int pid,
+		uint8_t bus_addr, uint8_t dev_addr): _verbose(verbose>1),
+		dev_handle(NULL), usb_ctx(NULL), obuf(_obuf), _tdi(0), _tms(0)
 {
 	libusb_device** devs;
 	int actual_length = 0;
@@ -267,11 +268,12 @@ int CH347Jtag::_setClkFreq(uint32_t clkHZ)
 }
 
 int CH347Jtag::writeTMS(const uint8_t *tms, uint32_t len, bool flush_buffer,
-		__attribute__((unused)) const uint8_t tdi)
+		const uint8_t tdi)
 {
 	// if (get_obuf_length() < (int)(len * 2 + 4)) { // check if there is enough room left
 	// 	flush();
 	// }
+	_tdi = (tdi) ? SIG_TDI : 0;
  	flush();
 	uint8_t *ptr = obuf;
 	for (uint32_t i = 0; i < len; ++i) {
@@ -279,13 +281,14 @@ int CH347Jtag::writeTMS(const uint8_t *tms, uint32_t len, bool flush_buffer,
 			*ptr++ = CMD_BITS_WO;
 			ptr += 2;  // leave place for length;
 		}
-		uint8_t x = ((tms[i >> 3] & (1 << (i & 7))) ? SIG_TMS : 0);
-		*ptr++ = x;
-		*ptr++ = x | SIG_TCK;
+		_tms = ((tms[i >> 3] & (1 << (i & 7))) ? SIG_TMS : 0);
+		const uint8_t val = _tms | _tdi;
+		*ptr++ = val;
+		*ptr++ = val | SIG_TCK;
 		int wlen = ptr - obuf;
 		if (wlen + 1 >= get_obuf_length() || i == len - 1) {
-			*ptr++ = x;  // clear TCK
-			wlen = ptr - obuf;
+			*ptr++ = val;  // clear TCK
+			wlen++;
 			obuf[1] = wlen - 3;
 			obuf[2] = (wlen - 3) >> 8;
 			int ret = usb_xfer(wlen, 0, 0, !flush_buffer);
@@ -300,11 +303,11 @@ int CH347Jtag::writeTMS(const uint8_t *tms, uint32_t len, bool flush_buffer,
 	return len;
 }
 
-int CH347Jtag::toggleClk(uint8_t tms, uint8_t tdi, uint32_t len)
+int CH347Jtag::toggleClk(__attribute__((unused)) uint8_t tms,
+	__attribute__((unused)) uint8_t tdi, uint32_t len)
 {
-	uint8_t bits = 0;
-	if (tms) bits |= SIG_TMS;
-	if (tdi) bits |= SIG_TDI;
+	const uint8_t bits = _tms | _tdi;
+
 	if (!bits && len > 7) {
 		return writeTDI(0, 0, len, false);
 	}
@@ -394,9 +397,10 @@ int CH347Jtag::writeTDI(const uint8_t *tx, uint8_t *rx, uint32_t len, bool end)
 	const uint8_t *bptr = tx + bytes;
 	for (unsigned i = 0; i < bits; ++i) {
 		uint8_t txb = (tx) ? bptr[i >> 3] : 0;
-		uint8_t _tdi = (txb & (1 << (i & 7))) ? SIG_TDI : 0;
+		_tdi = (txb & (1 << (i & 7))) ? SIG_TDI : 0;
 		x = _tdi;
 		if (end && i == bits - 1) {
+			_tms = SIG_TMS;
 			x |= SIG_TMS;
 		}
 		*ptr++ = x;

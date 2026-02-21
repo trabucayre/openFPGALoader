@@ -44,4 +44,7 @@ class CH347Jtag : public JtagInterface {
 	uint8_t *obuf;
 	int get_obuf_length() const {return MAX_BUFFER - (obuf - _obuf);}
 	int usb_xfer(unsigned wlen, unsigned rlen, unsigned *actual, bool defer);
+
+	uint8_t _tdi;
+	uint8_t _tms;
 };
