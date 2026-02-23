@@ -500,6 +500,23 @@ static std::map <uint32_t, flash_t> flash_list = {
 		.quad_mask = (1 << 6),
 		.global_lock = false,
 	}},
+	{0xc22017, {
+		/* https://www.macronix.com/Lists/Datasheet/Attachments/8554/MX25L1605D,%203V,%2016Mb,%20v1.5.pdf */
+		.manufacturer = "Macronix",
+		.model = "MX25L6405",
+		.nr_sector = 128,
+		.sector_erase = true,
+		.subsector_erase = true,
+		.has_extended = false,
+		.tb_otp = true,
+		.tb_offset = 0,
+		.tb_register = NONER,
+		.bp_len = 5,
+		.bp_offset = {(1 << 2), (1 << 3), (1 << 4), (1 << 5)},
+		.quad_register = NONER,
+		.quad_mask = 0,
+		.global_lock = false,
+	}},
 	{0xc22018, {
 		/* https://www.macronix.com/Lists/Datasheet/Attachments/8934/MX25L12833F,%203V,%20128Mb,%20v1.0.pdf */
 		.manufacturer = "Macronix",

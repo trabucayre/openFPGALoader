@@ -421,19 +421,21 @@ bool SPIFlash::prepare_flash(const int base_addr, const int len)
 						_must_relock = true;
 				}
 			}
+			const uint32_t jedec = _jedec_id >> 8;
 			/* ISSI IS25LP032 seems have a bug:
 			 * block protection is always in top mode regardless of
 			 * the TB bit: if write is not at offset 0 -> force unlock
 			 */
-			if ((_jedec_id >> 8) == 0x9d6016 && tb == 1 && base_addr != 0) {
+			if (jedec == 0x9d6016 && tb == 1 && base_addr != 0) {
 				_unprotect = true;
 				_must_relock = true;
 			}
-			/* ST M25P16 has not TB bit:
+			/* ST M25P16 / MX25L6045 have not TB bit:
 			 * block protection is always in top mode:
 			 * if write is not at offset 0 -> force unlock
 			 */
-			if ((_jedec_id >> 8) == 0x202015 && tb == 1 && base_addr != 0) {
+			if (((jedec == 0x202015) || (jedec == 0xC22017))
+				&& tb == 1 && base_addr != 0) {
 				_unprotect = true;
 				_must_relock = true;
 			}
