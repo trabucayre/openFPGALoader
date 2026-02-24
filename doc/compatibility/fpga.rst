@@ -5,7 +5,7 @@ FPGAs
 
 .. include:: fpga.inc
 
-* IF: Internal Flash
 * AS: Active Serial flash mode
+* IF: Internal Flash
 * NA: Not Available
 * NT: Not Tested

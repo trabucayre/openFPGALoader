@@ -13,8 +13,8 @@ Boards
 
 .. include:: boards.inc
 
-* IF: Internal Flash
-* EF: External Flash
 * AS: Active Serial flash mode
+* EF: External Flash
+* IF: Internal Flash
 * NA: Not Available
 * NT: Not Tested
