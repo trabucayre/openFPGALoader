@@ -21,10 +21,10 @@
 
 using namespace std;
 
-LatticeBitParser::LatticeBitParser(const string &filename, bool machxo2,
+LatticeBitParser::LatticeBitParser(const string &filename, bool machxo2, bool ecp3,
 	bool verbose):
 	ConfigBitstreamParser(filename, ConfigBitstreamParser::BIN_MODE, verbose),
-	_endHeader(0), _is_machXO2(machxo2)
+	_endHeader(0), _is_machXO2(machxo2), _is_ecp3(ecp3)
 {}
 
 LatticeBitParser::~LatticeBitParser()
@@ -135,8 +135,19 @@ int LatticeBitParser::parse()
 
 	/* read All data */
 	if (!_is_machXO2) {
-		_bit_data.resize(_raw_data.size() - _endHeader);
-		std::move(_raw_data.begin()+_endHeader, _raw_data.end(), _bit_data.begin());
+		/* According to FPGA-TN-02192-3.4
+		 * the Lattice ECP3 must trasnmit at least 128 clock pulses before
+		 * receiving the preamble.
+		 * Here the header contains 16 Dummy bit + preamble so only
+		 * 14bits 8x14= 112bits must be added as padding.
+		 */
+		const uint32_t offset = (_is_ecp3) ? 14 : 0;
+		_bit_data.resize(_raw_data.size() - _endHeader + offset);
+		if (_is_ecp3) {
+			std::string tmp(14, 0xff);
+			std::move(tmp.begin(), tmp.end(), _bit_data.begin());
+		}
+		std::move(_raw_data.begin() + _endHeader, _raw_data.end(), _bit_data.begin() + offset);
 		_bit_length = _bit_data.size() * 8;
 	} else {
 		const uint32_t len = _raw_data.size() - _endHeader;

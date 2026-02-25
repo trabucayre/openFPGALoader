@@ -331,7 +331,7 @@ bool Lattice::program_mem()
 {
 	bool err;
 
-	LatticeBitParser _bit(_filename, false, _verbose);
+	LatticeBitParser _bit(_filename, false, false, _verbose);
 
 	printInfo("Open file: ", false);
 	printSuccess("DONE");
@@ -950,7 +950,8 @@ bool Lattice::program_extFlash(unsigned int offset, bool unprotect_flash)
 		if (_file_extension == "mcs")
 			_bit = new McsParser(_filename, true, _verbose);
 		else if (_file_extension == "bit")
-			_bit = new LatticeBitParser(_filename, false, _verbose);
+			_bit = new LatticeBitParser(_filename, false,
+				_fpga_family==ECP3_FAMILY, _verbose);
 		else
 			_bit = new RawParser(_filename, false);
 		printSuccess("DONE");

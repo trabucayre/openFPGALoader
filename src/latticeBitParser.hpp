@@ -15,7 +15,7 @@
 
 class LatticeBitParser: public ConfigBitstreamParser {
 	public:
-		LatticeBitParser(const std::string &filename, bool machxo2,
+		LatticeBitParser(const std::string &filename, bool machxo2, bool ecp3,
 			bool verbose = false);
 		~LatticeBitParser();
 		int parse() override;
@@ -31,6 +31,7 @@ class LatticeBitParser: public ConfigBitstreamParser {
 		bool parseCfgData();
 		size_t _endHeader;
 		bool _is_machXO2;
+		bool _is_ecp3;
 		/* data storage for machXO2 */
 		std::vector<std::string> _bit_array;
 };
