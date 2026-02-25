@@ -73,10 +73,10 @@ int LatticeBitParser::parseHeader()
 		printError("Wrong preamble key");
 		return EXIT_FAILURE;
 	}
-	_endHeader = pos - 4;
+	_endHeader = pos - 3; // align to 2 Dummy bits + preamble (ie. Header start offset).
 
 	/* parse header */
-	istringstream lineStream(_raw_data.substr(currPos, _endHeader-currPos));
+	istringstream lineStream(_raw_data.substr(currPos, _endHeader - currPos - 1));
 	string buff;
 	while (std::getline(lineStream, buff, '\0')) {
 		pos = buff.find_first_of(':', 0);
@@ -98,7 +98,7 @@ int LatticeBitParser::parse()
 		return EXIT_FAILURE;
 
 	/* check preamble */
-	uint32_t preamble = (*(uint32_t *)&_raw_data[_endHeader+1]);
+	uint32_t preamble = (*(uint32_t *)&_raw_data[_endHeader]);
 	//0xb3beffff is the preamble for encrypted bitstreams in Nexus fpgas
 	if ((preamble != 0xb3bdffff) && (preamble != 0xb3bfffff) && (preamble != 0xb3beffff)) {
 		printError("Error: missing preamble\n");
@@ -139,8 +139,7 @@ int LatticeBitParser::parse()
 		std::move(_raw_data.begin()+_endHeader, _raw_data.end(), _bit_data.begin());
 		_bit_length = _bit_data.size() * 8;
 	} else {
-		_endHeader += 1;
-		uint32_t len = _raw_data.size() - _endHeader;
+		const uint32_t len = _raw_data.size() - _endHeader;
 		uint32_t max_len = 16;
 		for (uint32_t i = 0; i < len; i+=max_len) {
 			std::string tmp(16, 0xff);
@@ -173,7 +172,7 @@ int LatticeBitParser::parse()
 bool LatticeBitParser::parseCfgData()
 {
 	uint8_t *ptr;
-	size_t pos = _endHeader + 5;  // drop preamble
+	size_t pos = _endHeader + 4;  // drop 16 Dummy bits and preamble
 	uint32_t idcode;
 	char __buf[10];
 	int __buf_valid_bytes;
