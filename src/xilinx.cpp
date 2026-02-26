@@ -283,7 +283,7 @@ Xilinx::Xilinx(Jtag *jtag, const std::string &filename,
 				 skip_reset),
 	_device_package(device_package), _spiOverJtagPath(spiOverJtagPath),
 	_irlen(6), _secondary_filename(secondary_filename), _soj_is_v2(false),
-	_jtag_chain_len(1), _is_bpi_board(~spi_flash_type)
+	_jtag_chain_len(1), _is_bpi_board(!spi_flash_type)
 {
 	if (prg_type == Device::RD_FLASH) {
 		_mode = Device::READ_MODE;
