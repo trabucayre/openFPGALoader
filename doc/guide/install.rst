@@ -385,7 +385,8 @@ Example (enable FTDI-based cables and Xilinx devices only):
 - ``ENABLE_USB_BLASTERII``: Enable Altera USB-Blaster II support.
 - ``ENABLE_LIBGPIOD``: Enable libgpiod bitbang driver support (Linux only).
 - ``ENABLE_REMOTEBITBANG``: Enable remote-bitbang driver support.
-- ``ENABLE_XILINX_VIRTUAL_CABLE``: Enable Xilinx Virtual Cable (XVC) support.
+- ``ENABLE_XILINX_VIRTUAL_CABLE_CLIENT``: Enable Xilinx Virtual Cable (XVC) client support.
+- ``ENABLE_XILINX_VIRTUAL_CABLE_SERVER``: Enable Xilinx Virtual Cable (XVC) server support.
 
 **Vendor options**
 
