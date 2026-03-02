@@ -55,7 +55,7 @@
 #ifdef ENABLE_USBBLASTER
 #include "usbBlaster.hpp"
 #endif
-#ifdef ENABLE_XVC
+#ifdef ENABLE_XVC_CLIENT
 #include "xvc_client.hpp"
 #endif
 
@@ -186,7 +186,7 @@ Jtag::Jtag(const cable_t &cable, const jtag_pins_conf_t *pin_conf,
 		throw std::exception();
 #endif
 	case MODE_XVC_CLIENT:
-#ifdef ENABLE_XVC
+#ifdef ENABLE_XVC_CLIENT
 		_jtag = new XVC_client(ip_adr, port, clkHZ, verbose);
 		break;
 #else

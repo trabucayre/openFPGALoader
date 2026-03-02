@@ -66,11 +66,13 @@ endif()
 
 # XVC and RemoteBitbang are not available on Windows OS.
 if (NOT ${CMAKE_SYSTEM_NAME} MATCHES "Windows")
-	option(ENABLE_REMOTEBITBANG        "enable remote bitbang driver"              ${ENABLE_CABLE_ALL})
-	option(ENABLE_XILINX_VIRTUAL_CABLE "enable Xilinx Virtual Cable (XVC) support" ${ENABLE_CABLE_ALL})
+	option(ENABLE_REMOTEBITBANG               "enable remote bitbang driver"              ${ENABLE_CABLE_ALL})
+	option(ENABLE_XILINX_VIRTUAL_CABLE_CLIENT "enable Xilinx Virtual Cable (XVC) client support" ${ENABLE_CABLE_ALL})
+	option(ENABLE_XILINX_VIRTUAL_CABLE_SERVER "enable Xilinx Virtual Cable (XVC) server support" ${ENABLE_CABLE_ALL})
 else()
-	set(ENABLE_REMOTEBITBANG        OFF)
-	set(ENABLE_XILINX_VIRTUAL_CABLE OFF)
+	set(ENABLE_REMOTEBITBANG               OFF)
+	set(ENABLE_XILINX_VIRTUAL_CABLE_CLIENT OFF)
+	set(ENABLE_XILINX_VIRTUAL_CABLE_SERVER OFF)
 endif()
 
 ####################################################################################################
@@ -102,11 +104,11 @@ set(USE_LIBUSB_LL OFF)
 
 # Only adds libftdi as dependency when a cable
 # need this library.
-if (ENABLE_FTDI_BASED_CABLE OR ENABLE_USB_BLASTERI OR ENABLE_XILINX_VIRTUAL_CABLE)
+if (ENABLE_FTDI_BASED_CABLE OR ENABLE_USB_BLASTERI OR ENABLE_XILINX_VIRTUAL_CABLE_SERVER)
 	set(USE_LIBFTDI ON)
 else()
 	message("disabled all cables based on FTDI devices")
-endif(ENABLE_FTDI_BASED_CABLE OR ENABLE_USB_BLASTERI OR ENABLE_XILINX_VIRTUAL_CABLE)
+endif(ENABLE_FTDI_BASED_CABLE OR ENABLE_USB_BLASTERI OR ENABLE_XILINX_VIRTUAL_CABLE_SERVER)
 
 # Only adds libusb as dependency when a cable need this library
 if (ENABLE_DFU OR ENABLE_ANLOGIC_CABLE OR ENABLE_CH347 OR ENABLE_DIRTYJTAG
@@ -591,9 +593,13 @@ add_definitions(-DENABLE_SVF_JTAG)
 endif()
 
 # Xilinx Virtual Cable
-if (ENABLE_XILINX_VIRTUAL_CABLE)
-list (APPEND OPENFPGALOADER_SOURCE  src/xvc_client.cpp src/xvc_server.cpp)
-list (APPEND OPENFPGALOADER_HEADERS src/xvc_client.hpp src/xvc_server.hpp)
+if (ENABLE_XILINX_VIRTUAL_CABLE_CLIENT)
+list (APPEND OPENFPGALOADER_SOURCE  src/xvc_client.cpp)
+list (APPEND OPENFPGALOADER_HEADERS src/xvc_client.hpp)
+endif()
+if (ENABLE_XILINX_VIRTUAL_CABLE_SERVER)
+list (APPEND OPENFPGALOADER_SOURCE  src/xvc_server.cpp)
+list (APPEND OPENFPGALOADER_HEADERS src/xvc_server.hpp)
 endif()
 
 # Altera USB Blaster (I & II).
@@ -772,8 +778,16 @@ else()
 	message("Remote bitbang client support disabled")
 endif()
 
-if (ENABLE_XILINX_VIRTUAL_CABLE)
-	add_definitions(-DENABLE_XVC=1)
+if (ENABLE_XILINX_VIRTUAL_CABLE_CLIENT)
+	add_definitions(-DENABLE_XVC_CLIENT=1)
+	set(CMAKE_EXE_LINKER_FLAGS "-pthread ${CMAKE_EXE_LINKER_FLAGS}")
+	message("Xilinx Virtual Client support enabled")
+else()
+	message("Xilinx Virtual Client support disabled")
+endif()
+
+if (ENABLE_XILINX_VIRTUAL_CABLE_SERVER)
+	add_definitions(-DENABLE_XVC_SERVER=1)
 	set(CMAKE_EXE_LINKER_FLAGS "-pthread ${CMAKE_EXE_LINKER_FLAGS}")
 	message("Xilinx Virtual Server support enabled")
 else()

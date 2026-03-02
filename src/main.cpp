@@ -62,7 +62,7 @@
 #ifdef ENABLE_SVF_JTAG
 #include "svf_jtag.hpp"
 #endif
-#ifdef ENABLE_XVC
+#ifdef ENABLE_XVC_SERVER
 #include "xvc_server.hpp"
 #endif
 
@@ -517,7 +517,7 @@ int main(int argc, char **argv)
 #endif
 	}
 
-#ifdef ENABLE_XVC
+#ifdef ENABLE_XVC_SERVER
 	/* ------------------- */
 	/*      XVC server     */
 	/* ------------------- */
@@ -809,7 +809,7 @@ int main(int argc, char **argv)
 	delete(jtag);
 }
 
-#ifdef ENABLE_XVC
+#ifdef ENABLE_XVC_SERVER
 int run_xvc_server(const struct arguments &args, const cable_t &cable,
 	const jtag_pins_conf_t *pins_config)
 {
@@ -988,7 +988,7 @@ int parse_opt(int argc, char **argv, struct arguments *args,
 			("h,help", "Give this help list")
 			("verify", "Verify write operation (SPI Flash only)",
 				cxxopts::value<bool>(args->verify))
-#ifdef ENABLE_XVC
+#ifdef ENABLE_XVC_SERVER
 			("xvc",   "Xilinx Virtual Cable Functions",
 				cxxopts::value<bool>(args->xvc))
 #endif
