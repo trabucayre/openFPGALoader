@@ -73,10 +73,10 @@ int LatticeBitParser::parseHeader()
 		printError("Wrong preamble key");
 		return EXIT_FAILURE;
 	}
-	_endHeader = pos - 3; // align to 2 Dummy bits + preamble (ie. Header start offset).
+	_endHeader = pos - 4; // align to 3 Dummy Bytes + preamble (ie. Header start offset).
 
 	/* parse header */
-	istringstream lineStream(_raw_data.substr(currPos, _endHeader - currPos - 1));
+	istringstream lineStream(_raw_data.substr(currPos, _endHeader - currPos));
 	string buff;
 	while (std::getline(lineStream, buff, '\0')) {
 		pos = buff.find_first_of(':', 0);
@@ -98,7 +98,7 @@ int LatticeBitParser::parse()
 		return EXIT_FAILURE;
 
 	/* check preamble */
-	uint32_t preamble = (*(uint32_t *)&_raw_data[_endHeader]);
+	uint32_t preamble = (*(uint32_t *)&_raw_data[_endHeader + 1]);
 	//0xb3beffff is the preamble for encrypted bitstreams in Nexus fpgas
 	if ((preamble != 0xb3bdffff) && (preamble != 0xb3bfffff) && (preamble != 0xb3beffff)) {
 		printError("Error: missing preamble\n");
@@ -138,18 +138,19 @@ int LatticeBitParser::parse()
 		/* According to FPGA-TN-02192-3.4
 		 * the Lattice ECP3 must trasnmit at least 128 clock pulses before
 		 * receiving the preamble.
-		 * Here the header contains 16 Dummy bit + preamble so only
-		 * 14bits 8x14= 112bits must be added as padding.
+		 * Here the header contains 3x8 Dummy bit + preamble so only
+		 * 13bits 8x13= 112bits must be added as padding.
 		 */
 		const uint32_t offset = (_is_ecp3) ? 14 : 0;
 		_bit_data.resize(_raw_data.size() - _endHeader + offset);
 		if (_is_ecp3) {
-			std::string tmp(14, 0xff);
+			std::string tmp(13, 0xff);
 			std::move(tmp.begin(), tmp.end(), _bit_data.begin());
 		}
 		std::move(_raw_data.begin() + _endHeader, _raw_data.end(), _bit_data.begin() + offset);
 		_bit_length = _bit_data.size() * 8;
 	} else {
+		_endHeader++;
 		const uint32_t len = _raw_data.size() - _endHeader;
 		uint32_t max_len = 16;
 		for (uint32_t i = 0; i < len; i+=max_len) {
@@ -183,7 +184,7 @@ int LatticeBitParser::parse()
 bool LatticeBitParser::parseCfgData()
 {
 	uint8_t *ptr;
-	size_t pos = _endHeader + 4;  // drop 16 Dummy bits and preamble
+	size_t pos = _endHeader + 5;  // drop 16 Dummy bits and preamble
 	uint32_t idcode;
 	char __buf[10];
 	int __buf_valid_bytes;
