@@ -50,7 +50,7 @@ GowinGWU2x::GowinGWU2x(cable_t *cable, uint32_t clkHz, int8_t verbose):
 	_usb_dev(nullptr), _dev(nullptr), _xfer_buf(nullptr), _xfer_pos(0),
 	_buffer_len(256 + 2 + 1)
 {
-	const int found = get_devices_list(_cable);
+	const int found = get_devices_list(_cable, "", false);
 	if (found == 0)
 		throw std::runtime_error("No cable found");
 	if (found > 1)
