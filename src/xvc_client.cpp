@@ -267,7 +267,7 @@ ssize_t XVC_client::xfer_pkt(const string &instr,
 		uint8_t *rx, uint32_t rx_size)
 {
 	ssize_t len = tx_size;
-	vector<uint8_t> buffer(instr.size() + (tx) ? tx_size : 0);
+	vector<uint8_t> buffer(instr.size() + ((tx) ? tx_size : 0));
 	memcpy(buffer.data(), instr.c_str(), instr.size());
 	if (tx)
 		memcpy(buffer.data() + instr.size(), tx, tx_size);
