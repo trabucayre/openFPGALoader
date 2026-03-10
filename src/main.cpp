@@ -132,6 +132,11 @@ struct arguments {
 int run_xvc_server(const struct arguments &args, const cable_t &cable,
 	const jtag_pins_conf_t *pins_config);
 
+#ifdef USE_LIBFTDI
+int spi_comm(struct arguments args, const cable_t &cable,
+	const jtag_pins_conf_t *pins_config, target_board_t *board);
+#endif
+
 int parse_opt(int argc, char **argv, struct arguments *args,
 	jtag_pins_conf_t *pins_config);
 
@@ -285,171 +290,14 @@ int main(int argc, char **argv)
 	cable.config.status_pin = args.status_pin;
 
 #ifdef USE_LIBFTDI
-	/* FLASH direct access */
-	if (args.spi || (board && board->mode == COMM_SPI)) {
-		/* if no instruction from user -> select flash mode */
-		if (args.prg_type == Device::PRG_NONE)
-			args.prg_type = Device::WR_FLASH;
-
-		FtdiSpi *spi = NULL;
-		spi_pins_conf_t spi_pins_config;
-		if (board && !args.pin_config)
-			spi_pins_config = board->spi_pins_config;
-		if (args.pin_config) {
-			printInfo("Board default pins configuration overridden");
-			spi_pins_config.cs_pin = (1 << pins_config.tms_pin);
-			spi_pins_config.sck_pin = (1 << pins_config.tck_pin);
-			spi_pins_config.mosi_pin = (1 << pins_config.tdi_pin);
-			spi_pins_config.miso_pin = (1 << pins_config.tdo_pin);
-			spi_pins_config.holdn_pin = (1 << pins_config.ext0_pin);
-			spi_pins_config.wpn_pin = (1 << pins_config.ext1_pin);
-		}
-
-		try {
-			spi = new FtdiSpi(cable, spi_pins_config, args.freq, args.verbose);
-		} catch (std::exception &e) {
-			printError("Error: Failed to claim cable");
-			return EXIT_FAILURE;
-		}
-
-		int spi_ret = EXIT_SUCCESS;
-
-		if (board && board->manufacturer != "none") {
-			Device *target;
-			if (board->manufacturer == "efinix") {
-#ifdef ENABLE_EFINIX_SUPPORT
-				target = new Efinix(spi, args.bit_file, args.file_type,
-					board->reset_pin, board->done_pin, board->oe_pin,
-					args.verify, args.verbose);
+	/* ----------------------- */
+	/* SPI FLASH direct access */
+	/* ----------------------- */
+	if (args.spi || (board && board->mode == COMM_SPI))
+		return spi_comm(args, cable, &pins_config, board);
 #else
-				printError("Support for Efinix FPGAs was not enabled at compile time");
-				return EXIT_FAILURE;
-#endif
-			} else if (board->manufacturer == "lattice") {
-				if (board->fpga_part == "ice40") {
-#ifdef ENABLE_ICE40_SUPPORT
-					target = new Ice40(spi, args.bit_file, args.file_type,
-						args.prg_type,
-						board->reset_pin, board->done_pin, args.verify, args.verbose);
-#else
-					printError("Support for ICE40 FPGAs was not enabled at compile time");
-					return EXIT_FAILURE;
-#endif
-				} else if (board->fpga_part == "ecp5") {
-#ifdef ENABLE_LATTICESSPI_SUPPORT
-					target = new LatticeSSPI(spi, args.bit_file, args.file_type, args.verbose);
-#else
-					printError("Support for Lattice FPGAs (SSPI mode) was not enabled at compile time");
-					return EXIT_FAILURE;
-#endif
-				} else {
-					printError("Error (SPI mode): " + board->fpga_part +
-						" is an unsupported/unknown Lattice Model");
-					return EXIT_FAILURE;
-				}
-			} else if (board->manufacturer == "colognechip") {
-#ifdef ENABLE_COLOGNECHIP_SUPPORT
-				target = new CologneChip(spi, args.bit_file, args.file_type, args.prg_type,
-					board->reset_pin, board->done_pin, DBUS6, board->oe_pin,
-					args.verify, args.verbose);
-#else
-				printError("Support for Gowin FPGAs was not enabled at compile time");
-				return EXIT_FAILURE;
-#endif
-			} else {
-				printError("Error (SPI mode): " + board->manufacturer +
-					" is an unsupported/unknown target");
-				return EXIT_FAILURE;
-			}
-			if (args.prg_type == Device::RD_FLASH) {
-				if (args.file_size == 0) {
-					printError("Error: 0 size for dump");
-				} else {
-					target->dumpFlash(args.offset, args.file_size);
-				}
-			} else if ((args.prg_type == Device::WR_FLASH ||
-						args.prg_type == Device::WR_SRAM) ||
-						!args.bit_file.empty() || !args.file_type.empty()) {
-				if (args.detect_flash)
-					target->detect_flash();
-				else
-					target->program(args.offset, args.unprotect_flash);
-			}
-			if (args.unprotect_flash && args.bit_file.empty())
-				if (!target->unprotect_flash())
-					spi_ret = EXIT_FAILURE;
-			if (args.bulk_erase_flash && args.bit_file.empty())
-				if (!target->bulk_erase_flash())
-					spi_ret = EXIT_FAILURE;
-			if (args.protect_flash)
-				if (!target->protect_flash(args.protect_flash))
-					spi_ret = EXIT_FAILURE;
-		} else {
-			RawParser *bit = NULL;
-			if (board && board->reset_pin) {
-				spi->gpio_set_output(board->reset_pin, true);
-				spi->gpio_clear(board->reset_pin, true);
-			}
-
-			SPIFlash flash((SPIInterface *)spi, args.unprotect_flash, args.verbose);
-			flash.display_status_reg();
-
-			if (args.prg_type != Device::RD_FLASH &&
-					(!args.bit_file.empty() || !args.file_type.empty())) {
-				printInfo("Open file " + args.bit_file + " ", false);
-				try {
-					bit = new RawParser(args.bit_file, false);
-					printSuccess("DONE");
-				} catch (std::exception &e) {
-					printError("FAIL");
-					delete spi;
-					return EXIT_FAILURE;
-				}
-
-				printInfo("Parse file ", false);
-				if (bit->parse() == EXIT_FAILURE) {
-					printError("FAIL");
-					delete spi;
-					return EXIT_FAILURE;
-				} else {
-					printSuccess("DONE");
-				}
-
-				try {
-					flash.erase_and_prog(args.offset, bit->getData(), bit->getLength()/8);
-				} catch (std::exception &e) {
-					printError("FAIL: " + string(e.what()));
-				}
-
-				if (args.verify)
-					flash.verify(args.offset, bit->getData(), bit->getLength() / 8);
-
-				delete bit;
-			} else if (args.prg_type == Device::RD_FLASH) {
-				if (args.file_size == 0)
-					printError("Error: 0 size for dump");
-				else
-					flash.dump(args.bit_file, args.offset, args.file_size);
-			}
-
-			if (args.unprotect_flash && args.bit_file.empty())
-				if (!flash.disable_protection())
-					spi_ret = EXIT_FAILURE;
-			if (args.bulk_erase_flash && args.bit_file.empty())
-				if (!flash.bulk_erase())
-					spi_ret = EXIT_FAILURE;
-			if (args.protect_flash)
-				if (!flash.enable_protection(args.protect_flash))
-					spi_ret = EXIT_FAILURE;
-
-			if (board && board->reset_pin)
-				spi->gpio_set(board->reset_pin, true);
-		}
-
-		delete spi;
-
-		return spi_ret;
-	}
+		printError("SPI Flash Direct access: disabled at build time");
+		return EXIT_FAILURE;
 #endif
 
 	/* ------------------- */
@@ -827,6 +675,176 @@ int run_xvc_server(const struct arguments &args, const cable_t &cable,
 	}
 	printInfo("Xilinx Virtual Cable Stopped! ");
 	return EXIT_SUCCESS;
+}
+#endif
+
+#ifdef USE_LIBFTDI
+int spi_comm(struct arguments args, const cable_t &cable,
+	const jtag_pins_conf_t *pins_config, target_board_t *board)
+{
+	/* if no instruction from user -> select flash mode */
+	if (args.prg_type == Device::PRG_NONE)
+		args.prg_type = Device::WR_FLASH;
+
+	FtdiSpi *spi = NULL;
+	spi_pins_conf_t spi_pins_config;
+	if (board && !args.pin_config)
+		spi_pins_config = board->spi_pins_config;
+	if (args.pin_config) {
+		printInfo("Board default pins configuration overridden");
+		spi_pins_config.cs_pin = (1 << pins_config->tms_pin);
+		spi_pins_config.sck_pin = (1 << pins_config->tck_pin);
+		spi_pins_config.mosi_pin = (1 << pins_config->tdi_pin);
+		spi_pins_config.miso_pin = (1 << pins_config->tdo_pin);
+		spi_pins_config.holdn_pin = (1 << pins_config->ext0_pin);
+		spi_pins_config.wpn_pin = (1 << pins_config->ext1_pin);
+	}
+
+	try {
+		spi = new FtdiSpi(cable, spi_pins_config, args.freq, args.verbose);
+	} catch (std::exception &e) {
+		printError("Error: Failed to claim cable");
+		return EXIT_FAILURE;
+	}
+
+	int spi_ret = EXIT_SUCCESS;
+
+	if (board && board->manufacturer != "none") {
+		Device *target;
+		if (board->manufacturer == "efinix") {
+#ifdef ENABLE_EFINIX_SUPPORT
+			target = new Efinix(spi, args.bit_file, args.file_type,
+				board->reset_pin, board->done_pin, board->oe_pin,
+				args.verify, args.verbose);
+#else
+			printError("Support for Efinix FPGAs was not enabled at compile time");
+			return EXIT_FAILURE;
+#endif
+		} else if (board->manufacturer == "lattice") {
+			if (board->fpga_part == "ice40") {
+#ifdef ENABLE_ICE40_SUPPORT
+				target = new Ice40(spi, args.bit_file, args.file_type,
+					args.prg_type,
+					board->reset_pin, board->done_pin, args.verify, args.verbose);
+#else
+				printError("Support for ICE40 FPGAs was not enabled at compile time");
+				return EXIT_FAILURE;
+#endif
+			} else if (board->fpga_part == "ecp5") {
+#ifdef ENABLE_LATTICESSPI_SUPPORT
+				target = new LatticeSSPI(spi, args.bit_file, args.file_type, args.verbose);
+#else
+				printError("Support for Lattice FPGAs (SSPI mode) was not enabled at compile time");
+				return EXIT_FAILURE;
+#endif
+			} else {
+				printError("Error (SPI mode): " + board->fpga_part +
+					" is an unsupported/unknown Lattice Model");
+				return EXIT_FAILURE;
+			}
+		} else if (board->manufacturer == "colognechip") {
+#ifdef ENABLE_COLOGNECHIP_SUPPORT
+			target = new CologneChip(spi, args.bit_file, args.file_type, args.prg_type,
+				board->reset_pin, board->done_pin, DBUS6, board->oe_pin,
+				args.verify, args.verbose);
+#else
+			printError("Support for Gowin FPGAs was not enabled at compile time");
+			return EXIT_FAILURE;
+#endif
+		} else {
+			printError("Error (SPI mode): " + board->manufacturer +
+				" is an unsupported/unknown target");
+			return EXIT_FAILURE;
+		}
+		if (args.prg_type == Device::RD_FLASH) {
+			if (args.file_size == 0) {
+				printError("Error: 0 size for dump");
+			} else {
+				target->dumpFlash(args.offset, args.file_size);
+			}
+		} else if ((args.prg_type == Device::WR_FLASH ||
+					args.prg_type == Device::WR_SRAM) ||
+					!args.bit_file.empty() || !args.file_type.empty()) {
+			if (args.detect_flash)
+				target->detect_flash();
+			else
+				target->program(args.offset, args.unprotect_flash);
+		}
+		if (args.unprotect_flash && args.bit_file.empty())
+			if (!target->unprotect_flash())
+				spi_ret = EXIT_FAILURE;
+		if (args.bulk_erase_flash && args.bit_file.empty())
+			if (!target->bulk_erase_flash())
+				spi_ret = EXIT_FAILURE;
+		if (args.protect_flash)
+			if (!target->protect_flash(args.protect_flash))
+				spi_ret = EXIT_FAILURE;
+	} else {
+		RawParser *bit = NULL;
+		if (board && board->reset_pin) {
+			spi->gpio_set_output(board->reset_pin, true);
+			spi->gpio_clear(board->reset_pin, true);
+		}
+
+		SPIFlash flash((SPIInterface *)spi, args.unprotect_flash, args.verbose);
+		flash.display_status_reg();
+
+		if (args.prg_type != Device::RD_FLASH &&
+				(!args.bit_file.empty() || !args.file_type.empty())) {
+			printInfo("Open file " + args.bit_file + " ", false);
+			try {
+				bit = new RawParser(args.bit_file, false);
+				printSuccess("DONE");
+			} catch (std::exception &e) {
+				printError("FAIL");
+				delete spi;
+				return EXIT_FAILURE;
+			}
+
+			printInfo("Parse file ", false);
+			if (bit->parse() == EXIT_FAILURE) {
+				printError("FAIL");
+				delete bit;
+				delete spi;
+				return EXIT_FAILURE;
+			} else {
+				printSuccess("DONE");
+			}
+
+			try {
+				flash.erase_and_prog(args.offset, bit->getData(), bit->getLength()/8);
+			} catch (std::exception &e) {
+				printError("FAIL: " + string(e.what()));
+			}
+
+			if (args.verify)
+				flash.verify(args.offset, bit->getData(), bit->getLength() / 8);
+
+			delete bit;
+		} else if (args.prg_type == Device::RD_FLASH) {
+			if (args.file_size == 0)
+				printError("Error: 0 size for dump");
+			else
+				flash.dump(args.bit_file, args.offset, args.file_size);
+		}
+
+		if (args.unprotect_flash && args.bit_file.empty())
+			if (!flash.disable_protection())
+				spi_ret = EXIT_FAILURE;
+		if (args.bulk_erase_flash && args.bit_file.empty())
+			if (!flash.bulk_erase())
+				spi_ret = EXIT_FAILURE;
+		if (args.protect_flash)
+			if (!flash.enable_protection(args.protect_flash))
+				spi_ret = EXIT_FAILURE;
+
+		if (board && board->reset_pin)
+			spi->gpio_set(board->reset_pin, true);
+	}
+
+	delete spi;
+
+	return spi_ret;
 }
 #endif
 
