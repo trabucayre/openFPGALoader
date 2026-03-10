@@ -163,13 +163,9 @@ int main(int argc, char **argv)
 			"" // user_flash
 	};
 	/* parse arguments */
-	try {
-		if (parse_opt(argc, argv, &args, &pins_config))
-			return EXIT_SUCCESS;
-	} catch (std::exception &e) {
-		printError("Error in parse arg step");
-		return EXIT_FAILURE;
-	}
+	int ret = parse_opt(argc, argv, &args, &pins_config);
+	if (ret != 0)
+		return (ret == 1) ? EXIT_SUCCESS : EXIT_FAILURE;
 
 	if (args.is_list_command) {
 		displaySupported(args);
@@ -304,7 +300,6 @@ int main(int argc, char **argv)
 			spi_pins_config.cs_pin = (1 << pins_config.tms_pin);
 			spi_pins_config.sck_pin = (1 << pins_config.tck_pin);
 			spi_pins_config.mosi_pin = (1 << pins_config.tdi_pin);
-			spi_pins_config.miso_pin = (1 << pins_config.tdo_pin);
 			spi_pins_config.miso_pin = (1 << pins_config.tdo_pin);
 			spi_pins_config.holdn_pin = (1 << pins_config.ext0_pin);
 			spi_pins_config.wpn_pin = (1 << pins_config.ext1_pin);
@@ -868,9 +863,9 @@ static int parse_eng(string arg, double *dst) {
 int parse_opt(int argc, char **argv, struct arguments *args,
 	jtag_pins_conf_t *pins_config)
 {
-	string freqo, rd_reg;
+	string freqo;
 	vector<string> pins, bus_dev_num;
-	bool verbose, quiet;
+	bool verbose = false, quiet = false;
 	int8_t verbose_level = -2;
 	try {
 		cxxopts::Options options(argv[0], "openFPGALoader -- a program to flash FPGA",
@@ -1003,7 +998,7 @@ int parse_opt(int argc, char **argv, struct arguments *args,
 			("X,read-xadc", "Read XADC (Xilinx FPGA only)",
 				cxxopts::value<bool>(args->read_xadc))
 			("read-register", "Read Status Register(Xilinx FPGA only)",
-				cxxopts::value<string>(rd_reg))
+				cxxopts::value<string>(args->read_register))
 			("user-flash", "User flash file (Gowin LittleBee FPGA only)",
 				cxxopts::value<string>(args->user_flash))
 			("V,Version", "Print program version");
@@ -1018,7 +1013,7 @@ int parse_opt(int argc, char **argv, struct arguments *args,
 
 		if (verbose && quiet) {
 			printError("Error: can't select quiet and verbose mode in same time");
-			throw std::exception();
+			return -1;
 		}
 		if (verbose)
 			args->verbose = 1;
@@ -1028,7 +1023,7 @@ int parse_opt(int argc, char **argv, struct arguments *args,
 			if ((verbose && verbose_level != 1) ||
 					(quiet && verbose_level != -1)) {
 				printError("Error: mismatch quiet/verbose and verbose-level\n");
-				throw std::exception();
+				return -1;
 			}
 
 			args->verbose = verbose_level;
@@ -1055,20 +1050,25 @@ int parse_opt(int argc, char **argv, struct arguments *args,
 
 				if (tokens.size() != 3) {
 					printError("Error: invalid format for misc-device.");
-					throw std::exception();
+					return -1;
 				}
 
-				idcode = std::stoul(tokens[0], nullptr, 16);
-				irlen = std::stoi(tokens[1]);
+				try {
+					idcode = std::stoul(tokens[0], nullptr, 16);
+					irlen = std::stoi(tokens[1]);
+				} catch (const std::exception &) {
+					printError("Error: invalid numeric format for misc-device, expected <hex_idcode,irlen,name>");
+					return -1;
+				}
 				name = tokens[2];
 				args->user_misc_devs[idcode] = {name, irlen};
 			}
 		}
 
-		if (result.count("write-flash") && result.count("write-sram") &&
-				result.count("dump-flash")) {
-			printError("Error: both write to flash and write to ram enabled");
-			throw std::exception();
+		if (result.count("write-flash") + result.count("write-sram") +
+				result.count("dump-flash") > 1) {
+			printError("Error: --write-flash, --write-sram and --dump-flash are mutually exclusive");
+			return -1;
 		}
 
 		if (result.count("write-flash"))
@@ -1084,11 +1084,11 @@ int parse_opt(int argc, char **argv, struct arguments *args,
 			double freq;
 			if (parse_eng(freqo, &freq)) {
 				printError("Error: invalid format for --freq");
-				throw std::exception();
+				return -1;
 			}
 			if (freq < 1) {
 				printError("Error: --freq must be positive");
-				throw std::exception();
+				return -1;
 			}
 			args->freq = static_cast<uint32_t>(freq);
 		}
@@ -1096,21 +1096,21 @@ int parse_opt(int argc, char **argv, struct arguments *args,
 		if (result.count("status-pin")) {
 			if (args->status_pin < 4 || args->status_pin > 15) {
 				printError("Error: valid status pin numbers are 4-15.");
-				throw std::exception();
+				return -1;
 			}
 		}
 
 		if (result.count("ftdi-channel")) {
 			if (args->ftdi_channel < 0 || args->ftdi_channel > 3) {
 				printError("Error: valid FTDI channels are 0-3.");
-				throw std::exception();
+				return -1;
 			}
 		}
 
 		if (result.count("busdev-num")) {
 			if (bus_dev_num.size() != 2) {
 				printError("Error: busdev-num must be xx:yy");
-				throw std::exception();
+				return -1;
 			}
 			try {
 				args->bus_addr = static_cast<uint8_t>(std::stoi(bus_dev_num[0],
@@ -1119,14 +1119,14 @@ int parse_opt(int argc, char **argv, struct arguments *args,
 					std::stoi(bus_dev_num[1], nullptr, 10));
 			} catch (std::exception &e) {
 				printError("Error: busdev-num invalid format: must be numeric values");
-				throw std::exception();
+				return -1;
 			}
 		}
 
 		if (result.count("pins")) {
 			if (pins.size() < 4 || pins.size() > 6) {
 				printError("Error: pin_config need 4 pins in JTAG mode or 6 pins in SPI Mode");
-				throw std::exception();
+				return -1;
 			}
 
 			static std::map <std::string, int> pins_list = {
@@ -1139,6 +1139,15 @@ int parse_opt(int argc, char **argv, struct arguments *args,
 				{"DCD", FT232RL_DCD},
 				{"RI" , FT232RL_RI}};
 
+			uint8_t *pin_fields[] = {
+				&pins_config->tdi_pin,
+				&pins_config->tdo_pin,
+				&pins_config->tck_pin,
+				&pins_config->tms_pin,
+				&pins_config->ext0_pin,
+				&pins_config->ext1_pin
+			};
+
 			for (size_t i = 0; i < pins.size(); i++) {
 				int pin_num;
 				try {
@@ -1146,31 +1155,12 @@ int parse_opt(int argc, char **argv, struct arguments *args,
 				} catch (std::exception &e) {
 					if (pins_list.find(pins[i]) == pins_list.end()) {
 						printError("Invalid pin name");
-						throw std::exception();
+						return -1;
 					}
 					pin_num = pins_list[pins[i]];
 				}
 
-				switch (i) {
-					case 0:
-						pins_config->tdi_pin = pin_num;
-						break;
-					case 1:
-						pins_config->tdo_pin = pin_num;
-						break;
-					case 2:
-						pins_config->tck_pin = pin_num;
-						break;
-					case 3:
-						pins_config->tms_pin = pin_num;
-						break;
-					case 4:
-						pins_config->ext0_pin = pin_num;
-						break;
-					case 5:
-						pins_config->ext1_pin = pin_num;
-						break;
-				}
+				*pin_fields[i] = pin_num;
 			}
 			args->pin_config = true;
 		}
@@ -1185,7 +1175,7 @@ int parse_opt(int argc, char **argv, struct arguments *args,
 				) {
 				printError("Error: secondary bitfile not specified");
 				cout << options.help() << endl;
-				throw std::exception();
+				return -1;
 			}
 		}
 
@@ -1197,12 +1187,6 @@ int parse_opt(int argc, char **argv, struct arguments *args,
 			printf("empty\n");
 		} else {
 			printf("pas empty\n");
-		}
-
-		if (result.count("read-register")) {
-			args->read_register = rd_reg;
-			printf("read_register");
-			std::cout << args->read_register << std::endl;
 		}
 
 		if (args->bit_file.empty() &&
@@ -1224,7 +1208,7 @@ int parse_opt(int argc, char **argv, struct arguments *args,
 			args->read_register.empty()) {
 			printError("Error: bitfile not specified");
 			cout << options.help() << endl;
-			throw std::exception();
+			return -1;
 		}
 
 		// user ask detect with flash set
@@ -1235,8 +1219,8 @@ int parse_opt(int argc, char **argv, struct arguments *args,
 			args->detect_flash = true;
 		}
 	} catch (const cxxopts::OptionException& e) {
-		cerr << "Error parsing options: " << e.what() << endl;
-		throw std::exception();
+		printError("Error parsing options: " + string(e.what()));
+		return -1;
 	}
 
 	return 0;
@@ -1305,4 +1289,3 @@ void displaySupported(const struct arguments &args)
 	}
 #endif
 }
-
