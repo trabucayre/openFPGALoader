@@ -1264,7 +1264,7 @@ void displaySupported(const struct arguments &args)
 
 	if (args.list_boards) {
 		stringstream t;
-		t << setw(26) << left << "board name" << setw(19) << "cable_name";
+		t << setw(27) << left << "board name" << setw(19) << "cable_name";
 		t << setw(25) << "fpga_part";
 		printSuccess(t.str());
 		for (auto b = board_list.begin(); b != board_list.end(); b++) {
@@ -1276,7 +1276,7 @@ void displaySupported(const struct arguments &args)
 				cable_name = "Undefined";
 			if (fpga_part.size() == 0)
 				fpga_part = "Undefined";
-			ss << setw(26) << left << (*b).first << setw(19) << cable_name;
+			ss << setw(27) << left << (*b).first << setw(19) << cable_name;
 			ss << setw(25)<< fpga_part;
 			printInfo(ss.str());
 		}
