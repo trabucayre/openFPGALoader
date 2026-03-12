@@ -67,41 +67,51 @@ DirtyJtag::DirtyJtag(uint32_t clkHz, int8_t verbose, uint16_t vid, uint16_t pid)
 {
 	int ret;
 
-	if (libusb_init(&usb_ctx) < 0) {
-		cerr << "libusb init failed" << endl;
-		throw std::exception();
-	}
+	if (libusb_init(&usb_ctx) < 0)
+		throw std::runtime_error("DirtyJtag: libusb init failed");
 
 	dev_handle = libusb_open_device_with_vid_pid(usb_ctx, vid, pid);
 	if (!dev_handle) {
-		cerr << "fails to open device" << endl;
 		libusb_exit(usb_ctx);
-		throw std::exception();
+		throw std::runtime_error("DirtyJtag: fails to open device");
 	}
 
 	ret = libusb_claim_interface(dev_handle, DIRTYJTAG_INTF);
 	if (ret) {
-		cerr << "libusb error while claiming DirtyJTAG interface" << endl;
 		libusb_close(dev_handle);
+		dev_handle = NULL;
 		libusb_exit(usb_ctx);
-		throw std::exception();
+		usb_ctx = NULL;
+		throw std::runtime_error("DirtyJtag: libusb error while claiming interface");
 	}
 
-	if (!getVersion())
-		throw std::runtime_error("Fail to get version");
+	if (!getVersion()) {
+		close_usb();
+		throw std::runtime_error("DirtyJtag: Fail to get version");
+	}
 
 	if (setClkFreq(clkHz) < 0) {
-		cerr << "Fail to set frequency" << endl;
-		throw std::exception();
+		close_usb();
+		throw std::runtime_error("Fail to set frequency");
+	}
+}
+
+void DirtyJtag::close_usb()
+{
+	if (dev_handle) {
+		libusb_release_interface(dev_handle, DIRTYJTAG_INTF);
+		libusb_close(dev_handle);
+		dev_handle = NULL;
+	}
+	if (usb_ctx) {
+		libusb_exit(usb_ctx);
+		usb_ctx = NULL;
 	}
 }
 
 DirtyJtag::~DirtyJtag()
 {
-	if (dev_handle)
-		libusb_close(dev_handle);
-	if (usb_ctx)
-		libusb_exit(usb_ctx);
+	close_usb();
 }
 
 bool DirtyJtag::getVersion()

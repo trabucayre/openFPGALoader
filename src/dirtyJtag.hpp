@@ -76,8 +76,11 @@ class DirtyJtag : public JtagInterface {
 	bool getVersion();
 	bool _set_gpio_level(uint8_t gpio, uint8_t val);
 
+	/* USB */
+	void close_usb();
 	libusb_device_handle *dev_handle;
 	libusb_context *usb_ctx;
+
 	uint8_t _tdi;
 	uint8_t _tms;
 	uint8_t _version;
