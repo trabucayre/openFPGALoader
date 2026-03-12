@@ -52,7 +52,6 @@ struct version_specific
 static version_specific v_options[4] ={{0, 240}, {0, 240}, {NO_READ, 496},
 									{NO_READ, 4000}};
 
-
 enum dirtyJtagSig {
 	SIG_TCK = (1 << 1),
 	SIG_TDI = (1 << 2),
@@ -62,7 +61,7 @@ enum dirtyJtagSig {
 	SIG_SRST = (1 << 6)
 };
 
-DirtyJtag::DirtyJtag(uint32_t clkHZ, int8_t verbose, uint16_t vid, uint16_t pid):
+DirtyJtag::DirtyJtag(uint32_t clkHz, int8_t verbose, uint16_t vid, uint16_t pid):
 			_verbose(verbose),
 			dev_handle(NULL), usb_ctx(NULL), _tdi(0), _tms(0), _version(0)
 {
@@ -91,7 +90,7 @@ DirtyJtag::DirtyJtag(uint32_t clkHZ, int8_t verbose, uint16_t vid, uint16_t pid)
 	if (!getVersion())
 		throw std::runtime_error("Fail to get version");
 
-	if (setClkFreq(clkHZ) < 0) {
+	if (setClkFreq(clkHz) < 0) {
 		cerr << "Fail to set frequency" << endl;
 		throw std::exception();
 	}
@@ -140,24 +139,24 @@ bool DirtyJtag::getVersion()
 	return true;
 }
 
-int DirtyJtag::setClkFreq(uint32_t clkHZ)
+int DirtyJtag::setClkFreq(uint32_t clkHz)
 {
 	int actual_length;
-	int ret, req_freq = clkHZ;
+	int ret, req_freq = clkHz;
 
-	if (clkHZ > 16000000) {
-		printWarn("DirtyJTAG probe limited to 16000kHz");
-		clkHZ = 16000000;
+	if (clkHz > 16000000) {
+		printWarn("DirtyJTAG probe limited to 16000 kHz");
+		clkHz = 16000000;
 	}
 
-	_clkHZ = clkHZ;
+	_clkHZ = clkHz;
 
 	printInfo("Jtag frequency : requested " + std::to_string(req_freq) +
-			"Hz -> real " + std::to_string(clkHZ) + "Hz");
+			" Hz -> real " + std::to_string(clkHz) + " Hz");
 
 	uint8_t buf[] = {CMD_FREQ,
-					static_cast<uint8_t>(0xff & ((clkHZ / 1000) >> 8)),
-					static_cast<uint8_t>(0xff & ((clkHZ / 1000)     )),
+					static_cast<uint8_t>(0xff & ((clkHz / 1000) >> 8)),
+					static_cast<uint8_t>(0xff & ((clkHz / 1000)     )),
 					CMD_STOP};
 	ret = libusb_bulk_transfer(dev_handle, DIRTYJTAG_WRITE_EP,
 					buf, 4, &actual_length, DIRTYJTAG_TIMEOUT);
@@ -166,7 +165,7 @@ int DirtyJtag::setClkFreq(uint32_t clkHZ)
 		return -EXIT_FAILURE;
 	}
 
-	return clkHZ;
+	return clkHz;
 }
 
 int DirtyJtag::writeTMS(const uint8_t *tms, uint32_t len,
@@ -320,11 +319,11 @@ int DirtyJtag::writeTDI(const uint8_t *tx, uint8_t *rx, uint32_t len, bool end)
 			}
 			/* Last xfer:
 			 * if bit_to_send is not a multiple of 8bits a shift must
-			 * be applied to align rigth the last Byte
+			 * be applied to align right the last Byte
 			 */
 			if (bit_to_send < max_bit_transfer_length) {
-				const uint32_t b = (bit_to_send >> 3) << 3; // floor
-				if (b < bit_to_send) { // difference ?
+				const uint32_t b = (bit_to_send >> 3) << 3;  // floor
+				if (b < bit_to_send) {  // difference ?
 					const uint32_t diff = bit_to_send - b;
 					const uint8_t t = rx_ptr[(rx_cnt-1) >> 3] >> (8 - diff);
 					rx_ptr[(rx_cnt - 1) >> 3] = t;
@@ -336,7 +335,7 @@ int DirtyJtag::writeTDI(const uint8_t *tx, uint8_t *rx, uint32_t len, bool end)
 		tx_ptr += byte_to_send;
 	}
 
-	/* this step exist only with [D|I]R_SHIFT */
+	/* Final single-bit step used only for DR/IR SHIFT end transitions. */
 	if (end) {
 		int pos = len-1;
 		uint8_t sig;
@@ -395,8 +394,8 @@ int DirtyJtag::writeTDI(const uint8_t *tx, uint8_t *rx, uint32_t len, bool end)
 	return EXIT_SUCCESS;
 }
 
-/* GPIOs */
-/* Read GPIOs */
+/* GPIO helpers */
+/* Read GPIO signal state */
 uint8_t DirtyJtag::gpio_get()
 {
 	int actual_length;
@@ -437,12 +436,13 @@ bool DirtyJtag::_set_gpio_level(uint8_t gpio, uint8_t val)
 	return true;
 }
 
-/* update selected gpio */
+/* Set selected GPIO bits */
 bool DirtyJtag::gpio_set(uint8_t gpio)
 {
 	return _set_gpio_level(gpio, gpio);
 }
 
+/* Clear selected GPIO bits */
 bool DirtyJtag::gpio_clear(uint8_t gpio)
 {
 	return _set_gpio_level(gpio, 0);
