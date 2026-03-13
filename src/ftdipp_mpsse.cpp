@@ -459,7 +459,7 @@ int FTDIpp_MPSSE::setClkFreq(uint32_t clkHZ)
 
 	_clkHZ = real_freq;
 
-	return real_freq;
+	return (int)real_freq;
 }
 
 int FTDIpp_MPSSE::mpsse_store(unsigned char c)
@@ -710,7 +710,7 @@ bool FTDIpp_MPSSE::gpio_write(uint8_t gpio, bool low_pins)
 	else
 		_cable.bit_high_val = gpio;
 
-	if (__gpio_write(low_pins))
+	if (!__gpio_write(low_pins))
 		return false;
 	return (mpsse_write() >= 0);
 }
