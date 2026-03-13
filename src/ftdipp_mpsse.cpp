@@ -402,7 +402,7 @@ int FTDIpp_MPSSE::setClkFreq(uint32_t clkHZ)
 	}
 
 	if (_clkHZ > base_freq / 2) {
-		printWarn("Jtag probe limited to %d MHz" + std::to_string(base_freq / 2));
+		printWarn("Jtag probe limited to " + std::to_string(base_freq / 2) + " Hz");
 		_clkHZ = base_freq / 2;
 	}
 
