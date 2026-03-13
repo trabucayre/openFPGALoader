@@ -54,6 +54,7 @@
 #endif
 #include "jtag.hpp"
 #include "part.hpp"
+#include "progressBar.hpp"
 #include "spiFlash.hpp"
 #include "rawParser.hpp"
 #ifdef ENABLE_XILINX_SUPPORT
@@ -72,6 +73,7 @@ using namespace std;
 
 struct arguments {
 	int8_t verbose;
+	bool force_terminal_mode;
 	bool reset, detect, detect_flash, verify, scan_usb;
 	unsigned int offset;
 	string bit_file;
@@ -149,7 +151,9 @@ int main(int argc, char **argv)
 	jtag_pins_conf_t pins_config = {0, 0, 0, 0, 0, 0};
 
 	/* command line args. */
-	struct arguments args = {0,
+	struct arguments args = {
+			/* verbose, force_terminal_mode */
+			0,          false,
 			//reset, detect, detect_flash, verify, scan_usb
 			false,   false,  false,        false,  false,
 			0, "", "", "", "-", "", -1,
@@ -171,6 +175,9 @@ int main(int argc, char **argv)
 	int ret = parse_opt(argc, argv, &args, &pins_config);
 	if (ret != 0)
 		return (ret == 1) ? EXIT_SUCCESS : EXIT_FAILURE;
+
+	if (args.force_terminal_mode)
+		ProgressBar::setForceTerminalMode();
 
 	if (args.is_list_command) {
 		displaySupported(args);
@@ -998,6 +1005,9 @@ int parse_opt(int argc, char **argv, struct arguments *args,
 			("v,verbose", "Produce verbose output", cxxopts::value<bool>(verbose))
 			("verbose-level", "verbose level -1: quiet, 0: normal, 1:verbose, 2:debug",
 				cxxopts::value<int8_t>(verbose_level))
+			("force-terminal-mode",
+				"force progress bar output as if connected to a terminal",
+				cxxopts::value<bool>(args->force_terminal_mode))
 			("h,help", "Give this help list")
 			("verify", "Verify write operation (SPI Flash only)",
 				cxxopts::value<bool>(args->verify))

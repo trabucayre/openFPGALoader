@@ -12,6 +12,7 @@ class ProgressBar {
 	public:
 		ProgressBar(const std::string &mess, int maxValue, int progressLen,
 				bool quiet = false);
+		static void setForceTerminalMode();
 		void display(int value, char force = 0);
 		void done();
 		void fail();
@@ -24,6 +25,7 @@ class ProgressBar {
 		bool _quiet;
 		bool _first;
 		bool _is_tty;
+		static bool _force_terminal_mode;
 };
 
 #endif

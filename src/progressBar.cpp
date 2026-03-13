@@ -11,11 +11,19 @@
 #include "progressBar.hpp"
 #include "display.hpp"
 
+bool ProgressBar::_force_terminal_mode = false;
+
 ProgressBar::ProgressBar(const std::string &mess, int maxValue,
 		int progressLen, bool quiet): _mess(mess), _maxValue(maxValue),
 		_progressLen(progressLen), last_time(std::chrono::system_clock::now()),
-		_quiet(quiet), _first(true), _is_tty(isatty(STDOUT_FILENO) == 1)
+		_quiet(quiet), _first(true),
+		_is_tty(_force_terminal_mode || isatty(STDOUT_FILENO) == 1)
 {
+}
+
+void ProgressBar::setForceTerminalMode()
+{
+	_force_terminal_mode = true;
 }
 
 void ProgressBar::display(int value, char force)
