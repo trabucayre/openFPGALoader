@@ -15,14 +15,13 @@
 #include "fx2_ll.hpp"
 #include "ihexParser.hpp"
 
-using namespace std;
 
 #define FX2_FIRM_LOAD          0xA0
 #define FX2_GCR_CPUCS          0xe600
 #define FX2_GCR_CPUCS_8051_RES (1 << 0)
 
 FX2_ll::FX2_ll(uint16_t uninit_vid, uint16_t uninit_pid,
-		uint16_t vid, uint16_t pid, const string &firmware_path)
+		uint16_t vid, uint16_t pid, const std::string &firmware_path)
 {
 	int ret;
 	bool reenum = false;
@@ -168,7 +167,7 @@ int FX2_ll::read_ctrl(uint8_t bRequest, uint16_t wValue,
  * and 64B by 64B
  * set CPU in reset state before and restart after
  */
-bool FX2_ll::load_firmware(string firmware_path)
+bool FX2_ll::load_firmware(std::string firmware_path)
 {
 	IhexParser ihex(firmware_path, false, true);
 	ihex.parse();
@@ -177,7 +176,7 @@ bool FX2_ll::load_firmware(string firmware_path)
 	if (!reset(1))
 		return false;
 	/* load */
-	vector<IhexParser::data_line_t> data = ihex.getDataArray();
+	std::vector<IhexParser::data_line_t> data = ihex.getDataArray();
 	for (size_t i = 0; i < data.size(); i++) {
 		IhexParser::data_line_t data_line = data[i];
 

@@ -120,7 +120,7 @@ int EPCQ::erase_sector(char start_sector, char nb_sectors)
 		printf("%d %d %x %x %x %x ", nb_sectors, base_addr, buffer[0], buffer[1], buffer[2], buffer[3]);
 
 		if (_spi.ft2232_spi_wr_and_rd(4, buffer, NULL) < 0) {
-			cout << "Write error in erase_sector\n" << endl;
+			std::cout << "Write error in erase_sector\n" << std::endl;
 			return -1;
 		}
 
@@ -138,7 +138,7 @@ int EPCQ::erase_sector(char start_sector, char nb_sectors)
  */
 
 #if 0
-void EPCQ::program(unsigned int start_offset, string filename, bool reverse)
+void EPCQ::program(unsigned int start_offset, std::string filename, bool reverse)
 {
 	FILE *fd;
 	int file_size, nb_sect, i, ii;
@@ -151,7 +151,7 @@ void EPCQ::program(unsigned int start_offset, string filename, bool reverse)
 	 */
 	fd = fopen(filename.c_str(), "r");
 	if (!fd) {
-		cout << "Error opening " << filename << endl;
+		std::cout << "Error opening " << filename << std::endl;
 		return;
 	}
 	fseek(fd, 0, SEEK_END);

@@ -19,7 +19,6 @@
 #include "fx2_ll.hpp"
 #include "usbBlaster.hpp"
 
-using namespace std;
 
 #define DO_READ  (1 << 6)
 #define DO_WRITE (0 << 6)
@@ -358,10 +357,8 @@ UsbBlasterI::UsbBlasterI()
 {
 	int ret;
 	_ftdi = ftdi_new();
-	if (_ftdi == NULL) {
-		cout << "open_device: failed to initialize ftdi" << endl;
-		throw std::exception();
-	}
+	if (_ftdi == NULL)
+		throw std::runtime_error("open_device: failed to initialize ftdi");
 
 	 ret = ftdi_usb_open(_ftdi, 0x09fb, 0x6001);
 	if (ret < 0) {
@@ -446,7 +443,7 @@ int UsbBlasterI::write(uint8_t *wr_buf, int wr_len,
  * USB Blash II specific implementation
  */
 
-UsbBlasterII::UsbBlasterII(const string &firmware_path)
+UsbBlasterII::UsbBlasterII(const std::string &firmware_path)
 {
 	std::string fpath;
 	uint8_t buf[5];

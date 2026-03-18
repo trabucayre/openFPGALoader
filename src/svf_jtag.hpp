@@ -11,31 +11,30 @@
 #include <map>
 
 #include "jtag.hpp"
-using namespace std;
 
 class SVF_jtag {
  public:
 	SVF_jtag(Jtag *jtag, bool verbose);
 	~SVF_jtag();
-	void parse(string filename);
+	void parse(std::string filename);
 	void setVerbose(bool verbose) {_verbose = verbose;}
 
 	private:
 	typedef struct {
 		uint32_t len;
-		string tdo;
-		string tdi;
-		string mask;
-		string smask;
+		std::string tdo;
+		std::string tdi;
+		std::string mask;
+		std::string smask;
 	} svf_XYR;
 
-		void split_str(string const &str, vector<string> &vparse);
+		void split_str(const std::string &str, std::vector<std::string> &vparse);
 		void clear_XYR(svf_XYR &t);
-		void parse_XYR(vector<string> const &vstr/*, svf_stat &svfs*/, svf_XYR &t);
-		void parse_runtest(vector<string> const &vstr);
-		void handle_instruction(vector<string> const &vstr);
+		void parse_XYR(const std::vector<std::string> &vstr/*, svf_stat &svfs*/, svf_XYR &t);
+		void parse_runtest(const std::vector<std::string> &vstr);
+		void handle_instruction(const std::vector<std::string> &vstr);
 
-	map <string, uint8_t> fsm_state = {
+	std::map<std::string, uint8_t> fsm_state = {
 		{"RESET", 0},
 		{"IDLE", 1},
 		{"DRSELECT", 2},

@@ -15,7 +15,6 @@
 #include "anlogicCable.hpp"
 #include "display.hpp"
 
-using namespace std;
 
 #define ANLOGICCABLE_VIDv1 0x0547
 #define ANLOGICCABLE_VIDv2 0x336C
@@ -59,8 +58,7 @@ AnlogicCable::AnlogicCable(uint32_t clkHZ):
 	int ret;
 
 	if (libusb_init(&usb_ctx) < 0) {
-		cerr << "libusb init failed" << endl;
-		throw std::exception();
+		throw std::runtime_error("libusb init failed");
 	}
 
 	/* First: Try with original (old) VID */
@@ -72,23 +70,20 @@ AnlogicCable::AnlogicCable(uint32_t clkHZ):
 						ANLOGICCABLE_VIDv2, ANLOGICCABLE_PID);
 
 		if (!dev_handle) {
-			cerr << "fails to open device" << endl;
 			libusb_exit(usb_ctx);
-			throw std::exception();
+			throw std::runtime_error("fails to open device");
 		}
 	}
 
 	ret = libusb_claim_interface(dev_handle, 0);
 	if (ret) {
-		cerr << "libusb error while claiming DirtyJTAG interface #0" << endl;
 		libusb_close(dev_handle);
 		libusb_exit(usb_ctx);
-		throw std::exception();
+		throw std::runtime_error("libusb error while claiming AnlogicCable interface #0");
 	}
 
 	if (setClkFreq(clkHZ) < 0) {
-		cerr << "Fail to set frequency" << endl;
-		throw std::exception();
+		throw std::runtime_error("Fail to set frequency");
 	}
 }
 
@@ -140,7 +135,7 @@ int AnlogicCable::setClkFreq(uint32_t clkHZ)
 	ret = libusb_bulk_transfer(dev_handle, ANLOGICCABLE_CONF_EP,
 					buf, 2, &actual_length, 1000);
 	if (ret < 0) {
-		cerr << "setClkFreq: usb bulk write failed " << ret << endl;
+		printError("setClkFreq: usb bulk write failed " + std::to_string(ret));
 		return -EXIT_FAILURE;
 	}
 
@@ -293,14 +288,14 @@ int AnlogicCable::write(uint8_t *in_buf, uint8_t *out_buf, int len, int rd_len)
 	int ret = libusb_bulk_transfer(dev_handle, ANLOGICCABLE_WRITE_EP,
 			in_buf, len, &actual_length, 1000);
 	if (ret < 0) {
-		cerr << "write: usb bulk write failed " << ret << endl;
+		printError("write: usb bulk write failed " + std::to_string(ret));
 		return -EXIT_FAILURE;
 	}
 	/* all write must be followed by a read */
 	ret = libusb_bulk_transfer(dev_handle, ANLOGICCABLE_READ_EP,
 			in_buf, len, &actual_length, 1000);
 	if (ret < 0) {
-		cerr << "write: usb bulk read failed " << ret << endl;
+		printError("write: usb bulk read failed " + std::to_string(ret));
 		return -EXIT_FAILURE;
 	}
 

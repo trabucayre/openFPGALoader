@@ -42,7 +42,7 @@ Altera::Altera(Jtag *jtag, const std::string &filename,
 {
 	/* check device family */
 	_idcode = _jtag->get_target_device_id();
-	string family = fpga_list[_idcode].family;
+	std::string family = fpga_list[_idcode].family;
 	if (family == "MAX 10") {
 		_fpga_family = MAX10_FAMILY;
 	} else {

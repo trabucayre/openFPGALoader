@@ -17,14 +17,12 @@
 
 #include "jtag.hpp"
 
-using namespace std;
-
 class XVC_server {
 	public:
 		XVC_server(int port, const cable_t &cable, const jtag_pins_conf_t *pin_conf,
-			string dev, const string &serial, uint32_t clkHZ, int8_t verbose,
-			const string &ip_adr,
-			const bool invert_read_edge, const string &firmware_path);
+			std::string dev, const std::string &serial, uint32_t clkHZ, int8_t verbose,
+			const std::string &ip_adr,
+			const bool invert_read_edge, const std::string &firmware_path);
 		~XVC_server();
 
 		/*!

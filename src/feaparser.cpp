@@ -63,9 +63,8 @@
 #  define FEATURE_CORE_CLK_SEL		(0x03 << 30)	/* Core Clock Sel */
 
 
-using namespace std;
 
-FeaParser::FeaParser(const string &filename, bool verbose):
+FeaParser::FeaParser(const std::string &filename, bool verbose):
 	ConfigBitstreamParser(filename, ConfigBitstreamParser::BIN_MODE, verbose),
 	_feabits(0), _has_feabits(false)
 {
@@ -76,14 +75,14 @@ FeaParser::FeaParser(const string &filename, bool verbose):
 /* fill a vector with consecutive lines, beginning with 0 or 1, until EOF
  * \brief read a line with '\r''\n' or '\n' termination
  * check if last char is '\r'
- * \return a vector of lines without [\r]\n
+ * \return a std::vector of lines without [\r]\n
  */
-vector<string> FeaParser::readFeaFile()
+std::vector<std::string> FeaParser::readFeaFile()
 {
-	vector<string> lines;
+	std::vector<std::string> lines;
 
 	while (true) {
-		string buffer;
+		std::string buffer;
 		std::getline(_ss, buffer, '\n');
 		if (buffer.empty())
 			break;
@@ -230,16 +229,16 @@ void FeaParser::displayHeader()
  * 1: xxxx\n : feature Row (96 bits)
  * 2: yyyy*\n : feabits (32 bits)
  */
-void FeaParser::parseFeatureRowAndFeabits(const vector<string> &content)
+void FeaParser::parseFeatureRowAndFeabits(const std::vector<std::string> &content)
 {
 	printf("Parsing Feature Row & FEAbits...\n");
 
-	string featuresRow = content[0];
+	std::string featuresRow = content[0];
 	//printf("Features: [%s]\n", featuresRow.c_str());
 	for (size_t i = 0; i < featuresRow.size(); i++)
 		_featuresRow[3 - (i/32) - 1] |= ((featuresRow[i] - '0') << (32 - (i%32) - 1));
 
-	string feabits = content[1];
+	std::string feabits = content[1];
 	//printf("Feabits: [%s]\n", feabits.c_str());
 	_feabits = 0;
 	for (size_t i = 0; i < feabits.size(); i++) {
@@ -249,7 +248,7 @@ void FeaParser::parseFeatureRowAndFeabits(const vector<string> &content)
 
 int FeaParser::parse()
 {
-	std::vector<string>lines;
+	std::vector<std::string>lines;
 
 	_ss.str(_raw_data);
 

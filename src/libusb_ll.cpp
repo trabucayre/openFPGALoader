@@ -20,7 +20,6 @@
 #include "display.hpp"
 #include "libusb_ll.hpp"
 
-using namespace std;
 
 libusb_ll::libusb_ll(int vid, int pid, int8_t _verbose):
 	_usb_ctx(nullptr), _verbose(_verbose >= 2)

@@ -20,13 +20,12 @@
 #include "display.hpp"
 #include "ftdipp_mpsse.hpp"
 
-using namespace std;
 
 //#define DEBUG 1
 #define display(...) \
 	do { if (_verbose) fprintf(stdout, __VA_ARGS__);}while(0)
 
-FTDIpp_MPSSE::FTDIpp_MPSSE(const cable_t &cable, const string &dev,
+FTDIpp_MPSSE::FTDIpp_MPSSE(const cable_t &cable, const std::string &dev,
 				const std::string &serial, uint32_t clkHZ, int8_t verbose):
 				_verbose(verbose > 2), _cable(cable.config), _vid(0),
 				_pid(0), _index(0),
@@ -41,7 +40,7 @@ FTDIpp_MPSSE::FTDIpp_MPSSE(const cable_t &cable, const string &dev,
 	strcpy(_product, "");
 	if (!dev.empty()) {
 		if (!search_with_dev(dev)) {
-			cerr << "No cable found" << endl;
+			std::cerr << "No cable found" << std::endl;
 			throw std::runtime_error("No cable found");
 		}
 	} else {
@@ -159,7 +158,7 @@ void FTDIpp_MPSSE::open_device(const std::string &serial, unsigned int baudrate)
 
 	_ftdi = ftdi_new();
 	if (_ftdi == NULL) {
-		cout << "open_device: failed to initialize ftdi" << endl;
+		std::cout << "open_device: failed to initialize ftdi" << std::endl;
 		throw std::runtime_error("open_device: failed to initialize ftdi");
 	}
 #if (ATTACH_KERNEL && (FTDI_VERSION >= 105))
@@ -277,14 +276,14 @@ int FTDIpp_MPSSE::init(unsigned char latency, unsigned char bitmask_mode,
 	if ((ret = ftdi_usb_reset(_ftdi)) < 0) {
 		printError("FTDI reset error with code " +
 				std::to_string(ret) + " (" +
-				string(ftdi_get_error_string(_ftdi)) + ")");
+				std::string(ftdi_get_error_string(_ftdi)) + ")");
 		return ret;
 	}
 
 	if ((ret = ftdi_set_bitmode(_ftdi, 0x00, BITMODE_RESET)) < 0) {
 		printError("FTDI bitmode reset error with code " +
 				std::to_string(ret) + " (" +
-				string(ftdi_get_error_string(_ftdi)) + ")");
+				std::string(ftdi_get_error_string(_ftdi)) + ")");
 		return ret;
 	}
 
@@ -295,27 +294,27 @@ int FTDIpp_MPSSE::init(unsigned char latency, unsigned char bitmask_mode,
 #endif
 		printError("FTDI flush buffer error with code " +
 				std::to_string(ret) + " (" +
-				string(ftdi_get_error_string(_ftdi)) + ")");
+				std::string(ftdi_get_error_string(_ftdi)) + ")");
 		return ret;
 	}
 	if ((ret = ftdi_set_latency_timer(_ftdi, latency)) < 0) {
 		printError("FTDI set latency timer error with code " +
 				std::to_string(ret) + " (" +
-				string(ftdi_get_error_string(_ftdi)) + ")");
+				std::string(ftdi_get_error_string(_ftdi)) + ")");
 		return ret;
 	}
 	/* enable mode */
 	if ((ret = ftdi_set_bitmode(_ftdi, bitmask_mode, mode)) < 0) {
 		printError("FTDI bitmode config error with code " +
 				std::to_string(ret) + " (" +
-				string(ftdi_get_error_string(_ftdi)) + ")");
+				std::string(ftdi_get_error_string(_ftdi)) + ")");
 		return ret;
 	}
 	if (mode == BITMODE_MPSSE) {
 		unsigned char buf1[5];
 		if ((ret = ftdi_read_data(_ftdi, buf1, 5)) < 0) {
 			printError("fail to read data " +
-					string(ftdi_get_error_string(_ftdi)));
+					std::string(ftdi_get_error_string(_ftdi)));
 			return -1;
 		}
 
@@ -344,24 +343,24 @@ int FTDIpp_MPSSE::init(unsigned char latency, unsigned char bitmask_mode,
 		}
 		if ((ret = mpsse_store(buf_cmd, to_wr)) < 0) {
 			printError("fail to store buffer " +
-					string(ftdi_get_error_string(_ftdi)));
+					std::string(ftdi_get_error_string(_ftdi)));
 			return -1;
 		}
 		if (mpsse_write() < 0) {
 			printError("fail to write buffer " +
-					string(ftdi_get_error_string(_ftdi)));
+					std::string(ftdi_get_error_string(_ftdi)));
 			return -1;
 		}
 	}
 
 	if (ftdi_read_data_set_chunksize(_ftdi, _buffer_size) < 0) {
 		printError("fail to set read chunk size: " +
-				string(ftdi_get_error_string(_ftdi)));
+				std::string(ftdi_get_error_string(_ftdi)));
 		return -1;
 	}
 	if (ftdi_write_data_set_chunksize(_ftdi, _buffer_size) < 0) {
 		printError("fail to set write chunk size: " +
-				string(ftdi_get_error_string(_ftdi)));
+				std::string(ftdi_get_error_string(_ftdi)));
 		return -1;
 	}
 
@@ -382,7 +381,7 @@ int FTDIpp_MPSSE::setClkFreq(uint32_t clkHZ)
 #else
 	if ((ret = ftdi_tcioflush(_ftdi)) < 0) {
 		printError("selfClkFreq: fail to flush buffers: " +
-				string(ftdi_get_error_string(_ftdi)));
+				std::string(ftdi_get_error_string(_ftdi)));
 		return ret;
 	}
 
@@ -421,7 +420,7 @@ int FTDIpp_MPSSE::setClkFreq(uint32_t clkHZ)
 		__buf_valid_bytes = snprintf(__buf, 10, "%3.2fKHz", clkHZ / 1e3);
 	else
 		__buf_valid_bytes = snprintf(__buf, 10, "%3u.00Hz", clkHZ);
-	string clkHZ_str(__buf, __buf_valid_bytes);
+	std::string clkHZ_str(__buf, __buf_valid_bytes);
 	clkHZ_str.resize(10, ' ');
 	if (real_freq >= 1e6)
 		__buf_valid_bytes = snprintf(__buf, 9, "%2.2fMHz", real_freq / 1e6);
@@ -429,7 +428,7 @@ int FTDIpp_MPSSE::setClkFreq(uint32_t clkHZ)
 		__buf_valid_bytes = snprintf(__buf, 10, "%3.2fKHz", real_freq / 1e3);
 	else
 		__buf_valid_bytes = snprintf(__buf, 10, "%3.2fHz", real_freq);
-	string real_freq_str(__buf, __buf_valid_bytes);
+	std::string real_freq_str(__buf, __buf_valid_bytes);
 	real_freq_str.resize(10, ' ');
 
 
@@ -453,7 +452,7 @@ int FTDIpp_MPSSE::setClkFreq(uint32_t clkHZ)
 	}
 	if ((ret = ftdi_read_data(_ftdi, buffer, 4)) < 0) {
 		printError("selfClkFreq: fail to read: " +
-				string(ftdi_get_error_string(_ftdi)));
+				std::string(ftdi_get_error_string(_ftdi)));
 		return ret;
 	}
 
@@ -478,7 +477,7 @@ int FTDIpp_MPSSE::mpsse_store(unsigned char *buff, int len)
 			if ((ret = mpsse_write()) < 0) {
 				printError("mpsse_store: fails to first flush " +
 						std::to_string(ret) + " " +
-						string(ftdi_get_error_string(_ftdi)));
+						std::string(ftdi_get_error_string(_ftdi)));
 				return ret;
 			}
 		}
@@ -493,7 +492,7 @@ int FTDIpp_MPSSE::mpsse_store(unsigned char *buff, int len)
 			if ((ret = mpsse_write()) < 0) {
 				printError("mpsse_store: fails to first flush " +
 						std::to_string(ret) + " " +
-						string(ftdi_get_error_string(_ftdi)));
+						std::string(ftdi_get_error_string(_ftdi)));
 				return ret;
 			}
 			ptr += store_size;
@@ -523,7 +522,7 @@ int FTDIpp_MPSSE::mpsse_write()
 	if ((ret = ftdi_write_data(_ftdi, _buffer, _num)) != _num) {
 		printError("mpsse_write: fail to write with error " +
 				std::to_string(ret) + " (" +
-				string(ftdi_get_error_string(_ftdi)) + ")");
+				std::string(ftdi_get_error_string(_ftdi)) + ")");
 		return ret;
 	}
 
@@ -541,14 +540,14 @@ int FTDIpp_MPSSE::mpsse_read(unsigned char *rx_buff, int len)
 	if ((ret = mpsse_store(SEND_IMMEDIATE)) < 0) {
 		printError("mpsse_read: fail to store with error: " +
 				std::to_string(ret) + " (" +
-				string(ftdi_get_error_string(_ftdi)) + ")");
+				std::string(ftdi_get_error_string(_ftdi)) + ")");
 		return ret;
 	}
 
 	if ((ret = mpsse_write()) < 0) {
 		printError("mpsse_read: fail to flush buffer with error: " +
 				std::to_string(ret) + " (" +
-				string(ftdi_get_error_string(_ftdi)) + ")");
+				std::string(ftdi_get_error_string(_ftdi)) + ")");
 		return ret;
 	}
 
@@ -825,7 +824,7 @@ unsigned int FTDIpp_MPSSE::udevstufftoint(const char *udevstring, int base)
 	return (ret);
 }
 
-bool FTDIpp_MPSSE::search_with_dev(const string &device)
+bool FTDIpp_MPSSE::search_with_dev(const std::string &device)
 {
 	struct udev *udev;
 	struct udev_device *dev, *usbdeviceparent;
@@ -899,7 +898,7 @@ unsigned int FTDIpp_MPSSE::udevstufftoint(const char *udevstring, int base)
 	(void)base;
 	return 0;
 }
-bool FTDIpp_MPSSE::search_with_dev(const string &device)
+bool FTDIpp_MPSSE::search_with_dev(const std::string &device)
 {
 	(void)device;
 	return false;

@@ -22,7 +22,6 @@
 #define VID 0x1366
 #define PID 0x0105
 
-using namespace std;
 
 // convert 2Byte to 1 short
 #define CONV_16B(_val) ((((uint16_t) _val[0]) << 0) | \
@@ -458,13 +457,13 @@ bool Jlink::write_device(const uint8_t *buf, uint32_t size)
 	return ((uint32_t)recv == size);
 }
 
-string Jlink::get_version()
+std::string Jlink::get_version()
 {
 	uint16_t length = 0;
 	cmd_read(EMU_CMD_VERSION, &length);
 	uint8_t version[length];
 	read_device(version, length);
-	return string(reinterpret_cast<char*>(version));
+	return std::string(reinterpret_cast<char*>(version));
 }
 
 int Jlink::get_hw_version()
@@ -689,7 +688,7 @@ bool Jlink::jlink_scan_usb(int vid, int pid)
 			continue;
 		if (desc.idProduct != pid) {
 			if (_verbose)
-				cerr << "skip pid" << hex << desc.idProduct << dec << endl;
+				std::cerr << "skip pid" << std::hex << desc.idProduct << std::dec << std::endl;
 			continue;
 		}
 

@@ -21,7 +21,6 @@
 #include "rawParser.hpp"
 #include "spiFlash.hpp"
 
-using namespace std;
 
 #ifdef STATUS_TIMEOUT
 // defined in the Windows headers included by libftdi.h
@@ -75,7 +74,7 @@ using namespace std;
 #define BSCAN_GW1NSR_4C_SPI_DO  (1 << 1)
 #define BSCAN_GW1NSR_4C_SPI_MSK (1 << 0)
 
-Gowin::Gowin(Jtag *jtag, const string filename, const string &file_type, std::string mcufw,
+Gowin::Gowin(Jtag *jtag, const std::string filename, const std::string &file_type, std::string mcufw,
 		Device::prog_type_t prg_type, bool external_flash,
 		bool verify, int8_t verbose, const std::string& user_flash)
 	: Device(jtag, filename, file_type, verify, verbose),
@@ -128,7 +127,7 @@ Gowin::Gowin(Jtag *jtag, const string filename, const string &file_type, std::st
 
 		/* for fs file check match with targeted device */
 		if (_file_extension == "fs") {
-			string idcode_str = _fs->getHeaderVal("idcode");
+			std::string idcode_str = _fs->getHeaderVal("idcode");
 			uint32_t fs_idcode = std::stoul(idcode_str.c_str(), NULL, 16);
 			if ((fs_idcode & 0x0fffffff) != _idcode) {
 				char mess[256];
@@ -437,7 +436,7 @@ void Gowin::checkCRC()
 	 * is used, try to compare with this value
 	 */
 	try {
-		string hdr = _fs->getHeaderVal("checkSum");
+		std::string hdr = _fs->getHeaderVal("checkSum");
 		if (!hdr.empty()) {
 			if (ucode == strtol(hdr.c_str(), NULL, 16))
 				goto success;

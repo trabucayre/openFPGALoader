@@ -59,7 +59,6 @@
 #include "xvc_client.hpp"
 #endif
 
-using namespace std;
 
 #define DEBUG 0
 
@@ -94,10 +93,10 @@ using namespace std;
  */
 
 Jtag::Jtag(const cable_t &cable, const jtag_pins_conf_t *pin_conf,
-			const string &dev,
-			const string &serial, uint32_t clkHZ, int8_t verbose,
-			const string &ip_adr, int port,
-			const bool invert_read_edge, const string &firmware_path,
+			const std::string &dev,
+			const std::string &serial, uint32_t clkHZ, int8_t verbose,
+			const std::string &ip_adr, int port,
+			const bool invert_read_edge, const std::string &firmware_path,
 			const std::map<uint32_t, misc_device> &user_misc_devs):
 			_verbose(verbose > 1),
 			_state(RUN_TEST_IDLE),
@@ -344,7 +343,7 @@ int Jtag::device_select(unsigned index)
 	 * after the selected one
 	 */
 	_dr_bits_after = device_index;
-	_dr_bits = vector<uint8_t>((std::max(_dr_bits_after, _dr_bits_before) + 7)/8, 0);
+	_dr_bits = std::vector<uint8_t>((std::max(_dr_bits_after, _dr_bits_before) + 7)/8, 0);
 
 	/* when the device is not alone and not
 	 * the first a serie of bypass must be
@@ -361,7 +360,7 @@ int Jtag::device_select(unsigned index)
 	_ir_bits_before = 0;
 	for (unsigned i = device_index + 1; i < _devices_list.size(); ++i)
 		_ir_bits_before += _irlength_list[i];
-	_ir_bits = vector<uint8_t>((std::max(_ir_bits_before, _ir_bits_after) + 7) / 8, 0xff); // BYPASS command is all-ones
+	_ir_bits = std::vector<uint8_t>((std::max(_ir_bits_before, _ir_bits_after) + 7) / 8, 0xff); // BYPASS command is all-ones
 
 	return device_index;
 }
@@ -466,7 +465,7 @@ int Jtag::shiftDR(const uint8_t *tdi, unsigned char *tdo, int drlen, tapState_t 
 int Jtag::shiftIR(unsigned char tdi, int irlen, tapState_t end_state)
 {
 	if (irlen > 8) {
-		cerr << "Error: this method this direct char don't support more than 1 byte" << endl;
+		std::cerr << "Error: this method this direct char don't support more than 1 byte" << std::endl;
 		return -1;
 	}
 	return shiftIR(&tdi, NULL, irlen, end_state);

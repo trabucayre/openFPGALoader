@@ -13,8 +13,6 @@
 #include "spiInterface.hpp"
 #include "spiFlash.hpp"
 
-using namespace std;
-
 class EPCQ: public SPIFlash {
  public:
 	EPCQ(SPIInterface *spi, bool unprotect_flash, int8_t verbose);

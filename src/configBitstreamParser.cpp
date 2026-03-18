@@ -26,9 +26,8 @@
 
 #include "configBitstreamParser.hpp"
 
-using namespace std;
 
-ConfigBitstreamParser::ConfigBitstreamParser(const string &filename, int mode,
+ConfigBitstreamParser::ConfigBitstreamParser(const std::string &filename, int mode,
 			bool verbose): _filename(filename), _bit_length(0),
 			_file_size(0), _verbose(verbose),
 			_bit_data(), _raw_data(), _hdr()
@@ -40,7 +39,7 @@ ConfigBitstreamParser::ConfigBitstreamParser(const string &filename, int mode,
 		FILE *_fd = fopen(filename.c_str(), "rb");
 		if (!_fd) {
 			/* if file not found it's maybe a gz -> try without gz */
-			if (offset != string::npos) {
+			if (offset != std::string::npos) {
 				_filename = filename.substr(0, offset);
 				_fd = fopen(_filename.c_str(), "rb");
 			}
@@ -61,10 +60,10 @@ ConfigBitstreamParser::ConfigBitstreamParser(const string &filename, int mode,
 		if (ret != _file_size)
 			throw std::runtime_error("Error: fail to read " + _filename);
 
-		if (offset != string::npos) {
-			string extension = _filename.substr(_filename.find_last_of(".") +1);
+		if (offset != std::string::npos) {
+			std::string extension = _filename.substr(_filename.find_last_of(".") +1);
 			if (extension == "gz" || extension == "gzip") {
-				string tmp;
+				std::string tmp;
 				tmp.reserve(_file_size);
 				if (!decompress_bitstream(_raw_data, &tmp))
 					throw std::runtime_error("Error: decompress failed");
@@ -77,7 +76,7 @@ ConfigBitstreamParser::ConfigBitstreamParser(const string &filename, int mode,
 
 	} else if (!isatty(fileno(stdin))) {
 		_file_size = 0;
-		string tmp;
+		std::string tmp;
 		tmp.resize(4096);
 		size_t size;
 
@@ -95,7 +94,7 @@ ConfigBitstreamParser::~ConfigBitstreamParser()
 {
 }
 
-string ConfigBitstreamParser::getHeaderVal(string key)
+std::string ConfigBitstreamParser::getHeaderVal(std::string key)
 {
 	auto val = _hdr.find(key);
 	if (val == _hdr.end())
@@ -107,7 +106,7 @@ void ConfigBitstreamParser::displayHeader()
 {
 	if (_hdr.empty())
 		return;
-	cout << "bitstream header infos" << endl;
+	printInfo("bitstream header infos");
 	for (auto it = _hdr.begin(); it != _hdr.end(); it++) {
 		printInfo((*it).first + ": ", false);
 		printSuccess((*it).second);
@@ -165,7 +164,7 @@ uint32_t ConfigBitstreamParser::reverse_32(const uint32_t src)
 		   (revertByteArr[(src >> 24) & 0xff] <<  0);
 }
 
-bool ConfigBitstreamParser::decompress_bitstream(string source, string *dest)
+bool ConfigBitstreamParser::decompress_bitstream(std::string source, std::string *dest)
 {
 #ifndef HAS_ZLIB
 	(void)source;

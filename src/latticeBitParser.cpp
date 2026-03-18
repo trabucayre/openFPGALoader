@@ -19,9 +19,8 @@
 
 #include "latticeBitParser.hpp"
 
-using namespace std;
 
-LatticeBitParser::LatticeBitParser(const string &filename, bool machxo2, bool ecp3,
+LatticeBitParser::LatticeBitParser(const std::string &filename, bool machxo2, bool ecp3,
 	bool verbose):
 	ConfigBitstreamParser(filename, ConfigBitstreamParser::BIN_MODE, verbose),
 	_endHeader(0), _is_machXO2(machxo2), _is_ecp3(ecp3)
@@ -57,14 +56,14 @@ int LatticeBitParser::parseHeader()
 
 
 	_endHeader = _raw_data.find(0xff, currPos);
-	if (_endHeader == string::npos) {
+	if (_endHeader == std::string::npos) {
 		printError("Error: preamble not found\n");
 		return EXIT_FAILURE;
 	}
 
 	/* .bit for MACHXO3D seems to have more 0xff before preamble key */
 	size_t pos = _raw_data.find(0xb3, _endHeader);
-	if (pos == string::npos) {
+	if (pos == std::string::npos) {
 		printError("Preamble key not found");
 		return EXIT_FAILURE;
 	}
@@ -76,13 +75,13 @@ int LatticeBitParser::parseHeader()
 	_endHeader = pos - 4; // align to 3 Dummy Bytes + preamble (ie. Header start offset).
 
 	/* parse header */
-	istringstream lineStream(_raw_data.substr(currPos, _endHeader - currPos));
-	string buff;
+	std::istringstream lineStream(_raw_data.substr(currPos, _endHeader - currPos));
+	std::string buff;
 	while (std::getline(lineStream, buff, '\0')) {
 		pos = buff.find_first_of(':', 0);
-		if (pos != string::npos) {
-			string key(buff.substr(0, pos));
-			string val(buff.substr(pos+1, buff.size()));
+		if (pos != std::string::npos) {
+			std::string key(buff.substr(0, pos));
+			std::string val(buff.substr(pos+1, buff.size()));
 			int startPos = val.find_first_not_of(" ");
 			int endPos = val.find_last_not_of(" ")+1;
 			_hdr[key] = val.substr(startPos, endPos).c_str();
@@ -117,17 +116,17 @@ int LatticeBitParser::parse()
 			printError("encrypted bitstream not supported for machXO2");
 			return EXIT_FAILURE;
 		}
-		string part = getHeaderVal("Part");
-		string subpart = part.substr(0, part.find_last_of("-"));
+		std::string part = getHeaderVal("Part");
+		std::string subpart = part.substr(0, part.find_last_of("-"));
 		for (auto && fpga : fpga_list) {
 			if (fpga.second.manufacturer != "lattice")
 				continue;
-			string model = fpga.second.model;
+			std::string model = fpga.second.model;
 			if (subpart.compare(0, model.size(), model) == 0) {
 				char __buf[10];
 				int __buf_valid_bytes;
 				__buf_valid_bytes = snprintf(__buf, 9, "%08x", fpga.first);
-				_hdr["idcode"] = string(__buf, __buf_valid_bytes);
+				_hdr["idcode"] = std::string(__buf, __buf_valid_bytes);
 				_hdr["idcode"].resize(8, ' ');
 			}
 		}
@@ -203,7 +202,7 @@ bool LatticeBitParser::parseCfgData()
 					 (((uint32_t)reverseByte(ptr[4])) <<  8) |
 					 (((uint32_t)reverseByte(ptr[3])) <<  0);
 			__buf_valid_bytes = snprintf(__buf, 9, "%08x", idcode);
-			_hdr["idcode"] = string(__buf, __buf_valid_bytes);
+			_hdr["idcode"] = std::string(__buf, __buf_valid_bytes);
 			_hdr["idcode"].resize(8, ' ');
 			pos += 7;
 			if (!_is_machXO2)
@@ -216,7 +215,7 @@ bool LatticeBitParser::parseCfgData()
 					 (((uint32_t)ptr[5]) <<  8) |
 					 (((uint32_t)ptr[6]) <<  0);
 			__buf_valid_bytes = snprintf(__buf, 9, "%08x", idcode);
-			_hdr["idcode"] = string(__buf, __buf_valid_bytes);
+			_hdr["idcode"] = std::string(__buf, __buf_valid_bytes);
 			_hdr["idcode"].resize(8, ' ');
 			pos += 7;
 			if (!_is_machXO2)

@@ -10,9 +10,8 @@
 #include "display.hpp"
 #include "rawParser.hpp"
 
-using namespace std;
 
-RawParser::RawParser(const string &filename, bool reverseOrder):
+RawParser::RawParser(const std::string &filename, bool reverseOrder):
 		ConfigBitstreamParser(filename, ConfigBitstreamParser::BIN_MODE,
 		false), _reverseOrder(reverseOrder)
 {}

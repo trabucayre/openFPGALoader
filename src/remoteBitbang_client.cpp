@@ -26,7 +26,6 @@
 
 #include "display.hpp"
 
-using namespace std;
 
 #define TCK_OFFSET 2
 #define TMS_OFFSET 1
@@ -170,7 +169,7 @@ int RemoteBitbang_client::setClkFreq(uint32_t clkHz)
 	return clkHz;
 }
 
-bool RemoteBitbang_client::open_connection(const string &ip_addr)
+bool RemoteBitbang_client::open_connection(const std::string &ip_addr)
 {
 	struct sockaddr_in addr;
 	addr.sin_family = AF_INET;

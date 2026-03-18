@@ -16,7 +16,6 @@
 #include "ch552_jtag.hpp"
 #include "ftdipp_mpsse.hpp"
 
-using namespace std;
 
 #define DEBUG 0
 
@@ -30,7 +29,7 @@ using namespace std;
 #endif
 
 CH552_jtag::CH552_jtag(const cable_t &cable,
-			const string &dev, const string &serial, uint32_t clkHZ,
+			const std::string &dev, const std::string &serial, uint32_t clkHZ,
 			int8_t verbose):
 			FTDIpp_MPSSE(cable, dev, serial, clkHZ, verbose), _to_read(0)
 {

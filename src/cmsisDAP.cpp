@@ -21,7 +21,6 @@
 
 #include "cmsisDAP.hpp"
 
-using namespace std;
 
 #define DAP_JTAG_SEQ_TDO_CAPTURE  (1 << 7)
 #define DAP_JTAG_SEQ_TMS_SHIFT(x) ((x & 0x01) << 6)
@@ -49,7 +48,7 @@ enum cmsisdap_info_id {
 	INFO_ID_PID                = 0x02,  // Get the Product ID (string).
 	INFO_ID_SERNUM             = 0x03,  // Get the Serial Number (string).
 	INFO_ID_FWVERS             = 0x04,  // Get the CMSIS-DAP Firmware
-								 		// Version (string).
+	                                    // Version (string).
 	INFO_ID_TARGET_DEV_VENDOR  = 0x05,  // Get the Target Device Vendor (string).
 	INFO_ID_TARGET_DEV_NAME    = 0x06,  // Get the Target Device Name (string).
 	INFO_ID_HWCAP              = 0xF0,  // Get information about the
@@ -60,7 +59,7 @@ enum cmsisdap_info_id {
 	INFO_ID_MAX_PKT_SZ         = 0xFF   // Get the maximum Packet Size (SHORT).
 };
 
-static map<uint8_t, string> cmsisdap_info_id_str = {
+static std::map<uint8_t, std::string> cmsisdap_info_id_str = {
 	{INFO_ID_VID,                "VID"},
 	{INFO_ID_PID,                "PID"},
 	{INFO_ID_SERNUM,             "serial number"},
@@ -159,7 +158,7 @@ CmsisDAP::CmsisDAP(const cable_t &cable, int index, int8_t verbose):_verbose(ver
 	_vid = dev_found[_device_idx]->vendor_id;
 	_pid = dev_found[_device_idx]->product_id;
 	if (dev_found[_device_idx]->serial_number != NULL)
-		_serial_number = wstring(dev_found[_device_idx]->serial_number);
+		_serial_number = std::wstring(dev_found[_device_idx]->serial_number);
 	/* open the device */
 	_dev = hid_open_path(dev_found[_device_idx]->path);
 	if (!_dev) {

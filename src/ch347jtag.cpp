@@ -19,7 +19,6 @@
 #include "ch347jtag.hpp"
 #include "display.hpp"
 
-using namespace std;
 
 #define CH347JTAG_VID 0x1a86
 #define CH347T_JTAG_PID 0x55dd    //ch347T
@@ -64,12 +63,12 @@ int CH347Jtag::usb_xfer(unsigned wlen, unsigned rlen, unsigned *ract, bool defer
 	}
 
 	if (obuf - _obuf > MAX_BUFFER) {
-		throw runtime_error("buffer overflow");
+		throw std::runtime_error("buffer overflow");
 	}
 
 	wlen += obuf - _obuf;
 	if (wlen > MAX_BUFFER) {
-		throw runtime_error("buffer overflow");
+		throw std::runtime_error("buffer overflow");
 	}
 	obuf = _obuf;
 
@@ -293,8 +292,8 @@ int CH347Jtag::writeTMS(const uint8_t *tms, uint32_t len, bool flush_buffer,
 			obuf[2] = (wlen - 3) >> 8;
 			int ret = usb_xfer(wlen, 0, 0, !flush_buffer);
 			if (ret < 0) {
-				cerr << "writeTMS: usb bulk write failed: " <<
-					libusb_strerror(static_cast<libusb_error>(ret)) << endl;
+				printError(std::string("writeTMS: usb bulk write failed: ")
+					+ std::string(libusb_strerror(static_cast<libusb_error>(ret))));
 				return -EXIT_FAILURE;
 			}
 			ptr = obuf;
@@ -332,8 +331,8 @@ int CH347Jtag::toggleClk(__attribute__((unused)) uint8_t tms,
 			obuf[2] = (wlen - 3) >> 8;
 			int ret = usb_xfer(wlen, 0, 0, true);
 			if (ret < 0) {
-				cerr << "writeCLK: usb bulk write failed: " <<
-					libusb_strerror(static_cast<libusb_error>(ret)) << endl;
+				printError(std::string("writeCLK: usb bulk write failed: ")
+					+ std::string(libusb_strerror(static_cast<libusb_error>(ret))));
 				return -EXIT_FAILURE;
 			}
 			ptr = obuf;
@@ -371,15 +370,15 @@ int CH347Jtag::writeTDI(const uint8_t *tx, uint8_t *rx, uint32_t len, bool end)
 		unsigned actual_length = 0;
 		int ret = usb_xfer(chunk + 3, (rx) ? chunk + 3 : 0, &actual_length, rx == 0 && get_obuf_length());
 		if (ret < 0) {
-			cerr << "writeTDI: usb bulk read failed: " <<
-				libusb_strerror(static_cast<libusb_error>(ret)) << endl;
+			printError(std::string("writeTDI: usb bulk read failed: ")
+				+ std::string(libusb_strerror(static_cast<libusb_error>(ret))));
 			return -EXIT_FAILURE;
 		}
 		if (!rx)
 			continue;
 		unsigned size = ibuf[1] + ibuf[2] * 0x100;
 		if (ibuf[0] != CMD_BYTES_WR || actual_length - 3 != size) {
-			cerr << "writeTDI: invalid read data: " << ret << endl;
+			printError("writeTDI: invalid read data: " + std::to_string(ret));
 			return -EXIT_FAILURE;
 		}
 		memcpy(rptr, &ibuf[3], size);
@@ -414,8 +413,8 @@ int CH347Jtag::writeTDI(const uint8_t *tx, uint8_t *rx, uint32_t len, bool end)
 	int ret = usb_xfer(wlen, (rx) ? (bits + 3) : 0, &actual_length, rx == nullptr);
 
 	if (ret < 0) {
-		cerr << "writeTDI: usb bulk read failed: " <<
-			libusb_strerror(static_cast<libusb_error>(ret)) << endl;
+		printError(std::string("writeTDI: usb bulk read failed: ")
+			+ std::string(libusb_strerror(static_cast<libusb_error>(ret))));
 		return -EXIT_FAILURE;
 	}
 	if (!rx)
@@ -424,7 +423,7 @@ int CH347Jtag::writeTDI(const uint8_t *tx, uint8_t *rx, uint32_t len, bool end)
 	unsigned size = ibuf[1] + ibuf[2] * 0x100;
 
 	if (ibuf[0] != CMD_BITS_WR || actual_length - 3 != size) {
-		cerr << "writeTDI: invalid read data: " << endl;
+		printError("writeTDI: invalid read data: ");
 		return -EXIT_FAILURE;
 	}
 	for (unsigned i = 0; i < size; ++i) {

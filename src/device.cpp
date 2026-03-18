@@ -8,9 +8,8 @@
 
 #include "device.hpp"
 
-using namespace std;
 
-Device::Device(Jtag *jtag, string filename, const string &file_type,
+Device::Device(Jtag *jtag, std::string filename, const std::string &file_type,
 		bool verify, int8_t verbose):
 		_filename(filename),
 		_file_extension(filename.substr(filename.find_last_of(".") +1)),
@@ -24,13 +23,13 @@ Device::Device(Jtag *jtag, string filename, const string &file_type,
 	} else if (!filename.empty()) {
 		size_t offset = filename.find_last_of(".");
 		/* no extension => consider raw */
-		if (offset == string::npos) {
+		if (offset == std::string::npos) {
 			_file_extension = "raw";
 		/* compressed file ? */
 		} else if  (_file_extension.substr(0, 2) == "gz") {
 			size_t offset2 = filename.find_last_of(".", offset - 1);
 			/* no more extension -> error */
-			if (offset2 == string::npos) {
+			if (offset2 == std::string::npos) {
 				char mess[256];
 				snprintf(mess, sizeof(mess), "\nfile %s is compressed\n"
 						"but can't determine real type\n"
@@ -46,7 +45,7 @@ Device::Device(Jtag *jtag, string filename, const string &file_type,
 
 	_jtag = jtag;
 	if (verbose > 0)
-		cout << "File type : " << _file_extension << endl;
+		std::cout << "File type : " << _file_extension << std::endl;
 }
 
 Device::~Device() {}

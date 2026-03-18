@@ -22,7 +22,6 @@
 #include "display.hpp"
 #include "dfuFileParser.hpp"
 
-using namespace std;
 
 /* USB Device firmware Upgrade Specification, Revision 1.1 B.1 */
 /* p. 42 */
@@ -71,7 +70,7 @@ static const uint32_t crc32tbl[] = {
 	0x54de5729, 0x23d967bf, 0xb3667a2e, 0xc4614ab8, 0x5d681b02, 0x2a6f2b94,
 	0xb40bbe37, 0xc30c8ea1, 0x5a05df1b, 0x2d02ef8d};
 
-DFUFileParser::DFUFileParser(const string &filename, bool verbose):
+DFUFileParser::DFUFileParser(const std::string &filename, bool verbose):
 	ConfigBitstreamParser(filename, ConfigBitstreamParser::BIN_MODE, verbose),
 		_bcdDFU(0), _idVendor(0), _idProduct(0), _bcdDevice(0),
 		_dwCRC(0), _bLength(0)
@@ -81,7 +80,7 @@ DFUFileParser::DFUFileParser(const string &filename, bool verbose):
 /* p.40-47 */
 int DFUFileParser::parseHeader()
 {
-	string ucDfuSignature;
+	std::string ucDfuSignature;
 	/* check size: If file size <= 16
 	 * no space for suffix and/or bitstream
 	 * */
@@ -114,30 +113,30 @@ int DFUFileParser::parseHeader()
 		(_raw_data[_file_size - 15] <<  8);
 
 	/* yes it's silly but it's simpliest way */
-	_hdr = {{"dwCRC", string(11, ' ')}, {"bLength", ""},
-		{"ucDfuSignature", string(4, ' ')}, {"bcdDFU", string(7, ' ')},
-		{"idVendor", string(7, ' ')}, {"idProduct", string(7, ' ')},
-		{"bcdDevice", string(7, ' ')}};
+	_hdr = {{"dwCRC", std::string(11, ' ')}, {"bLength", ""},
+		{"ucDfuSignature", std::string(4, ' ')}, {"bcdDFU", std::string(7, ' ')},
+		{"idVendor", std::string(7, ' ')}, {"idProduct", std::string(7, ' ')},
+		{"bcdDevice", std::string(7, ' ')}};
 
 
 	char __buf[16];
 	int __buf_valid_bytes;
 	__buf_valid_bytes = snprintf(__buf, 11, "0x%08x", _dwCRC);
-	_hdr["dwCRC"] = string(__buf, __buf_valid_bytes);
+	_hdr["dwCRC"] = std::string(__buf, __buf_valid_bytes);
 	_hdr["dwCRC"].resize(11, ' ');
-	_hdr["bLength"] = to_string(_bLength);
+	_hdr["bLength"] = std::to_string(_bLength);
 	_hdr["ucDfuSignature"] = ucDfuSignature;
 	__buf_valid_bytes = snprintf(__buf, 7, "0x%04x", _bcdDFU);
-	_hdr["bcdDFU"] = string(__buf, __buf_valid_bytes);
+	_hdr["bcdDFU"] = std::string(__buf, __buf_valid_bytes);
 	_hdr["bcdDFU"].resize(7, ' ');
 	__buf_valid_bytes = snprintf(__buf, 7, "0x%04x", _idVendor);
-	_hdr["idVendor"] = string(__buf, __buf_valid_bytes);
+	_hdr["idVendor"] = std::string(__buf, __buf_valid_bytes);
 	_hdr["idVendor"].resize(7, ' ');
 	__buf_valid_bytes = snprintf(__buf, 7, "0x%04x", _idProduct);
-	_hdr["idProduct"] = string(__buf, __buf_valid_bytes);
+	_hdr["idProduct"] = std::string(__buf, __buf_valid_bytes);
 	_hdr["idProduct"].resize(7, ' ');
 	__buf_valid_bytes = snprintf(__buf, 7, "0x%04x", _bcdDevice);
-	_hdr["bcdDevice"] = string(__buf, __buf_valid_bytes);
+	_hdr["bcdDevice"] = std::string(__buf, __buf_valid_bytes);
 	_hdr["bcdDevice"].resize(7, ' ');
 
 	return 1;

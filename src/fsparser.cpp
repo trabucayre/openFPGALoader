@@ -11,9 +11,8 @@
 #include "fsparser.hpp"
 #include "display.hpp"
 
-using namespace std;
 
-FsParser::FsParser(const string &filename, bool reverseByte, bool verbose):
+FsParser::FsParser(const std::string &filename, bool reverseByte, bool verbose):
 			ConfigBitstreamParser(filename, ConfigBitstreamParser::ASCII_MODE,
 			verbose), _reverseByte(reverseByte), _end_header(0), _checksum(0),
 			_8Zero(0xff), _4Zero(0xff), _2Zero(0xff),
@@ -36,11 +35,11 @@ uint64_t FsParser::bitToVal(const char *bits, int len)
 int FsParser::parseHeader()
 {
 	int ret = 0;
-	string buffer;
+	std::string buffer;
 	int line_index = 0;
 	bool in_header = true;
 
-	istringstream lineStream(_raw_data);
+	std::istringstream lineStream(_raw_data);
 
 	while (std::getline(lineStream, buffer, '\n')) {
 		ret += buffer.size() + 1;
@@ -69,12 +68,12 @@ int FsParser::parseHeader()
 			case 0x06: /* idCode */
 				_idcode = (0xffffffff & val);
 				__buf_valid_bytes = snprintf(__buf, 9, "%08x", _idcode);
-				_hdr["idcode"] = string(__buf, __buf_valid_bytes);
+				_hdr["idcode"] = std::string(__buf, __buf_valid_bytes);
 				_hdr["idcode"].resize(8, ' ');
 				break;
 			case 0x0A: /* user code or checksum ? */
 				__buf_valid_bytes = snprintf(__buf, 9, "%08x", (uint32_t)(0xffffffff & val));
-				_hdr["CheckSum"] = string(__buf, __buf_valid_bytes);
+				_hdr["CheckSum"] = std::string(__buf, __buf_valid_bytes);
 				_hdr["CheckSum"].resize(8, ' ');
 				break;
 			case 0x0B: /* only present when bit_security is set */
@@ -90,7 +89,7 @@ int FsParser::parseHeader()
 				} else {
 					rate = 2500000; // default
 				}
-				_hdr["LoadingRate"] = to_string(rate);
+				_hdr["LoadingRate"] = std::to_string(rate);
 				_compressed = (val >> 13) & 1;
 				_hdr["Compress"] = (_compressed) ? "ON" : "OFF";
 				_hdr["ProgramDoneBypass"] = ((val >> 12) & 1) ? "ON" : "OFF";
@@ -112,7 +111,7 @@ int FsParser::parseHeader()
 				uint32_t flash_addr;
 				flash_addr = val & 0xffffffff;
 				__buf_valid_bytes = snprintf(__buf, 9, "%08x", flash_addr);
-				_hdr["SPIAddr"] = string(__buf, __buf_valid_bytes);
+				_hdr["SPIAddr"] = std::string(__buf, __buf_valid_bytes);
 				_hdr["SPIAddr"].resize(8, ' ');
 
 				break;
@@ -123,7 +122,7 @@ int FsParser::parseHeader()
 				crc = 0x01 & (val >> 23);
 
 				_hdr["CRCCheck"] = (crc) ? "ON" : "OFF";
-				_hdr["ConfDataLength"] = to_string(0xffff & val);
+				_hdr["ConfDataLength"] = std::to_string(0xffff & val);
 				_end_header = line_index;
 				break;
 		}
@@ -136,7 +135,7 @@ int FsParser::parseHeader()
 
 int FsParser::parse()
 {
-	string tmp;
+	std::string tmp;
 	/* GW1N-6 and GW1N(R)-9 are address length not multiple of byte */
 	int padding = 0;
 
@@ -236,17 +235,17 @@ int FsParser::parse()
 		drop += 2 * 8;
 	for (auto &&ll = _lstRawData.begin();
 			ll != _lstRawData.end(); ll++) {
-		string l = "";
-		string line = *ll;
+		std::string l = "";
+		std::string line = *ll;
 		if (_compressed) {
 			for (size_t i = 0; i < line.size()-drop; i+=8) {
 				uint8_t c = bitToVal((const char *)&line[i], 8);
 				if (c == _8Zero)
-					l += string(8*8, '0');
+					l += std::string(8*8, '0');
 				else if (c == _4Zero)
-					l += string(4*8, '0');
+					l += std::string(4*8, '0');
 				else if (c == _2Zero)
-					l += string(2*8, '0');
+					l += std::string(2*8, '0');
 				else
 					l += line.substr(i, 8);
 			}

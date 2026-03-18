@@ -18,9 +18,8 @@
 #include "anlogicBitParser.hpp"
 #include "display.hpp"
 
-using namespace std;
 
-AnlogicBitParser::AnlogicBitParser(const string &filename, bool reverseOrder,
+AnlogicBitParser::AnlogicBitParser(const std::string &filename, bool reverseOrder,
 	bool verbose):
 	ConfigBitstreamParser(filename, ConfigBitstreamParser::BIN_MODE, verbose),
 	_reverseOrder(reverseOrder)
@@ -37,8 +36,8 @@ int AnlogicBitParser::parseHeader()
 {
 	int ret = 0;
 
-	string buffer;
-	istringstream lineStream(_raw_data);
+	std::string buffer;
+	std::istringstream lineStream(_raw_data);
 
 	while (std::getline(lineStream, buffer, '\n')) {
 		ret += buffer.size() + 1;
@@ -53,13 +52,13 @@ int AnlogicBitParser::parseHeader()
 			return -1;
 		}
 
-		string content = buffer.substr(2); // drop '# '
+		std::string content = buffer.substr(2); // drop '# '
 		size_t pos = content.find(':');
-		if (pos == string::npos) {
+		if (pos == std::string::npos) {
 			_hdr["tool"] = content;
 		} else {
-			string entry = content.substr(0, pos);
-			string val = content.substr(pos+2);
+			std::string entry = content.substr(0, pos);
+			std::string val = content.substr(pos+2);
 			_hdr[entry] = val;
 		}
 	}

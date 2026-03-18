@@ -14,9 +14,8 @@
 #include "jedParser.hpp"
 #include "xilinxMapParser.hpp"
 
-using namespace std;
 
-XilinxMapParser::XilinxMapParser(const string &filename,
+XilinxMapParser::XilinxMapParser(const std::string &filename,
 		uint16_t num_row, uint16_t num_col,
 		JedParser *jed, const uint32_t usercode,
 		bool verbose): ConfigBitstreamParser(filename,
@@ -61,7 +60,7 @@ int XilinxMapParser::parse()
 			} else {
 				empty = false;  // current line is not fully empty
 				int len = end_pos - prev_pos;  // section len
-				string cnt = line.substr(prev_pos, len);  // line substring
+				std::string cnt = line.substr(prev_pos, len);  // line substring
 				if (cnt[0] <= '9' && cnt[0] >= '0') {  // numeric value (index)
 					map_val = std::stoi(cnt, nullptr, 10);
 				} else {  // information (done, spare, user, ...)

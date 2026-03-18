@@ -21,7 +21,6 @@
 
 #include "dfu.hpp"
 
-using namespace std;
 
 /* USB request write */
 static const uint8_t DFU_REQUEST_OUT = LIBUSB_ENDPOINT_OUT |
@@ -46,7 +45,7 @@ enum dfu_cmd {
  * - index as jtag chain (fix issue when more than one device connected)
  */
 
-DFU::DFU(const string &filename, bool bypass_bitstream,
+DFU::DFU(const std::string &filename, bool bypass_bitstream,
 		uint16_t vid, uint16_t pid, int16_t altsetting,
 		int verbose_lvl):_verbose(verbose_lvl > 0), _debug(verbose_lvl > 1),
 		_quiet(verbose_lvl < 0), dev_idx(0), _vid(0), _pid(0),
@@ -68,7 +67,7 @@ DFU::DFU(const string &filename, bool bypass_bitstream,
 			printSuccess("DONE");
 		} catch (std::exception &e) {
 			printError("FAIL");
-			throw runtime_error("Error: Fail to open file");
+			throw std::runtime_error("Error: Fail to open file");
 		}
 
 		printInfo("Parse file ", false);
@@ -78,7 +77,7 @@ DFU::DFU(const string &filename, bool bypass_bitstream,
 		} catch (std::exception &e) {
 			printError("FAIL");
 			delete _bit;
-			throw runtime_error("Error: Fail to parse file");
+			throw std::runtime_error("Error: Fail to parse file");
 		}
 
 		if (_verbose > 0)
@@ -301,7 +300,7 @@ int DFU::searchDFUDevices()
 	/* iteration */
 	ssize_t list_size = libusb_get_device_list(usb_ctx, &dev_list);
 	if (_verbose)
-		printInfo("found " + to_string(list_size) + " USB device");
+		printInfo("found " + std::to_string(list_size) + " USB device");
 
 	while ((usb_dev = dev_list[i++]) != NULL) {
 		struct libusb_device_descriptor desc;
@@ -352,7 +351,7 @@ int DFU::searchIfDFU(struct libusb_device_handle *handle,
 		struct libusb_config_descriptor *cfg;
 		int ret = libusb_get_config_descriptor(dev, i, &cfg);
 		if (ret != 0) {
-			printError("Fail to retrieve config_descriptor " + to_string(i));
+			printError("Fail to retrieve config_descriptor " + std::to_string(i));
 			return 1;
 		}
 		/* configuration interface iteration */
@@ -499,7 +498,7 @@ int DFU::set_state(char newState)
 				return -1;
 			if (status.bState != STATE_appDETACH ||
 					status.bStatus != STATUS_OK) {
-				cerr << dfu_dev_status_val[status.bStatus] << endl;
+				std::cerr << dfu_dev_status_val[status.bStatus] << std::endl;
 				return -1;
 			}
 			break;
@@ -571,7 +570,7 @@ int DFU::set_state(char newState)
 				return ret;
 			if (status.bState != newState ||
 					status.bStatus != STATUS_OK) {
-				cerr << dfu_dev_status_val[status.bStatus] << endl;
+				std::cerr << dfu_dev_status_val[status.bStatus] << std::endl;
 				return -1;
 			}
 			break;
@@ -635,7 +634,7 @@ int DFU::poll_state(uint8_t state) {
 	do {
 		ret = get_status(&status);
 		if (ret <= 0) {
-			printError("Error: poll state " + string(libusb_error_name(ret)));
+			printError("Error: poll state " + std::string(libusb_error_name(ret)));
 			break;
 		}
 		/* millisecond */
@@ -800,7 +799,7 @@ int DFU::download()
 	//ret = set_state(STATE_dfuMANIFEST_SYNC);
 	ret = send(true, DFU_DNLOAD, transaction, NULL, 0);
 	if (ret < 0) {
-		printError("Error: fail to change state " + to_string(ret));
+		printError("Error: fail to change state " + std::to_string(ret));
 		return -6;
 	}
 

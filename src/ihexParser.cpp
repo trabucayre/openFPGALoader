@@ -11,7 +11,6 @@
 #include "display.hpp"
 #include "ihexParser.hpp"
 
-using namespace std;
 
 /* line format
  * :LLAAAATTHH...HHCC
@@ -34,7 +33,7 @@ using namespace std;
 #define TYPE_BASE 7
 #define DATA_BASE 9
 
-IhexParser::IhexParser(const string &filename, bool reverseOrder, bool verbose):
+IhexParser::IhexParser(const std::string &filename, bool reverseOrder, bool verbose):
 		ConfigBitstreamParser(filename, ConfigBitstreamParser::ASCII_MODE,
 		verbose),
 		_base_addr(0), _reverseOrder(reverseOrder)
@@ -42,8 +41,8 @@ IhexParser::IhexParser(const string &filename, bool reverseOrder, bool verbose):
 
 int IhexParser::parse()
 {
-	string str;
-	istringstream lineStream(_raw_data);
+	std::string str;
+	std::istringstream lineStream(_raw_data);
 
 	uint16_t next_addr = 0;
 	bool is_first = true;

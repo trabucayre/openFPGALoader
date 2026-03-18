@@ -11,7 +11,6 @@
 #include "display.hpp"
 #include "mcsParser.hpp"
 
-using namespace std;
 
 /* line format
  * :LLAAAATTHH...HHCC
@@ -34,7 +33,7 @@ using namespace std;
 #define TYPE_BASE 7
 #define DATA_BASE 9
 
-McsParser::McsParser(const string &filename, bool reverseOrder, bool verbose):
+McsParser::McsParser(const std::string &filename, bool reverseOrder, bool verbose):
 		ConfigBitstreamParser(filename, ConfigBitstreamParser::ASCII_MODE,
 		verbose),
 		_base_addr(0), _reverseOrder(reverseOrder)
@@ -42,8 +41,8 @@ McsParser::McsParser(const string &filename, bool reverseOrder, bool verbose):
 
 int McsParser::parse()
 {
-	string str;
-	istringstream lineStream(_raw_data);
+	std::string str;
+	std::istringstream lineStream(_raw_data);
 
 	FlashDataSection *rec = nullptr;
 

@@ -29,9 +29,8 @@
  * - be less lattice compliant
  */
 
-using namespace std;
 
-JedParser::JedParser(const string &filename, bool verbose):
+JedParser::JedParser(const std::string &filename, bool verbose):
 	ConfigBitstreamParser(filename, ConfigBitstreamParser::BIN_MODE, verbose),
 	_fuse_count(0), _pin_count(0), _max_vect_test(0),
 	_featuresRow(0), _feabits(0), _has_feabits(false), _checksum(0),
@@ -46,9 +45,9 @@ JedParser::JedParser(const string &filename, bool verbose):
  * check if last char is '\r'
  * \return the line without [\r]\n
  */
-string JedParser::readline()
+std::string JedParser::readline()
 {
-	string buffer;
+	std::string buffer;
 	std::getline(_ss, buffer, '\n');
 	if (!buffer.empty()) {
 		/* if '\r' is present -> drop */
@@ -60,10 +59,10 @@ string JedParser::readline()
 
 /* fill a vector with consecutive lines until '*'
  */
-vector<string> JedParser::readJEDLine()
+std::vector<std::string> JedParser::readJEDLine()
 {
-	string buffer;
-	vector<string> lines;
+	std::string buffer;
+	std::vector<std::string> lines;
 	bool inLine = true;
 
 	do {
@@ -83,10 +82,10 @@ vector<string> JedParser::readJEDLine()
 /* convert one serie ASCII 1/0 to a vector of
  * unsigned char
  */
-void JedParser::buildDataArray(const string &content, struct jed_data &jed)
+void JedParser::buildDataArray(const std::string &content, struct jed_data &jed)
 {
 	size_t data_len = content.size();
-	string tmp_buff;
+	std::string tmp_buff;
 	fuselist += content;
 	for (size_t i = 0; i < content.size(); i+=8) {
 		uint8_t data = 0;
@@ -104,11 +103,11 @@ void JedParser::buildDataArray(const string &content, struct jed_data &jed)
  * unsigned char
  * string must be up to 8 bits
  */
-void JedParser::buildDataArray(const vector<string> &content,
+void JedParser::buildDataArray(const std::vector<std::string> &content,
 		struct jed_data &jed)
 {
 	size_t data_len = 0;
-	string tmp_buff;
+	std::string tmp_buff;
 	for (size_t i = 0; i < content.size(); i++) {
 		uint8_t data = 0;
 		data_len += content[i].size();
@@ -183,20 +182,20 @@ void JedParser::displayHeader()
  * 1: Exxxx\n : feature Row
  * 2: yyyy*\n : feabits
  */
-void JedParser::parseEField(const vector<string> &content)
+void JedParser::parseEField(const std::vector<std::string> &content)
 {
 	_featuresRow = 0;
-	string featuresRow = content[0].substr(1);
+	std::string featuresRow = content[0].substr(1);
 	for (size_t i = 0; i < featuresRow.size(); ++i)
 		_featuresRow |= (uint64_t(featuresRow[i] - '0') << i);
-	string feabits = content[1];
+	std::string feabits = content[1];
 	_feabits = 0;
 	for (size_t i = 0; i < feabits.size(); i++) {
 		_feabits |= ((feabits[i] - '0') << i);
 	}
 }
 
-void JedParser::parseLField(const vector<string> &content)
+void JedParser::parseLField(const std::vector<std::string> &content)
 {
 	int start_offset;
 	sscanf(content[0].substr(1).c_str(), "%d", &start_offset);
@@ -216,8 +215,8 @@ void JedParser::parseLField(const vector<string> &content)
 	} else {
 		// search space
 		std::istringstream iss(content[0]);
-		vector<string> myList((std::istream_iterator<string>(iss)),
-		std::istream_iterator<string>());
+		std::vector<std::string> myList((std::istream_iterator<std::string>(iss)),
+		std::istream_iterator<std::string>());
 
 		myList.erase(myList.begin());
 
@@ -228,11 +227,11 @@ void JedParser::parseLField(const vector<string> &content)
 
 int JedParser::parse()
 {
-	string previousNote;
+	std::string previousNote;
 
 	_ss.str(_raw_data);
 
-	string content;
+	std::string content;
 
 	/* JED file may have some ASCII line before STX (0x02)
 	 * read until STX or EOF
@@ -261,7 +260,7 @@ int JedParser::parse()
 	/* read full content
 	 * JED file end fix ETX (0x03) + file checksum + \n
 	 */
-	std::vector<string>lines;
+	std::vector<std::string>lines;
 	int first_pos;
 	char instr;
 	do {
@@ -297,7 +296,7 @@ int JedParser::parse()
 					_max_vect_test = count;
 					break;
 				default:
-					cerr << "Error for 'Q' unknown qualifier " << lines[0] << endl;
+					std::cerr << "Error for 'Q' unknown qualifier " << lines[0] << std::endl;
 					return EXIT_FAILURE;
 			}
 			break;
@@ -316,7 +315,7 @@ int JedParser::parse()
 			break;
 		case 0x03:
 			if (_verbose)
-				cout << "end" << endl;
+				std::cout << "end" << std::endl;
 			break;
 		case 'E':
 			parseEField(lines);
@@ -344,7 +343,7 @@ int JedParser::parse()
 			break;
 		default:
 			printf("inconnu\n");
-			cout << lines[0]<< endl;
+			std::cout << lines[0]<< std::endl;
 			return EXIT_FAILURE;
 		}
 	} while (instr != 0x03);

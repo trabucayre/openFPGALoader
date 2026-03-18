@@ -25,7 +25,6 @@
 
 #include "display.hpp"
 
-using namespace std;
 
 XVC_client::XVC_client(const std::string &ip_addr, int port,
 		uint32_t clkHz, int8_t verbose):
@@ -41,7 +40,7 @@ XVC_client::XVC_client(const std::string &ip_addr, int port,
 		throw std::runtime_error("can't read info");
 
 	std::regex r("[_:]");
-	string rep((const char *)buffer);
+	std::string rep((const char *)buffer);
 
 	std::sregex_token_iterator start{ rep.begin(), rep.end(), r, -1 }, end;
 	std::vector<std::string> toto(start, end);
@@ -223,7 +222,7 @@ int XVC_client::setClkFreq(uint32_t clkHz)
 	return _clkHZ;
 }
 
-bool XVC_client::open_connection(const string &ip_addr)
+bool XVC_client::open_connection(const std::string &ip_addr)
 {
 	struct sockaddr_in addr;
 	addr.sin_family = AF_INET;
@@ -262,12 +261,12 @@ int sendall(int sock, const void* raw, size_t cnt, int flags)
 	return cnt; // success
 }
 
-ssize_t XVC_client::xfer_pkt(const string &instr,
+ssize_t XVC_client::xfer_pkt(const std::string &instr,
 		const uint8_t *tx, uint32_t tx_size,
 		uint8_t *rx, uint32_t rx_size)
 {
 	ssize_t len = tx_size;
-	vector<uint8_t> buffer(instr.size() + ((tx) ? tx_size : 0));
+	std::vector<uint8_t> buffer(instr.size() + ((tx) ? tx_size : 0));
 	memcpy(buffer.data(), instr.c_str(), instr.size());
 	if (tx)
 		memcpy(buffer.data() + instr.size(), tx, tx_size);

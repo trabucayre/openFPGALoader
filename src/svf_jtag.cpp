@@ -18,12 +18,11 @@
 
 #include "jtag.hpp"
 
-using namespace std;
 
-void SVF_jtag::split_str(string const &str, vector<string> &vparse)
+void SVF_jtag::split_str(std::string const &str, std::vector<std::string> &vparse)
 {
-	string token;
-	istringstream tokenStream(str);
+	std::string token;
+	std::istringstream tokenStream(str);
 	while (getline(tokenStream, token, ' '))
 		vparse.push_back(token);
 }
@@ -37,7 +36,7 @@ void SVF_jtag::clear_XYR(svf_XYR &t)
 	t.smask.clear();
 }
 
-static unsigned char *parse_hex(string const &in, size_t byte_length,
+static unsigned char *parse_hex(std::string const &in, size_t byte_length,
 		bool default_value)
 {
 	unsigned char *txbuf = new unsigned char[byte_length];
@@ -67,13 +66,13 @@ static unsigned char *parse_hex(string const &in, size_t byte_length,
 * tdo si absent on s'en fout
 * TODO: ameliorer l'analyse des chaines de caracteres
 */
-void SVF_jtag::parse_XYR(vector<string> const &vstr, svf_XYR &t)
+void SVF_jtag::parse_XYR(std::vector<std::string> const &vstr, svf_XYR &t)
 {
 	if (_verbose)
-		cout << endl;
+		std::cout << std::endl;
 	int mode = 0;
-	string s;
-	string full_line;
+	std::string s;
+	std::string full_line;
 	full_line.reserve(1276);
 	int write_data = -1;
 
@@ -168,14 +167,14 @@ void SVF_jtag::parse_XYR(vector<string> const &vstr, svf_XYR &t)
 			unsigned char *maskbuf = parse_hex(t.mask, byte_len, t.mask.empty() ? 1 : 0);
 			for (size_t i = 0; i < byte_len; i++) {
 				if ((read_buffer[i] ^ tdobuf[i]) & maskbuf[i]) {
-					cerr << "TDO value ";
+					std::cerr << "TDO value ";
 					for (int j = byte_len - 1; j >= 0; j--) {
-						cerr << uppercase << hex << int(read_buffer[j]);
+						std::cerr << std::uppercase << std::hex << int(read_buffer[j]);
 					}
-					cerr << " isn't the one expected: " << uppercase << t.tdo << endl;
+					std::cerr << " isn't the one expected: " << std::uppercase << t.tdo << std::endl;
 					delete[] tdobuf;
 					delete[] maskbuf;
-					throw exception();
+					throw std::exception();
 				}
 			}
 			delete[] tdobuf;
@@ -187,7 +186,7 @@ void SVF_jtag::parse_XYR(vector<string> const &vstr, svf_XYR &t)
 }
 
 /* Implementation partielle de la spec */
-void SVF_jtag::parse_runtest(vector<string> const &vstr)
+void SVF_jtag::parse_runtest(std::vector<std::string> const &vstr)
 {
 	unsigned int pos = 1;
 	int nb_iter = 0;
@@ -238,105 +237,105 @@ void SVF_jtag::parse_runtest(vector<string> const &vstr)
 	_jtag->set_state(_end_state);
 	}
 
-void SVF_jtag::handle_instruction(vector<string> const &vstr)
+void SVF_jtag::handle_instruction(std::vector<std::string> const &vstr)
 {
 	if (!vstr[0].compare("FREQUENCY")) {
 		_freq_hz = atof(vstr[1].c_str());
 		if (_verbose) {
-			cout << "frequency value " << vstr[1] << " unit " << vstr[2];
-			cout << _freq_hz << endl;
+			std::cout << "frequency value " << vstr[1] << " unit " << vstr[2];
+			std::cout << _freq_hz << std::endl;
 		}
 		_jtag->setClkFreq(_freq_hz);
 	} else if (!vstr[0].compare("TRST")) {
-		if (_verbose) cout << "trst value : " << vstr[1] << endl;
+		if (_verbose) std::cout << "trst value : " << vstr[1] << std::endl;
 	} else if (!vstr[0].compare("ENDDR")) {
-		if (_verbose) cout << "enddr value : " << vstr[1] << endl;
+		if (_verbose) std::cout << "enddr value : " << vstr[1] << std::endl;
 		_enddr = (Jtag::tapState_t)fsm_state[vstr[1]];
 	} else if (!vstr[0].compare("ENDIR")) {
-		if (_verbose) cout << "endir value : " << vstr[1] << endl;
+		if (_verbose) std::cout << "endir value : " << vstr[1] << std::endl;
 		_endir = (Jtag::tapState_t)fsm_state[vstr[1]];
 	} else if (!vstr[0].compare("STATE")) {
-		if (_verbose) cout << "state value : " << vstr[1] << endl;
+		if (_verbose) std::cout << "state value : " << vstr[1] << std::endl;
 		_jtag->set_state((Jtag::tapState_t)fsm_state[vstr[1]]);
 	} else if (!vstr[0].compare("RUNTEST")) {
 		parse_runtest(vstr);
 	} else if (!vstr[0].compare("HIR")) {
 		parse_XYR(vstr, hir);
 		if (hir.len > 0) {
-			cerr << "HIR length supported is only 0 " << endl;
+			std::cerr << "HIR length supported is only 0 " << std::endl;
 		}
 		if (_verbose) {
-			cout << "HIR" << endl;
-			cout << "\tlen   : " << hir.len << endl;
-			cout << "\ttdo   : " << hir.tdo.size()*4 << endl;
-			cout << "\ttdi   : " << hir.tdi.size()*4 << endl;
-			cout << "\tmask  : " << hir.mask.size()*4 << endl;
-			cout << "\tsmask : " << hir.smask.size()*4 << endl;
+			std::cout << "HIR" << std::endl;
+			std::cout << "\tlen   : " << hir.len << std::endl;
+			std::cout << "\ttdo   : " << hir.tdo.size()*4 << std::endl;
+			std::cout << "\ttdi   : " << hir.tdi.size()*4 << std::endl;
+			std::cout << "\tmask  : " << hir.mask.size()*4 << std::endl;
+			std::cout << "\tsmask : " << hir.smask.size()*4 << std::endl;
 		}
 	} else if (!vstr[0].compare("HDR")) {
 		parse_XYR(vstr, hdr);
 		if (hdr.len > 0) {
-			cerr << "HDR length supported is only 0" << endl;
+			std::cerr << "HDR length supported is only 0" << std::endl;
 		}
 		if (_verbose) {
-			cout << "HDR" << endl;
-			cout << "\tlen   : " << hdr.len << endl;
-			cout << "\ttdo   : " << hdr.tdo.size()*4 << endl;
-			cout << "\ttdi   : " << hdr.tdi.size()*4 << endl;
-			cout << "\tmask  : " << hdr.mask.size()*4 << endl;
-			cout << "\tsmask : " << hdr.smask.size()*4 << endl;
+			std::cout << "HDR" << std::endl;
+			std::cout << "\tlen   : " << hdr.len << std::endl;
+			std::cout << "\ttdo   : " << hdr.tdo.size()*4 << std::endl;
+			std::cout << "\ttdi   : " << hdr.tdi.size()*4 << std::endl;
+			std::cout << "\tmask  : " << hdr.mask.size()*4 << std::endl;
+			std::cout << "\tsmask : " << hdr.smask.size()*4 << std::endl;
 		}
 	} else if (!vstr[0].compare("SIR")) {
 		parse_XYR(vstr, sir);
 		if (_verbose) {
 			for (auto &&t : vstr)
-				cout << t << " ";
-			cout << endl;
-			cout << "\tlen   : " << sir.len << endl;
-			cout << "\ttdo   : " << sir.tdo.size()*4 << endl;
-			cout << "\ttdi   : " << sir.tdi.size()*4 << endl;
-			cout << "\tmask  : " << sir.mask.size()*4 << endl;
-			cout << "\tsmask : " << sir.smask.size()*4 << endl;
+				std::cout << t << " ";
+			std::cout << std::endl;
+			std::cout << "\tlen   : " << sir.len << std::endl;
+			std::cout << "\ttdo   : " << sir.tdo.size()*4 << std::endl;
+			std::cout << "\ttdi   : " << sir.tdi.size()*4 << std::endl;
+			std::cout << "\tmask  : " << sir.mask.size()*4 << std::endl;
+			std::cout << "\tsmask : " << sir.smask.size()*4 << std::endl;
 		}
 	} else if (!vstr[0].compare("SDR")) {
 		parse_XYR(vstr, sdr);
 		if (_verbose) {
-			cout << "SDR" << endl;
-			cout << "\tlen   : " << sdr.len << endl;
-			cout << "\ttdo   : " << sdr.tdo.size()*4 << endl;
-			cout << "\ttdi   : " << sdr.tdi.size()*4 << endl;
-			cout << "\tmask  : " << sdr.mask.size()*4 << endl;
-			cout << "\tsmask : " << sdr.smask.size()*4 << endl;
+			std::cout << "SDR" << std::endl;
+			std::cout << "\tlen   : " << sdr.len << std::endl;
+			std::cout << "\ttdo   : " << sdr.tdo.size()*4 << std::endl;
+			std::cout << "\ttdi   : " << sdr.tdi.size()*4 << std::endl;
+			std::cout << "\tmask  : " << sdr.mask.size()*4 << std::endl;
+			std::cout << "\tsmask : " << sdr.smask.size()*4 << std::endl;
 		}
 	} else if (!vstr[0].compare("TDR")) {
 		parse_XYR(vstr, tdr);
 		if (tdr.len > 0) {
-			cerr << "TDR length supported is only 0" << endl;
+			std::cerr << "TDR length supported is only 0" << std::endl;
 		}
 		if (_verbose) {
-			cout << "TDR" << endl;
-			cout << "\tlen   : " << tdr.len << endl;
-			cout << "\ttdo   : " << tdr.tdo.size() * 4 << endl;
-			cout << "\ttdi   : " << tdr.tdi.size() * 4 << endl;
-			cout << "\tmask  : " << tdr.mask.size() * 4 << endl;
-			cout << "\tsmask : " << tdr.smask.size() * 4 << endl;
+			std::cout << "TDR" << std::endl;
+			std::cout << "\tlen   : " << tdr.len << std::endl;
+			std::cout << "\ttdo   : " << tdr.tdo.size() * 4 << std::endl;
+			std::cout << "\ttdi   : " << tdr.tdi.size() * 4 << std::endl;
+			std::cout << "\tmask  : " << tdr.mask.size() * 4 << std::endl;
+			std::cout << "\tsmask : " << tdr.smask.size() * 4 << std::endl;
 		}
 	} else if (!vstr[0].compare("TIR")) {
 		parse_XYR(vstr, tir);
 		if (tir.len > 0) {
-			cerr << "TIR length supported is only 0" << endl;
+			std::cerr << "TIR length supported is only 0" << std::endl;
 		}
 		if (_verbose) {
-			cout << "TIR" << endl;
-			cout << "\tlen   : " << tir.len << endl;
-			cout << "\ttdo   : " << tir.tdo.size() * 4 << endl;
-			cout << "\ttdi   : " << tir.tdi.size() * 4 << endl;
-			cout << "\tmask  : " << tir.mask.size() * 4 << endl;
-			cout << "\tsmask : " << tir.smask.size() * 4 << endl;
+			std::cout << "TIR" << std::endl;
+			std::cout << "\tlen   : " << tir.len << std::endl;
+			std::cout << "\ttdo   : " << tir.tdo.size() * 4 << std::endl;
+			std::cout << "\ttdi   : " << tir.tdi.size() * 4 << std::endl;
+			std::cout << "\tmask  : " << tir.mask.size() * 4 << std::endl;
+			std::cout << "\tsmask : " << tir.smask.size() * 4 << std::endl;
 		}
 	} else {
-		cout << "error: unhandled instruction " << vstr[0] << endl;
-		throw exception();
+		std::cout << "error: unhandled instruction " << vstr[0] << std::endl;
+		throw std::exception();
 	}
 }
 
@@ -358,16 +357,16 @@ bool is_space(char x) {
  * concat continuous lines
  * and pass instruction to handle_instruction
  */
-void SVF_jtag::parse(string filename)
+void SVF_jtag::parse(std::string filename)
 {
-	string str;
-	vector<string> vstr;
+	std::string str;
+	std::vector<std::string> vstr;
 	bool is_complete;
-	ifstream fs;
+	std::ifstream fs;
 
 	fs.open(filename);
 	if (!fs.is_open()) {
-		cerr << "Error opening svf file " << filename << endl;
+		std::cerr << "Error opening svf file " << filename << std::endl;
 		return;
 	}
 	unsigned int lineno = 0;
@@ -391,8 +390,8 @@ void SVF_jtag::parse(string filename)
 					if (vstr[0].compare("HDR") && vstr[0].compare("HIR")
 						&& vstr[0].compare("SDR") && vstr[0].compare("SIR")) {
 						for (auto &&word : vstr)
-							cout << word << " ";
-						cout << endl;
+							std::cout << word << " ";
+						std::cout << std::endl;
 					}
 				}
 				handle_instruction(vstr);
@@ -400,11 +399,11 @@ void SVF_jtag::parse(string filename)
 			}
 		}
 	}
-	catch (exception &e)
+	catch (std::exception &e)
 	{
-		cerr << "Cannot proceed because of error(s) at line " << lineno << endl;
+		std::cerr << "Cannot proceed because of error(s) at line " << lineno << std::endl;
 		throw;
 	}
 
-	cout << "end of SVF file" << endl;
+	std::cout << "end of SVF file" << std::endl;
 }
