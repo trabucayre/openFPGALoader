@@ -931,10 +931,8 @@ int parse_opt(int argc, char **argv, struct arguments *args,
 			("ftdi-channel",
 				"FTDI chip channel number (channels 0-3 map to A-D)",
 				cxxopts::value<int>(args->ftdi_channel))
-#if defined(USE_DEVICE_ARG)
 			("d,device",  "device to use (/dev/ttyUSBx)",
 				cxxopts::value<std::string>(args->device))
-#endif
 			("detect",      "detect FPGA, add -f to show connected flash",
 				cxxopts::value<bool>(args->detect))
 			("dfu",   "DFU mode", cxxopts::value<bool>(args->dfu))
