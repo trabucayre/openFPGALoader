@@ -12,7 +12,6 @@
 
 #include "common.hpp"
 #include "device.hpp"
-#include "epcq.hpp"
 #include "jtag.hpp"
 #include "progressBar.hpp"
 #include "rawParser.hpp"
