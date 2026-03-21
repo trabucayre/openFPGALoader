@@ -792,7 +792,7 @@ int spi_comm(struct arguments args, const cable_t &cable,
 			spi->gpio_clear(board->reset_pin, true);
 		}
 
-		SPIFlash flash((SPIInterface *)spi, args.unprotect_flash, args.verbose);
+		SPIFlash flash((FlashInterface *)spi, args.unprotect_flash, args.verbose);
 		flash.display_status_reg();
 
 		if (args.prg_type != Device::RD_FLASH &&

@@ -16,9 +16,9 @@
 #include "device.hpp"
 #include "jedParser.hpp"
 #include "jtag.hpp"
-#include "spiInterface.hpp"
+#include "flashInterface.hpp"
 
-class Xilinx: public Device, SPIInterface {
+class Xilinx: public Device, FlashInterface {
 	public:
 		Xilinx(Jtag *jtag, const std::string &filename,
 				const std::string &secondary_filename,

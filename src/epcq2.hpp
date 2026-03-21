@@ -5,12 +5,12 @@
 
 #include <iostream>
 #include <vector>
-#include "spiInterface.hpp"
+#include "flashInterface.hpp"
 #include "spiFlash.hpp"
 
 class EPCQ: public SPIFlash {
  public:
- 	EPCQ(SPIInterface *spi, int8_t verbose);
+ 	EPCQ(FlashInterface *spi, int8_t verbose);
 	~EPCQ();
 
 	void read_id() override;

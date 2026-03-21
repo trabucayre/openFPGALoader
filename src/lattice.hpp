@@ -17,9 +17,9 @@
 #include "jedParser.hpp"
 #include "feaparser.hpp"
 #include "latticeBitParser.hpp"
-#include "spiInterface.hpp"
+#include "flashInterface.hpp"
 
-class Lattice: public Device, SPIInterface {
+class Lattice: public Device, FlashInterface {
 	public:
 		Lattice(Jtag *jtag, std::string filename, const std::string &file_type,
 			Device::prog_type_t prg_type, std::string flash_sector, bool verify,
@@ -34,32 +34,32 @@ class Lattice: public Device, SPIInterface {
 		bool Verify(std::vector<std::string> data, bool unlock = false,
 				uint32_t flash_area = 0);
 		bool dumpFlash(uint32_t base_addr, uint32_t len) override {
-			return SPIInterface::dump(base_addr, len);
+			return FlashInterface::dump(base_addr, len);
 		}
 
 		/*!
 		 * \brief display SPI flash ID and status register
 		 */
 		bool detect_flash() override {
-			return SPIInterface::detect_flash();
+			return FlashInterface::detect_flash();
 		}
 		/*!
 		 * \brief protect SPI flash blocks
 		 */
 		bool protect_flash(uint32_t len) override {
-			return SPIInterface::protect_flash(len);
+			return FlashInterface::protect_flash(len);
 		}
 		/*!
 		 * \brief protect SPI flash blocks
 		 */
 		bool unprotect_flash() override {
-			return SPIInterface::unprotect_flash();
+			return FlashInterface::unprotect_flash();
 		}
 		/*!
 		 * \brief bulk erase SPI flash
 		 */
 		bool bulk_erase_flash() override {
-			return SPIInterface::bulk_erase_flash();
+			return FlashInterface::bulk_erase_flash();
 		}
 
 		/* spi interface */

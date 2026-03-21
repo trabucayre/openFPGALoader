@@ -11,10 +11,10 @@
 #include "bitparser.hpp"
 #include "device.hpp"
 #include "jtag.hpp"
-#include "spiInterface.hpp"
+#include "flashInterface.hpp"
 #include "svf_jtag.hpp"
 
-class Anlogic: public Device, SPIInterface {
+class Anlogic: public Device, FlashInterface {
 	public:
 		Anlogic(Jtag *jtag, const std::string &filename,
 			const std::string &file_type,
@@ -30,21 +30,21 @@ class Anlogic: public Device, SPIInterface {
 		 * \brief protect SPI flash blocks
 		 */
 		bool protect_flash(uint32_t len) override {
-			return SPIInterface::protect_flash(len);
+			return FlashInterface::protect_flash(len);
 		}
 
 		/*!
 		 * \brief protect SPI flash blocks
 		 */
 		bool unprotect_flash() override {
-			return SPIInterface::unprotect_flash();
+			return FlashInterface::unprotect_flash();
 		}
 
 		/*!
 		 * \brief bulk erase SPI flash
 		 */
 		bool bulk_erase_flash() override {
-			return SPIInterface::bulk_erase_flash();
+			return FlashInterface::bulk_erase_flash();
 		}
 
 		/*!
@@ -54,7 +54,7 @@ class Anlogic: public Device, SPIInterface {
 		 * \return false if something wrong
 		 */
 		virtual bool dumpFlash(uint32_t base_addr, uint32_t len) override {
-			return SPIInterface::dump(base_addr, len);
+			return FlashInterface::dump(base_addr, len);
 		}
 
 		int spi_put(uint8_t cmd, const uint8_t *tx, uint8_t *rx,

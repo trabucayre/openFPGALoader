@@ -11,10 +11,10 @@
 #include "device.hpp"
 #include "jtag.hpp"
 #include "rawParser.hpp"
-#include "spiInterface.hpp"
+#include "flashInterface.hpp"
 #include "svf_jtag.hpp"
 
-class Altera: public Device, SPIInterface {
+class Altera: public Device, FlashInterface {
 	public:
 		Altera(Jtag *jtag, const std::string &filename,
 				const std::string &file_type,
@@ -39,7 +39,7 @@ class Altera: public Device, SPIInterface {
 		bool dumpFlash(uint32_t base_addr, uint32_t len) override {
 			if (_fpga_family == MAX10_FAMILY)
 				return max10_dump();
-			return SPIInterface::dump(base_addr, len);
+			return FlashInterface::dump(base_addr, len);
 		}
 
 		uint32_t idCode() override;
@@ -53,25 +53,25 @@ class Altera: public Device, SPIInterface {
 		 * \brief display SPI flash ID and status register
 		 */
 		bool detect_flash() override {
-			return SPIInterface::detect_flash();
+			return FlashInterface::detect_flash();
 		}
 		/*!
 		 * \brief protect SPI flash blocks
 		 */
 		bool protect_flash(uint32_t len) override {
-			return SPIInterface::protect_flash(len);
+			return FlashInterface::protect_flash(len);
 		}
 		/*!
 		 * \brief unprotect SPI flash blocks
 		 */
 		bool unprotect_flash() override {
-			return SPIInterface::unprotect_flash();
+			return FlashInterface::unprotect_flash();
 		}
 		/*!
 		 * \brief bulk erase SPI flash
 		 */
 		bool bulk_erase_flash() override {
-			return SPIInterface::bulk_erase_flash();
+			return FlashInterface::bulk_erase_flash();
 		}
 
 		int spi_put(uint8_t cmd, const uint8_t *tx, uint8_t *rx,

@@ -34,7 +34,7 @@ Altera::Altera(Jtag *jtag, const std::string &filename,
 	const std::string &flash_sectors,
 	bool skip_load_bridge, bool skip_reset):
 	Device(jtag, filename, file_type, verify, verbose),
-	SPIInterface(filename, verbose, 256, verify, skip_load_bridge,
+	FlashInterface(filename, verbose, 256, verify, skip_load_bridge,
 				 skip_reset),
 	_device_package(device_package), _spiOverJtagPath(spiOverJtagPath),
 	_vir_addr(0x1000), _vir_length(14), _clk_period(1),
@@ -274,7 +274,7 @@ void Altera::program(unsigned int offset, bool unprotect_flash)
 			throw std::runtime_error(e.what());
 		}
 
-		if (!SPIInterface::write(offset, data, length, unprotect_flash))
+		if (!FlashInterface::write(offset, data, length, unprotect_flash))
 			throw std::runtime_error("Fail to write data");
 	}
 }

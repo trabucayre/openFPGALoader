@@ -9,7 +9,7 @@
 #include <map>
 #include <string>
 
-#include "spiInterface.hpp"
+#include "flashInterface.hpp"
 #include "spiFlashdb.hpp"
 
 /* Flash memory section record
@@ -40,7 +40,7 @@ class FlashDataSection {
 
 class SPIFlash {
 	public:
-		SPIFlash(SPIInterface *spi, bool unprotect, int8_t verbose);
+		SPIFlash(FlashInterface *spi, bool unprotect, int8_t verbose);
 		/* power */
 		virtual void power_up();
 		virtual void power_down();
@@ -173,7 +173,7 @@ class SPIFlash {
 		 */
 		uint8_t len_to_bp(uint32_t len);
 
-		SPIInterface *_spi;
+		FlashInterface *_spi;
 		int8_t _verbose;
 		uint32_t _jedec_id; /**< CHIP ID */
 		flash_t *_flash_model; /**< detect flash model */

@@ -16,7 +16,7 @@
 #include "display.hpp"
 #include "spiFlash.hpp"
 #include "spiFlashdb.hpp"
-#include "spiInterface.hpp"
+#include "flashInterface.hpp"
 
 /* read/write status register : 0B addr + 0 dummy */
 #define FLASH_WRSR     0x01
@@ -84,7 +84,7 @@
 /* Global Block Protection unlock */
 #define FLASH_ULBPR 0x98
 
-SPIFlash::SPIFlash(SPIInterface *spi, bool unprotect, int8_t verbose):
+SPIFlash::SPIFlash(FlashInterface *spi, bool unprotect, int8_t verbose):
 	_spi(spi), _verbose(verbose), _jedec_id(0),
 	_flash_model(NULL), _unprotect(unprotect), _must_relock(false),
 	_status(0)

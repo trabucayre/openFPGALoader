@@ -69,7 +69,7 @@ void EPCQ::reset()
 	_spi->spi_put(0x99, NULL, NULL, 0);
 }
 
-EPCQ::EPCQ(SPIInterface *spi, bool unprotect_flash, int8_t verbose):
+EPCQ::EPCQ(FlashInterface *spi, bool unprotect_flash, int8_t verbose):
 	SPIFlash(spi, unprotect_flash, verbose), _device_id(0), _silicon_id(0)
 {}
 

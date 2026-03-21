@@ -243,7 +243,7 @@ int FtdiSpi::ft2232_spi_wr_and_rd(//struct ftdi_spi *spi,
 	return 0;
 }
 
-/* method spiInterface::spi_put */
+/* method flashInterface::spi_put */
 int FtdiSpi::spi_put(uint8_t cmd, const uint8_t *tx, uint8_t *rx, uint32_t len)
 {
 	uint32_t xfer_len = len + 1;
@@ -266,13 +266,13 @@ int FtdiSpi::spi_put(uint8_t cmd, const uint8_t *tx, uint8_t *rx, uint32_t len)
 	return 0;
 }
 
-/* method spiInterface::spi_put */
+/* method flashInterface::spi_put */
 int FtdiSpi::spi_put(const uint8_t *tx, uint8_t *rx, uint32_t len)
 {
 	return ft2232_spi_wr_and_rd(len, tx, rx);
 }
 
-/* method spiInterface::spi_wait
+/* method flashInterface::spi_wait
  */
 int FtdiSpi::spi_wait(uint8_t cmd, uint8_t mask, uint8_t cond,
 			uint32_t timeout, bool verbose)

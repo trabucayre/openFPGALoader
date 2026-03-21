@@ -136,7 +136,7 @@ void Ice40::program(unsigned int offset, bool unprotect_flash)
 
 	_spi->gpio_clear(_rst_pin);
 
-	SPIFlash flash(reinterpret_cast<SPIInterface *>(_spi), unprotect_flash,
+	SPIFlash flash(reinterpret_cast<FlashInterface *>(_spi), unprotect_flash,
 			_verbose_level);
 
 	flash.erase_and_prog(offset, data, length);
@@ -154,7 +154,7 @@ bool Ice40::detect_flash()
 	prepare_flash_access();
 	printInfo("Read Flash ", false);
 	try {
-		SPIFlash flash(reinterpret_cast<SPIInterface *>(_spi), false, _verbose_level);
+		SPIFlash flash(reinterpret_cast<FlashInterface *>(_spi), false, _verbose_level);
 		flash.read_id();
 		flash.display_status_reg();
 	} catch (std::exception &e) {
@@ -173,7 +173,7 @@ bool Ice40::dumpFlash(uint32_t base_addr, uint32_t len)
 	prepare_flash_access();
 	printInfo("Read Flash ", false);
 	try {
-		SPIFlash flash(reinterpret_cast<SPIInterface *>(_spi), false, _verbose_level);
+		SPIFlash flash(reinterpret_cast<FlashInterface *>(_spi), false, _verbose_level);
 		flash.reset();
 		flash.power_up();
 		flash.dump(_filename, base_addr, len);
@@ -193,7 +193,7 @@ bool Ice40::protect_flash(uint32_t len)
 	prepare_flash_access();
 	/* acess */
 	try {
-		SPIFlash flash(reinterpret_cast<SPIInterface *>(_spi), false, _verbose_level);
+		SPIFlash flash(reinterpret_cast<FlashInterface *>(_spi), false, _verbose_level);
 		/* configure flash protection */
 		if (flash.enable_protection(len) == -1)
 			return false;
@@ -213,7 +213,7 @@ bool Ice40::unprotect_flash()
 	prepare_flash_access();
 	/* acess */
 	try {
-		SPIFlash flash(reinterpret_cast<SPIInterface *>(_spi), false, _verbose_level);
+		SPIFlash flash(reinterpret_cast<FlashInterface *>(_spi), false, _verbose_level);
 		/* configure flash protection */
 		if (flash.disable_protection() == -1)
 			return false;
@@ -233,7 +233,7 @@ bool Ice40::bulk_erase_flash()
 	prepare_flash_access();
 	/* acess */
 	try {
-		SPIFlash flash(reinterpret_cast<SPIInterface *>(_spi), false, _verbose_level);
+		SPIFlash flash(reinterpret_cast<FlashInterface *>(_spi), false, _verbose_level);
 		/* bulk erase flash */
 		if (flash.bulk_erase() == -1)
 			return false;

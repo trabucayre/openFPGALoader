@@ -337,7 +337,7 @@ endif()
 list(APPEND OPENFPGALOADER_SOURCE
 	src/bpiFlash.cpp
 	src/spiFlash.cpp
-	src/spiInterface.cpp
+	src/flashInterface.cpp
 	src/epcq.cpp
 	src/jtag.cpp
 )
@@ -349,7 +349,7 @@ list(APPEND OPENFPGALOADER_HEADERS
 	src/spiFlash.hpp
 	src/spiFlashdb.hpp
 	src/epcq.hpp
-	src/spiInterface.hpp
+	src/flashInterface.hpp
 )
 
 # FTDI Based cables

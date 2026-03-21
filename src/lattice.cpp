@@ -164,7 +164,7 @@
 Lattice::Lattice(Jtag *jtag, const std::string filename, const std::string &file_type,
 	Device::prog_type_t prg_type, std::string flash_sector, bool verify, int8_t verbose, bool skip_load_bridge, bool skip_reset):
 		Device(jtag, filename, file_type, verify, verbose),
-		SPIInterface(filename, verbose, 0, verify, skip_load_bridge, skip_reset),
+		FlashInterface(filename, verbose, 0, verify, skip_load_bridge, skip_reset),
 		_fpga_family(UNKNOWN_FAMILY), _flash_sector(LATTICE_FLASH_UNDEFINED)
 {
 	if (prg_type == Device::RD_FLASH) {
@@ -838,7 +838,7 @@ bool Lattice::post_flash_access()
 			_skip_reset = true;  // avoid infinite loop
 			/* read flash 0 -> 255 */
 			uint8_t buffer[256];
-			ret = SPIInterface::read(buffer, 0, 256);
+			ret = FlashInterface::read(buffer, 0, 256);
 			loadConfiguration(); // reset again
 
 			/* read ok? check if everything == 0xff */
@@ -987,9 +987,9 @@ bool Lattice::program_extFlash(unsigned int offset, bool unprotect_flash)
 
 	if (_file_extension == "mcs") {
 		McsParser *parser = (McsParser *)_bit;
-		ret = SPIInterface::write(parser->getRecords(), unprotect_flash, true);
+		ret = FlashInterface::write(parser->getRecords(), unprotect_flash, true);
 	} else {
-		ret = SPIInterface::write(offset, _bit->getData(), _bit->getLength() / 8,
+		ret = FlashInterface::write(offset, _bit->getData(), _bit->getLength() / 8,
 			unprotect_flash);
 	}
 

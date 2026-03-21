@@ -29,7 +29,7 @@ Anlogic::Anlogic(Jtag *jtag, const std::string &filename,
 	const std::string &file_type,
 	Device::prog_type_t prg_type, bool verify, int8_t verbose):
 	Device(jtag, filename, file_type, verify, verbose),
-	SPIInterface(filename, verbose, 0, verify), _target_freq(0)
+	FlashInterface(filename, verbose, 0, verify), _target_freq(0)
 {
 	if (prg_type == Device::RD_FLASH) {
 		_mode = Device::READ_MODE;
@@ -81,7 +81,7 @@ void Anlogic::program(unsigned int offset, bool unprotect_flash)
 	int len = bit.getLength() / 8;
 
 	if (_mode == Device::SPI_MODE) {
-		SPIInterface::write(offset, data, len, unprotect_flash);
+		FlashInterface::write(offset, data, len, unprotect_flash);
 		return;
 	}
 

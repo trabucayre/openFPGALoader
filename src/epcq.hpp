@@ -10,12 +10,12 @@
 #include <iostream>
 #include <vector>
 
-#include "spiInterface.hpp"
+#include "flashInterface.hpp"
 #include "spiFlash.hpp"
 
 class EPCQ: public SPIFlash {
  public:
-	EPCQ(SPIInterface *spi, bool unprotect_flash, int8_t verbose);
+	EPCQ(FlashInterface *spi, bool unprotect_flash, int8_t verbose);
 	~EPCQ();
 
 	void read_id() override;

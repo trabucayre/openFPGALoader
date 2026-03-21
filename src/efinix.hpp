@@ -12,9 +12,9 @@
 #include "ftdiJtagMPSSE.hpp"
 #include "ftdispi.hpp"
 #include "jtag.hpp"
-#include "spiInterface.hpp"
+#include "flashInterface.hpp"
 
-class Efinix: public Device, SPIInterface {
+class Efinix: public Device, FlashInterface {
 	public:
 		Efinix(FtdiSpi *spi, const std::string &filename,
 			const std::string &file_type,

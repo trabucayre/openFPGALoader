@@ -78,7 +78,7 @@ Gowin::Gowin(Jtag *jtag, const std::string filename, const std::string &file_typ
 		Device::prog_type_t prg_type, bool external_flash,
 		bool verify, int8_t verbose, const std::string& user_flash)
 	: Device(jtag, filename, file_type, verify, verbose),
-		SPIInterface(filename, verbose, 0, verify, false, false),
+		FlashInterface(filename, verbose, 0, verify, false, false),
 		_idcode(0), is_gw1n1(false), is_gw1n4(false), is_gw1n9(false),
 		is_gw2a(false), is_gw5a(false),
 		_external_flash(external_flash),

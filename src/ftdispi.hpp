@@ -13,9 +13,9 @@
 #include "board.hpp"
 #include "cable.hpp"
 #include "ftdipp_mpsse.hpp"
-#include "spiInterface.hpp"
+#include "flashInterface.hpp"
 
-class FtdiSpi : public FTDIpp_MPSSE, SPIInterface {
+class FtdiSpi : public FTDIpp_MPSSE, FlashInterface {
  public:
 	enum SPI_endianness {
 		SPI_MSB_FIRST = 0,

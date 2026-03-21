@@ -10,9 +10,9 @@
 
 #include "device.hpp"
 #include "ftdispi.hpp"
-#include "spiInterface.hpp"
+#include "flashInterface.hpp"
 
-class Ice40: public Device, SPIInterface {
+class Ice40: public Device, FlashInterface {
 	public:
 		Ice40(FtdiSpi *spi, const std::string &filename,
 			const std::string &file_type,

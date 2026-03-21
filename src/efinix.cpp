@@ -47,7 +47,7 @@ Efinix::Efinix(Jtag* jtag, const std::string &filename,
 			const std::string &board_name, const std::string &device_package,
 			const std::string &spiOverJtagPath, bool verify, int8_t verbose):
 	Device(jtag, filename, file_type, verify, verbose),
-	SPIInterface(filename, verbose, 256, false, false, false),
+	FlashInterface(filename, verbose, 256, false, false, false),
 	_spi(NULL), _rst_pin(0), _done_pin(0), _cs_pin(0),
 	_oe_pin(0), _fpga_family(UNKNOWN_FAMILY), _irlen(0),
 	_device_package(device_package), _spiOverJtagPath(spiOverJtagPath)
@@ -238,7 +238,7 @@ void Efinix::program(unsigned int offset, bool unprotect_flash)
 			break;
 		case FLASH_MODE:
 			if (_jtag)
-				ret = SPIInterface::write(offset, const_cast<uint8_t *>(data),
+				ret = FlashInterface::write(offset, const_cast<uint8_t *>(data),
 					length, unprotect_flash);
 			else
 				ret = programSPI(offset, data, length, unprotect_flash);
@@ -257,7 +257,7 @@ void Efinix::program(unsigned int offset, bool unprotect_flash)
 bool Efinix::detect_flash()
 {
 	if (_jtag) {
-		return SPIInterface::detect_flash();
+		return FlashInterface::detect_flash();
 	}
 
 #if 0
@@ -265,7 +265,7 @@ bool Efinix::detect_flash()
 	 * uncomment it and submit a PR!  */
 	_spi->gpio_clear(_rst_pin);
 
-	bool rv = reinterpret_cast<SPIInterface *>(_spi)->detect_flash();
+	bool rv = reinterpret_cast<FlashInterface *>(_spi)->detect_flash();
 
 	reset();
 
@@ -279,8 +279,8 @@ bool Efinix::detect_flash()
 bool Efinix::dumpFlash(uint32_t base_addr, uint32_t len)
 {
 	if (_jtag) {
-		SPIInterface::set_filename(_filename);
-		return SPIInterface::dump(base_addr, len);
+		FlashInterface::set_filename(_filename);
+		return FlashInterface::dump(base_addr, len);
 	}
 
 	uint32_t timeout = 1000;
@@ -289,7 +289,7 @@ bool Efinix::dumpFlash(uint32_t base_addr, uint32_t len)
 	/* prepare SPI access */
 	printInfo("Read Flash ", false);
 	try {
-		SPIFlash flash(reinterpret_cast<SPIInterface *>(_spi), false, _verbose);
+		SPIFlash flash(reinterpret_cast<FlashInterface *>(_spi), false, _verbose);
 		flash.reset();
 		flash.power_up();
 		flash.dump(_filename, base_addr, len);
@@ -322,7 +322,7 @@ bool Efinix::programSPI(unsigned int offset, const uint8_t *data,
 	bool ret = true;
 	_spi->gpio_clear(_rst_pin | _oe_pin);
 
-	SPIFlash flash(reinterpret_cast<SPIInterface *>(_spi), unprotect_flash,
+	SPIFlash flash(reinterpret_cast<FlashInterface *>(_spi), unprotect_flash,
 			_verbose);
 	flash.reset();
 	flash.power_up();

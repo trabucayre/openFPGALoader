@@ -23,7 +23,7 @@
 #include "spiFlash.hpp"
 #include "progressBar.hpp"
 
-class CologneChip: public Device, SPIInterface {
+class CologneChip: public Device, FlashInterface {
 	public:
 		CologneChip(FtdiSpi *spi, const std::string &filename,
 			const std::string &file_type, Device::prog_type_t prg_type,

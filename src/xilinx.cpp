@@ -31,7 +31,7 @@
 #endif
 #include "rawParser.hpp"
 #include "spiFlash.hpp"
-#include "spiInterface.hpp"
+#include "flashInterface.hpp"
 #include "xilinx.hpp"
 #include "xilinxMapParser.hpp"
 
@@ -279,7 +279,7 @@ Xilinx::Xilinx(Jtag *jtag, const std::string &filename,
 	bool verify, int8_t verbose,
 	bool skip_load_bridge, bool skip_reset, bool read_dna, bool read_xadc):
 	Device(jtag, filename, file_type, verify, verbose),
-	SPIInterface(filename, verbose, 256, verify, skip_load_bridge,
+	FlashInterface(filename, verbose, 256, verify, skip_load_bridge,
 				 skip_reset),
 	_device_package(device_package), _spiOverJtagPath(spiOverJtagPath),
 	_irlen(6), _secondary_filename(secondary_filename), _soj_is_v2(false),
@@ -842,11 +842,11 @@ void Xilinx::program_spi(ConfigBitstreamParser * bit, std::string extention,
 		throw std::runtime_error("called with null bitstream");
 	if (extention == "mcs") {
 		McsParser *parser = (McsParser *)bit;
-		SPIInterface::write(parser->getRecords(), unprotect_flash, true);
+		FlashInterface::write(parser->getRecords(), unprotect_flash, true);
 	} else {
 		const uint8_t *data = bit->getData();
 		int length = bit->getLength() / 8;
-		SPIInterface::write(offset, data, length, unprotect_flash);
+		FlashInterface::write(offset, data, length, unprotect_flash);
 	}
 }
 
@@ -1261,14 +1261,14 @@ bool Xilinx::dumpFlash(uint32_t base_addr, uint32_t len)
 
 	if (_flash_chips & PRIMARY_FLASH) {
 		select_flash_chip(PRIMARY_FLASH);
-		SPIInterface::set_filename(_filename);
-		if (!SPIInterface::dump(base_addr, len))
+		FlashInterface::set_filename(_filename);
+		if (!FlashInterface::dump(base_addr, len))
 			return false;
 	}
 	if (_flash_chips & SECONDARY_FLASH) {
 		select_flash_chip(SECONDARY_FLASH);
-		SPIInterface::set_filename(_secondary_filename);
-		if (!SPIInterface::dump(base_addr, len))
+		FlashInterface::set_filename(_secondary_filename);
+		if (!FlashInterface::dump(base_addr, len))
 			return false;
 	}
 
@@ -1279,12 +1279,12 @@ bool Xilinx::detect_flash()
 {
 	if (_flash_chips & PRIMARY_FLASH) {
 		select_flash_chip(PRIMARY_FLASH);
-		if (!SPIInterface::detect_flash())
+		if (!FlashInterface::detect_flash())
 			return false;
 	}
 	if (_flash_chips & SECONDARY_FLASH) {
 		select_flash_chip(SECONDARY_FLASH);
-		if (!SPIInterface::detect_flash())
+		if (!FlashInterface::detect_flash())
 			return false;
 	}
 	return true;
@@ -1294,12 +1294,12 @@ bool Xilinx::protect_flash(uint32_t len)
 {
 	if (_flash_chips & PRIMARY_FLASH) {
 		select_flash_chip(PRIMARY_FLASH);
-		if (!SPIInterface::protect_flash(len))
+		if (!FlashInterface::protect_flash(len))
 			return false;
 	}
 	if (_flash_chips & SECONDARY_FLASH) {
 		select_flash_chip(SECONDARY_FLASH);
-		if (!SPIInterface::protect_flash(len))
+		if (!FlashInterface::protect_flash(len))
 			return false;
 	}
 	return true;
@@ -1309,12 +1309,12 @@ bool Xilinx::unprotect_flash()
 {
 	if (_flash_chips & PRIMARY_FLASH) {
 		select_flash_chip(PRIMARY_FLASH);
-		if (!SPIInterface::unprotect_flash())
+		if (!FlashInterface::unprotect_flash())
 			return false;
 	}
 	if (_flash_chips & SECONDARY_FLASH) {
 		select_flash_chip(SECONDARY_FLASH);
-		if (!SPIInterface::unprotect_flash())
+		if (!FlashInterface::unprotect_flash())
 			return false;
 	}
 	return true;
@@ -1324,12 +1324,12 @@ bool Xilinx::set_quad_bit(bool set_quad)
 {
 	if (_flash_chips & PRIMARY_FLASH) {
 		select_flash_chip(PRIMARY_FLASH);
-		if (!SPIInterface::set_quad_bit(set_quad))
+		if (!FlashInterface::set_quad_bit(set_quad))
 			return false;
 	}
 	if (_flash_chips & SECONDARY_FLASH) {
 		select_flash_chip(SECONDARY_FLASH);
-		if (!SPIInterface::set_quad_bit(set_quad))
+		if (!FlashInterface::set_quad_bit(set_quad))
 			return false;
 	}
 	return true;
@@ -1339,12 +1339,12 @@ bool Xilinx::bulk_erase_flash()
 {
 	if (_flash_chips & PRIMARY_FLASH) {
 		select_flash_chip(PRIMARY_FLASH);
-		if (!SPIInterface::bulk_erase_flash())
+		if (!FlashInterface::bulk_erase_flash())
 			return false;
 	}
 	if (_flash_chips & SECONDARY_FLASH) {
 		select_flash_chip(SECONDARY_FLASH);
-		if (!SPIInterface::bulk_erase_flash())
+		if (!FlashInterface::bulk_erase_flash())
 			return false;
 	}
 	return true;
