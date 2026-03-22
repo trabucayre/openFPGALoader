@@ -585,7 +585,7 @@ static std::map <uint32_t, flash_t> flash_list = {
 		.quad_mask = (1 << 6),
 		.global_lock = false,
 	}},
-	{0xc84016 {
+	{0xc84016, {
 		/* https://cdn.compacttool.ru/downloads/GD25Q32%20datasheet.pdf */
 		.manufacturer = "GigaDevice",
 		.model = "GD25Q32C",
@@ -594,7 +594,7 @@ static std::map <uint32_t, flash_t> flash_list = {
 		.subsector_erase = true,
 		.has_extended = false,
 		.tb_otp = false,
-		.tb_offset = (1 << 14),
+		.tb_offset = (1 << 14),  // CMP
 		.tb_register = STATR,
 		.bp_len = 4,
 		.bp_offset = {(1 << 2), (1 << 3), (1 << 4), (1 << 5)},
