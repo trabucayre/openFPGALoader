@@ -295,16 +295,17 @@ int main(int argc, char **argv)
 	cable.config.index = args.cable_index;
 	cable.config.status_pin = args.status_pin;
 
-#ifdef USE_LIBFTDI
 	/* ----------------------- */
 	/* SPI FLASH direct access */
 	/* ----------------------- */
-	if (args.spi || (board && board->mode == COMM_SPI))
+	if (args.spi || (board && board->mode == COMM_SPI)) {
+#ifdef USE_LIBFTDI
 		return spi_comm(args, cable, &pins_config, board);
 #else
 		printError("SPI Flash Direct access: disabled at build time");
 		return EXIT_FAILURE;
 #endif
+	}
 
 	/* ------------------- */
 	/* DFU access          */
