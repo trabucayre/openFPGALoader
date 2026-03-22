@@ -585,7 +585,7 @@ static std::map <uint32_t, flash_t> flash_list = {
 		.quad_mask = (1 << 6),
 		.global_lock = false,
 	}},
-	{0xc284016 {
+	{0xc84016 {
 		/* https://cdn.compacttool.ru/downloads/GD25Q32%20datasheet.pdf */
 		.manufacturer = "GigaDevice",
 		.model = "GD25Q32C",
