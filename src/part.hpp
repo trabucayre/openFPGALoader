@@ -280,6 +280,7 @@ static std::map <uint32_t, fpga_model> fpga_list = {
 	{0x0318d0dd, {"altera", "MAX 10", "10M40S", 10}},
 	{0x031850dd, {"altera", "MAX 10", "10M50S", 10}},
 	/** dual-supply **/
+    {0x031030dd, {"altera", "MAX 10", "10M16D", 10}},
 	{0x031050dd, {"altera", "MAX 10", "10M50D", 10}},
 
 	/* Altera Stratix V */
