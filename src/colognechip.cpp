@@ -425,16 +425,18 @@ int CologneChip::spi_put(uint8_t cmd, const uint8_t *tx, uint8_t *rx, uint32_t l
 			jtx[i+1] = ConfigBitstreamParser::reverseByte(tx[i]);
 	}
 
-	_jtag->shiftIR(JTAG_SPI_BYPASS, 6, Jtag::SELECT_DR_SCAN);
+	_jtag->shiftIR(JTAG_SPI_BYPASS, 6, Jtag::SHIFT_DR);
 
-	int test = (rx == NULL) ? 8*xfer_len+1 : 8*xfer_len+2;
-	_jtag->shiftDR(jtx, (rx == NULL)? NULL: jrx, test, Jtag::SELECT_DR_SCAN);
+	int drlen = (rx == NULL) ? 8*xfer_len : 8*xfer_len+1;
+	_jtag->read_write(jtx, (rx == NULL) ? NULL : jrx, drlen, false);
+
+	int shift = _jtag->get_devices_list().size();
 
 	if (rx != NULL) {
 		for (uint32_t i=0; i < len; i++) {
 			uint8_t b0 = ConfigBitstreamParser::reverseByte(jrx[i+1]);
 			uint8_t b1 = ConfigBitstreamParser::reverseByte(jrx[i+2]);
-			rx[i] = (b0 << 1) | ((b1 >> 7) & 0x01);
+			rx[i] = (b0 << shift) | (b1 >> 8-shift);
 		}
 	}
 	return 0;
@@ -482,11 +484,13 @@ int CologneChip::spi_wait(uint8_t cmd, uint8_t mask, uint8_t cond,
 	_jtag->shiftIR(JTAG_SPI_BYPASS, 6, Jtag::SHIFT_DR);
 	_jtag->read_write(&tx, NULL, 8, 0);
 
+	int shift = _jtag->get_devices_list().size();
+
 	do {
 		_jtag->read_write(dummy, rx, 16, 0);
 		uint8_t b0 = ConfigBitstreamParser::reverseByte(rx[0]);
 		uint8_t b1 = ConfigBitstreamParser::reverseByte(rx[1]);
-		tmp = (b0 << 1) | ((b1 >> 7) & 0x01);
+		tmp = (b0 << shift) | (b1 >> 8-shift);
 
 		count++;
 		if (count == timeout) {
