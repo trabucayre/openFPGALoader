@@ -170,7 +170,7 @@ int FsParser::parse()
 			nb_line = 274;
 			break;
 		case 0x0100181b: /* GW1N-2    */
-		case 0x1100181b: /* GW1N-2B   */
+		case 0x0120681b: /* GW1N(R/Z)-2/2B/2C, GW1N-1P5/1P5B/1P5C */
 		case 0x0300081b: /* GW1NS-2   */
 		case 0x0300181b: /* GW1NSx-2C */
 		case 0x0100981b: /* GW1NSR-4C (warning! not documented) */
