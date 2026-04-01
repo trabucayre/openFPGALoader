@@ -36,49 +36,86 @@ int BitParser::parseHeader()
 {
 	int pos_data = 0;
 	int ret = 1;
-	short length;
+	uint16_t length;
 	std::string tmp;
-	int pos, prev_pos;
 
 	/* Field 1 : misc header */
+	if (_raw_data.size() < 2) {
+		printError("BitParser: Bound check failure. Can't read Field 1 length");
+		return -1;
+	}
 	length = *(uint16_t *)&_raw_data[0];
 	length = ntohs(length);
 	pos_data += length + 2;
 
-	length = *(uint16_t *)&_raw_data[pos_data];
-	length = ntohs(length);
+	if (pos_data + 2 >= static_cast<int>(_raw_data.size())) {
+		printError("BitParser: Bound check failure. Can't read Field 2 length");
+		return -1;
+	}
+
+	length = ((static_cast<uint16_t>(_raw_data[pos_data]) & 0xff) << 8) |
+		((static_cast<uint16_t>(_raw_data[pos_data + 1]) & 0xff) << 0);
+
 	pos_data += 2;
 
 	while (1) {
 		/* type */
-		uint8_t type;
-		type = (uint8_t)_raw_data[pos_data++];
+		if (pos_data >= static_cast<int>(_raw_data.size())) {
+			printError("BitParser: Bound check failure. Field type");
+			return -1;
+		}
+		const uint8_t type = (uint8_t)_raw_data[pos_data++];
 
 		if (type != 'e') {
-			length = *(uint16_t *)&_raw_data[pos_data];
-			length = ntohs(length);
+			if (pos_data + 2 >= static_cast<int>(_raw_data.size())) {
+				printError("BitParser: Bound check failure, Field length");
+				return -1;
+			}
+			length = ((static_cast<uint16_t>(_raw_data[pos_data]) & 0xff) << 8) |
+				((static_cast<uint16_t>(_raw_data[pos_data + 1]) & 0xff) << 0);
 			pos_data += 2;
 		} else {
 			length = 4;
+		}
+		if (static_cast<int>(_raw_data.size()) < pos_data + length) {
+			printError("BitParser: Bound check failure. Field Data");
+			return -1;
 		}
 		tmp = _raw_data.substr(pos_data, length);
 		pos_data += length;
 
 		switch (type) {
-			case 'a': /* design name:userid:synthesize tool version */
-				prev_pos = 0;
-				pos = tmp.find(";");
-				_hdr["design_name"] = tmp.substr(prev_pos, pos);
-				prev_pos = pos+1;
+			case 'a': {  /* design name:userid:synthesize tool version */
+				std::stringstream ss(tmp);
+				std::string token;
+				bool first = true;
 
-				pos = tmp.find(";", prev_pos);
-				prev_pos = tmp.find("=", prev_pos) + 1;
-				_hdr["userID"] = tmp.substr(prev_pos, pos-prev_pos);
-				prev_pos = pos+1;
+				while (std::getline(ss, token, ';')) {
+					if (first) {
+						_hdr["design_name"] = token;
+						first = false;
+						continue;
+					}
 
-				prev_pos = tmp.find("=", prev_pos) + 1;
-				_hdr["toolVersion"] = tmp.substr(prev_pos, length-prev_pos);
-				break;
+					auto pos = token.find('=');
+					if (pos != std::string::npos) {
+						auto key = token.substr(0, pos);
+						if (length < pos + 1) {
+							printError("Failed to find for key");
+							return -1;
+						}
+						auto value = token.substr(pos + 1);
+						if (key == "UserID") {
+							_hdr["userId"] = value;
+						} else if (key == "Version") {
+							_hdr["version"] = value;
+						} else {
+							printError("Unknown key " + key);
+							return -1;
+						}
+					}
+				}
+				} break;
 			case 'b': /* FPGA model */
 				_hdr["part_name"] = tmp.substr(0, length);
 				break;
@@ -107,6 +144,10 @@ int BitParser::parse()
 {
 	/* process all field */
 	int pos = parseHeader();
+	if (pos == -1) {
+		printError("BitParser: parseHeader failed");
+		return 1;
+	}
 
 	/* _bit_length is length of data to send */
 	int rest_of_file_length = _file_size - pos;
