@@ -67,6 +67,7 @@ void POFParser::displayHeader()
 
 int POFParser::parse()
 {
+	const uint32_t file_size = static_cast<uint32_t>(_file_size);
 	uint8_t *ptr = (uint8_t *)_raw_data.data();
 	uint32_t pos = 0;
 
@@ -77,6 +78,10 @@ int POFParser::parse()
 	pos += 4;
 	/* unknown */
 	if (_verbose) {
+		if ((pos + 4) > file_size) {
+			printError("POFParser: Can't read first section");
+			return -1;
+		}
 		uint32_t first_section = ARRAY2INT32(ptr);
 		printf("first section:     %08x %4u\n", first_section, first_section);
 	}
@@ -84,18 +89,39 @@ int POFParser::parse()
 	pos += 4;
 	/* number of packets */
 	if (_verbose) {
+		if ((pos + 4) > file_size) {
+			printError("POFParser: Can't read first section");
+			return -1;
+		}
 		uint32_t num_packets = ARRAY2INT32(ptr);
 		printf("number of packets: %08x %4u\n", num_packets, num_packets);
 	}
 	pos += 4;
 
 	/* 16bit code + 32bits size + content */
-	while (pos < static_cast<uint32_t>(_file_size)) {
+	while (pos < file_size) {
+		if ((pos + 2) > file_size) {
+			printError("POFParser: Bound check failure: can't read flag");
+			return -1;
+		}
 		uint16_t flag = ARRAY2INT16((&_raw_data.data()[pos]));
 		pos += 2;
+		if ((pos + 4) > file_size) {
+			printError("POFParser: Bound check failure: can't read size");
+			return -1;
+		}
 		uint32_t size = ARRAY2INT32((&_raw_data.data()[pos]));
 		pos += 4;
-		pos += parseSection(flag, pos, size);
+		if ((pos >= file_size) || ((pos + size) > file_size)) {
+			printError("POFParser: Bound check: can't parse section");
+			return -1;
+		}
+		uint32_t ret = parseSection(flag, pos, size);
+		if (ret != size) {
+			printError("POFParser: parseSection Failed");
+			return -1;
+		}
+		pos += ret;
 	}
 
 	/* update pointers to memory area */
@@ -147,6 +173,10 @@ uint32_t POFParser::parseSection(uint16_t flag, uint32_t pos, uint32_t size)
 			_hdr["design_name"] = _raw_data.substr(pos, size);
 			break;
 		case 0x08:  // last packet: CRC ?
+			if (size < 2) {
+				printError("POFParser: flag 0x08 failed size too small");
+				return 0;
+			}
 			_hdr["maybeCRC"] = std::to_string(ARRAY2INT16((&_raw_data.data()[pos])));
 			break;
 		case 0x11:  // cfg data
@@ -154,6 +184,10 @@ uint32_t POFParser::parseSection(uint16_t flag, uint32_t pos, uint32_t size)
 					// followed by UFM/CFM/DSM data
 			if (_verbose) {
 				content = _raw_data.substr(pos, size);
+				if ((3 * 4) > size) {
+					printError("POFParser: can't display 0x11 area");
+					return -1;
+				}
 				uint32_t val0 = ARRAY2INT32((&content.c_str()[0]));
 				uint32_t val1 = ARRAY2INT32((&content.c_str()[4]));
 				uint32_t val2 = ARRAY2INT32((&content.c_str()[8]));
@@ -170,6 +204,10 @@ uint32_t POFParser::parseSection(uint16_t flag, uint32_t pos, uint32_t size)
 		case 0x13:  // contains usercode / checksum
 			_hdr["usercode"] = std::to_string(ARRAY2INT32((&_raw_data.data()[pos+size-4])));
 			if (_verbose) {
+				if (size < 12) {
+					printf("POFParser: Can't display flag 0x13 area");
+					return -1;
+				}
 				t = _raw_data.substr(pos, size);
 				for (size_t i = 0; i < t.size(); i++)
 					printf("%02x ", static_cast<uint8_t>(t[i]));
