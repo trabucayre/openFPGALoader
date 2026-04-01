@@ -18,10 +18,10 @@
 	(static_cast<uint16_t>(_array_[1] & 0x00ff) << 8))
 
 #define ARRAY2INT32(_array_) ( \
-	(static_cast<uint16_t>(_array_[0] & 0x00ff) <<  0) | \
-	(static_cast<uint16_t>(_array_[1] & 0x00ff) <<  8) | \
-	(static_cast<uint16_t>(_array_[2] & 0x00ff) << 16) | \
-	(static_cast<uint16_t>(_array_[3] & 0x00ff) << 24))
+	(static_cast<uint32_t>(_array_[0] & 0x00ff) <<  0) | \
+	(static_cast<uint32_t>(_array_[1] & 0x00ff) <<  8) | \
+	(static_cast<uint32_t>(_array_[2] & 0x00ff) << 16) | \
+	(static_cast<uint32_t>(_array_[3] & 0x00ff) << 24))
 
 /*!
  * \file pofParser.hpp
