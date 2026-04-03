@@ -436,7 +436,7 @@ int CologneChip::spi_put(uint8_t cmd, const uint8_t *tx, uint8_t *rx, uint32_t l
 		for (uint32_t i=0; i < len; i++) {
 			uint8_t b0 = ConfigBitstreamParser::reverseByte(jrx[i+1]);
 			uint8_t b1 = ConfigBitstreamParser::reverseByte(jrx[i+2]);
-			rx[i] = (b0 << shift) | (b1 >> 8-shift);
+			rx[i] = (b0 << shift) | (b1 >> (8-shift));
 		}
 	}
 	return 0;
@@ -490,7 +490,7 @@ int CologneChip::spi_wait(uint8_t cmd, uint8_t mask, uint8_t cond,
 		_jtag->read_write(dummy, rx, 16, 0);
 		uint8_t b0 = ConfigBitstreamParser::reverseByte(rx[0]);
 		uint8_t b1 = ConfigBitstreamParser::reverseByte(rx[1]);
-		tmp = (b0 << shift) | (b1 >> 8-shift);
+		tmp = (b0 << shift) | (b1 >> (8-shift));
 
 		count++;
 		if (count == timeout) {
