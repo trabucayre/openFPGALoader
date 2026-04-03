@@ -10,7 +10,6 @@
 #include <string.h>
 #include <unistd.h>
 
-#include <algorithm>
 #include <iostream>
 #include <fstream>
 #include <sstream>
@@ -80,7 +79,6 @@ DFUFileParser::DFUFileParser(const std::string &filename, bool verbose):
 /* p.40-47 */
 int DFUFileParser::parseHeader()
 {
-	std::string ucDfuSignature;
 	/* check size: If file size <= 16
 	 * no space for suffix and/or bitstream
 	 * */
@@ -88,11 +86,9 @@ int DFUFileParser::parseHeader()
 		return -1;
 
 	/* first check DFU signature :
-	 * must be equal to 'DFU'
+	 * stored as 'UFD' (reversed 'DFU') in the file
 	 */
-	ucDfuSignature = _raw_data.substr(_file_size-8, 3);
-	reverse(ucDfuSignature.begin(), ucDfuSignature.end());
-	if (ucDfuSignature != "DFU") {
+	if (_raw_data.compare(_file_size - 8, 3, "UFD") != 0) {
 		if (_verbose)
 			printWarn("Not a DFU file");
 		return 0;
@@ -102,15 +98,23 @@ int DFUFileParser::parseHeader()
 		(((uint32_t)_raw_data[_file_size - 3] & 0xff) <<  8) |
 		(((uint32_t)_raw_data[_file_size - 2] & 0xff) << 16) |
 		(((uint32_t)_raw_data[_file_size - 1] & 0xff) << 24);
-	_bLength = _raw_data[_file_size - 5];
-	_bcdDFU = (_raw_data[_file_size - 10] <<  0) |
-		(_raw_data[_file_size - 9] <<  8);
-	_idVendor = (_raw_data[_file_size - 12] <<  0) |
-		(_raw_data[_file_size - 11] <<  8);
-	_idProduct = (((uint16_t)_raw_data[_file_size - 14] & 0xff) <<  0) |
-		(((uint16_t)_raw_data[_file_size - 13] & 0xff) <<  8);
-	_bcdDevice = (_raw_data[_file_size - 16] <<  0) |
-		(_raw_data[_file_size - 15] <<  8);
+	_bLength = static_cast<uint8_t>(_raw_data[_file_size - 5]);
+	if (_bLength > _file_size) {
+		printError("Error: invalid DFU suffix length");
+		return -1;
+	}
+	_bcdDFU =
+		(static_cast<uint16_t>(_raw_data[_file_size - 10] & 0xff) <<  0) |
+		(static_cast<uint16_t>(_raw_data[_file_size -  9] & 0xff) <<  8);
+	_idVendor =
+		(static_cast<uint16_t>(_raw_data[_file_size - 12] & 0xff) <<  0) |
+		(static_cast<uint16_t>(_raw_data[_file_size - 11] & 0xff) <<  8);
+	_idProduct =
+		(static_cast<uint16_t>(_raw_data[_file_size - 14] & 0xff) <<  0) |
+		(static_cast<uint16_t>(_raw_data[_file_size - 13] & 0xff) <<  8);
+	_bcdDevice =
+		(static_cast<uint16_t>(_raw_data[_file_size - 16] & 0xff) <<  0) |
+		(static_cast<uint16_t>(_raw_data[_file_size - 15] & 0xff) <<  8);
 
 	/* yes it's silly but it's simpliest way */
 	_hdr = {{"dwCRC", std::string(11, ' ')}, {"bLength", ""},
@@ -125,7 +129,7 @@ int DFUFileParser::parseHeader()
 	_hdr["dwCRC"] = std::string(__buf, __buf_valid_bytes);
 	_hdr["dwCRC"].resize(11, ' ');
 	_hdr["bLength"] = std::to_string(_bLength);
-	_hdr["ucDfuSignature"] = ucDfuSignature;
+	_hdr["ucDfuSignature"] = "DFU";
 	__buf_valid_bytes = snprintf(__buf, 7, "0x%04x", _bcdDFU);
 	_hdr["bcdDFU"] = std::string(__buf, __buf_valid_bytes);
 	_hdr["bcdDFU"].resize(7, ' ');
@@ -148,14 +152,13 @@ int DFUFileParser::parse()
 	if (ret < 0)
 		return EXIT_FAILURE;
 
-	_bit_data.resize(_file_size - _bLength);
-	std::move(_raw_data.begin(), _raw_data.end(), _bit_data.begin());
+	_bit_data.assign(_raw_data.begin(), _raw_data.begin() + (_file_size - _bLength));
 
 	/* If file contains suffix check CRC */
 	if (ret != 0) {
 		/* check if CRC match content */
 		uint32_t crc = 0xffffffff;
-		for (int i = 0; i < _file_size-4; i++)
+		for (int i = 0; i < _file_size - 4; i++)
 			crc = crc32tbl[(crc ^ (uint8_t)_raw_data[i]) & 0xff] ^ (crc >> 8);
 
 		if (crc != _dwCRC) {

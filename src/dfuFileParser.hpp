@@ -37,12 +37,12 @@ class DFUFileParser: public ConfigBitstreamParser {
 		 * \brief return vendor id associated
 		 * \return _idVendor
 		 */
-		uint16_t vendorID() {return _idVendor;}
+		uint16_t vendorID() const noexcept {return _idVendor;}
 		/*!
 		 * \brief return product id associated
 		 * \return _idProduct
 		 */
-		uint16_t productID() {return _idProduct;}
+		uint16_t productID() const noexcept {return _idProduct;}
 
 	private:
 		/*!
