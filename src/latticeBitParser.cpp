@@ -35,7 +35,7 @@ std::string LatticeBitParser::fmtIdcode(uint32_t id)
 	char tmp[8], buf[9] = "00000000";
 	std::to_chars_result conv = std::to_chars(tmp, tmp + 8, id, 16);
 	char *ptr = conv.ptr;
-	std::memcpy(buf + (8 - (ptr - tmp)), tmp, ptr - tmp);
+	memcpy(buf + (8 - (ptr - tmp)), tmp, ptr - tmp);
 	return std::string(buf, 8);
 }
 
