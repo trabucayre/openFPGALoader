@@ -24,11 +24,17 @@ class LatticeBitParser: public ConfigBitstreamParser {
 		 * \brief return configuration data with structure similar to jedec
 		 * \return configuration data
 		 */
-		std::vector<std::string> getDataArray() {return _bit_array;}
+		std::vector<std::string> &getDataArray() {return _bit_array;}
 
 	private:
 		int parseHeader();
 		bool parseCfgData();
+		/*!
+		 * \brief format a 32-bit value as 8 zero-padded lowercase hex digits
+		 * \param[in] id: value to format
+		 * \return 8-character hex string
+		 */
+		static std::string fmtIdcode(uint32_t id);
 		size_t _endHeader;
 		bool _is_machXO2;
 		bool _is_ecp3;
