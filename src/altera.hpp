@@ -90,10 +90,25 @@ class Altera: public Device, FlashInterface {
 			MAX10_FAMILY     = 1,
 			CYCLONE5_FAMILY  = 2,
 			CYCLONE10_FAMILY = 3,
-			STRATIXV_FAMILY  = 3,
+			STRATIXV_FAMILY  = 4,
+			AGILEX3_FAMILY   = 5,
+			AGILEX5_FAMILY   = 6,
 			CYCLONE_MISC     = 10, // Fixme: idcode shared
 			UNKNOWN_FAMILY   = 999
 		};
+
+		/**************************/
+		/*     agilex specific    */
+		/**************************/
+		bool agilex_poll_status(uint64_t *expected, uint64_t *mask, uint32_t check_len,
+			int max_poll=50);
+		bool agilex_send_instruction(const uint8_t *cmd, const uint64_t *tx,
+			uint64_t *rx, uint32_t length);
+		bool agilex_isc_init();
+		bool agilex_exit_and_conf_done();
+		bool agilex_load_bitstream(const uint8_t *data, const uint32_t length);
+		bool agilex_program();
+
 		/*************************/
 		/*     max10 specific    */
 		/*************************/

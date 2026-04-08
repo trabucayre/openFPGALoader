@@ -44,6 +44,10 @@ Altera::Altera(Jtag *jtag, const std::string &filename,
 	std::string family = fpga_list[_idcode].family;
 	if (family == "MAX 10") {
 		_fpga_family = MAX10_FAMILY;
+	} else if (family == "agilex 3") {
+		_fpga_family = AGILEX3_FAMILY;
+	} else if (family == "agilex 5") {
+		_fpga_family = AGILEX5_FAMILY;
 	} else {
 		_fpga_family = CYCLONE_MISC;  // FIXME
 	}
@@ -239,6 +243,16 @@ void Altera::program(unsigned int offset, bool unprotect_flash)
 	/* Specific case for MAX10 */
 	if (_fpga_family == MAX10_FAMILY) {
 		max10_program(offset);
+		return;
+	}
+
+	/* Specific case for Agilex */
+	if (_fpga_family == AGILEX3_FAMILY || _fpga_family == AGILEX5_FAMILY) {
+		if (_mode != Device::MEM_MODE) {
+			printError("Altera: Error Write to flash for Agilex not supported");
+			return;
+		}
+		agilex_program();
 		return;
 	}
 
@@ -1009,6 +1023,276 @@ bool Altera::sectors_mask_start_end_addr(const Altera::max10_mem_t *mem,
 	*end = eaddr;
 	return true;
 }
+
+/* ---------------------------------- */
+/*             Agilex 3/5             */
+/* ---------------------------------- */
+
+#define AGILEX_ISC_PROGRAM {0x02, 0x00}
+#define AGILEX_COMMAND     {0x01, 0x02}
+#define AGILEX_ISC_SR      {0x02, 0x02}
+#define AGILEX_IRFLOW      {0x08, 0x02}
+#define AGILEX_BYPASS      {0xff, 0x03}
+
+#define uintStarTo64(__input__) ( \
+	(static_cast<uint64_t>(__input__[4]) << 32) | \
+	(static_cast<uint64_t>(__input__[3]) << 24) | \
+	(static_cast<uint64_t>(__input__[2]) << 16) | \
+	(static_cast<uint64_t>(__input__[1]) <<  8) | \
+	(static_cast<uint64_t>(__input__[0]) <<  0))
+#define DWORDToCharStar(__dword__) { \
+	static_cast<unsigned char>((__dword__ >>  0) & 0xff), \
+	static_cast<unsigned char>((__dword__ >>  8) & 0xff), \
+	static_cast<unsigned char>((__dword__ >> 16) & 0xff), \
+	static_cast<unsigned char>((__dword__ >> 24) & 0xff), \
+	static_cast<unsigned char>((__dword__ >> 32) & 0xff) \
+}
+
+// Depends to the JTAG frequency?
+static uint32_t agilex_toggle_length = 16;
+
+bool Altera::agilex_poll_status(uint64_t *expected, uint64_t *mask,
+	uint32_t check_len, int max_poll)
+{
+	const uint8_t isc_sr[2] = AGILEX_ISC_SR;
+	_jtag->shiftIR((unsigned char *)isc_sr, NULL, IRLENGTH);
+	_jtag->toggleClk(agilex_toggle_length);
+	if (_verbose)
+		printf("Begin\n");
+
+	for (uint32_t check = 0; check < check_len; check++) {
+		bool match = false;
+		const uint64_t exp = expected[check];
+		const uint64_t msk = mask[check];
+		for (int i = 0; i < max_poll && !match; i++) {
+			uint8_t status[5];
+			_jtag->shiftDR(NULL, status, 34);
+			_jtag->toggleClk(agilex_toggle_length);
+			uint64_t res = uintStarTo64(status) & 0x3FFFFFFFF;
+			if (_verbose) {
+				printf("%2d/%3d: 0x%08lx 0x%08lx %08lx ", check, i,
+					res, res & msk, exp & msk);
+				for (int a = 0; a < 5; a++)
+					printf("%02x ", status[a]);
+				printf("\n");
+			}
+			// It's silly but mask must be applied to expected
+			// too...
+			match = ((res & msk) == (msk & exp));
+		}
+		if (!match)
+			return false;
+	}
+	return true;
+}
+
+bool Altera::agilex_send_instruction(const uint8_t *cmd, const uint64_t *tx,
+	uint64_t *rx, uint32_t length)
+{
+	unsigned char rx_pkt[5];
+	_jtag->shiftIR((unsigned char *)cmd, NULL, IRLENGTH);
+	_jtag->toggleClk(agilex_toggle_length);
+	if (!rx && !tx)
+		return true;
+	for (uint32_t i = 0; i < length; i++) {
+		const uint64_t v = (tx) ? tx[i] : 0;
+		const unsigned char tx_pkt[] = DWORDToCharStar(v);
+		_jtag->shiftDR((tx)? tx_pkt : NULL, (rx) ? rx_pkt : NULL, 34);
+		_jtag->toggleClk(agilex_toggle_length);
+		if (rx)
+			rx[i] = uintStarTo64(rx_pkt);
+	}
+	return true;
+}
+
+bool Altera::agilex_isc_init()
+{
+	const uint8_t cmd[2] = AGILEX_COMMAND;
+
+	/* Everything is magic here.
+	 * stp0 and step2 are constant for AGILEX3 and AGILEX5 (at least
+	 * with tested devices)
+	 * stp1 is partially constant: 3 Words changes between synthesis
+	 * (jam file) but if this value match the check everything is fine
+	 */
+	const uint64_t stp0[3] = {0x000000000, 0x300000000, 0x200000000};
+	const uint64_t stp1[3] = {0x000000000, 0x1F0001001, 0x27E2DA938};
+	const uint64_t stp2[2] = {0x000000000, 0x200000005};
+
+	if (!agilex_send_instruction(cmd, stp0, NULL, 3)) {
+		printError("Altera: Error during step0 write configuration");
+		return false;
+	}
+	/* Again: magic words */
+	uint64_t stp0_exp = 0x000000003;
+	uint64_t stp0_mask = 0x3FDFFFFFD;
+	if (!agilex_poll_status(&stp0_exp, &stp0_mask, 1)) {
+		printf("Altera: STP0: poll failed\n");
+		return false;
+	}
+
+	/* Device specific configuration */
+	if (!agilex_send_instruction(cmd, stp1, NULL, 3)) {
+		printError("Altera: Error during step0 write configuration");
+		return false;
+	}
+
+	/* Again: magic words */
+	uint64_t stp1_exp[] = {0x3C0004001, (0x3FFFFFFFF & ((stp1[2] << 2) | 0x03))};
+	uint64_t stp1_mask[] = {0x3FDFFFFFD, 0x3FFFFFFFD};
+	if (!agilex_poll_status(stp1_exp, stp1_mask, 2)) {
+		printError("Altera: Error during Device specific configuration step");
+		return false;
+	}
+
+	/* Enter ISC Configure mode */
+	if (!agilex_send_instruction(cmd, stp2, NULL, 2)) {
+		printError("Altera: Error during enter ISC Configure write");
+		return false;
+	}
+
+	uint64_t stp2_exp = 0x000000003;
+	uint64_t stp2_mask = 0x3FDFFFFFD;
+	if (!agilex_poll_status(&stp2_exp, &stp2_mask, 1, 300)) {
+		printError("Error during ISC configure mode");
+		return false;
+	}
+
+	return true;
+}
+
+bool Altera::agilex_exit_and_conf_done()
+{
+	const uint8_t cmd[2] = AGILEX_COMMAND;
+	const uint8_t sr[2] = AGILEX_ISC_SR;
+	const uint8_t bypass[2] = AGILEX_BYPASS;
+	const uint8_t done0[5] = {0x00, 0x00, 0x00, 0x00, 0x00};
+	const uint8_t done1[5] = {0x04, 0x00, 0x00, 0x00, 0x02};
+
+	_jtag->shiftIR((unsigned char *)cmd, NULL, IRLENGTH);
+	_jtag->toggleClk(agilex_toggle_length);
+	_jtag->shiftDR((unsigned char *)done0, NULL, 34);
+	_jtag->toggleClk(agilex_toggle_length);
+	_jtag->shiftDR((unsigned char *)done1, NULL, 34);
+	_jtag->toggleClk(agilex_toggle_length);
+
+	_jtag->shiftIR((unsigned char *)sr, NULL, IRLENGTH);
+	_jtag->toggleClk(agilex_toggle_length);
+	uint8_t stat_tx[5];
+	uint8_t stat_rx[5];
+	memset(stat_tx, 0, 5);
+	uint64_t status;
+	do {
+		_jtag->shiftDR((unsigned char *)stat_tx, stat_rx, 34);
+		_jtag->toggleClk(agilex_toggle_length);
+		status = uintStarTo64(stat_rx);
+	} while ((status & 0x01) != 0);
+
+
+	_jtag->shiftIR((unsigned char *)bypass, NULL, IRLENGTH);
+	_jtag->toggleClk(agilex_toggle_length);
+
+
+	return true;
+}
+
+bool Altera::agilex_load_bitstream(const uint8_t *data, const uint32_t length)
+{
+	const uint8_t stat_cmd[2] = AGILEX_IRFLOW;
+	const uint8_t cmd[2] = AGILEX_ISC_PROGRAM;
+	const uint8_t start[5] = {0x07, 0x00, 0x00, 0x00, 0x00};
+
+	const uint32_t xfer_min_length = 4096;
+	const uint32_t xfer_max_length = 65536;
+
+	uint8_t buffer[xfer_max_length + 9];
+	buffer[0] = 0xff;
+	buffer[1] = 0xff;
+	buffer[2] = 0xff;
+	buffer[3] = 0xff;
+	buffer[4] = 0x00;
+	buffer[5] = 0x2a;
+	buffer[6] = 0x7e;
+	buffer[7] = 0xa1;
+	uint8_t *ptr = &buffer[8];
+
+	/* Pre command */
+	_jtag->shiftIR((unsigned char *)stat_cmd, NULL, IRLENGTH);
+	_jtag->toggleClk(agilex_toggle_length);
+	_jtag->shiftDR((unsigned char *)start, NULL, 34);
+	_jtag->toggleClk(agilex_toggle_length);
+
+	uint32_t wr_pos = 0;
+	uint32_t curr_xfer_len = xfer_min_length;
+
+	ProgressBar progress("Load SRAM", length, 50, false);
+
+	while (wr_pos < length) {
+		uint32_t xfer_len = std::min(curr_xfer_len, length - wr_pos);
+		memcpy(ptr, &data[wr_pos], xfer_len);
+		ptr[xfer_len] = 0;
+
+		_jtag->shiftIR((unsigned char *)cmd, NULL, IRLENGTH);
+		_jtag->toggleClk(agilex_toggle_length);
+		_jtag->shiftDR((unsigned char *)buffer, NULL, 64 + 1 + xfer_len * 8);
+		_jtag->toggleClk(agilex_toggle_length);
+
+		/* loop until status bit0 low */
+		uint8_t stat_tx[5] = {0x00, 0x00, 0x00, 0x00, 0x00};
+		uint8_t stat_rx[5];
+		uint64_t res;
+		bool busy, error;
+		do {
+			_jtag->shiftIR((unsigned char *)stat_cmd, NULL, IRLENGTH);
+			_jtag->toggleClk(agilex_toggle_length);
+			_jtag->shiftDR((unsigned char *)stat_tx, stat_rx, 37);
+			_jtag->toggleClk(agilex_toggle_length);
+			res = uintStarTo64(stat_rx);
+			busy = ((res >> 0) & 0x01);
+			error = ((res >> 1) & 0x01);
+			if (error) {
+				progress.fail();
+				printError("Device Configuration Error");
+				return false;
+			}
+			stat_tx[0] = 0x01;
+
+		} while(busy);
+
+		const uint32_t offset_after_write = wr_pos + curr_xfer_len;
+		// next position is provided by the FPGA
+		// it's a x 4
+		wr_pos = res & (~0x03);
+
+		/* search if we have to increase or reduce curr_xfer_len */
+		if (offset_after_write == wr_pos)
+			curr_xfer_len = std::min(curr_xfer_len * 2, xfer_max_length);
+		else
+			curr_xfer_len = std::max(curr_xfer_len / 2, xfer_min_length);
+		progress.display(wr_pos);
+	}
+	progress.done();
+
+	return true;
+}
+
+bool Altera::agilex_program()
+{
+	RawParser rbf(_filename, _verbose);
+	rbf.parse();
+
+	const uint32_t rbf_length = rbf.getLength() / 8;
+	const uint8_t *rbf_data = rbf.getData();
+
+	if (!agilex_isc_init())
+		return false;
+	if (!agilex_load_bitstream(rbf_data, rbf_length))
+		return false;
+	if (!agilex_exit_and_conf_done())
+		return false;
+	return true;
+}
+
 
 /* SPI interface */
 
