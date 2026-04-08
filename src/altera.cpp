@@ -5,6 +5,7 @@
 
 #include "altera.hpp"
 
+#include <inttypes.h>
 #include <string.h>
 
 #include <map>
@@ -1070,8 +1071,8 @@ bool Altera::agilex_poll_status(uint64_t *expected, uint64_t *mask,
 			_jtag->toggleClk(agilex_toggle_length);
 			uint64_t res = uintStarTo64(status) & 0x3FFFFFFFF;
 			if (_verbose) {
-				printf("%2d/%3d: 0x%08lx 0x%08lx %08lx ", check, i,
-					res, res & msk, exp & msk);
+				printf("%2d/%3d: 0x%08" PRIx64 "0x%08" PRIx64 "%08" PRIx64 " ",
+					check, i, res, res & msk, exp & msk);
 				for (int a = 0; a < 5; a++)
 					printf("%02x ", status[a]);
 				printf("\n");
