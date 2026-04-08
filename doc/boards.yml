@@ -27,6 +27,13 @@
   Memory: OK
   Flash: OK
 
+- ID: atumA3Nano
+  Description: Terasic Atum A3 Nano
+  URL: https://www.terasic.com.tw/cgi-bin/page/archive.pl?Language=English&No=1373
+  FPGA: Altera Agilex 3 A3CZ135BB18AE7S
+  Memory: OK
+  Flash: NT
+
 - ID: axe5000
   Description: A5EC008BM16AE6S FPGA Starter Kit
   URL: https://www.arrow.com/en/products/axe5000/trenz-electronic-gmbh.html
