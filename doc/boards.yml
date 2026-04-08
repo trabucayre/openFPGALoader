@@ -27,6 +27,13 @@
   Memory: OK
   Flash: OK
 
+- ID: axe5000
+  Description: A5EC008BM16AE6S FPGA Starter Kit
+  URL: https://www.arrow.com/en/products/axe5000/trenz-electronic-gmbh.html
+  FPGA: Altera Agilex 5 A5EC008BM16AE6S
+  Memory: OK
+  Flash: NT
+
 - ID: litex-acorn-baseboard-mini
   Description: The LiteX-Acorn-Baseboards are baseboards developed around the SQRL's Acorn board (or Nite/LiteFury)
   URL: https://github.com/enjoy-digital/litex-acorn-baseboard/
