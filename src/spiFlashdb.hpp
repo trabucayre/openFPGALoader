@@ -813,7 +813,22 @@ static std::map <uint32_t, flash_t> flash_list = {
 		.quad_mask = (1 << 1),
 		.global_lock = false,
 	}},
-
+	{0x1f4701, {
+		.manufacturer = "Adesto",
+		.model = "AT25DF321A",
+		.nr_sector = 64,
+		.sector_erase = true,
+		.subsector_erase = true,
+		.has_extended = false,
+		.tb_otp = false,
+		.tb_offset = (1 << 3),
+		.tb_register = STATR,
+		.bp_len = 3,
+		.bp_offset = {(1 << 2), (1 << 3), (1 << 4), 0},
+		.quad_register = NONER,
+		.quad_mask = 0,
+		.global_lock = false,
+	}},
 };
 
 #endif  // SRC_SPIFLASHDB_HPP_
