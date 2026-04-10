@@ -42,30 +42,50 @@ int FsParser::parseHeader()
 	std::istringstream lineStream(_raw_data);
 
 	while (std::getline(lineStream, buffer, '\n')) {
+		/* store full/real file lenght */
 		ret += buffer.size() + 1;
+
+		/* FIXME: a line can't be empty -> error */
+		if (buffer.empty())
+			break;
+		/* dos file */
+		if (buffer.back() == '\r')
+			buffer.pop_back();
+
+		/* FIXME: a line can't be empty -> error */
 		if (buffer.empty())
 			break;
 		/* drop all comment, base analyze on header */
 		if (buffer[0] == '/')
 			continue;
-		if (buffer[buffer.size()-1] == '\r')
-			buffer.pop_back();
 
-		/* store each line in dedicated buffer for future use
-		 */
+		const size_t line_length = buffer.size();
+
+		/* store each line in dedicated buffer for future use */
 		_lstRawData.push_back(buffer);
 
+		/* only headers are parsed by next portion of code */
 		if (!in_header)
 			continue;
 
+		/* a line must have at least 8 1/0 for the key */
+		if (line_length < 8) {
+			printError("FsParser: Potential corrupted file");
+			return 0;
+		}
 		uint8_t c = bitToVal(buffer.substr(0, 8).c_str(), 8);
 		uint8_t key = c & 0x7F;
-		uint64_t val = bitToVal(buffer.c_str(), buffer.size());
+		/* the line length depends on key/information */
+		uint64_t val = bitToVal(buffer.c_str(), line_length);
 
 		char __buf[10];
 		int __buf_valid_bytes;
 		switch (key) {
 			case 0x06: /* idCode */
+				if (line_length != 64) {
+					printError("FsParser: length too short for key 0x06");
+					return 0;
+				}
 				_idcode = (0xffffffff & val);
 				__buf_valid_bytes = snprintf(__buf, 9, "%08x", _idcode);
 				_hdr["idcode"] = std::string(__buf, __buf_valid_bytes);
@@ -77,9 +97,17 @@ int FsParser::parseHeader()
 				_hdr["CheckSum"].resize(8, ' ');
 				break;
 			case 0x0B: /* only present when bit_security is set */
+				if (line_length != 32) {
+					printError("FsParser: length too short for key 0x0B");
+					return 0;
+				}
 				_hdr["SecurityBit"] = "ON";
 				break;
 			case 0x10: {
+				if (line_length != 64) {
+					printError("FsParser: length too short for key 0x10");
+					return 0;
+				}
 				unsigned rate = (val >> 16) & 0xff;
 				if (rate) {
 					rate &= 0x7f;
@@ -96,8 +124,16 @@ int FsParser::parseHeader()
 				break;
 			}
 			case 0x12: /* unknown */
+				if (line_length != 32) {
+					printError("FsParser: length too short for key 0x12");
+					return 0;
+				}
 				break;
 			case 0x51:
+				if (line_length != 64) {
+					printError("FsParser: length too short for key 0x51");
+					return 0;
+				}
 				/*
 				[23:16] : a value used to replace 8x 0x00 in compress mode
 				[15: 8] : a value used to replace 4x 0x00 in compress mode
@@ -108,6 +144,10 @@ int FsParser::parseHeader()
 				_2Zero = 0xff & (val >>  0);
 				break;
 			case 0x52: /* documentation issue */
+				if (line_length != 64) {
+					printError("FsParser: length too short for key 0x52");
+					return 0;
+				}
 				uint32_t flash_addr;
 				flash_addr = val & 0xffffffff;
 				__buf_valid_bytes = snprintf(__buf, 9, "%08x", flash_addr);
@@ -117,6 +157,10 @@ int FsParser::parseHeader()
 				break;
 			case 0x3B: /* last header line with crc and cfg data length */
 						/* documentation issue */
+				if (line_length != 32) {
+					printError("FsParser: length too short for key 0x3B");
+					return 0;
+				}
 				in_header = false;
 				uint8_t crc;
 				crc = 0x01 & (val >> 23);
@@ -148,8 +192,14 @@ int FsParser::parse()
 	 * if true 0 -> 0, 1 -> 1
 	 */
 
+	_bit_data.reserve(_raw_data.size() / 8);
 	for (auto &&line : _lstRawData) {
-		for (size_t i = 0; i < line.size(); i += 8) {
+		const size_t line_length = line.size();
+		if ((line_length % 8) != 0) {
+			printError("FsParser: truncated line in bitstream data");
+			return EXIT_FAILURE;
+		}
+		for (size_t i = 0; i < line_length; i += 8) {
 			uint8_t data = bitToVal(&line[i], 8);
 			_bit_data.push_back((_reverseByte) ? reverseByte(data) : data);
 		}
@@ -236,9 +286,20 @@ int FsParser::parse()
 	for (auto &&ll = _lstRawData.begin();
 			ll != _lstRawData.end(); ll++) {
 		std::string l = "";
-		std::string line = *ll;
+		const std::string &line = *ll;
+		const size_t line_length = line.size();
+		if (line_length < static_cast<size_t>(drop)) {
+			printError("FsParser: truncated configuration line");
+			return EXIT_FAILURE;
+		}
 		if (_compressed) {
-			for (size_t i = 0; i < line.size()-drop; i+=8) {
+			const size_t payload_len = line_length - drop;
+			if ((payload_len % 8) != 0) {
+				printError("FsParser: compressed line is not byte aligned");
+				return EXIT_FAILURE;
+			}
+			l.reserve(payload_len * 8);
+			for (size_t i = 0; i < payload_len; i += 8) {
 				uint8_t c = bitToVal((const char *)&line[i], 8);
 				if (c == _8Zero)
 					l += std::string(8*8, '0');
@@ -250,15 +311,24 @@ int FsParser::parse()
 					l += line.substr(i, 8);
 			}
 		} else {
-			l = line.substr(0, line.size() - drop);
+			l = line.substr(0, line_length - drop);
 		}
+		const size_t l_length = l.size();
 
 		/* store bit for checksum */
-		tmp += l.substr(padding, l.size() - padding);
+		if (static_cast<size_t>(padding) > l_length) {
+			printError("FsParser: invalid padding for configuration line");
+			return EXIT_FAILURE;
+		}
+		tmp += l.substr(padding, l_length - padding);
 	}
 
 	/* checksum */
 	_checksum = 0;
+	if ((tmp.size() % 16) != 0) {
+		printError("FsParser: checksum data is truncated");
+		return EXIT_FAILURE;
+	}
 	for (uint32_t pos = 0; pos < tmp.size(); pos+=16)
 		_checksum += (uint16_t)bitToVal(&tmp[pos], 16);
 
