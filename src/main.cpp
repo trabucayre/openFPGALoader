@@ -1209,12 +1209,6 @@ int parse_opt(int argc, char **argv, struct arguments *args,
 			args->scan_usb)
 			args->is_list_command = true;
 
-		if (args->mcufw.empty()) {
-			printf("empty\n");
-		} else {
-			printf("pas empty\n");
-		}
-
 		if (args->bit_file.empty() &&
 			args->secondary_bit_file.empty() &&
 			args->file_type.empty() &&
