@@ -109,6 +109,8 @@ int BitParser::parseHeader()
 							_hdr["userId"] = value;
 						} else if (key == "Version") {
 							_hdr["version"] = value;
+						} else if (key == "SW_CRC") {
+							_hdr["crc"] = value;
 						} else {
 							printError("Unknown key " + key);
 							return -1;
