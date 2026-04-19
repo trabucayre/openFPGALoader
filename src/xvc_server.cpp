@@ -28,7 +28,7 @@ XVC_server::XVC_server(int port, const cable_t & cable,
 	const std::string & firmware_path):_verbose(verbose > 1),
 			_jtag(NULL), _port(port), _sock(-1),
 			_is_stopped(false), _must_stop(false),
-			_buffer_size(2048), _state(Jtag::RUN_TEST_IDLE)
+			_buffer_size(1048576), _state(Jtag::RUN_TEST_IDLE)
 {
 	(void)pin_conf;
 	(void)ip_adr;
