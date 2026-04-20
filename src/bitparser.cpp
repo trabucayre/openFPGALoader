@@ -112,8 +112,7 @@ int BitParser::parseHeader()
 						} else if (key == "SW_CRC") {
 							_hdr["crc"] = value;
 						} else {
-							printError("Unknown key " + key);
-							return -1;
+							printWarn("Unknown key " + key);
 						}
 					}
 				}
