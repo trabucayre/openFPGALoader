@@ -111,6 +111,8 @@ int BitParser::parseHeader()
 							_hdr["version"] = value;
 						} else if (key == "SW_CRC") {
 							_hdr["crc"] = value;
+						} else if (key == "COMPRESS") {
+							_hdr["compress"] = value;
 						} else {
 							printWarn("Unknown key " + key);
 						}
