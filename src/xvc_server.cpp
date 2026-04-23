@@ -6,6 +6,7 @@
 #include "xvc_server.hpp"
 
 #include <arpa/inet.h>
+#include <sys/socket.h>
 #include <errno.h>
 #include <netinet/tcp.h>
 #include <unistd.h>

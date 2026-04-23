@@ -156,6 +156,41 @@ OPENFPGALOADER_SOJ_DIR=/somewhere openFPGALoader xxxx
 `OPENFPGALOADER_SOJ_DIR` must point to directory containing **spiOverJtag**
 bitstreams.
 
+## Disabling uftdi on OpenBSD
+
+Certain evaluation boards can cause the following error when running openFPGAloader on OpenBSD:
+
+```
+fail to read data usb bulk read failed
+JTAG init failed with: low level FTDI init failed
+```
+
+This issue is most likely caused by the uftdi module, trying to access the device. To disable it,
+the following commands can be used:
+
+```bash
+# doas config -e -f -o /bsd.nouftdi /bsd
+OpenBSD 7.8 (GENERIC) #54: Sun Oct 12 12:45:58 MDT 2025
+    deraadt@amd64.openbsd.org:/usr/src/sys/arch/amd64/compile/GENERIC
+Enter 'help' for information
+ukc> disable uftdi*
+356 uftdi* disabled
+ukc> disable uftdi0
+ukc> disable uftdi1
+ukc> quit
+Saving modified kernel.
+# reboot
+```
+
+At the boot prompt, typing in
+
+```
+boot> boot /bsd.nouftdi
+```
+
+will boot the new kernel with the disabled module.
+
+
 ## Sponsors/Partners
 
 ![Sponsors](https://github.com/user-attachments/assets/cb4efce1-ed0c-461c-bd05-9caeb440870d)
