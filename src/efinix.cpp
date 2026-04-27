@@ -218,10 +218,13 @@ void Efinix::program(unsigned int offset, bool unprotect_flash)
 					throw std::runtime_error("device mismatch: " + device + " != " + target);
 				}
 			}
-			std::string mode = bit->getHeaderVal("mode");
-			if (mode.find("passive") != std::string::npos) {
-				delete bit;
-				throw std::runtime_error("passive mode not supported for flash");
+			std::map<std::string, std::string> hdr = bit->getHeader();
+			if(hdr.find("mode") != hdr.end()) {
+				std::string mode = bit->getHeaderVal("mode");
+				if (mode.find("passive") != std::string::npos) {
+					delete bit;
+					throw std::runtime_error("passive mode not supported for flash");
+				}
 			}
 		} catch (std::runtime_error& e) {
 			throw;
