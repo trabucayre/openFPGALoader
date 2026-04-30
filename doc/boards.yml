@@ -751,6 +751,13 @@
   Memory: OK
   Flash: NT
 
+- ID: sp701
+  Description: Xilinx SP701
+  URL: https://www.amd.com/en/products/adaptive-socs-and-fpgas/evaluation-boards/sp701.html
+  FPGA: Spartan 7 xc7s100-2-fgga676
+  Memory: OK
+  Flash: OK
+
 - ID: spartanEdgeAccelBoard
   Description: SeeedStudio Spartan Edge Accelerator Board
   URL: http://wiki.seeedstudio.com/Spartan-Edge-Accelerator-Board
