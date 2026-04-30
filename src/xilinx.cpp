@@ -659,7 +659,6 @@ void Xilinx::program(unsigned int offset, bool unprotect_flash)
 		/* Check for BPI flash boards */
 		if (_is_bpi_board) {
 			program_bpi(bit, offset);
-			reset();
 		} else {
 			if (_flash_chips & PRIMARY_FLASH) {
 				select_flash_chip(PRIMARY_FLASH);
@@ -669,8 +668,6 @@ void Xilinx::program(unsigned int offset, bool unprotect_flash)
 				select_flash_chip(SECONDARY_FLASH);
 				program_spi(secondary_bit, _secondary_file_extension, offset, unprotect_flash);
 			}
-
-			reset();
 		}
 	} else {
 		if (_fpga_family == SPARTAN3_FAMILY)
@@ -809,6 +806,9 @@ void Xilinx::program_bpi(ConfigBitstreamParser *bit, unsigned int offset)
 	if (!_bpi_flash->write(offset, data, length)) {
 		throw std::runtime_error("BPI flash programming failed");
 	}
+
+	/* Reset the board if skip_reset is not set */
+	post_flash_access();
 
 	printInfo("BPI flash programming complete");
 }
