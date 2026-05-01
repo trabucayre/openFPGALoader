@@ -40,7 +40,9 @@ option(ENABLE_ANLOGIC_CABLE    "enable Anlogic cable (requires libUSB)"       ${
 option(ENABLE_CH347            "enable CH347 cable (requires libUSB)"         ${ENABLE_CABLE_ALL})
 # CMSIS-DAP requires hidapi which is complex to cross-compile, disable by default for cross-compilation
 if (NOT WINDOWS_CROSSCOMPILE)
-	option(ENABLE_CMSISDAP     "enable cmsis DAP interface (requires hidapi)" ${ENABLE_CABLE_ALL})
+	option(ENABLE_CMSISDAP     "enable cmsis DAP interface (v1 and v2)"       ${ENABLE_CABLE_ALL})
+	option(ENABLE_CMSISDAP_V1  "enable cmsis DAP interface v1 (requires hidapi)" ${ENABLE_CMSISDAP})
+	option(ENABLE_CMSISDAP_V2  "enable cmsis DAP interface v2 (requires libusb)" ${ENABLE_CMSISDAP})
 else()
 	option(ENABLE_CMSISDAP     "enable cmsis DAP interface (requires hidapi)" OFF)
 endif()
@@ -120,7 +122,8 @@ endif(ENABLE_FTDI_BASED_CABLE OR ENABLE_USB_BLASTERI OR ENABLE_XILINX_VIRTUAL_CA
 
 # Only adds libusb as dependency when a cable need this library
 if (ENABLE_DFU OR ENABLE_ANLOGIC_CABLE OR ENABLE_CH347 OR ENABLE_DIRTYJTAG
-		OR ENABLE_ESP_USB OR ENABLE_JLINK OR ENABLE_GOWIN_GWU2X OR USE_FX2_LL OR ENABLE_USB_SCAN)
+		OR ENABLE_ESP_USB OR ENABLE_JLINK OR ENABLE_GOWIN_GWU2X OR USE_FX2_LL OR ENABLE_USB_SCAN
+		OR ENABLE_CMSISDAP_V2)
 	set(USE_LIBUSB ON)
 endif()
 
@@ -213,7 +216,7 @@ if (USE_PKGCONFIG)
 		set(LIBUSB_LIBRARIES    "")
 	endif(USE_LIBUSB)
 
-	if(ENABLE_CMSISDAP)
+	if(ENABLE_CMSISDAP_V1)
 		pkg_check_modules(HIDAPI hidapi-libusb)
 		# if libusb not found try with hidraw
 		if (NOT HIDAPI_FOUND)
@@ -630,7 +633,7 @@ if (ENABLE_LIBGPIOD)
 	link_directories(${LIBGPIOD_LIBRARY_DIRS})
 endif()
 
-if (ENABLE_CMSISDAP AND HIDAPI_FOUND)
+if (ENABLE_CMSISDAP_V1 AND HIDAPI_FOUND)
 	link_directories(${HIDAPI_LIBRARY_DIRS})
 endif()
 
@@ -697,18 +700,34 @@ else()
 	message("CH347 support disabled")
 endif()
 
-if (ENABLE_CMSISDAP)
+# CMSIS DAP
+if (ENABLE_CMSISDAP_V1)
 	if (HIDAPI_FOUND)
 		include_directories(${HIDAPI_INCLUDE_DIRS})
 		target_link_libraries(openFPGALoader ${HIDAPI_LIBRARIES})
-		add_definitions(-DENABLE_CMSISDAP=1)
-		target_sources(openFPGALoader PRIVATE src/cmsisDAP.cpp)
-		list (APPEND OPENFPGALOADER_HEADERS src/cmsisDAP.hpp)
-		message("cmsis_dap support enabled")
+		add_definitions(-DENABLE_CMSISDAP_V1=1)
+		message("cmsis_dap v1 support enabled")
 	else()
-		message("hidapi-libusb not found: cmsis_dap support disabled")
+		set(ENABLE_CMSISDAP_V1 OFF)
+		message("hidapi-libusb not found: cmsis_dap v1 support disabled")
 	endif()
-endif(ENABLE_CMSISDAP)
+endif(ENABLE_CMSISDAP_V1)
+if (NOT ENABLE_CMSISDAP_V1)
+	message("cmsis_dap v1 support disabled")
+endif()
+
+if (ENABLE_CMSISDAP_V2)
+	add_definitions(-DENABLE_CMSISDAP_V2=1)
+	message("cmsis_dap v2 support enabled")
+else()
+	message("cmsis_dap v2 support disabled")
+endif (ENABLE_CMSISDAP_V2)
+
+if (ENABLE_CMSISDAP OR ENABLE_CMSISDAP_V1 OR ENABLE_CMSISDAP_V2)
+	add_definitions(-DENABLE_CMSISDAP=1)
+	target_sources(openFPGALoader PRIVATE src/cmsisDAP.cpp)
+	list (APPEND OPENFPGALOADER_HEADERS src/cmsisDAP.hpp)
+endif()
 
 # DFU
 if (ENABLE_DFU)
