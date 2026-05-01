@@ -8,7 +8,7 @@ anlogicCable:
 arm-usb-ocd-h:
 
   - Name: Olimex ARM-USB-OCD-H adapter
-    Description: High-speed 3-IN-1 fast USB ARM JTAG, USB-to-RS232 virtual port and power supply 5VDC device 
+    Description: High-speed 3-IN-1 fast USB ARM JTAG, USB-to-RS232 virtual port and power supply 5VDC device
     URL: https://www.olimex.com/Products/ARM/JTAG/ARM-USB-OCD-H/
 
 
@@ -50,9 +50,14 @@ ch552_jtag:
 cmsisdap:
 
   - Name: ARM CMSIS DAP protocol interface
-    Description: ARM CMSIS DAP protocol interface (hid only)
+    Description: ARM CMSIS DAP protocol interface
     URL: https://os.mbed.com/docs/mbed-os/v6.11/debug-test/daplink.html
 
+sipeed_slogic_combo8:
+
+  - Name: Sipeed SLogic Combo 8
+    Description: The DAP-Link interface on Sipeed SLogic Combo 8 (usbbulk only)
+    URL: https://wiki.sipeed.com/hardware/en/logic_analyzer/combo8/index.html
 
 gatemate_pgm:
 
@@ -90,13 +95,13 @@ dfu:
 
 digilent:
 
-  - Name: digilent cable 
+  - Name: digilent cable
     Description: FT2232 JTAG / UART cable
 
 
 diglent_b:
 
-  - Name: digilent cable 
+  - Name: digilent cable
     Description: digilent FT2232 JTAG / UART cable (interface B)
 
 
@@ -246,7 +251,7 @@ numato:
 
   - Name: numato
     Description: Embedded cable for Numato Systems Mimas-A7 board
-    
+
 orbtrace:
 
   - Name: orbtrace interface
