@@ -178,7 +178,7 @@ Jtag::Jtag(const cable_t &cable, const jtag_pins_conf_t *pin_conf,
 #endif
 	case MODE_CMSISDAP:
 #ifdef ENABLE_CMSISDAP
-		_jtag = new CmsisDAP(cable, cable.config.index, verbose);
+		_jtag = new CmsisDAP(cable, cable.config.index, clkHZ, verbose);
 		break;
 #else
 		std::cerr << "Jtag: support for cmsisdap was not enabled at compile time" << std::endl;
