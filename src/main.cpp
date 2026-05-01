@@ -3,6 +3,8 @@
  * Copyright (C) 2019 Gwenhael Goavec-Merou <gwenhael.goavec-merou@trabucayre.com>
  */
 
+#include "cmsisDAP.hpp"
+#include <cstdlib>
 #include <string.h>
 #include <unistd.h>
 
@@ -108,6 +110,7 @@ struct arguments {
 	int16_t cable_index;
 	uint8_t bus_addr;
 	uint8_t device_addr;
+	std::string cmsisdap_backend;
 	std::string ip_adr;
 	uint32_t protect_flash;
 	bool unprotect_flash;
@@ -163,7 +166,7 @@ int main(int argc, char **argv)
 			-1,            0,        "primary",   false,         true,          -1,
 			/* vid, pid, index bus_addr, device_addr */
 				0,   0,   -1,     0,         0,
-			"127.0.0.1", 0, false, false, false, false, "", false, false,
+			"-", "127.0.0.1", 0, false, false, false, false, "", false, false,
 			/* xvc server */
 			false, 3721, "-",
 			"", false, {},  // mcufw conmcu, user_misc_dev_list
@@ -244,6 +247,18 @@ int main(int argc, char **argv)
 	 */
 	if (args.freq == 0)
 		args.freq = DEFAULT_FREQ;
+
+	cmsisdap_backend_type cmsisdap_backend;
+	if (args.cmsisdap_backend == "hid")
+		cmsisdap_backend = BACKEND_HID;
+	else if (args.cmsisdap_backend == "usbbulk")
+		cmsisdap_backend = BACKEND_USBBULK;
+	else if (args.cmsisdap_backend == "-") /* no USB backend specified, will autoselect later */
+		cmsisdap_backend = BACKEND_AUTOSELECT;
+	else {
+		printError("Error: Unknown CMSIS-DAP usb backend \'" + args.cmsisdap_backend + "\'");
+		return EXIT_FAILURE;
+	}
 
 	auto select_cable = cable_list.find(args.cable);
 	if (select_cable == cable_list.end()) {
@@ -389,7 +404,7 @@ int main(int argc, char **argv)
 
 	Jtag *jtag;
 	try {
-		jtag = new Jtag(cable, &pins_config, args.device, args.ftdi_serial,
+		jtag = new Jtag(cable, &pins_config, args.device, cmsisdap_backend, args.ftdi_serial,
 				args.freq, args.verbose, args.ip_adr, args.port,
 				args.invert_read_edge, args.probe_firmware,
 				args.user_misc_devs);
@@ -932,6 +947,9 @@ int parse_opt(int argc, char **argv, struct arguments *args,
 			("ftdi-channel",
 				"FTDI chip channel number (channels 0-3 map to A-D)",
 				cxxopts::value<int>(args->ftdi_channel))
+			("cmsisdap-backend",
+				"cmsisDAP USB backend (hid or usbbulk), leave blank for auto selection",
+				cxxopts::value<std::string>(args->cmsisdap_backend))
 			("d,device",  "device to use (/dev/ttyUSBx)",
 				cxxopts::value<std::string>(args->device))
 			("detect",      "detect FPGA, add -f to show connected flash",
