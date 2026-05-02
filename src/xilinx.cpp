@@ -1277,6 +1277,18 @@ bool Xilinx::dumpFlash(uint32_t base_addr, uint32_t len)
 
 bool Xilinx::detect_flash()
 {
+	if (_is_bpi_board) {
+		if (!_bpi_flash) {
+			if (!load_bpi_bridge())
+				return false;
+		}
+		if (!_bpi_flash->detect()) {
+			printError("BPI flash detection failed");
+				return false;
+		}
+		return post_flash_access();
+	}
+
 	if (_flash_chips & PRIMARY_FLASH) {
 		select_flash_chip(PRIMARY_FLASH);
 		if (!FlashInterface::detect_flash())
