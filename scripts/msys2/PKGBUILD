@@ -9,6 +9,7 @@ url="https://github.com/trabucayre/openFPGALoader"
 license=('Apache-2.0')
 depends=(
   "${MINGW_PACKAGE_PREFIX}-libftdi"
+  "${MINGW_PACKAGE_PREFIX}-hidapi"
   "${MINGW_PACKAGE_PREFIX}-zlib"
 )
 makedepends=(
