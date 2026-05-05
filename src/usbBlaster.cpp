@@ -49,8 +49,8 @@ UsbBlaster::UsbBlaster(const cable_t &cable, const std::string &firmware_path,
 #else
 		throw std::runtime_error("usb-blasterI: Not build");
 #endif
-#ifdef ENABLE_USB_BLASTERII
 	else if (cable.pid == 0x6810 || cable.pid == 0x6010)
+#ifdef ENABLE_USB_BLASTERII
 		ll_driver = new UsbBlasterII(firmware_path);
 #else
 		throw std::runtime_error("usb-blasterII: Not build");
