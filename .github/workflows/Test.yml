@@ -117,7 +117,7 @@ jobs:
     - name: '⚙️ Install dependencies'
       run: |
         #brew update
-        brew install --only-dependencies openFPGALoader
+        brew install --only-dependencies openFPGALoader hidapi
 
     - name: '🚧 Build tarball'
       run: |
