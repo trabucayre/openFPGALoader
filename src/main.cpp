@@ -1027,7 +1027,8 @@ int parse_opt(int argc, char **argv, struct arguments *args,
 				cxxopts::value<std::string>(args->read_register))
 			("user-flash", "User flash file (Gowin LittleBee FPGA only)",
 				cxxopts::value<std::string>(args->user_flash))
-			("V,Version", "Print program version");
+			("V,version", "Print program version")
+			("Version", "Print program version (Deprecated)");
 
 		options.parse_positional({"bitstream"});
 		auto result = options.parse(argc, argv);
@@ -1055,7 +1056,7 @@ int parse_opt(int argc, char **argv, struct arguments *args,
 			args->verbose = verbose_level;
 		}
 
-		if (result.count("Version")) {
+		if (result.count("Version") || result.count("version")) {
 			std::cout << "openFPGALoader " << VERSION << std::endl;
 			return 1;
 		}

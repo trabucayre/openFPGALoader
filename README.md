@@ -119,6 +119,8 @@ openFPGALoader -- a program to flash FPGA
   -v, --verbose                 Produce verbose output
       --verbose-level arg       verbose level -1: quiet, 0: normal,
                                 1:verbose, 2:debug
+      --force-terminal-mode     force progress bar output as if connected to
+                                a terminal
   -h, --help                    Give this help list
       --verify                  Verify write operation (SPI Flash only)
       --xvc                     Xilinx Virtual Cable Functions
@@ -130,7 +132,8 @@ openFPGALoader -- a program to flash FPGA
   -X, --read-xadc               Read XADC (Xilinx FPGA only)
       --read-register arg       Read Status Register(Xilinx FPGA only)
       --user-flash arg          User flash file (Gowin LittleBee FPGA only)
-  -V, --Version                 Print program version
+  -V, --version                 Print program version
+      --Version                 Print program version (Deprecated)
 
 Mandatory or optional arguments to long options are also mandatory or optional
 for any corresponding short options.
