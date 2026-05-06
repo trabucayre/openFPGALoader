@@ -7,6 +7,7 @@
 
 #include "svf_jtag.hpp"
 
+#include <stdexcept>
 #include <unistd.h>
 
 #include <algorithm>
@@ -23,8 +24,11 @@ void SVF_jtag::split_str(std::string const &str, std::vector<std::string> &vpars
 {
 	std::string token;
 	std::istringstream tokenStream(str);
-	while (getline(tokenStream, token, ' '))
-		vparse.push_back(token);
+	while (tokenStream >> token){
+		if(!token.empty()){
+			vparse.push_back(token);
+		}
+	}
 }
 
 void SVF_jtag::clear_XYR(svf_XYR &t)
@@ -89,6 +93,11 @@ void SVF_jtag::parse_XYR(std::vector<std::string> const &vstr, svf_XYR &t)
 		return;
 	for (size_t pos = 2; pos < vstr.size(); pos++) {
 		s = vstr[pos];
+
+		if (s.empty()){
+			throw std::runtime_error("Error parsing instruction: extraneous spaces");
+			return;
+		}
 
 		if (!s.compare("TDO")) {
 			mode = 1;
@@ -372,6 +381,9 @@ void SVF_jtag::parse(std::string filename)
 	unsigned int lineno = 0;
 	try	{
 		while (getline(fs, str)) {
+			if(str.empty()){
+				continue;
+			}
 			/* sanity check: DOS CR */
 			if (str.back() == '\r')
 				str.pop_back();
