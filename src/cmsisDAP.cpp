@@ -816,33 +816,40 @@ int CmsisDAP::xfer(uint8_t instruction, int tx_len,
 			}
 			break;
 		case BACKEND_USBBULK:
-			ret = libusb_bulk_transfer(_usb_dev, _ep_out, &_ll_buffer[1], tx_len + 1, &bulk_len, 1000);
+			memset(&_ll_buffer[1 + tx_len + 1], 0, 64 - (tx_len + 1));
+			ret = libusb_bulk_transfer(_usb_dev, _ep_out, &_ll_buffer[1], 64, &bulk_len, 1000);
 			if (ret != 0) {
 				printError("Error: Bulk write failed\n");
 				return ret;
 			}
+			memset(&_ll_buffer[0], 0, 1024);
 			ret = libusb_bulk_transfer(_usb_dev, _ep_in, &_ll_buffer[0], _packet_size, &bulk_len, 1000);
+			// sleep for 1ms to ensure that polling behavior aligns with HID backend
+			usleep(1000);
 			if (ret != 0 && ret != LIBUSB_ERROR_TIMEOUT) {
 				printError("Error: Bulk read failed\n");
 				return ret;
 			}
 			if(bulk_len == 0){
-				printError("Error: Bulk timeout");
+				printError("Error: Bulk timeout\n");
 				return -1;
 			}
+			// if (rx_buff && bulk_len < rx_len + 2) {
+                // printf("bulk short read: expected %d, got %d\n", rx_len + 2, bulk_len);
+            // }
 			ret = bulk_len;
 			break;
 		default:
-			printError("Error: unknown USB backend");
+			printError("Error: unknown USB backend\n");
 			break;
 	}
 
 	if (_ll_buffer[0] != instruction) {
-		printError("Error: command error");
+		printError("Error: command error\n");
 		return -1;
 	}
 	if (_ll_buffer[1] != DAP_OK) {
-		printError("Error: DAP status error");
+		printError("Error: DAP status error\n");
 		return -1;
 	}
 	if (rx_buff) {
@@ -877,24 +884,31 @@ int CmsisDAP::xfer(int tx_len, uint8_t *rx_buff, int rx_len)
 			}
 			break;
 		case BACKEND_USBBULK:
-			ret = libusb_bulk_transfer(_usb_dev, _ep_out, &_ll_buffer[1], tx_len, &bulk_len, 1000);
+			memset(&_ll_buffer[1 + tx_len + 1], 0, 64 - (tx_len + 1));
+			ret = libusb_bulk_transfer(_usb_dev, _ep_out, &_ll_buffer[1], 64, &bulk_len, 1000);
 			if (ret != 0) {
 				printError("Error: Bulk write failed\n");
 				return ret;
 			}
+			memset(&_ll_buffer[0], 0, 1024);
 			ret = libusb_bulk_transfer(_usb_dev, _ep_in, &_ll_buffer[0], _packet_size, &bulk_len, 1000);
+			// sleep for 1ms to ensure that polling behavior aligns with HID backend
+			usleep(1000);
 			if (ret != 0 && ret != LIBUSB_ERROR_TIMEOUT) {
 				printError("Error: Bulk read failed\n");
 				return ret;
 			}
 			if(bulk_len == 0){
-				printError("Error: Bulk timeout");
+				printError("Error: Bulk timeout\n");
 				return -1;
 			}
+			// if (rx_buff && bulk_len < rx_len + 2) {
+                // printf("bulk short read: expected %d, got %d\n", rx_len + 2, bulk_len);
+            // }
 			ret = bulk_len;
 			break;
 		default:
-			printError("Error: unknown USB backend");
+			printError("Error: unknown USB backend\n");
 			break;
 	}
 
