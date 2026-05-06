@@ -18,6 +18,7 @@
 #include <vector>
 
 #include "jtag.hpp"
+#include "progressBar.hpp"
 
 
 void SVF_jtag::split_str(std::string const &str, std::vector<std::string> &vparse)
@@ -379,6 +380,14 @@ void SVF_jtag::parse(std::string filename)
 		return;
 	}
 	unsigned int lineno = 0;
+	int lines_total = std::count(std::istreambuf_iterator<char>(fs),
+             std::istreambuf_iterator<char>(), '\n') + 1;
+	fs.clear();
+	fs.seekg(0,std::ios::beg);
+	printf("Reading %s with %d lines", filename.c_str(), lines_total);
+
+	ProgressBar progress("Writing SVF " + filename, lines_total, 50, _verbose);
+
 	try	{
 		while (getline(fs, str)) {
 			if(str.empty()){
@@ -409,13 +418,16 @@ void SVF_jtag::parse(std::string filename)
 				handle_instruction(vstr);
 				vstr.clear();
 			}
+			progress.display(lineno);
 		}
 	}
 	catch (std::exception &e)
 	{
-		std::cerr << "Cannot proceed because of error(s) at line " << lineno << std::endl;
+		std::cerr << "Cannot proceed because of error(s) at line " << std::dec << lineno << std::endl;
+		progress.fail();
 		throw;
 	}
 
+	progress.done();
 	std::cout << "end of SVF file" << std::endl;
 }
