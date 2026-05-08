@@ -108,19 +108,19 @@ CmsisDAP::CmsisDAP(const cable_t &cable, int index, uint32_t clkHZ, int8_t verbo
 		case BACKEND_AUTOSELECT:
 			char t[256];
 			try {
-				_backend = BACKEND_HID;
-				initWithHID(cable, index, verbose);
-				break;
-			} catch (std::runtime_error const& e) {
-				snprintf(t, sizeof(t), "try HID init but failed with: %s", e.what());
-				printInfo(t);
-			}
-			try {
 				_backend = BACKEND_USBBULK;
 				initWithBulk(cable, verbose);
 				break;
 			} catch (std::runtime_error const& e) {
 				snprintf(t, sizeof(t), "try USB bulk init but failed with: %s", e.what());
+				printInfo(t);
+			}
+			try {
+				_backend = BACKEND_HID;
+				initWithHID(cable, index, verbose);
+				break;
+			} catch (std::runtime_error const& e) {
+				snprintf(t, sizeof(t), "try HID init but failed with: %s", e.what());
 				printInfo(t);
 			}
 			throw std::runtime_error("Error: no USB backend available");
