@@ -72,7 +72,12 @@ jobs:
             -w /work/spiOverJtag \
             fpgatools/vivado:latest \
             bash -c '
-              set -e
+              # NOTE: no `set -e` — the ca-certificates trigger script
+              # inside the fpgatools/vivado image can return non-zero
+              # (e.g. due to OpenSSL hook quirks) which would otherwise
+              # silently terminate the build *before* python3 build.py
+              # has a chance to run. We rely on explicit error handling
+              # at each command.
               set -x
               # Locate Vivado.
               VIVADO_SETTINGS=""
@@ -100,9 +105,12 @@ jobs:
               # edalize 0.4.0 still ships its own Jinja2 templates and
               # tolerates Jinja2 < 3.
               export DEBIAN_FRONTEND=noninteractive
-              apt-get update
+              apt-get update || true
               apt-get install -y --no-install-recommends \
-                python3 python3-pip python3-setuptools ca-certificates
+                python3 python3-pip python3-setuptools ca-certificates || true
+              # Confirm python3 is now available; if not, abort with code 51.
+              which python3 || { echo "ERROR: python3 not found"; exit 51; }
+              python3 --version
               # edalize 0.3.0 has get_edatool and only requires
               # Jinja2 >= 2.11.3 (no hard >=3 dep). Force Jinja2 2.11.3
               # because Jinja2 3.x is broken under Python 3.6 in this
