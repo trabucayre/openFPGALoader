@@ -97,7 +97,11 @@ jobs:
           done
 
           export DEBIAN_FRONTEND=noninteractive
-          timeout 180 sudo -E apt-get update -qq -o Acquire::Retries=3
+          # apt-get update may stall on a flaky mirror; ignore failure
+          # because the GitHub runner image already ships an up-to-date
+          # package cache for everything we install below.
+          timeout 180 sudo -E apt-get update -qq -o Acquire::Retries=3 \
+              || echo "WARN: apt-get update failed/timeout, continuing with cached lists"
 
           # Core CLI tools (always required) installed strictly.
           timeout 300 sudo -E apt-get install -y --no-install-recommends \
