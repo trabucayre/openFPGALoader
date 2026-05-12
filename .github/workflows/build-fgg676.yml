@@ -26,7 +26,7 @@ on:
 # no documented programmatic download API. Two secrets, tried in priority
 # order:
 #
-#   1. XILINX_INSTALLER_URL  - a presigned URL the user copied from their
+#   1. XILINX_INSTALLER_URL  - DEPRECATED: superseded by internal release asset (gHashTag/openFPGALoader@vivado-installer-2025.2)
 #                              browser's "Copy link" on the download page
 #                              (most reliable; expires fast, so use
 #                              workflow_dispatch right after copying).
@@ -84,64 +84,30 @@ jobs:
           # libtinfo5/libncurses5 may not exist on jammy; ignore failure.
           sudo locale-gen en_US.UTF-8 || true
 
-      - name: Resolve and download AMD Unified Installer
+      - name: Download AMD Unified Installer from internal release
         id: download_installer
         env:
-          XILINX_INSTALLER_URL: ${{ secrets.XILINX_INSTALLER_URL }}
+          GH_TOKEN: ${{ github.token }}
         run: |
           set -euxo pipefail
-          if [ -z "${XILINX_INSTALLER_URL:-}" ]; then
-            echo "ERROR: XILINX_INSTALLER_URL secret is not set."
-            echo ""
-            echo "How to set it:"
-            echo "  1. Log in at https://www.amd.com/en/support/downloads/adaptive-soc-fpga.html"
-            echo "  2. Start downloading 'AMD Unified Installer for FPGAs &"
-            echo "     Adaptive SoCs ${VIVADO_VERSION} - Linux Self Extracting"
-            echo "     Web Installer'."
-            echo "  3. In the browser download manager, right-click the active"
-            echo "     download -> Copy download link."
-            echo "  4. Save that link as the XILINX_INSTALLER_URL repository secret."
-            echo "  5. Re-run this workflow within ~30 min (signed URL expires)."
-            exit 30
-          fi
-
+          # The installer is staged as a release asset in this repo
+          # (release tag: vivado-installer-2025.2) to bypass the CAPTCHA+CSRF
+          # presigned-URL flow on amd.com. The installer's bytes are unmodified
+          # AMD content; the release is private to this fork.
           mkdir -p "$HOME/installer"
           cd "$HOME/installer"
-
-          echo "Downloading installer from XILINX_INSTALLER_URL"
-          curl -fL --retry 5 --retry-delay 10 --connect-timeout 30 \
-               -o installer_download \
-               "$XILINX_INSTALLER_URL"
-          ls -la installer_download
-          file installer_download || true
-
-          INSTALLER_FILE=""
-          if head -c 4 installer_download | grep -q ELF; then
-            mv installer_download Xilinx_Unified_Web_Installer.bin
-            INSTALLER_FILE="$HOME/installer/Xilinx_Unified_Web_Installer.bin"
-            chmod +x "$INSTALLER_FILE"
-          elif file installer_download | grep -qi gzip; then
-            echo "Got a gzip archive; extracting"
-            mkdir -p extracted
-            tar -xzf installer_download -C extracted
-            INSTALLER_FILE="$(find extracted -maxdepth 3 -name 'xsetup' -type f | head -1)"
-            [ -n "$INSTALLER_FILE" ] || { echo "ERROR: no xsetup in archive"; exit 11; }
-            chmod +x "$INSTALLER_FILE"
-          elif file installer_download | grep -qi 'tar archive'; then
-            mkdir -p extracted
-            tar -xf installer_download -C extracted
-            INSTALLER_FILE="$(find extracted -maxdepth 3 -name 'xsetup' -type f | head -1)"
-            [ -n "$INSTALLER_FILE" ] || { echo "ERROR: no xsetup in tar"; exit 12; }
-            chmod +x "$INSTALLER_FILE"
-          else
-            echo "ERROR: unknown installer file format"
-            file installer_download
-            exit 13
-          fi
-
-          echo "Resolved installer: $INSTALLER_FILE"
+          gh release download vivado-installer-2025.2 \
+            --repo gHashTag/openFPGALoader \
+            --pattern 'FPGAs_AdaptiveSoCs_Unified_SDI_*_Lin64.bin' \
+            --output Xilinx_Unified_Web_Installer.bin
+          ls -la Xilinx_Unified_Web_Installer.bin
+          file Xilinx_Unified_Web_Installer.bin || true
+          # Verify expected sha256 — defends against asset tampering
+          echo 'a78dbe8943c1c7ea14aea13937192d6316c0ba94e05bf6f4ebcdca9ef1a73280  Xilinx_Unified_Web_Installer.bin' \
+            | sha256sum -c -
+          chmod +x Xilinx_Unified_Web_Installer.bin
+          INSTALLER_FILE="$HOME/installer/Xilinx_Unified_Web_Installer.bin"
           echo "installer_file=$INSTALLER_FILE" >> "$GITHUB_OUTPUT"
-          ls -la "$INSTALLER_FILE"
           df -h /
 
       - name: Extract web-installer payload (if .bin)
