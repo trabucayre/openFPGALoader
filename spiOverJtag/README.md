@@ -59,6 +59,24 @@ Clean temporary/build files:
 make clean
 ```
 
+## Package-specific bitstreams
+
+Some boards within the same FPGA family/size use different SPI flash pin
+mappings depending on the device package. When the SPI pins differ between
+packages, `build.py` must produce a distinct bitstream per package rather
+than aliasing one build to every package via symlinks.
+
+To build a package-specific bitstream, pass the full device name
+(device + package) to `make`. Example for the QMTech XC7A100T (FGG676)
+core board:
+
+```bash
+make spiOverJtag_xc7a100tfgg676.bit.gz
+```
+
+This consumes `constr_xc7a_fgg676.xdc` and produces a bitstream wired to
+the FGG676 SPI dedicated configuration pins (C8/B19/A18/B18/A19).
+
 ## Add support for a new device
 
 ### 1. Register the part in `Makefile`

@@ -688,6 +688,13 @@
   Memory: OK
   Flash: NA
 
+- ID: qmtechArtix7_100T
+  Description: QMTech Artix-7 XC7A100T Core Board (FGG676)
+  URL: https://www.aliexpress.com/item/1005003746671141.html
+  FPGA: Artix-7 xc7a100tfgg676
+  Memory: OK
+  Flash: OK
+
 - ID: qmtechCyclone10
   Description: QMTech Cyclone 10 Starter Kit
   URL: http://www.chinaqmtech.com/productinfo/1858435.html
