@@ -171,24 +171,81 @@ jobs:
           echo "Auth token installed (size: $(wc -c <"$HOME/.Xilinx/wi_authentication_key") bytes)."
           ls -la "$HOME/.Xilinx"
 
-          # install_config.txt — Vivado ML Standard, Artix-7 only.
-          # Field names match the output of `xsetup -b ConfigGen`.
+          # Generate an install config that matches the *actual* schema
+          # produced by this installer build. Hand-written configs break
+          # whenever AMD renames/removes a module between releases
+          # (e.g. "System Generator for DSP" no longer valid in 2025.2).
+          XSETUP='${{ steps.extract_installer.outputs.xsetup }}'
+          CONFIG_DIR="$HOME/.Xilinx/install_configs"
+          mkdir -p "$CONFIG_DIR"
+          echo "== Generating reference configs via xsetup -b ConfigGen =="
+          # ConfigGen writes <Edition>_config.txt for each edition into CWD.
+          ( cd "$CONFIG_DIR" && "$XSETUP" -b ConfigGen ) || true
+          ls -la "$CONFIG_DIR"
+
+          # Pick the Vivado ML Standard reference config.
+          REF_CONFIG="$(find "$CONFIG_DIR" -maxdepth 2 -iname '*Standard*config*.txt' -type f | head -1)"
+          if [ -z "$REF_CONFIG" ]; then
+            # Fall back to any *_config.txt that mentions Vivado ML Standard.
+            REF_CONFIG="$(grep -lF 'Edition=Vivado ML Standard' $(find "$CONFIG_DIR" -maxdepth 2 -name '*.txt' -type f) 2>/dev/null | head -1)"
+          fi
+          if [ -z "$REF_CONFIG" ]; then
+            echo "ERROR: no Vivado ML Standard reference config found."
+            find "$CONFIG_DIR" -maxdepth 2 -type f -name '*.txt' -exec echo {} \; -exec head -5 {} \;
+            exit 42
+          fi
+          echo "Using reference config: $REF_CONFIG"
+          echo "==== REFERENCE CONFIG (verbatim) ===="
+          cat "$REF_CONFIG"
+          echo "====================================="
+
           CONFIG="$HOME/install_config.txt"
-          {
-            printf '#### AMD Unified Installer config — Vivado ML Standard, Artix-7 only ####\n'
-            printf 'Edition=Vivado ML Standard\n'
-            printf 'Product=Vivado\n'
-            printf 'Destination=%s\n' "${XILINX_INSTALL_DIR}"
-            printf 'Modules=Artix-7:1,Kintex-7:0,Spartan-7:0,Virtex-7:0,Zynq-7000:0,UltraScale:0,UltraScale+:0,Versal:0,Zynq UltraScale+ MPSoC:0,Zynq UltraScale+ RFSoC:0,Engineering Sample Devices:0,DocNav:0,Vivado Simulator:0,Model Composer:0,System Generator for DSP:0\n'
-            printf 'InstallOptions=Acquire or Manage a License Key:0,Enable WebTalk for FPGAs to send usage statistics to Xilinx (Always enabled for WebPACK license):0\n'
-            printf 'CreateProgramGroupShortcuts=0\n'
-            printf 'CreateShortcutsForAllUsers=0\n'
-            printf 'CreateDesktopShortcuts=0\n'
-            printf 'CreateFileAssociation=0\n'
-          } > "$CONFIG"
-          echo "==== install_config.txt ===="
+          cp "$REF_CONFIG" "$CONFIG"
+
+          # Patch the reference config in place using awk (POSIX tool,
+          # no shell-script / python — constitution rule).
+          # - Destination     -> our LVM build-mount install dir
+          # - Modules         -> Artix-7:1, everything else :0
+          # - InstallOptions  -> every option forced to :0
+          # - Create*         -> 0
+          awk -v dest="${XILINX_INSTALL_DIR}" '
+          function disable_all(body,   n, parts, i, name, colon, out) {
+              n = split(body, parts, ",")
+              out = ""
+              for (i = 1; i <= n; i++) {
+                  colon = match(parts[i], /:[^:]*$/)
+                  if (colon == 0) { out = out (i==1?"":",") parts[i]; continue }
+                  name = substr(parts[i], 1, colon - 1)
+                  out = out (i==1?"":",") name ":0"
+              }
+              return out
+          }
+          function only_artix7(body,   n, parts, i, name, colon, out, keep) {
+              n = split(body, parts, ",")
+              out = ""
+              for (i = 1; i <= n; i++) {
+                  colon = match(parts[i], /:[^:]*$/)
+                  if (colon == 0) { out = out (i==1?"":",") parts[i]; continue }
+                  name = substr(parts[i], 1, colon - 1)
+                  gsub(/^[[:space:]]+|[[:space:]]+$/, "", name)
+                  keep = (name == "Artix-7") ? "1" : "0"
+                  out = out (i==1?"":",") name ":" keep
+              }
+              return out
+          }
+          /^Destination=/        { print "Destination=" dest; next }
+          /^Modules=/            { sub(/^Modules=/, ""); print "Modules=" only_artix7($0); next }
+          /^InstallOptions=/     { sub(/^InstallOptions=/, ""); print "InstallOptions=" disable_all($0); next }
+          /^CreateProgramGroupShortcuts=/ { print "CreateProgramGroupShortcuts=0"; next }
+          /^CreateShortcutsForAllUsers=/  { print "CreateShortcutsForAllUsers=0";  next }
+          /^CreateDesktopShortcuts=/      { print "CreateDesktopShortcuts=0";      next }
+          /^CreateFileAssociation=/       { print "CreateFileAssociation=0";       next }
+          { print }
+          ' "$REF_CONFIG" > "$CONFIG"
+
+          echo "==== PATCHED install_config.txt ===="
           cat "$CONFIG"
-          echo "============================"
+          echo "===================================="
           echo "config=$CONFIG" >> "$GITHUB_OUTPUT"
 
       - name: Install Vivado (silent, Artix-7 only)
