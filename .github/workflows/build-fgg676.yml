@@ -65,8 +65,9 @@ jobs:
         run: |
           set -x
           mkdir -p "$GITHUB_WORKSPACE/out"
-          # Try several known install paths for Vivado.
-          docker run --rm \
+          # Run as root inside the container so we can install python3-pip
+          # (the fpgatools/vivado image starts as a non-root user).
+          docker run --rm --user 0:0 \
             -v "$GITHUB_WORKSPACE":/work \
             -w /work/spiOverJtag \
             fpgatools/vivado:latest \
@@ -93,18 +94,24 @@ jobs:
               which vivado
               vivado -version | head -5
 
-              # Install edalize for the build driver.
-              if ! command -v pip3 >/dev/null 2>&1; then
-                apt-get update && apt-get install -y python3 python3-pip || \
-                  yum install -y python3 python3-pip || true
-              fi
-              pip3 install --no-cache-dir edalize || pip3 install --break-system-packages edalize
+              # Install python3 + pip + edalize.
+              # The fpgatools/vivado:latest image is Ubuntu-based.
+              export DEBIAN_FRONTEND=noninteractive
+              apt-get update
+              apt-get install -y --no-install-recommends \
+                python3 python3-pip python3-setuptools ca-certificates
+              python3 -m pip install --no-cache-dir edalize || \
+                python3 -m pip install --no-cache-dir --break-system-packages edalize
 
               # Build the FGG676 variant explicitly.
               python3 build.py xc7a100tfgg676 spi
 
               ls -la
               ls -la tmp_xc7a100tfgg676 || true
+
+              # Make outputs world-writable so the runner user can read them.
+              chown -R 0:0 tmp_xc7a100tfgg676 spiOverJtag_*.bit* 2>/dev/null || true
+              chmod -R a+rwX tmp_xc7a100tfgg676 spiOverJtag_*.bit* 2>/dev/null || true
             '
 
       - name: Verify FGG676 bitstream device string
