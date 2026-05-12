@@ -195,22 +195,31 @@ jobs:
           echo "============================"
           echo "config=$CONFIG" >> "$GITHUB_OUTPUT"
 
-      - name: Install Vivado (silent, Artix-7 only)
+      - name: Install Vivado (silent, defaults for ML Standard)
         run: |
           set -euxo pipefail
           XSETUP='${{ steps.extract_installer.outputs.xsetup }}'
-          CONFIG='${{ steps.configure_install.outputs.config }}'
 
           mkdir -p "${XILINX_INSTALL_DIR}"
-
           mkdir -p "${TMPDIR}"
+
+          # Use --edition defaults instead of a hand-written --config.
+          # Module names drift between releases (e.g. 'System Generator
+          # for DSP' removed, 'Vivado Simulator' renamed); the installer's
+          # own defaults are guaranteed to match the schema it ships with.
+          # Per UG973 (2025.2) and AMD docs:
+          #   xsetup --agree XilinxEULA,3rdPartyEULA --batch Install \
+          #     --edition "Vivado ML Standard" --product Vivado \
+          #     --location "$XILINX_INSTALL_DIR"
           echo "Starting silent Vivado install — this can take 30-60 min..."
           echo "== Free space before install =="
           df -h / "${{ github.workspace }}" || true
           "$XSETUP" \
             --agree XilinxEULA,3rdPartyEULA \
             --batch Install \
-            --config "$CONFIG"
+            --edition 'Vivado ML Standard' \
+            --product 'Vivado' \
+            --location "${XILINX_INSTALL_DIR}"
           echo "== Free space after install =="
           df -h / "${{ github.workspace }}" || true
 
