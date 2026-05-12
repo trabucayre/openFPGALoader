@@ -229,23 +229,38 @@ jobs:
           mkdir -p "${XILINX_INSTALL_DIR}"
           mkdir -p "${TMPDIR}"
 
-          # Use --edition defaults instead of a hand-written --config.
-          # Module names drift between releases (e.g. 'System Generator
-          # for DSP' removed, 'Vivado Simulator' renamed); the installer's
-          # own defaults are guaranteed to match the schema it ships with.
-          # Per UG973 (2025.2) and AMD docs:
-          #   xsetup --agree XilinxEULA,3rdPartyEULA --batch Install \
-          #     --edition "Vivado ML Standard" --product Vivado \
-          #     --location "$XILINX_INSTALL_DIR"
+          # Vivado 2025.2 silent install requires at least one device-family
+          # Module to be selected. --edition/--product alone don't pick any.
+          # Write a minimal --config that lists ONLY Artix-7:1 (and DocNav:0
+          # because the installer's error message explicitly cites it as a
+          # valid module name). All other 7-series / UltraScale / Versal
+          # entries are omitted, not :0'd, so we can't trip on renamed or
+          # removed module names like 'System Generator for DSP' (2025.1)
+          # or 'Vivado Simulator' (2025.2).
+          CONFIG="$HOME/install_config_minimal.txt"
+          {
+            printf '#### Minimal Vivado ML Standard install — Artix-7 only ####\n'
+            printf 'Edition=Vivado ML Standard\n'
+            printf 'Product=Vivado\n'
+            printf 'Destination=%s\n' "${XILINX_INSTALL_DIR}"
+            printf 'Modules=Artix-7:1,DocNav:0\n'
+            printf 'InstallOptions=\n'
+            printf 'CreateProgramGroupShortcuts=0\n'
+            printf 'CreateShortcutsForAllUsers=0\n'
+            printf 'CreateDesktopShortcuts=0\n'
+            printf 'CreateFileAssociation=0\n'
+          } > "$CONFIG"
+          echo "==== minimal install_config.txt ===="
+          cat "$CONFIG"
+          echo "===================================="
+
           echo "Starting silent Vivado install — this can take 30-60 min..."
           echo "== Free space before install =="
           df -h / "${{ github.workspace }}" || true
           "$XSETUP" \
             --agree XilinxEULA,3rdPartyEULA \
             --batch Install \
-            --edition 'Vivado ML Standard' \
-            --product 'Vivado' \
-            --location "${XILINX_INSTALL_DIR}"
+            --config "$CONFIG"
           echo "== Free space after install =="
           df -h / "${{ github.workspace }}" || true
 
