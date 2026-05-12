@@ -1,7 +1,12 @@
-name: Build FGG676 spiOverJtag bitstream
+name: Build FGG676 spiOverJtag bitstream (Vivado)
 
 on:
   workflow_dispatch:
+    inputs:
+      vivado_version:
+        description: 'Vivado version (e.g. 2023.2, 2024.2)'
+        required: false
+        default: '2024.2'
   push:
     branches:
       - feat/qmtech-xc7a100t-board
@@ -9,135 +14,265 @@ on:
       - 'spiOverJtag/**'
       - '.github/workflows/build-fgg676.yml'
 
+# Build FGG676 spiOverJtag bitstream by installing real AMD Vivado on the
+# runner, then `python3 build.py xc7a100tfgg676 spi`.
+#
+# Disk: ubuntu-latest has ~14 GiB free; Vivado ML Standard with only the
+# Artix-7 device family is ~15-20 GiB. We use easimon/maximize-build-space
+# to recover ~45 GiB before checkout.
+#
+# Installer source: AMD's amd.com download portal requires an authenticated
+# Salesforce/Okta session with CSRF tokens and (often) a captcha. There is
+# no documented programmatic download API. Two secrets, tried in priority
+# order:
+#
+#   1. XILINX_INSTALLER_URL  - a presigned URL the user copied from their
+#                              browser's "Copy link" on the download page
+#                              (most reliable; expires fast, so use
+#                              workflow_dispatch right after copying).
+#   2. XILINX_USER + XILINX_PASS - used by xsetup AuthTokenGen to fetch
+#                              device data during the silent install. The
+#                              web-installer .bin itself still must come
+#                              from XILINX_INSTALLER_URL because the
+#                              initial portal download cannot be scripted
+#                              (CSRF + captcha).
+
 jobs:
   build-fgg676:
-    name: 'Build spiOverJtag_xc7a100tfgg676.bit.gz'
+    name: 'Build spiOverJtag_xc7a100tfgg676.bit'
     runs-on: ubuntu-latest
-    timeout-minutes: 180
+    timeout-minutes: 300
+
+    env:
+      VIVADO_VERSION: ${{ github.event.inputs.vivado_version || '2024.2' }}
+      XILINX_INSTALL_DIR: /opt/Xilinx
 
     steps:
+      - name: Maximize build space
+        uses: easimon/maximize-build-space@v10
+        with:
+          root-reserve-mb: 2048
+          swap-size-mb: 1024
+          remove-dotnet: 'true'
+          remove-android: 'true'
+          remove-haskell: 'true'
+          remove-codeql: 'true'
+          remove-docker-images: 'true'
+
+      - name: Show free space after cleanup
+        run: |
+          set -euxo pipefail
+          echo "== df -h =="
+          df -h
+          echo "== free -h =="
+          free -h
+
       - name: Checkout
         uses: actions/checkout@v4
 
-      - name: Free disk space on runner
+      - name: Install installer prerequisites
         run: |
-          set -x
-          df -h
-          sudo rm -rf /usr/share/dotnet /usr/local/lib/android /opt/ghc \
-                      /usr/local/share/boost "$AGENT_TOOLSDIRECTORY" || true
-          sudo apt-get clean
-          docker system prune -af || true
-          df -h
+          set -euxo pipefail
+          echo "Installing host packages required by xsetup and Vivado runtime"
+          sudo apt-get update
+          sudo DEBIAN_FRONTEND=noninteractive apt-get install -y --no-install-recommends \
+            ca-certificates wget curl jq tar gzip unzip file \
+            libtinfo5 libncurses5 libx11-6 libxext6 libxrender1 libxtst6 libxi6 \
+            libgtk-3-0 libnss3 libgl1 libegl1 \
+            python3 python3-pip python3-setuptools \
+            locales || true
+          # libtinfo5/libncurses5 may not exist on jammy; ignore failure.
+          sudo locale-gen en_US.UTF-8 || true
 
-      - name: Show Docker info
-        run: docker info | head -40
-
-      - name: Pull Vivado Docker image (fpgatools/vivado)
-        id: pull_vivado
-        continue-on-error: true
+      - name: Resolve and download AMD Unified Installer
+        id: download_installer
+        env:
+          XILINX_INSTALLER_URL: ${{ secrets.XILINX_INSTALLER_URL }}
         run: |
-          set -x
-          # Public best-effort image. Note: Xilinx licensing forbids redistribution
-          # of full Vivado, so most public images either omit Artix-7 device files
-          # or are stripped. If this pull or the build below fails, the workflow
-          # logs will report the exact reason.
-          docker pull fpgatools/vivado:latest
-          docker image ls
-          df -h
+          set -euxo pipefail
+          if [ -z "${XILINX_INSTALLER_URL:-}" ]; then
+            echo "ERROR: XILINX_INSTALLER_URL secret is not set."
+            echo ""
+            echo "How to set it:"
+            echo "  1. Log in at https://www.amd.com/en/support/downloads/adaptive-soc-fpga.html"
+            echo "  2. Start downloading 'AMD Unified Installer for FPGAs &"
+            echo "     Adaptive SoCs ${VIVADO_VERSION} - Linux Self Extracting"
+            echo "     Web Installer'."
+            echo "  3. In the browser download manager, right-click the active"
+            echo "     download -> Copy download link."
+            echo "  4. Save that link as the XILINX_INSTALLER_URL repository secret."
+            echo "  5. Re-run this workflow within ~30 min (signed URL expires)."
+            exit 30
+          fi
 
-      - name: Inspect image contents (where is vivado?)
-        if: steps.pull_vivado.outcome == 'success'
-        continue-on-error: true
+          mkdir -p "$HOME/installer"
+          cd "$HOME/installer"
+
+          echo "Downloading installer from XILINX_INSTALLER_URL"
+          curl -fL --retry 5 --retry-delay 10 --connect-timeout 30 \
+               -o installer_download \
+               "$XILINX_INSTALLER_URL"
+          ls -la installer_download
+          file installer_download || true
+
+          INSTALLER_FILE=""
+          if head -c 4 installer_download | grep -q ELF; then
+            mv installer_download Xilinx_Unified_Web_Installer.bin
+            INSTALLER_FILE="$HOME/installer/Xilinx_Unified_Web_Installer.bin"
+            chmod +x "$INSTALLER_FILE"
+          elif file installer_download | grep -qi gzip; then
+            echo "Got a gzip archive; extracting"
+            mkdir -p extracted
+            tar -xzf installer_download -C extracted
+            INSTALLER_FILE="$(find extracted -maxdepth 3 -name 'xsetup' -type f | head -1)"
+            [ -n "$INSTALLER_FILE" ] || { echo "ERROR: no xsetup in archive"; exit 11; }
+            chmod +x "$INSTALLER_FILE"
+          elif file installer_download | grep -qi 'tar archive'; then
+            mkdir -p extracted
+            tar -xf installer_download -C extracted
+            INSTALLER_FILE="$(find extracted -maxdepth 3 -name 'xsetup' -type f | head -1)"
+            [ -n "$INSTALLER_FILE" ] || { echo "ERROR: no xsetup in tar"; exit 12; }
+            chmod +x "$INSTALLER_FILE"
+          else
+            echo "ERROR: unknown installer file format"
+            file installer_download
+            exit 13
+          fi
+
+          echo "Resolved installer: $INSTALLER_FILE"
+          echo "installer_file=$INSTALLER_FILE" >> "$GITHUB_OUTPUT"
+          ls -la "$INSTALLER_FILE"
+          df -h /
+
+      - name: Extract web-installer payload (if .bin)
+        id: extract_installer
         run: |
-          set -x
-          docker run --rm fpgatools/vivado:latest bash -c '
-            set -x
-            ls /opt 2>/dev/null || true
-            ls /tools 2>/dev/null || true
-            find / -maxdepth 5 -name "vivado" -type f 2>/dev/null | head -20
-            find / -maxdepth 6 -name "settings64.sh" 2>/dev/null | head -20
-          '
+          set -euxo pipefail
+          INSTALLER_FILE='${{ steps.download_installer.outputs.installer_file }}'
+          echo "Installer file: $INSTALLER_FILE"
+          if [[ "$INSTALLER_FILE" == *.bin ]]; then
+            mkdir -p "$HOME/xsetup_extract"
+            chmod +x "$INSTALLER_FILE"
+            # --noexec extracts the bundled xsetup tree without launching GUI.
+            "$INSTALLER_FILE" --noexec --keep --target "$HOME/xsetup_extract" || true
+            XSETUP="$(find "$HOME/xsetup_extract" -maxdepth 3 -name xsetup -type f | head -1)"
+            if [ -z "$XSETUP" ]; then
+              echo "WARN: --noexec didn't produce xsetup; using .bin directly"
+              XSETUP="$INSTALLER_FILE"
+            fi
+          else
+            XSETUP="$INSTALLER_FILE"
+          fi
+          chmod +x "$XSETUP" || true
+          echo "xsetup=$XSETUP" >> "$GITHUB_OUTPUT"
+          ls -la "$XSETUP"
 
-      - name: Run build inside Vivado container
-        id: vivado_build
-        if: steps.pull_vivado.outcome == 'success'
-        continue-on-error: true
+      - name: Generate auth token and install_config
+        id: configure_install
+        env:
+          XILINX_USER: ${{ secrets.XILINX_USER }}
+          XILINX_PASS: ${{ secrets.XILINX_PASS }}
         run: |
-          set -x
-          mkdir -p "$GITHUB_WORKSPACE/out"
-          # Run as root inside the container so we can install python3-pip
-          # (the fpgatools/vivado image starts as a non-root user).
-          docker run --rm --user 0:0 \
-            -v "$GITHUB_WORKSPACE":/work \
-            -w /work/spiOverJtag \
-            fpgatools/vivado:latest \
-            bash -c '
-              # NOTE: no `set -e` — the ca-certificates trigger script
-              # inside the fpgatools/vivado image can return non-zero
-              # (e.g. due to OpenSSL hook quirks) which would otherwise
-              # silently terminate the build *before* python3 build.py
-              # has a chance to run. We rely on explicit error handling
-              # at each command.
-              set -x
-              # Locate Vivado.
-              VIVADO_SETTINGS=""
-              for p in \
-                /opt/Xilinx/Vivado/*/settings64.sh \
-                /tools/Xilinx/Vivado/*/settings64.sh \
-                /Xilinx/Vivado/*/settings64.sh \
-                /opt/vivado/settings64.sh; do
-                if [ -f "$p" ]; then VIVADO_SETTINGS="$p"; break; fi
-              done
-              if [ -z "$VIVADO_SETTINGS" ]; then
-                echo "ERROR: Could not find Vivado settings64.sh inside the container"
-                find / -maxdepth 6 -name settings64.sh 2>/dev/null | head -20 || true
-                exit 42
-              fi
-              echo "Sourcing $VIVADO_SETTINGS"
-              # shellcheck disable=SC1090
-              source "$VIVADO_SETTINGS"
-              which vivado
-              vivado -version | head -5
+          set -euxo pipefail
+          XSETUP='${{ steps.extract_installer.outputs.xsetup }}'
 
-              # Install python3 + pip + edalize.
-              # The fpgatools/vivado:latest image is Ubuntu 18.04 with
-              # system Python 3.6, so we pin compatible versions:
-              # edalize 0.4.0 still ships its own Jinja2 templates and
-              # tolerates Jinja2 < 3.
-              export DEBIAN_FRONTEND=noninteractive
-              apt-get update || true
-              apt-get install -y --no-install-recommends \
-                python3 python3-pip python3-setuptools ca-certificates || true
-              # Confirm python3 is now available; if not, abort with code 51.
-              which python3 || { echo "ERROR: python3 not found"; exit 51; }
-              python3 --version
-              # edalize 0.3.0 has get_edatool and only requires Jinja2 >= 2.11.3.
-              # Force Jinja2 2.x because Jinja2 3.x is broken under Python 3.6
-              # in this container (PackageLoader assertion error).
-              python3 -m pip install --no-cache-dir --disable-pip-version-check \
-                Jinja2==2.11.3 "MarkupSafe<2.1" edalize==0.3.0
-              python3 -c "import edalize; from edalize.edatool import get_edatool; print(\"get_edatool OK\")"
+          if [ -z "${XILINX_USER:-}" ] || [ -z "${XILINX_PASS:-}" ]; then
+            echo "ERROR: XILINX_USER and XILINX_PASS secrets are required"
+            echo "       for the web installer to fetch device data."
+            exit 40
+          fi
 
-              # Build the FGG676 variant explicitly.
-              python3 build.py xc7a100tfgg676 spi
+          mkdir -p "$HOME/.Xilinx"
+          # AuthTokenGen writes ~/.Xilinx/wi_authentication_key. Credentials
+          # are read from stdin (User: / Password: prompts).
+          {
+            echo "$XILINX_USER"
+            echo "$XILINX_PASS"
+          } | "$XSETUP" -b AuthTokenGen || true
 
-              ls -la
-              ls -la tmp_xc7a100tfgg676 || true
+          if [ ! -f "$HOME/.Xilinx/wi_authentication_key" ]; then
+            echo "ERROR: AuthTokenGen did not produce wi_authentication_key"
+            echo "       This usually means the credentials are wrong, or"
+            echo "       AMD added a captcha step. The workaround is to use"
+            echo "       a full offline installer (large .tar.gz) URL in"
+            echo "       XILINX_INSTALLER_URL instead of the web installer."
+            ls -la "$HOME/.Xilinx" || true
+            exit 41
+          fi
+          echo "Auth token generated."
+          ls -la "$HOME/.Xilinx"
 
-              # Make outputs world-writable so the runner user can read them.
-              chown -R 0:0 tmp_xc7a100tfgg676 spiOverJtag_*.bit* 2>/dev/null || true
-              chmod -R a+rwX tmp_xc7a100tfgg676 spiOverJtag_*.bit* 2>/dev/null || true
-            '
+          # install_config.txt — Vivado ML Standard, Artix-7 only.
+          # Field names match the output of `xsetup -b ConfigGen`.
+          CONFIG="$HOME/install_config.txt"
+          cat > "$CONFIG" <<EOF
+#### AMD Unified Installer config — Vivado ML Standard, Artix-7 only ####
+Edition=Vivado ML Standard
+Product=Vivado
+Destination=${XILINX_INSTALL_DIR}
+Modules=Artix-7:1,Kintex-7:0,Spartan-7:0,Virtex-7:0,Zynq-7000:0,UltraScale:0,UltraScale+:0,Versal:0,Zynq UltraScale+ MPSoC:0,Zynq UltraScale+ RFSoC:0,Engineering Sample Devices:0,DocNav:0,Vivado Simulator:0,Model Composer:0,System Generator for DSP:0
+InstallOptions=Acquire or Manage a License Key:0,Enable WebTalk for FPGAs to send usage statistics to Xilinx (Always enabled for WebPACK license):0
+CreateProgramGroupShortcuts=0
+CreateShortcutsForAllUsers=0
+CreateDesktopShortcuts=0
+CreateFileAssociation=0
+EOF
+          echo "==== install_config.txt ===="
+          cat "$CONFIG"
+          echo "============================"
+          echo "config=$CONFIG" >> "$GITHUB_OUTPUT"
+
+      - name: Install Vivado (silent, Artix-7 only)
+        run: |
+          set -euxo pipefail
+          XSETUP='${{ steps.extract_installer.outputs.xsetup }}'
+          CONFIG='${{ steps.configure_install.outputs.config }}'
+
+          sudo mkdir -p "${XILINX_INSTALL_DIR}"
+          sudo chown -R "$USER:$USER" "${XILINX_INSTALL_DIR}"
+
+          echo "Starting silent Vivado install — this can take 30-60 min..."
+          "$XSETUP" \
+            --agree XilinxEULA,3rdPartyEULA,WebTalkTerms \
+            --batch Install \
+            --config "$CONFIG"
+
+          echo "Install finished."
+          find "${XILINX_INSTALL_DIR}" -maxdepth 3 -name settings64.sh
+          df -h /
+
+      - name: Install edalize for build.py
+        run: |
+          set -euxo pipefail
+          python3 -m pip install --user --disable-pip-version-check 'edalize>=0.4.0'
+          python3 -c 'from edalize.edatool import get_edatool; print("edalize OK")'
+
+      - name: Build FGG676 bitstream
+        id: build
+        run: |
+          set -euxo pipefail
+          VIVADO_SETTINGS="$(find "${XILINX_INSTALL_DIR}" -maxdepth 3 -name settings64.sh | head -1)"
+          [ -n "$VIVADO_SETTINGS" ] || { echo "ERROR: no settings64.sh"; exit 50; }
+          echo "Sourcing $VIVADO_SETTINGS"
+          # shellcheck disable=SC1090
+          source "$VIVADO_SETTINGS"
+          which vivado
+          vivado -version | head -3
+
+          cd spiOverJtag
+          python3 build.py xc7a100tfgg676 spi
+
+          ls -la
+          ls -la tmp_xc7a100tfgg676 || true
+          ls -la spiOverJtag_xc7a100tfgg676.bit* || true
 
       - name: Verify FGG676 bitstream device string
-        id: verify
-        if: steps.vivado_build.outcome == 'success'
         run: |
-          set -x
+          set -euxo pipefail
           cd spiOverJtag
-          ls -la spiOverJtag_xc7a100tfgg676.bit.gz
-          gunzip -kf spiOverJtag_xc7a100tfgg676.bit.gz
           ls -la spiOverJtag_xc7a100tfgg676.bit
+          # The bitstream embeds the device-package string; expect "7a100tfgg676",
+          # NOT "7a100tftg256".
           DEVICE_STR=$(strings spiOverJtag_xc7a100tfgg676.bit | grep -E '7a100t[a-z]+[0-9]+' | head -3 || true)
           echo "Detected device strings:"
           echo "$DEVICE_STR"
@@ -145,17 +280,19 @@ jobs:
             echo "OK: Bitstream contains '7a100tfgg676'"
           else
             echo "FAIL: Bitstream does NOT contain '7a100tfgg676'"
-            exit 1
+            exit 60
           fi
+          gzip -kf spiOverJtag_xc7a100tfgg676.bit
+          ls -la spiOverJtag_xc7a100tfgg676.bit spiOverJtag_xc7a100tfgg676.bit.gz
           sha256sum spiOverJtag_xc7a100tfgg676.bit spiOverJtag_xc7a100tfgg676.bit.gz
 
-      - name: Collect diagnostic logs (always)
+      - name: Collect diagnostics (always)
         if: always()
         run: |
-          set -x
+          set -uxo pipefail
           mkdir -p diag
           cp -r spiOverJtag/tmp_xc7a100tfgg676 diag/ 2>/dev/null || true
-          cp spiOverJtag/spiOverJtag_xc7a100tfgg676.bit* diag/ 2>/dev/null || true
+          cp spiOverJtag/spiOverJtag_xc7a100tfgg676.bit*  diag/ 2>/dev/null || true
           ls -la diag/ || true
 
       - name: Upload artifact (FGG676 bitstream + logs)
