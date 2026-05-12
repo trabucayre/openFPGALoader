@@ -103,13 +103,15 @@ jobs:
               apt-get update
               apt-get install -y --no-install-recommends \
                 python3 python3-pip python3-setuptools ca-certificates
-              python3 -m pip install --no-cache-dir --upgrade "pip<21"
               # edalize 0.3.0 has get_edatool and only requires
               # Jinja2 >= 2.11.3 (no hard >=3 dep). Force Jinja2 2.11.3
               # because Jinja2 3.x is broken under Python 3.6 in this
               # container ('A loader was not found for the package').
-              python3 -m pip install --no-cache-dir \
+              # Use the system pip 9 — it has no dependency resolver
+              # but tolerates conflicting metadata better than pip 20.
+              python3 -m pip install --no-cache-dir --disable-pip-version-check \
                 "Jinja2==2.11.3" "MarkupSafe<2.1" "edalize==0.3.0"
+              python3 -c "import edalize, sys; print('edalize', edalize.__file__); from edalize.edatool import get_edatool; print('get_edatool OK')"
 
               # Build the FGG676 variant explicitly.
               python3 build.py xc7a100tfgg676 spi
