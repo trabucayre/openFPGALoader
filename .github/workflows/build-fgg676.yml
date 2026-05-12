@@ -205,18 +205,18 @@ jobs:
           # install_config.txt — Vivado ML Standard, Artix-7 only.
           # Field names match the output of `xsetup -b ConfigGen`.
           CONFIG="$HOME/install_config.txt"
-          cat > "$CONFIG" <<EOF
-#### AMD Unified Installer config — Vivado ML Standard, Artix-7 only ####
-Edition=Vivado ML Standard
-Product=Vivado
-Destination=${XILINX_INSTALL_DIR}
-Modules=Artix-7:1,Kintex-7:0,Spartan-7:0,Virtex-7:0,Zynq-7000:0,UltraScale:0,UltraScale+:0,Versal:0,Zynq UltraScale+ MPSoC:0,Zynq UltraScale+ RFSoC:0,Engineering Sample Devices:0,DocNav:0,Vivado Simulator:0,Model Composer:0,System Generator for DSP:0
-InstallOptions=Acquire or Manage a License Key:0,Enable WebTalk for FPGAs to send usage statistics to Xilinx (Always enabled for WebPACK license):0
-CreateProgramGroupShortcuts=0
-CreateShortcutsForAllUsers=0
-CreateDesktopShortcuts=0
-CreateFileAssociation=0
-EOF
+          {
+            printf '#### AMD Unified Installer config — Vivado ML Standard, Artix-7 only ####\n'
+            printf 'Edition=Vivado ML Standard\n'
+            printf 'Product=Vivado\n'
+            printf 'Destination=%s\n' "${XILINX_INSTALL_DIR}"
+            printf 'Modules=Artix-7:1,Kintex-7:0,Spartan-7:0,Virtex-7:0,Zynq-7000:0,UltraScale:0,UltraScale+:0,Versal:0,Zynq UltraScale+ MPSoC:0,Zynq UltraScale+ RFSoC:0,Engineering Sample Devices:0,DocNav:0,Vivado Simulator:0,Model Composer:0,System Generator for DSP:0\n'
+            printf 'InstallOptions=Acquire or Manage a License Key:0,Enable WebTalk for FPGAs to send usage statistics to Xilinx (Always enabled for WebPACK license):0\n'
+            printf 'CreateProgramGroupShortcuts=0\n'
+            printf 'CreateShortcutsForAllUsers=0\n'
+            printf 'CreateDesktopShortcuts=0\n'
+            printf 'CreateFileAssociation=0\n'
+          } > "$CONFIG"
           echo "==== install_config.txt ===="
           cat "$CONFIG"
           echo "============================"
