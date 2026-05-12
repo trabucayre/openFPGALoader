@@ -83,14 +83,36 @@ jobs:
         run: |
           set -euxo pipefail
           echo "Installing host packages required by xsetup and Vivado runtime"
-          sudo apt-get update
-          sudo DEBIAN_FRONTEND=noninteractive apt-get install -y --no-install-recommends \
-            ca-certificates wget curl jq tar gzip unzip file \
-            libtinfo5 libncurses5 libx11-6 libxext6 libxrender1 libxtst6 libxi6 \
-            libgtk-3-0 libnss3 libgl1 libegl1 \
-            python3 python3-pip python3-setuptools \
-            locales || true
-          # libtinfo5/libncurses5 may not exist on jammy; ignore failure.
+
+          # Wait briefly for any unattended-upgrades lock the runner image may
+          # still be holding. Bounded by `timeout` so we never hang forever.
+          for i in 1 2 3 4 5; do
+              if sudo fuser /var/lib/dpkg/lock-frontend >/dev/null 2>&1 \
+                || sudo fuser /var/lib/apt/lists/lock     >/dev/null 2>&1 ; then
+                  echo "apt lock busy, waiting 5s (attempt $i/5)..."
+                  sleep 5
+                  continue
+              fi
+              break
+          done
+
+          export DEBIAN_FRONTEND=noninteractive
+          timeout 180 sudo -E apt-get update -qq -o Acquire::Retries=3
+
+          # Core CLI tools (always required) installed strictly.
+          timeout 300 sudo -E apt-get install -y --no-install-recommends \
+            ca-certificates wget curl jq tar gzip unzip file locales \
+            python3 python3-pip python3-setuptools
+
+          # X11 / GTK runtime libs that xsetup *may* dlopen during the silent
+          # install. They're best-effort: install one-by-one so a single
+          # missing-on-this-release package doesn't tank the whole batch.
+          for pkg in libx11-6 libxext6 libxrender1 libxtst6 libxi6 \
+                     libgtk-3-0 libnss3 libgl1 libegl1 ; do
+              timeout 120 sudo -E apt-get install -y --no-install-recommends "$pkg" \
+                  || echo "WARN: optional package $pkg not installed (skipped)"
+          done
+
           sudo locale-gen en_US.UTF-8 || true
 
       - name: Download AMD Unified Installer from internal release
