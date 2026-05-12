@@ -3,6 +3,15 @@ set_property CONFIG_VOLTAGE 3.3 [current_design]
 set_property BITSTREAM.CONFIG.SPI_BUSWIDTH {4} [current_design]
 set_property BITSTREAM.GENERAL.COMPRESS TRUE [current_design]
 
+# Drive the startup sequencer from JTAG TCK so the bitstream reaches EOS
+# (End-Of-Startup, i.e. DONE=HIGH) when loaded over JTAG via DLC10.
+# Without this Vivado defaults to CFGCLK (CCLK) — but CCLK is only driven
+# during SelectMAP/SPI configuration, not during JTAG. The result is a
+# bitstream that passes CRC/ID_ERROR=0, has MMCM_LOCK=1 and
+# INIT_COMPLETE=1, but EOS stays 0 forever because the startup FSM never
+# gets clocks. UG470 §6.3 Table 6-3.
+set_property BITSTREAM.STARTUP.STARTUPCLK JTAGCLK [current_design]
+
 # XC7A75T/100T/200T-FGG676 SPI flash pins on QMTech XC7A100T-2FGG676I core board.
 # Verified against QMTECH_XC7A75T_100T_200T-CORE-BOARD-V01-20210109.pdf schematic
 # (https://github.com/ChinaQMTECH/QMTECH_XC7A75T-100T-200T_Core_Board).
