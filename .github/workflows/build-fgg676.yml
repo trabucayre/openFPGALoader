@@ -45,7 +45,16 @@ jobs:
 
     env:
       VIVADO_VERSION: ${{ github.event.inputs.vivado_version || '2024.2' }}
-      XILINX_INSTALL_DIR: /opt/Xilinx
+      # All Vivado paths live under the large LVM build mount
+      # (mounted at ${{ github.workspace }} by easimon/maximize-build-space).
+      # Root partition only has ~145G total and is shared with the OS;
+      # build-mount has ~104G dedicated free space.
+      XILINX_INSTALL_DIR: ${{ github.workspace }}/xilinx-install
+      INSTALLER_DIR: ${{ github.workspace }}/xilinx-installer
+      XSETUP_EXTRACT_DIR: ${{ github.workspace }}/xilinx-xsetup-extract
+      # Redirect Java/installer temp files to the large build mount
+      # so /tmp on the root partition doesn't fill up during install.
+      TMPDIR: ${{ github.workspace }}/tmp
 
     steps:
       - name: Maximize build space
@@ -94,8 +103,8 @@ jobs:
           # (release tag: vivado-installer-2025.2) to bypass the CAPTCHA+CSRF
           # presigned-URL flow on amd.com. The installer's bytes are unmodified
           # AMD content; the release is private to this fork.
-          mkdir -p "$HOME/installer"
-          cd "$HOME/installer"
+          mkdir -p "${INSTALLER_DIR}"
+          cd "${INSTALLER_DIR}"
           gh release download vivado-installer-2025.2 \
             --repo gHashTag/openFPGALoader \
             --pattern 'FPGAs_AdaptiveSoCs_Unified_SDI_*_Lin64.bin' \
@@ -106,7 +115,7 @@ jobs:
           echo 'a78dbe8943c1c7ea14aea13937192d6316c0ba94e05bf6f4ebcdca9ef1a73280  Xilinx_Unified_Web_Installer.bin' \
             | sha256sum -c -
           chmod +x Xilinx_Unified_Web_Installer.bin
-          INSTALLER_FILE="$HOME/installer/Xilinx_Unified_Web_Installer.bin"
+          INSTALLER_FILE="${INSTALLER_DIR}/Xilinx_Unified_Web_Installer.bin"
           echo "installer_file=$INSTALLER_FILE" >> "$GITHUB_OUTPUT"
           df -h /
 
@@ -117,11 +126,11 @@ jobs:
           INSTALLER_FILE='${{ steps.download_installer.outputs.installer_file }}'
           echo "Installer file: $INSTALLER_FILE"
           if [[ "$INSTALLER_FILE" == *.bin ]]; then
-            mkdir -p "$HOME/xsetup_extract"
+            mkdir -p "${XSETUP_EXTRACT_DIR}"
             chmod +x "$INSTALLER_FILE"
             # --noexec extracts the bundled xsetup tree without launching GUI.
-            "$INSTALLER_FILE" --noexec --keep --target "$HOME/xsetup_extract" || true
-            XSETUP="$(find "$HOME/xsetup_extract" -maxdepth 3 -name xsetup -type f | head -1)"
+            "$INSTALLER_FILE" --noexec --keep --target "${XSETUP_EXTRACT_DIR}" || true
+            XSETUP="$(find "${XSETUP_EXTRACT_DIR}" -maxdepth 3 -name xsetup -type f | head -1)"
             if [ -z "$XSETUP" ]; then
               echo "WARN: --noexec didn't produce xsetup; using .bin directly"
               XSETUP="$INSTALLER_FILE"
@@ -188,14 +197,18 @@ jobs:
           XSETUP='${{ steps.extract_installer.outputs.xsetup }}'
           CONFIG='${{ steps.configure_install.outputs.config }}'
 
-          sudo mkdir -p "${XILINX_INSTALL_DIR}"
-          sudo chown -R "$USER:$USER" "${XILINX_INSTALL_DIR}"
+          mkdir -p "${XILINX_INSTALL_DIR}"
 
+          mkdir -p "${TMPDIR}"
           echo "Starting silent Vivado install — this can take 30-60 min..."
+          echo "== Free space before install =="
+          df -h / "${{ github.workspace }}" || true
           "$XSETUP" \
             --agree XilinxEULA,3rdPartyEULA \
             --batch Install \
             --config "$CONFIG"
+          echo "== Free space after install =="
+          df -h / "${{ github.workspace }}" || true
 
           echo "Install finished."
           find "${XILINX_INSTALL_DIR}" -maxdepth 3 -name settings64.sh
