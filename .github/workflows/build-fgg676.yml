@@ -1,0 +1,149 @@
+name: Build FGG676 spiOverJtag bitstream
+
+on:
+  workflow_dispatch:
+  push:
+    branches:
+      - feat/qmtech-xc7a100t-board
+    paths:
+      - 'spiOverJtag/**'
+      - '.github/workflows/build-fgg676.yml'
+
+jobs:
+  build-fgg676:
+    name: 'Build spiOverJtag_xc7a100tfgg676.bit.gz'
+    runs-on: ubuntu-latest
+    timeout-minutes: 180
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Free disk space on runner
+        run: |
+          set -x
+          df -h
+          sudo rm -rf /usr/share/dotnet /usr/local/lib/android /opt/ghc \
+                      /usr/local/share/boost "$AGENT_TOOLSDIRECTORY" || true
+          sudo apt-get clean
+          docker system prune -af || true
+          df -h
+
+      - name: Show Docker info
+        run: docker info | head -40
+
+      - name: Pull Vivado Docker image (fpgatools/vivado)
+        id: pull_vivado
+        continue-on-error: true
+        run: |
+          set -x
+          # Public best-effort image. Note: Xilinx licensing forbids redistribution
+          # of full Vivado, so most public images either omit Artix-7 device files
+          # or are stripped. If this pull or the build below fails, the workflow
+          # logs will report the exact reason.
+          docker pull fpgatools/vivado:latest
+          docker image ls
+          df -h
+
+      - name: Inspect image contents (where is vivado?)
+        if: steps.pull_vivado.outcome == 'success'
+        continue-on-error: true
+        run: |
+          set -x
+          docker run --rm fpgatools/vivado:latest bash -c '
+            set -x
+            ls /opt 2>/dev/null || true
+            ls /tools 2>/dev/null || true
+            find / -maxdepth 5 -name "vivado" -type f 2>/dev/null | head -20
+            find / -maxdepth 6 -name "settings64.sh" 2>/dev/null | head -20
+          '
+
+      - name: Run build inside Vivado container
+        id: vivado_build
+        if: steps.pull_vivado.outcome == 'success'
+        continue-on-error: true
+        run: |
+          set -x
+          mkdir -p "$GITHUB_WORKSPACE/out"
+          # Try several known install paths for Vivado.
+          docker run --rm \
+            -v "$GITHUB_WORKSPACE":/work \
+            -w /work/spiOverJtag \
+            fpgatools/vivado:latest \
+            bash -c '
+              set -e
+              set -x
+              # Locate Vivado.
+              VIVADO_SETTINGS=""
+              for p in \
+                /opt/Xilinx/Vivado/*/settings64.sh \
+                /tools/Xilinx/Vivado/*/settings64.sh \
+                /Xilinx/Vivado/*/settings64.sh \
+                /opt/vivado/settings64.sh; do
+                if [ -f "$p" ]; then VIVADO_SETTINGS="$p"; break; fi
+              done
+              if [ -z "$VIVADO_SETTINGS" ]; then
+                echo "ERROR: Could not find Vivado settings64.sh inside the container"
+                find / -maxdepth 6 -name settings64.sh 2>/dev/null | head -20 || true
+                exit 42
+              fi
+              echo "Sourcing $VIVADO_SETTINGS"
+              # shellcheck disable=SC1090
+              source "$VIVADO_SETTINGS"
+              which vivado
+              vivado -version | head -5
+
+              # Install edalize for the build driver.
+              if ! command -v pip3 >/dev/null 2>&1; then
+                apt-get update && apt-get install -y python3 python3-pip || \
+                  yum install -y python3 python3-pip || true
+              fi
+              pip3 install --no-cache-dir edalize || pip3 install --break-system-packages edalize
+
+              # Build the FGG676 variant explicitly.
+              python3 build.py xc7a100tfgg676 spi
+
+              ls -la
+              ls -la tmp_xc7a100tfgg676 || true
+            '
+
+      - name: Verify FGG676 bitstream device string
+        id: verify
+        if: steps.vivado_build.outcome == 'success'
+        run: |
+          set -x
+          cd spiOverJtag
+          ls -la spiOverJtag_xc7a100tfgg676.bit.gz
+          gunzip -kf spiOverJtag_xc7a100tfgg676.bit.gz
+          ls -la spiOverJtag_xc7a100tfgg676.bit
+          DEVICE_STR=$(strings spiOverJtag_xc7a100tfgg676.bit | grep -E '7a100t[a-z]+[0-9]+' | head -3 || true)
+          echo "Detected device strings:"
+          echo "$DEVICE_STR"
+          if echo "$DEVICE_STR" | grep -q '7a100tfgg676'; then
+            echo "OK: Bitstream contains '7a100tfgg676'"
+          else
+            echo "FAIL: Bitstream does NOT contain '7a100tfgg676'"
+            exit 1
+          fi
+          sha256sum spiOverJtag_xc7a100tfgg676.bit spiOverJtag_xc7a100tfgg676.bit.gz
+
+      - name: Collect diagnostic logs (always)
+        if: always()
+        run: |
+          set -x
+          mkdir -p diag
+          cp -r spiOverJtag/tmp_xc7a100tfgg676 diag/ 2>/dev/null || true
+          cp spiOverJtag/spiOverJtag_xc7a100tfgg676.bit* diag/ 2>/dev/null || true
+          ls -la diag/ || true
+
+      - name: Upload artifact (FGG676 bitstream + logs)
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: spiOverJtag-fgg676
+          path: |
+            spiOverJtag/spiOverJtag_xc7a100tfgg676.bit
+            spiOverJtag/spiOverJtag_xc7a100tfgg676.bit.gz
+            diag/**
+          if-no-files-found: warn
+          retention-days: 30
