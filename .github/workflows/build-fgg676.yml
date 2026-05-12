@@ -133,39 +133,33 @@ jobs:
           echo "xsetup=$XSETUP" >> "$GITHUB_OUTPUT"
           ls -la "$XSETUP"
 
-      - name: Generate auth token and install_config
+      - name: Install pre-generated auth token + install_config
         id: configure_install
         env:
-          XILINX_USER: ${{ secrets.XILINX_USER }}
-          XILINX_PASS: ${{ secrets.XILINX_PASS }}
+          WI_AUTHENTICATION_KEY_B64: ${{ secrets.WI_AUTHENTICATION_KEY_B64 }}
         run: |
           set -euxo pipefail
           XSETUP='${{ steps.extract_installer.outputs.xsetup }}'
 
-          if [ -z "${XILINX_USER:-}" ] || [ -z "${XILINX_PASS:-}" ]; then
-            echo "ERROR: XILINX_USER and XILINX_PASS secrets are required"
-            echo "       for the web installer to fetch device data."
+          # xsetup -b AuthTokenGen requires an interactive TTY (Java
+          # installer calls /dev/tty for password input). GitHub runners
+          # have no TTY, so we ship a pre-generated wi_authentication_key
+          # as a base64-encoded repo secret. Token lifetime: ~7 days
+          # (regenerate locally with xsetup -b AuthTokenGen if expired).
+          if [ -z "${WI_AUTHENTICATION_KEY_B64:-}" ]; then
+            echo "ERROR: WI_AUTHENTICATION_KEY_B64 secret is not set."
+            echo "       Generate locally with: xsetup -b AuthTokenGen,"
+            echo "       then: base64 -w0 ~/.Xilinx/wi_authentication_key |"
+            echo "             gh secret set WI_AUTHENTICATION_KEY_B64 \\"
+            echo "                --repo gHashTag/openFPGALoader"
             exit 40
           fi
 
           mkdir -p "$HOME/.Xilinx"
-          # AuthTokenGen writes ~/.Xilinx/wi_authentication_key. Credentials
-          # are read from stdin (User: / Password: prompts).
-          {
-            echo "$XILINX_USER"
-            echo "$XILINX_PASS"
-          } | "$XSETUP" -b AuthTokenGen || true
-
-          if [ ! -f "$HOME/.Xilinx/wi_authentication_key" ]; then
-            echo "ERROR: AuthTokenGen did not produce wi_authentication_key"
-            echo "       This usually means the credentials are wrong, or"
-            echo "       AMD added a captcha step. The workaround is to use"
-            echo "       a full offline installer (large .tar.gz) URL in"
-            echo "       XILINX_INSTALLER_URL instead of the web installer."
-            ls -la "$HOME/.Xilinx" || true
-            exit 41
-          fi
-          echo "Auth token generated."
+          printf '%s' "$WI_AUTHENTICATION_KEY_B64" | base64 -d > "$HOME/.Xilinx/wi_authentication_key"
+          chmod 600 "$HOME/.Xilinx/wi_authentication_key"
+          test -s "$HOME/.Xilinx/wi_authentication_key" || { echo "ERROR: token is empty"; exit 41; }
+          echo "Auth token installed (size: $(wc -c <"$HOME/.Xilinx/wi_authentication_key") bytes)."
           ls -la "$HOME/.Xilinx"
 
           # install_config.txt — Vivado ML Standard, Artix-7 only.
