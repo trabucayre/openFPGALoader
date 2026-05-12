@@ -193,7 +193,7 @@ jobs:
 
           echo "Starting silent Vivado install — this can take 30-60 min..."
           "$XSETUP" \
-            --agree XilinxEULA,3rdPartyEULA,WebTalkTerms \
+            --agree XilinxEULA,3rdPartyEULA \
             --batch Install \
             --config "$CONFIG"
 
