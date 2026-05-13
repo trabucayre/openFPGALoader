@@ -58,6 +58,9 @@
 #ifdef ENABLE_XVC_CLIENT
 #include "xvc_client.hpp"
 #endif
+#ifdef ENABLE_XILINX_PLATFORM_CABLE_USB
+#include "xilinxPlatformCableUSB.hpp"
+#endif
 
 
 #define DEBUG 0
@@ -206,6 +209,15 @@ Jtag::Jtag(const cable_t &cable, const jtag_pins_conf_t *pin_conf,
 	case MODE_REMOTEBITBANG:
 		_jtag = new RemoteBitbang_client(ip_adr, port, verbose);
 		break;
+#endif
+	case MODE_XPCU:
+#ifdef ENABLE_XILINX_PLATFORM_CABLE_USB
+		_jtag = new XilinxPlatformCableUSB(0x03fd, 0x0013, clkHZ,
+			firmware_path, verbose);
+		break;
+#else
+		printError("Jtag: support for Xilinx Platform Cable USB (XPCU) was not enabled at compile time");
+		throw std::exception();
 #endif
 	default:
 		std::cerr << "Jtag: unknown cable type" << std::endl;

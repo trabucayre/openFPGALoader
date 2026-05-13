@@ -302,6 +302,13 @@ usb-blasterIII:
     URL: https://www.intel.com/content/dam/www/programmable/us/en/pdfs/literature/ug/ug_usb_blstr_ii_cable.pdf
 
 
+xilinxPlatformCableUsb:
+
+  - Name: Xilinx Platform Cable USB (XPCU)
+    Description: Xilinx Platform Cable USB (XPCU) from AMD/Xilinx
+    URL: https://www.amd.com/en/products/adaptive-socs-and-fpgas/board-accessories/hw-usb-ii-g.html
+
+
 xvc-client:
 
   - Name: Xilinx Virtual Cable
