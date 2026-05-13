@@ -14,7 +14,7 @@
 #include "display.hpp"
 #include "fx2_ll.hpp"
 #include "ihexParser.hpp"
-
+#include "progressBar.hpp"
 
 #define FX2_FIRM_LOAD          0xA0
 #define FX2_GCR_CPUCS          0xe600
@@ -42,27 +42,36 @@ FX2_ll::FX2_ll(uint16_t uninit_vid, uint16_t uninit_pid,
 				throw std::runtime_error("claim interface failed");
 			}
 			/* load firmware */
-			load_firmware(firmware_path);
+			if (!load_firmware(firmware_path)) {
+				libusb_close(dev_handle);
+				libusb_exit(usb_ctx);
+				throw std::runtime_error("fx2 firmware load failed");
+			}
 			close();
 			reenum = true;
 		}
 	}
 
 	/* try to open an already init device
-	 * since fx2 may be not immediately ready
+	 * since fx2 may be not immediatly ready
 	 * retry with a delay
 	 */
+	ProgressBar progress("Waiting reload", 100, 50, false);
 	int timeout = 100;
 	do {
 		dev_handle = libusb_open_device_with_vid_pid(usb_ctx,
 				vid, pid);
 		timeout--;
+		progress.display(100-timeout);
 		if (!dev_handle)
 			sleep(1);
 	} while (!dev_handle && timeout > 0 && reenum);
 
-	if (!dev_handle)
+	if (!dev_handle) {
+		progress.fail();
 		throw std::runtime_error("FX2: fail to open device");
+	}
+	progress.done();
 
 	ret = libusb_claim_interface(dev_handle, 0);
 	if (ret) {
@@ -70,6 +79,18 @@ FX2_ll::FX2_ll(uint16_t uninit_vid, uint16_t uninit_pid,
 		libusb_exit(usb_ctx);
 		throw std::runtime_error("claim interface failed");
 	}
+}
+
+bool FX2_ll::set_interface_alt_setting(const int if_num, const int alt_setting)
+{
+	const int ret = libusb_set_interface_alt_setting(dev_handle, if_num,
+		alt_setting);
+	if (ret && ret != LIBUSB_ERROR_NOT_FOUND) {
+		printWarn("unable to select alternate interface 1: "
+			+ std::string(libusb_error_name(ret)));
+		return false;
+	}
+	return true;
 }
 
 /* destructor: close current device and
@@ -134,11 +155,11 @@ int FX2_ll::read(uint8_t endpoint, uint8_t *buff, uint16_t len)
 /* write len data using control
  */
 int FX2_ll::write_ctrl(uint8_t bRequest, uint16_t wValue,
-		uint8_t *buff, uint16_t len)
+		uint8_t *buff, uint16_t len, uint16_t wIndex)
 {
 	int ret = libusb_control_transfer(dev_handle,
 			LIBUSB_REQUEST_TYPE_VENDOR | LIBUSB_ENDPOINT_OUT,
-			bRequest, wValue, 0x0000, buff, len, 100);
+			bRequest, wValue, wIndex, buff, len, 100);
 	if (ret < 0) {
 		printError("Unable to send control request: "
 				+ std::string(libusb_error_name(ret)));
@@ -150,11 +171,11 @@ int FX2_ll::write_ctrl(uint8_t bRequest, uint16_t wValue,
 /* read len data using control
  */
 int FX2_ll::read_ctrl(uint8_t bRequest, uint16_t wValue,
-		uint8_t *buff, uint16_t len)
+		uint8_t *buff, uint16_t len, uint16_t wIndex)
 {
 	int ret = libusb_control_transfer(dev_handle,
 			LIBUSB_REQUEST_TYPE_VENDOR | LIBUSB_ENDPOINT_IN,
-			bRequest, wValue, 0x0000, buff, len, 100);
+			bRequest, wValue, wIndex, buff, len, 100);
 	if (ret < 0) {
 		printError("Unable to read control request: "
 				+ std::string(libusb_error_name(ret)));
@@ -177,6 +198,7 @@ bool FX2_ll::load_firmware(std::string firmware_path)
 		return false;
 	/* load */
 	std::vector<IhexParser::data_line_t> data = ihex.getDataArray();
+	ProgressBar progress("Loading firmware", data.size(), 50, false);
 	for (size_t i = 0; i < data.size(); i++) {
 		IhexParser::data_line_t data_line = data[i];
 
@@ -186,14 +208,16 @@ bool FX2_ll::load_firmware(std::string firmware_path)
 		while (toSend > 0) {
 			uint16_t xfer_len = (toSend > 64) ? 64: toSend;
 			if (!write_ctrl(FX2_FIRM_LOAD, addr, tx_buff, xfer_len)) {
-				printError("load firmware failed\n");
+				progress.fail();
 				return false;
 			}
 			toSend -= xfer_len;
 			tx_buff += xfer_len;
 			addr += xfer_len;
 		}
+		progress.display(i);
 	}
+	progress.done();
 
 	/* unset reset */
 	if (!reset(0))
