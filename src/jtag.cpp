@@ -165,7 +165,8 @@ Jtag::Jtag(const cable_t &cable, const jtag_pins_conf_t *pin_conf,
 		break;
 	case MODE_ESP:
 #ifdef ENABLE_ESP_USB
-		_jtag = new esp_usb_jtag(clkHZ, verbose, 0x303a, 0x1001);
+		_jtag = new esp_usb_jtag(clkHZ, verbose, 0x303a, 0x1001,
+			cable.bus_addr, cable.device_addr, serial);
 #else
 		std::cerr << "Jtag: support for esp32s3 cable was not enabled at compile time" << std::endl;
 		throw std::exception();

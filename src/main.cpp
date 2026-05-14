@@ -272,6 +272,14 @@ int main(int argc, char **argv)
 	}
 #endif
 
+	if (!args.usb_serial_num.empty()) {
+		if (cable.type != MODE_FTDI_SERIAL && cable.type != MODE_FTDI_BITBANG &&
+			cable.type != MODE_ESP){
+			printError("Error: usb-serial-num param is for FTDI and esp32s3 cables.");
+			return EXIT_FAILURE;
+		}
+	}
+
 	if (args.vid != 0) {
 		printInfo("Cable VID overridden");
 		cable.vid = args.vid;
@@ -921,7 +929,7 @@ int parse_opt(int argc, char **argv, struct arguments *args,
 			("busdev-num",
 				"select a probe by it bus and device number (bus_num:device_addr)",
 				cxxopts::value<std::vector<std::string>>(bus_dev_num))
-			("usb-serial-num", "USB iSerial (FTDI chip serial number)",
+			("usb-serial-num", "USB iSerial (FTDI chip serial number or ESP32 iSerialNumber substring)",
 				cxxopts::value<std::string>(args->usb_serial_num))
 			("ftdi-serial", "FTDI chip serial number (Deprecated)",
 				cxxopts::value<std::string>(ftdi_serial))
@@ -1131,8 +1139,8 @@ int parse_opt(int argc, char **argv, struct arguments *args,
 		}
 
 		if (result.count("ftdi-serial")) {
-			if (result.count("usb_serial_num")) {
-				printError("Error: ftdi_serial and usb_serial_num can't be used at the same time.");
+			if (result.count("usb-serial-num")) {
+				printError("Error: ftdi-serial and usb-serial-num can't be used at the same time.");
 				return -1;
 			}
 			args->usb_serial_num = ftdi_serial;

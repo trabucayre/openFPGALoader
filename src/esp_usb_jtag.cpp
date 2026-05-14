@@ -245,13 +245,17 @@ static uint16_t esp_usb_target_chip_id = 0; /* not applicable for FPGA, they hav
 
 /* end copy from openocd */
 
-esp_usb_jtag::esp_usb_jtag(uint32_t clkHZ, int8_t verbose, int vid = ESPUSBJTAG_VID, int pid = ESPUSBJTAG_PID):
+esp_usb_jtag::esp_usb_jtag(uint32_t clkHZ, int8_t verbose,
+			int vid = ESPUSBJTAG_VID, int pid = ESPUSBJTAG_PID,
+			uint8_t bus_addr = 0, uint8_t dev_addr = 0,
+			const std::string &serial = ""):
 			_verbose(verbose > 1),
 			dev_handle(NULL), usb_ctx(NULL), _tdi(0), _tms(0),
 			/* Default for emard firmware. */
 			_esp_usb_jtag_caps(0x2000), _write_ep(0x02),
 			_vid(ESPUSBJTAG_VID), _pid(ESPUSBJTAG_PID)
 {
+	libusb_device **devs = NULL;
 	int ret;
 	char mess[256];
 
@@ -260,18 +264,61 @@ esp_usb_jtag::esp_usb_jtag(uint32_t clkHZ, int8_t verbose, int vid = ESPUSBJTAG_
 		throw std::exception();
 	}
 
-	dev_handle = libusb_open_device_with_vid_pid(usb_ctx,
-		_vid, _pid);
-	if (!dev_handle) {
-		_esp_usb_jtag_caps = 0x030A;
-		_write_ep = 0x03;
-		_pid = 0x1002;
-		dev_handle = libusb_open_device_with_vid_pid(usb_ctx,
-			_vid, _pid);
+	ssize_t cnt = libusb_get_device_list(usb_ctx, &devs);
+	if (cnt < 0) {
+		std::cerr << "esp_usb_jtag: libusb_get_device_list failed: "
+		     << libusb_error_name(static_cast<int>(cnt)) << std::endl;
+		libusb_exit(usb_ctx);
+		throw std::exception();
 	}
+
+	for (ssize_t i = 0; i < cnt; i++) {
+		libusb_device *dev = devs[i];
+		struct libusb_device_descriptor desc;
+		if (libusb_get_device_descriptor(dev, &desc) < 0)
+			continue;
+		if (desc.idVendor != vid || desc.idProduct != pid)
+			continue;
+		/* bus/device filter (only when both are user-supplied) */
+		if (bus_addr != 0 && dev_addr != 0 &&
+				(libusb_get_bus_number(dev) != bus_addr ||
+				 libusb_get_device_address(dev) != dev_addr))
+			continue;
+
+		/* serial filter */
+		if (!serial.empty()) {
+			libusb_device_handle *probe = NULL;
+			if (libusb_open(dev, &probe) < 0)
+				continue;
+			unsigned char raw[256] = {0};
+			int n = 0;
+			if (desc.iSerialNumber)
+				n = libusb_get_string_descriptor_ascii(probe,
+						desc.iSerialNumber, raw, sizeof(raw));
+			libusb_close(probe);
+			if (n <= 0)
+				continue;
+			const std::string found(reinterpret_cast<char *>(raw), n);
+
+			if (found.find(serial) == std::string::npos)
+				continue;
+		}
+
+		if (libusb_open(dev, &dev_handle) == 0)
+			break;
+		dev_handle = NULL;
+	}
+	libusb_free_device_list(devs, 1);
+
 	if (!dev_handle) {
-		snprintf(mess, 256, "fails to open esp_usb_jtag device");
-		printError(mess);
+		std::cerr << "fails to open esp_usb_jtag device vid:pid 0x"
+		     << std::hex << vid << ":0x" << pid;
+		if (bus_addr || dev_addr)
+			std::cerr << " bus:dev " << std::dec << static_cast<int>(bus_addr)
+			     << ":" << static_cast<int>(dev_addr);
+		if (!serial.empty())
+			std::cerr << " serial '" << serial << "'";
+		std::cerr << std::endl;
 		libusb_exit(usb_ctx);
 		throw std::exception();
 	}
