@@ -79,7 +79,7 @@ struct arguments {
 	std::string secondary_bit_file;
 	std::string device;
 	std::string cable;
-	std::string ftdi_serial;
+	std::string usb_serial_num;
 	int ftdi_channel;
 	int status_pin;
 	uint32_t freq;
@@ -264,13 +264,6 @@ int main(int argc, char **argv)
 		cable.config.interface = mapping[args.ftdi_channel];
 	}
 
-	if (!args.ftdi_serial.empty()) {
-		if (cable.type != MODE_FTDI_SERIAL && cable.type != MODE_FTDI_BITBANG){
-			printError("Error: FTDI serial param is for FTDI cables.");
-			return EXIT_FAILURE;
-		}
-	}
-
 	if (args.status_pin != -1) {
 		if (cable.type != MODE_FTDI_SERIAL){
 			printError("Error: FTDI status pin is for FTDI MPSSE cables.");
@@ -278,6 +271,14 @@ int main(int argc, char **argv)
 		}
 	}
 #endif
+
+	if (!args.usb_serial_num.empty()) {
+		if (cable.type != MODE_FTDI_SERIAL && cable.type != MODE_FTDI_BITBANG &&
+			cable.type != MODE_ESP){
+			printError("Error: usb-serial-num param is for FTDI and esp32s3 cables.");
+			return EXIT_FAILURE;
+		}
+	}
 
 	if (args.vid != 0) {
 		printInfo("Cable VID overridden");
@@ -389,7 +390,7 @@ int main(int argc, char **argv)
 
 	Jtag *jtag;
 	try {
-		jtag = new Jtag(cable, &pins_config, args.device, args.ftdi_serial,
+		jtag = new Jtag(cable, &pins_config, args.device, args.usb_serial_num,
 				args.freq, args.verbose, args.ip_adr, args.port,
 				args.invert_read_edge, args.probe_firmware,
 				args.user_misc_devs);
@@ -667,7 +668,7 @@ int run_xvc_server(const struct arguments &args, const cable_t &cable,
 	try {
 		XVC_server *xvc = NULL;
 		xvc = new XVC_server(args.port, cable, pins_config, args.device,
-				args.ftdi_serial, args.freq, args.verbose, args.ip_adr,
+				args.usb_serial_num, args.freq, args.verbose, args.ip_adr,
 				args.invert_read_edge, args.probe_firmware);
 		/* create connection */
 		xvc->open_connection();
@@ -889,6 +890,7 @@ int parse_opt(int argc, char **argv, struct arguments *args,
 	jtag_pins_conf_t *pins_config)
 {
 	std::string freqo;
+	std::string ftdi_serial;
 	std::vector<std::string> pins, bus_dev_num;
 	bool verbose = false, quiet = false;
 	int8_t verbose_level = -2;
@@ -927,8 +929,10 @@ int parse_opt(int argc, char **argv, struct arguments *args,
 			("busdev-num",
 				"select a probe by it bus and device number (bus_num:device_addr)",
 				cxxopts::value<std::vector<std::string>>(bus_dev_num))
-			("ftdi-serial", "FTDI chip serial number",
-				cxxopts::value<std::string>(args->ftdi_serial))
+			("usb-serial-num", "USB iSerial (FTDI chip serial number or ESP32 iSerialNumber substring)",
+				cxxopts::value<std::string>(args->usb_serial_num))
+			("ftdi-serial", "FTDI chip serial number (Deprecated)",
+				cxxopts::value<std::string>(ftdi_serial))
 			("ftdi-channel",
 				"FTDI chip channel number (channels 0-3 map to A-D)",
 				cxxopts::value<int>(args->ftdi_channel))
@@ -1132,6 +1136,14 @@ int parse_opt(int argc, char **argv, struct arguments *args,
 				printError("Error: valid FTDI channels are 0-3.");
 				return -1;
 			}
+		}
+
+		if (result.count("ftdi-serial")) {
+			if (result.count("usb-serial-num")) {
+				printError("Error: ftdi-serial and usb-serial-num can't be used at the same time.");
+				return -1;
+			}
+			args->usb_serial_num = ftdi_serial;
 		}
 
 		if (result.count("busdev-num")) {

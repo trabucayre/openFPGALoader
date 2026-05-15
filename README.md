@@ -70,7 +70,9 @@ openFPGALoader -- a program to flash FPGA
       --cable-index arg         probe index (FTDI and cmsisDAP)
       --busdev-num arg          select a probe by it bus and device number
                                 (bus_num:device_addr)
-      --ftdi-serial arg         FTDI chip serial number
+      --usb-serial-num arg      USB iSerial (FTDI chip serial number or ESP32
+                                iSerialNumber substring)
+      --ftdi-serial arg         FTDI chip serial number (Deprecated)
       --ftdi-channel arg        FTDI chip channel number (channels 0-3 map to
                                 A-D)
   -d, --device arg              device to use (/dev/ttyUSBx)
