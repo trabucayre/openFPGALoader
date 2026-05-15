@@ -1,0 +1,335 @@
+name: Build FGG676 spiOverJtag bitstream (Vivado)
+
+on:
+  workflow_dispatch:
+    inputs:
+      vivado_version:
+        description: 'Vivado version (e.g. 2023.2, 2024.2)'
+        required: false
+        default: '2024.2'
+  push:
+    branches:
+      - feat/qmtech-xc7a100t-board
+    paths:
+      - 'spiOverJtag/**'
+      - '.github/workflows/build-fgg676.yml'
+
+# Build FGG676 spiOverJtag bitstream by installing real AMD Vivado on the
+# runner, then `python3 build.py xc7a100tfgg676 spi`.
+#
+# Disk: ubuntu-latest has ~14 GiB free; Vivado ML Standard with only the
+# Artix-7 device family is ~15-20 GiB. We use easimon/maximize-build-space
+# to recover ~45 GiB before checkout.
+#
+# Installer source: AMD's amd.com download portal requires an authenticated
+# Salesforce/Okta session with CSRF tokens and (often) a captcha. There is
+# no documented programmatic download API. Two secrets, tried in priority
+# order:
+#
+#   1. XILINX_INSTALLER_URL  - DEPRECATED: superseded by internal release asset (gHashTag/openFPGALoader@vivado-installer-2025.2)
+#                              browser's "Copy link" on the download page
+#                              (most reliable; expires fast, so use
+#                              workflow_dispatch right after copying).
+#   2. XILINX_USER + XILINX_PASS - used by xsetup AuthTokenGen to fetch
+#                              device data during the silent install. The
+#                              web-installer .bin itself still must come
+#                              from XILINX_INSTALLER_URL because the
+#                              initial portal download cannot be scripted
+#                              (CSRF + captcha).
+
+jobs:
+  build-fgg676:
+    name: 'Build spiOverJtag_xc7a100tfgg676.bit'
+    runs-on: ubuntu-latest
+    timeout-minutes: 300
+
+    env:
+      VIVADO_VERSION: ${{ github.event.inputs.vivado_version || '2024.2' }}
+      # All Vivado paths live under the large LVM build mount
+      # (mounted at ${{ github.workspace }} by easimon/maximize-build-space).
+      # Root partition only has ~145G total and is shared with the OS;
+      # build-mount has ~104G dedicated free space.
+      XILINX_INSTALL_DIR: ${{ github.workspace }}/xilinx-install
+      INSTALLER_DIR: ${{ github.workspace }}/xilinx-installer
+      XSETUP_EXTRACT_DIR: ${{ github.workspace }}/xilinx-xsetup-extract
+      # Redirect Java/installer temp files to the large build mount
+      # so /tmp on the root partition doesn't fill up during install.
+      TMPDIR: ${{ github.workspace }}/tmp
+
+    steps:
+      - name: Maximize build space
+        uses: easimon/maximize-build-space@v10
+        with:
+          root-reserve-mb: 2048
+          swap-size-mb: 1024
+          remove-dotnet: 'true'
+          remove-android: 'true'
+          remove-haskell: 'true'
+          remove-codeql: 'true'
+          remove-docker-images: 'true'
+
+      - name: Show free space after cleanup
+        run: |
+          set -euxo pipefail
+          echo "== df -h =="
+          df -h
+          echo "== free -h =="
+          free -h
+
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Install installer prerequisites
+        run: |
+          set -euxo pipefail
+          echo "Installing host packages required by xsetup and Vivado runtime"
+
+          # Wait briefly for any unattended-upgrades lock the runner image may
+          # still be holding. Bounded by `timeout` so we never hang forever.
+          for i in 1 2 3 4 5; do
+              if sudo fuser /var/lib/dpkg/lock-frontend >/dev/null 2>&1 \
+                || sudo fuser /var/lib/apt/lists/lock     >/dev/null 2>&1 ; then
+                  echo "apt lock busy, waiting 5s (attempt $i/5)..."
+                  sleep 5
+                  continue
+              fi
+              break
+          done
+
+          export DEBIAN_FRONTEND=noninteractive
+          # apt-get update may stall on a flaky mirror; ignore failure
+          # because the GitHub runner image already ships an up-to-date
+          # package cache for everything we install below.
+          timeout 180 sudo -E apt-get update -qq -o Acquire::Retries=3 \
+              || echo "WARN: apt-get update failed/timeout, continuing with cached lists"
+
+          # Core CLI tools (always required) installed strictly.
+          timeout 300 sudo -E apt-get install -y --no-install-recommends \
+            ca-certificates wget curl jq tar gzip unzip file locales \
+            python3 python3-pip python3-setuptools
+
+          # X11 / GTK runtime libs that xsetup *may* dlopen during the silent
+          # install. They're best-effort: install one-by-one so a single
+          # missing-on-this-release package doesn't tank the whole batch.
+          for pkg in libx11-6 libxext6 libxrender1 libxtst6 libxi6 \
+                     libgtk-3-0 libnss3 libgl1 libegl1 ; do
+              timeout 120 sudo -E apt-get install -y --no-install-recommends "$pkg" \
+                  || echo "WARN: optional package $pkg not installed (skipped)"
+          done
+
+          sudo locale-gen en_US.UTF-8 || true
+
+      - name: Download AMD Unified Installer from internal release
+        id: download_installer
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -euxo pipefail
+          # The installer is staged as a release asset in this repo
+          # (release tag: vivado-installer-2025.2) to bypass the CAPTCHA+CSRF
+          # presigned-URL flow on amd.com. The installer's bytes are unmodified
+          # AMD content; the release is private to this fork.
+          mkdir -p "${INSTALLER_DIR}"
+          cd "${INSTALLER_DIR}"
+          gh release download vivado-installer-2025.2 \
+            --repo gHashTag/openFPGALoader \
+            --pattern 'FPGAs_AdaptiveSoCs_Unified_SDI_*_Lin64.bin' \
+            --output Xilinx_Unified_Web_Installer.bin
+          ls -la Xilinx_Unified_Web_Installer.bin
+          file Xilinx_Unified_Web_Installer.bin || true
+          # Verify expected sha256 — defends against asset tampering
+          echo 'a78dbe8943c1c7ea14aea13937192d6316c0ba94e05bf6f4ebcdca9ef1a73280  Xilinx_Unified_Web_Installer.bin' \
+            | sha256sum -c -
+          chmod +x Xilinx_Unified_Web_Installer.bin
+          INSTALLER_FILE="${INSTALLER_DIR}/Xilinx_Unified_Web_Installer.bin"
+          echo "installer_file=$INSTALLER_FILE" >> "$GITHUB_OUTPUT"
+          df -h /
+
+      - name: Extract web-installer payload (if .bin)
+        id: extract_installer
+        run: |
+          set -euxo pipefail
+          INSTALLER_FILE='${{ steps.download_installer.outputs.installer_file }}'
+          echo "Installer file: $INSTALLER_FILE"
+          if [[ "$INSTALLER_FILE" == *.bin ]]; then
+            mkdir -p "${XSETUP_EXTRACT_DIR}"
+            chmod +x "$INSTALLER_FILE"
+            # --noexec extracts the bundled xsetup tree without launching GUI.
+            "$INSTALLER_FILE" --noexec --keep --target "${XSETUP_EXTRACT_DIR}" || true
+            XSETUP="$(find "${XSETUP_EXTRACT_DIR}" -maxdepth 3 -name xsetup -type f | head -1)"
+            if [ -z "$XSETUP" ]; then
+              echo "WARN: --noexec didn't produce xsetup; using .bin directly"
+              XSETUP="$INSTALLER_FILE"
+            fi
+          else
+            XSETUP="$INSTALLER_FILE"
+          fi
+          chmod +x "$XSETUP" || true
+          echo "xsetup=$XSETUP" >> "$GITHUB_OUTPUT"
+          ls -la "$XSETUP"
+
+      - name: Install pre-generated auth token + install_config
+        id: configure_install
+        env:
+          WI_AUTHENTICATION_KEY_B64: ${{ secrets.WI_AUTHENTICATION_KEY_B64 }}
+        run: |
+          set -euxo pipefail
+          XSETUP='${{ steps.extract_installer.outputs.xsetup }}'
+
+          # xsetup -b AuthTokenGen requires an interactive TTY (Java
+          # installer calls /dev/tty for password input). GitHub runners
+          # have no TTY, so we ship a pre-generated wi_authentication_key
+          # as a base64-encoded repo secret. Token lifetime: ~7 days
+          # (regenerate locally with xsetup -b AuthTokenGen if expired).
+          if [ -z "${WI_AUTHENTICATION_KEY_B64:-}" ]; then
+            echo "ERROR: WI_AUTHENTICATION_KEY_B64 secret is not set."
+            echo "       Generate locally with: xsetup -b AuthTokenGen,"
+            echo "       then: base64 -w0 ~/.Xilinx/wi_authentication_key |"
+            echo "             gh secret set WI_AUTHENTICATION_KEY_B64 \\"
+            echo "                --repo gHashTag/openFPGALoader"
+            exit 40
+          fi
+
+          mkdir -p "$HOME/.Xilinx"
+          printf '%s' "$WI_AUTHENTICATION_KEY_B64" | base64 -d > "$HOME/.Xilinx/wi_authentication_key"
+          chmod 600 "$HOME/.Xilinx/wi_authentication_key"
+          test -s "$HOME/.Xilinx/wi_authentication_key" || { echo "ERROR: token is empty"; exit 41; }
+          echo "Auth token installed (size: $(wc -c <"$HOME/.Xilinx/wi_authentication_key") bytes)."
+          ls -la "$HOME/.Xilinx"
+
+          # install_config.txt — Vivado ML Standard, Artix-7 only.
+          # Field names match the canonical xsetup config schema for 2025.2.
+          # NOTE: xsetup -b ConfigGen is interactive (prompts for edition
+          # choice on stdin) and floods the log if no TTY is attached, so we
+          # write the config by hand instead. "System Generator for DSP" was
+          # removed in 2025.2 — do not list it.
+          CONFIG="$HOME/install_config.txt"
+          {
+            printf '#### AMD Unified Installer config — Vivado ML Standard, Artix-7 only ####\n'
+            printf 'Edition=Vivado ML Standard\n'
+            printf 'Product=Vivado\n'
+            printf 'Destination=%s\n' "${XILINX_INSTALL_DIR}"
+            printf 'Modules=Artix-7:1,Kintex-7:0,Spartan-7:0,Virtex-7:0,Zynq-7000:0,UltraScale:0,UltraScale+:0,Versal:0,Zynq UltraScale+ MPSoC:0,Zynq UltraScale+ RFSoC:0,Engineering Sample Devices:0,DocNav:0,Vivado Simulator:0,Model Composer:0\n'
+            printf 'InstallOptions=Acquire or Manage a License Key:0,Enable WebTalk for FPGAs to send usage statistics to Xilinx (Always enabled for WebPACK license):0\n'
+            printf 'CreateProgramGroupShortcuts=0\n'
+            printf 'CreateShortcutsForAllUsers=0\n'
+            printf 'CreateDesktopShortcuts=0\n'
+            printf 'CreateFileAssociation=0\n'
+          } > "$CONFIG"
+          echo "==== install_config.txt ===="
+          cat "$CONFIG"
+          echo "============================"
+          echo "config=$CONFIG" >> "$GITHUB_OUTPUT"
+
+      - name: Install Vivado (silent, defaults for ML Standard)
+        run: |
+          set -euxo pipefail
+          XSETUP='${{ steps.extract_installer.outputs.xsetup }}'
+
+          mkdir -p "${XILINX_INSTALL_DIR}"
+          mkdir -p "${TMPDIR}"
+
+          # Vivado 2025.2 silent install requires at least one device-family
+          # Module to be selected. --edition/--product alone don't pick any.
+          # Write a minimal --config that lists ONLY Artix-7:1 (and DocNav:0
+          # because the installer's error message explicitly cites it as a
+          # valid module name). All other 7-series / UltraScale / Versal
+          # entries are omitted, not :0'd, so we can't trip on renamed or
+          # removed module names like 'System Generator for DSP' (2025.1)
+          # or 'Vivado Simulator' (2025.2).
+          CONFIG="$HOME/install_config_minimal.txt"
+          {
+            printf '#### Minimal Vivado ML Standard install — Artix-7 only ####\n'
+            printf 'Edition=Vivado ML Standard\n'
+            printf 'Product=Vivado\n'
+            printf 'Destination=%s\n' "${XILINX_INSTALL_DIR}"
+            printf 'Modules=Artix-7:1,DocNav:0\n'
+            printf 'InstallOptions=\n'
+            printf 'CreateProgramGroupShortcuts=0\n'
+            printf 'CreateShortcutsForAllUsers=0\n'
+            printf 'CreateDesktopShortcuts=0\n'
+            printf 'CreateFileAssociation=0\n'
+          } > "$CONFIG"
+          echo "==== minimal install_config.txt ===="
+          cat "$CONFIG"
+          echo "===================================="
+
+          echo "Starting silent Vivado install — this can take 30-60 min..."
+          echo "== Free space before install =="
+          df -h / "${{ github.workspace }}" || true
+          "$XSETUP" \
+            --agree XilinxEULA,3rdPartyEULA \
+            --batch Install \
+            --config "$CONFIG"
+          echo "== Free space after install =="
+          df -h / "${{ github.workspace }}" || true
+
+          echo "Install finished."
+          find "${XILINX_INSTALL_DIR}" -maxdepth 3 -name settings64.sh
+          df -h /
+
+      - name: Install edalize for build.py
+        run: |
+          set -euxo pipefail
+          python3 -m pip install --user --disable-pip-version-check 'edalize>=0.4.0'
+          python3 -c 'from edalize.edatool import get_edatool; print("edalize OK")'
+
+      - name: Build FGG676 bitstream
+        id: build
+        run: |
+          set -euxo pipefail
+          VIVADO_SETTINGS="$(find "${XILINX_INSTALL_DIR}" -maxdepth 3 -name settings64.sh | head -1)"
+          [ -n "$VIVADO_SETTINGS" ] || { echo "ERROR: no settings64.sh"; exit 50; }
+          echo "Sourcing $VIVADO_SETTINGS"
+          # shellcheck disable=SC1090
+          source "$VIVADO_SETTINGS"
+          which vivado
+          vivado -version | head -3
+
+          cd spiOverJtag
+          python3 build.py xc7a100tfgg676 spi
+
+          ls -la
+          ls -la tmp_xc7a100tfgg676 || true
+          ls -la spiOverJtag_xc7a100tfgg676.bit* || true
+
+      - name: Verify FGG676 bitstream device string
+        run: |
+          set -euxo pipefail
+          cd spiOverJtag
+          ls -la spiOverJtag_xc7a100tfgg676.bit
+          # The bitstream embeds the device-package string; expect "7a100tfgg676",
+          # NOT "7a100tftg256".
+          DEVICE_STR=$(strings spiOverJtag_xc7a100tfgg676.bit | grep -E '7a100t[a-z]+[0-9]+' | head -3 || true)
+          echo "Detected device strings:"
+          echo "$DEVICE_STR"
+          if echo "$DEVICE_STR" | grep -q '7a100tfgg676'; then
+            echo "OK: Bitstream contains '7a100tfgg676'"
+          else
+            echo "FAIL: Bitstream does NOT contain '7a100tfgg676'"
+            exit 60
+          fi
+          gzip -kf spiOverJtag_xc7a100tfgg676.bit
+          ls -la spiOverJtag_xc7a100tfgg676.bit spiOverJtag_xc7a100tfgg676.bit.gz
+          sha256sum spiOverJtag_xc7a100tfgg676.bit spiOverJtag_xc7a100tfgg676.bit.gz
+
+      - name: Collect diagnostics (always)
+        if: always()
+        run: |
+          set -uxo pipefail
+          mkdir -p diag
+          cp -r spiOverJtag/tmp_xc7a100tfgg676 diag/ 2>/dev/null || true
+          cp spiOverJtag/spiOverJtag_xc7a100tfgg676.bit*  diag/ 2>/dev/null || true
+          ls -la diag/ || true
+
+      - name: Upload artifact (FGG676 bitstream + logs)
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: spiOverJtag-fgg676
+          path: |
+            spiOverJtag/spiOverJtag_xc7a100tfgg676.bit
+            spiOverJtag/spiOverJtag_xc7a100tfgg676.bit.gz
+            diag/**
+          if-no-files-found: warn
+          retention-days: 30
