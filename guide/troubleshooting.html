@@ -89,6 +89,15 @@ To recover you have to pull down this pin (before power up) to recover JTAG inte
 converter and log out/login again.</p>
 <p>Reference: <a class="reference external" href="https://trabucayre.github.io/openFPGALoader/guide/install.html#udev-rules">install guide (udev rules section)</a>.</p>
 </section>
+<section id="unable-to-flash-device-on-openbsd-jtag-init-failed-with-dirtyjtag-fails-to-open-device">
+<h2>Unable to flash device on OpenBSD: <cite>JTAG init failed with: DirtyJtag: fails to open device</cite><a class="headerlink" href="#unable-to-flash-device-on-openbsd-jtag-init-failed-with-dirtyjtag-fails-to-open-device" title="Link to this heading">¶</a></h2>
+<p>Certain evaluation boards may show the following error message when running openFPGAloader on OpenBSD:</p>
+<p>This issue is most likely caused by the uftdi module, which has already locked the device.
+Disabling the module can be achieved with the following commands:</p>
+<p>At the boot prompt, typing in</p>
+<p>will boot the new kernel with the disabled module.
+Afterwards, openFPGALoader will access the development board as a generic USB device.</p>
+</section>
 </section>
 
 
@@ -130,6 +139,7 @@ converter and log out/login again.</p>
 <li class="toctree-l2"><a class="reference internal" href="#cannot-flash-tang-nano-9k-issue-251">Cannot flash Tang Nano 9k (issue #251)</a></li>
 <li class="toctree-l2"><a class="reference internal" href="#unable-to-open-ftdi-device-4-usb-open-failed-issue-245">Unable to open FTDI device: -4 (usb_open() failed) (issue #245)</a></li>
 <li class="toctree-l2"><a class="reference internal" href="#converter-cannot-be-opened-fails-to-open-device-issue-626">Converter cannot be opened: <cite>fails to open device</cite> (issue #626)</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#unable-to-flash-device-on-openbsd-jtag-init-failed-with-dirtyjtag-fails-to-open-device">Unable to flash device on OpenBSD: <cite>JTAG init failed with: DirtyJtag: fails to open device</cite></a></li>
 </ul>
 </li>
 <li class="toctree-l1"><a class="reference internal" href="advanced.html">Advanced usage of openFPGALoader</a></li>
