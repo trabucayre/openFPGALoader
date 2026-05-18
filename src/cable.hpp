@@ -93,7 +93,6 @@ static std::map <std::string, cable_t> cable_list = {
 	{"ch552_jtag",         FTDI_SER(0x0403, 0x6010, FTDI_INTF_A, 0x08, 0x0B, 0x08, 0x0B)},
 	{"ch347_jtag",         CABLE_DEF(MODE_CH347, 0x1a86, 0x55dd                        )},
 	{"cmsisdap",           CMSIS_CL(0x0d28, 0x0204                                     )},
-	{"sipeed_slogic",           CMSIS_CL(0xd6e7, 0x3507                                     )},
 	{"gatemate_pgm",       FTDI_SER(0x0403, 0x6014, FTDI_INTF_A, 0x10, 0x9B, 0x14, 0x17)},
 	{"gatemate_evb_jtag",  FTDI_SER(0x0403, 0x6010, FTDI_INTF_A, 0x10, 0x1B, 0x00, 0x01)},
 	{"gatemate_evb_spi",   FTDI_SER(0x0403, 0x6010, FTDI_INTF_B, 0x00, 0x1B, 0x00, 0x01)},

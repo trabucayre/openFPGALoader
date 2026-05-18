@@ -53,12 +53,6 @@ cmsisdap:
     Description: ARM CMSIS DAP protocol interface
     URL: https://os.mbed.com/docs/mbed-os/v6.11/debug-test/daplink.html
 
-sipeed_slogic:
-
-  - Name: Sipeed SLogic Combo 8
-    Description: The DAP-Link interface on Sipeed SLogic Combo 8 (usbbulk only)
-    URL: https://wiki.sipeed.com/hardware/en/logic_analyzer/combo8/index.html
-
 gatemate_pgm:
 
   - Name: gatemate pgm
