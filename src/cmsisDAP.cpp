@@ -91,10 +91,11 @@ enum cmsisdap_status {
 
 CmsisDAP::CmsisDAP(const cable_t &cable, int index, uint32_t clkHZ, int8_t verbose, int backend):_verbose(verbose>0),
 		_device_idx(0),  _vid(cable.vid), _pid(cable.pid), _serial_number(L""),
-		_hid_dev(NULL), _usb_dev(NULL), _ctx(NULL), _packet_size(0),
-		_ep_in(0), _ep_out(0), _num_tms(0), _is_connect(false), _backend(backend)
+		_hid_dev(NULL), _usb_dev(NULL), _ctx(NULL), _ll_buffer_size(1024),
+		_packet_size(0), _ep_in(0), _ep_out(0), _num_tms(0), _is_connect(false), _backend(backend)
 {
-	_ll_buffer = (unsigned char *)malloc(sizeof(unsigned char) * 1024);
+
+	_ll_buffer = (unsigned char *)malloc(_ll_buffer_size);
 	if (!_ll_buffer)
 		throw std::runtime_error("internal buffer allocation failed");
 	_buffer = _ll_buffer+2;
@@ -416,7 +417,7 @@ void CmsisDAP::initWithBulk(const cable_t &cable, int8_t verbose){
 						char t[256];
 						snprintf(t, sizeof(t), "could not read interface string for device 0x%04x:0x%04x", _vid, _pid);
 						printWarn(t);
-					} else if (!std::strstr(interface_str, "CMSIS-DAP")){
+					} else if (std::strstr(interface_str, "CMSIS-DAP") != nullptr){
 						interface_str_valid = true;
 					}
 				}
@@ -502,7 +503,30 @@ void CmsisDAP::initWithBulk(const cable_t &cable, int8_t verbose){
 			}
 
 		memset(_buffer, 0, 63);
-		int res = read_info(INFO_ID_HWCAP, _buffer, 63);
+
+		uint8_t pkt_info[4] = {0};
+		int res = read_info(INFO_ID_MAX_PKT_SZ, pkt_info, 4);
+		if (res < 0) {
+    		throw std::runtime_error("failed to read max packet size");
+		}
+		if (res != 2) {
+    		throw std::runtime_error("unexpected max packet size length");
+		}
+		uint16_t max_pkt_sz = (uint16_t)pkt_info[2] | ((uint16_t)pkt_info[3] << 8);
+		if (max_pkt_sz > 0 && _packet_size > max_pkt_sz)
+			_packet_size = max_pkt_sz;
+
+		size_t needed = (size_t)_packet_size + 2;
+		if (needed > _ll_buffer_size) {
+    		unsigned char *new_buf = (unsigned char *)realloc(_ll_buffer, needed);
+    		if (!new_buf)
+        		throw std::runtime_error("failed to realloc internal buffer");
+    		_ll_buffer = new_buf;
+    		_ll_buffer_size = needed;
+    		_buffer = _ll_buffer + 2;
+		}
+
+		res = read_info(INFO_ID_HWCAP, _buffer, 63);
 		if (res < 0) {
 			libusb_close(_usb_dev);
 			libusb_exit(_ctx);
@@ -659,6 +683,10 @@ int CmsisDAP::writeJtagSequence(uint8_t tms, const uint8_t *tx, uint8_t *rx,
 
 	flush();  // force TMS flush to free _buffer
 
+	int max_len = (_backend == BACKEND_HID) ? 63 : (_packet_size - 1);
+	int max_seq = (_backend == BACKEND_HID) ? 7  : 254;
+
+	max_len = std::min(max_len, (int)_ll_buffer_size - 2);
 	while (xfer_rest > 0) {
 		if (xfer_rest >= 64) {  // fully fill one sequence
 			xfer_byte_len = 8;
@@ -667,7 +695,6 @@ int CmsisDAP::writeJtagSequence(uint8_t tms, const uint8_t *tx, uint8_t *rx,
 			xfer_byte_len = (xfer_rest + 7) / 8;
 			xfer_bit_len = xfer_rest;
 		}
-
 		/* buffer is 65bits with
 		 * [0]   : hid
 		 * [1]   : cmsisdap operation
@@ -680,8 +707,8 @@ int CmsisDAP::writeJtagSequence(uint8_t tms, const uint8_t *tx, uint8_t *rx,
 		 * => one sequence == 9Bytes and 9*7 == 63
 		 * then we have 6 * 8 fully filled sequence + one up to 56bits
 		 */
-		if (xfer_byte_len + 1 + pos > 63) {
-			xfer_byte_len = 63 - pos - 1;  // number of free bytes
+		if (xfer_byte_len + 1 + pos > max_len) {
+			xfer_byte_len = max_len - pos - 1;  // number of free bytes
 			xfer_bit_len = xfer_byte_len * 8;
 		}
 
@@ -699,11 +726,12 @@ int CmsisDAP::writeJtagSequence(uint8_t tms, const uint8_t *tx, uint8_t *rx,
 
 		/* when it's the last sequence or
 		 * buffer is fully filled
+		 * or after each TDO-capturing sequence
 		 * => flush
 		 * if it's the last sequence and end is true, don't do anything
-		 * here -> see bellow
+		 * here -> see below
 		 */
-		if ((!end && xfer_rest == 0) || seq_num == 7) {
+		if ((!end && xfer_rest == 0) || (rx && seq_num >= 1) || seq_num == max_seq || (pos + 9 > max_len)) {
 			_buffer[0] = seq_num;  // set number of sequences
 			ret = xfer(DAP_JTAG_SEQUENCE, pos,
 					(rx) ? rx_ptr: NULL, byte_to_read);
@@ -729,6 +757,7 @@ int CmsisDAP::writeJtagSequence(uint8_t tms, const uint8_t *tx, uint8_t *rx,
 	if (end) {
 		byte_to_read++;   // residual (or 0) from previous iter + 1 Byte
 		uint8_t val[byte_to_read];
+		memset(val, 0, byte_to_read);
 		_buffer[0] = seq_num + 1;
 		_buffer[pos++] = ((rx) ? DAP_JTAG_SEQ_TDO_CAPTURE : 0) |
 								  DAP_JTAG_SEQ_TMS_SHIFT(0x01&(!tms)) |
@@ -816,16 +845,12 @@ int CmsisDAP::xfer(uint8_t instruction, int tx_len,
 			}
 			break;
 		case BACKEND_USBBULK:
-			memset(&_ll_buffer[1 + tx_len + 1], 0, 64 - (tx_len + 1));
-			ret = libusb_bulk_transfer(_usb_dev, _ep_out, &_ll_buffer[1], 64, &bulk_len, 1000);
+			ret = libusb_bulk_transfer(_usb_dev, _ep_out, &_ll_buffer[1], tx_len + 1, &bulk_len, 1000);
 			if (ret != 0) {
 				printError("Error: Bulk write failed\n");
 				return ret;
 			}
-			memset(&_ll_buffer[0], 0, 1024);
-			ret = libusb_bulk_transfer(_usb_dev, _ep_in, &_ll_buffer[0], _packet_size, &bulk_len, 1000);
-			// sleep for 1ms to ensure that polling behavior aligns with HID backend
-			usleep(1000);
+			ret = libusb_bulk_transfer(_usb_dev, _ep_in, _ll_buffer, _packet_size, &bulk_len, 1000);
 			if (ret != 0 && ret != LIBUSB_ERROR_TIMEOUT) {
 				printError("Error: Bulk read failed\n");
 				return ret;
@@ -833,6 +858,10 @@ int CmsisDAP::xfer(uint8_t instruction, int tx_len,
 			if(bulk_len == 0){
 				printError("Error: Bulk timeout\n");
 				return -1;
+			}
+
+			if (bulk_len < (int) _packet_size){
+				memset(&_ll_buffer[bulk_len], 0, _packet_size - bulk_len);
 			}
 			// if (rx_buff && bulk_len < rx_len + 2) {
                 // printf("bulk short read: expected %d, got %d\n", rx_len + 2, bulk_len);
@@ -884,16 +913,12 @@ int CmsisDAP::xfer(int tx_len, uint8_t *rx_buff, int rx_len)
 			}
 			break;
 		case BACKEND_USBBULK:
-			memset(&_ll_buffer[1 + tx_len + 1], 0, 64 - (tx_len + 1));
-			ret = libusb_bulk_transfer(_usb_dev, _ep_out, &_ll_buffer[1], 64, &bulk_len, 1000);
+			ret = libusb_bulk_transfer(_usb_dev, _ep_out, &_ll_buffer[1], tx_len, &bulk_len, 1000);
 			if (ret != 0) {
 				printError("Error: Bulk write failed\n");
 				return ret;
 			}
-			memset(&_ll_buffer[0], 0, 1024);
-			ret = libusb_bulk_transfer(_usb_dev, _ep_in, &_ll_buffer[0], _packet_size, &bulk_len, 1000);
-			// sleep for 1ms to ensure that polling behavior aligns with HID backend
-			usleep(1000);
+			ret = libusb_bulk_transfer(_usb_dev, _ep_in, _ll_buffer, _packet_size, &bulk_len, 1000);
 			if (ret != 0 && ret != LIBUSB_ERROR_TIMEOUT) {
 				printError("Error: Bulk read failed\n");
 				return ret;
@@ -901,6 +926,9 @@ int CmsisDAP::xfer(int tx_len, uint8_t *rx_buff, int rx_len)
 			if(bulk_len == 0){
 				printError("Error: Bulk timeout\n");
 				return -1;
+			}
+			if (bulk_len < (int) _packet_size) {
+				memset(&_ll_buffer[bulk_len], 0, _packet_size - bulk_len);
 			}
 			// if (rx_buff && bulk_len < rx_len + 2) {
                 // printf("bulk short read: expected %d, got %d\n", rx_len + 2, bulk_len);

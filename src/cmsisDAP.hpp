@@ -122,7 +122,8 @@ class CmsisDAP: public JtagInterface {
 		libusb_context *_ctx;       /**< libusb context */
 		unsigned char *_ll_buffer; /**< message buffer */
 		unsigned char *_buffer;    /**< subset of _ll_buffer */
-		int _packet_size;		   /**< USB bulk packet size */
+		size_t _ll_buffer_size;		/**< message buffer size*/
+		size_t _packet_size;		   /**< USB bulk packet size */
 		int _ep_in;				   /**< USB bulk in endpoint */
 		int _ep_out;			   /**< USB bulk out endpoint */
 		int _num_tms;              /**< current tms length */
