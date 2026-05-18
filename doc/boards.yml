@@ -751,6 +751,13 @@
   Memory: OK
   Flash: NT
 
+- ID: sp701
+  Description: Xilinx SP701
+  URL: https://www.amd.com/en/products/adaptive-socs-and-fpgas/evaluation-boards/sp701.html
+  FPGA: Spartan 7 xc7s100-2-fgga676
+  Memory: OK
+  Flash: OK
+
 - ID: spartanEdgeAccelBoard
   Description: SeeedStudio Spartan Edge Accelerator Board
   URL: http://wiki.seeedstudio.com/Spartan-Edge-Accelerator-Board
@@ -854,6 +861,13 @@
   FPGA: littleBee GW1NR-9
   Memory: OK
   Flash: IF
+
+- ID: brs-100-gw1nr9
+  Description: BrisbaneSilicon BRS-100-GW1NR9
+  URL: https://brisbanesilicon.com.au/brs-100-gw1nr9/
+  FPGA: littleBee GW1NR-9C
+  Memory: OK
+  Flash: IF/EF
 
 - ID: trion_t20_bga256_jtag
   Description: Efinix Trion T20 BGA256 Dev Kit

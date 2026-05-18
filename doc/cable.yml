@@ -33,6 +33,13 @@ bus_blaster_b:
     URL: http://dangerousprototypes.com/docs/Bus_Blaster
 
 
+ch347:
+
+  - Name: CH347
+    Description: CH347 is a USB HS bus converter with UART, I2C, SPI and JTAG interfaces
+    URL: https://github.com/wuxx/USB-HS-Bridge
+
+
 ch347_jtag:
 
   - Name: ch347 JTAG adapter
@@ -93,7 +100,7 @@ digilent:
     Description: FT2232 JTAG / UART cable
 
 
-diglent_b:
+digilent_b:
 
   - Name: digilent cable
     Description: digilent FT2232 JTAG / UART cable (interface B)
@@ -107,12 +114,14 @@ digilent_hs2:
 
 
 digilent_hs3:
+
   - Name: digilent hs3
     Description: JTAG programmer cable from digilent
     URL: https://digilent.com/shop/jtag-hs3-programming-cable/
 
 
 dirtyJtag:
+
   - Name: dirty Jtag
     Description: JTAG probe firmware for STM32F1
     URL: https://github.com/jeanthom/DirtyJTAG
@@ -120,16 +129,17 @@ dirtyJtag:
           New version `dirtyjtag2 <https://github.com/jeanthom/DirtyJTAG/tree/dirtyjtag2>`__ is also supported
 
 
-efinix_spi_ft4232:
+ecpix5-debug:
 
-  - Name: efinix SPI (ft4232)
-    Description: efinix SPI interface (FTDI4232 interface A)
+  - Name: ecpix5-debug
+    Description: LambdaConcept ECPIX5 (45k/85k) UART/JTAG interface
+    URL: https://shop.lambdaconcept.com/home/46-ecpix-5.html
 
 
-efinix_jtag_ft4232:
+efinix_jtag_ft2232:
 
-  - Name: efinix JTAG (ft4232)
-    Description: efinix JTAG interface (FTDI4232 interface B)
+  - Name: efinix JTAG (ft2232)
+    Description: efinix JTAG interface (FTDI2232 interface B)
 
 
 efinix_spi_ft2232:
@@ -138,10 +148,16 @@ efinix_spi_ft2232:
     Description: efinix SPI interface (FTDI2232 interface A)
 
 
-efinix_jtag_ft2232:
+efinix_jtag_ft4232:
 
-  - Name: efinix JTAG (ft2232)
-    Description: efinix JTAG interface (FTDI2232 interface B)
+  - Name: efinix JTAG (ft4232)
+    Description: efinix JTAG interface (FTDI4232 interface B)
+
+
+efinix_spi_ft4232:
+
+  - Name: efinix SPI (ft4232)
+    Description: efinix SPI interface (FTDI4232 interface A)
 
 
 ft2232:
@@ -195,11 +211,13 @@ ft4232:
     Description: quad interface programmer cable. MPSSE capable.
     URL: https://ftdichip.com/products/ft4232h-56q/
 
+
 ft4232hp:
 
   - Name: FT4232HP (interface A)
     Description:  quad interface programmer cable. MPSSE capable. High Speed USB Bridge with Type-C/PD3.0 Controller
     URL: https://ftdichip.com/wp-content/uploads/2023/02/DS_FT4233HP.pdf
+
 
 ft4232hp_b:
 
@@ -207,11 +225,40 @@ ft4232hp_b:
     Description:  quad interface programmer cable. MPSSE capable. High Speed USB Bridge with Type-C/PD3.0 Controller
     URL: https://ftdichip.com/wp-content/uploads/2023/02/DS_FT4233HP.pdf
 
-ecpix5-debug:
 
-  - Name: ecpix5-debug
-    Description: LambdaConcept ECPIX5 (45k/85k) UART/JTAG interface
-    URL: https://shop.lambdaconcept.com/home/46-ecpix-5.html
+gatemate_pgm:
+
+  - Name: gatemate pgm
+    Description: Cologne Chip GateMate FPGA Programmer. FT232H-based JTAG/SPI programmer cable
+    URL: https://colognechip.com/programmable-logic/gatemate/
+
+
+gatemate_evb_jtag:
+
+  - Name: gatemate evb JTAG
+    Description: Cologne Chip GateMate JTAG programmer
+    URL: https://colognechip.com/programmable-logic/gatemate/
+
+
+gatemate_evb_spi:
+
+  - Name: gatemate evb spi
+    Description: Cologne Chip GateMate SPI programmer
+    URL: https://colognechip.com/programmable-logic/gatemate/
+
+
+gwu2x:
+
+  - Name: gwu2x
+    Description: Gowin GWUX2X
+    URL: https://www.gowinsemi.com/en/product/detail/55/
+
+
+jetson-nano-gpio:
+
+  - Name: Bitbang GPIO
+    Description: Bitbang GPIO pins on Jetson Nano Linux host. Use /dev/mem to have a faster clock.
+    URL: https://github.com/jwatte/jetson-gpio-example
 
 
 jlink:
@@ -234,6 +281,13 @@ jtag-smt2-nc:
     URL: https://digilent.com/shop/jtag-smt2-nc-surface-mount-programming-module
 
 
+libgpiod:
+
+  - Name: Bitbang GPIO
+    Description: Bitbang GPIO pins on Linux host.
+    URL: https://git.kernel.org/pub/scm/libs/libgpiod/libgpiod.git/
+
+
 lpc-link2:
 
   - Name: lpc-link2
@@ -245,6 +299,7 @@ numato:
 
   - Name: numato
     Description: Embedded cable for Numato Systems Mimas-A7 board
+
 
 orbtrace:
 
@@ -260,18 +315,18 @@ papilio:
     URL: https://papilio.cc/
 
 
-steppenprobe:
-
-  - Name: steppenprobe
-    Description: Open Source Hardware JTAG/SWD/UART/SWO interface board based on FTDI FT2232H
-    URL: https://github.com/diegoherranz/steppenprobe
-
-
 remote-bitgang:
 
   - Name: OpenOCD remote bitbang
     Description: The remote_bitbang JTAG driver is used to drive JTAG from a remote (TCP) process
     URL: https://github.com/openocd-org/openocd/blob/master/doc/manual/jtag/drivers/remote_bitbang.txt
+
+
+steppenprobe:
+
+  - Name: steppenprobe
+    Description: Open Source Hardware JTAG/SWD/UART/SWO interface board based on FTDI FT2232H
+    URL: https://github.com/diegoherranz/steppenprobe
 
 
 tigard:
@@ -301,6 +356,13 @@ usb-blasterIII:
     URL: https://www.intel.com/content/dam/www/programmable/us/en/pdfs/literature/ug/ug_usb_blstr_ii_cable.pdf
 
 
+xilinxPlatformCableUsb:
+
+  - Name: Xilinx Platform Cable USB (XPCU)
+    Description: Xilinx Platform Cable USB (XPCU) from AMD/Xilinx
+    URL: https://www.amd.com/en/products/adaptive-socs-and-fpgas/board-accessories/hw-usb-ii-g.html
+
+
 xvc-client:
 
   - Name: Xilinx Virtual Cable
@@ -313,22 +375,3 @@ xvc-server:
   - Name: Xilinx Virtual Cable (server side)
     Description: Xilinx Virtual Cable (XVC) is a TCP/IP-based protocol that acts like a JTAG cable.
     URL: https://github.com/Xilinx/XilinxVirtualCable
-
-
-libgpiod:
-
-  - Name: Bitbang GPIO
-    Description: Bitbang GPIO pins on Linux host.
-    URL: https://git.kernel.org/pub/scm/libs/libgpiod/libgpiod.git/
-
-jetson-nano-gpio:
-
-  - Name: Bitbang GPIO
-    Description: Bitbang GPIO pins on Jetson Nano Linux host. Use /dev/mem to have a faster clock.
-    URL: https://github.com/jwatte/jetson-gpio-example
-
-ch347:
-
-  - Name: CH347
-    Description: CH347 is a USB HS bus converter with UART, I2C, SPI and JTAG interfaces
-    URL: https://github.com/wuxx/USB-HS-Bridge

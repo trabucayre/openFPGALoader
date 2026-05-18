@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: Apache-2.0
 /*
- * Copyright (c) 2021 Gwenhael Goavec-Merou <gwenhael.goavec-merou@trabucayre.com>
+ * Copyright (c) 2021-2026 Gwenhael Goavec-Merou <gwenhael.goavec-merou@trabucayre.com>
  */
 
 #ifndef SRC_FX2_LL_HPP_
@@ -32,6 +32,14 @@ class FX2_ll {
 		~FX2_ll();
 
 		/*!
+		 * \brief libusb_set_interface_alt_setting wrapper
+		 * \param[in] if_num: Interface number
+		 * \param[in] alt_setting: alternate setting
+		 * \return true on success
+		 */
+		bool set_interface_alt_setting(const int if_num, const int alt_setting);
+
+		/*!
 		 * \brief bulk write
 		 * \param[in] endpoint: endpoint to use
 		 * \param[in] buff: buffer to write
@@ -53,20 +61,22 @@ class FX2_ll {
 		 * \param[in] wValue
 		 * \param[in] buff: buffer to write
 		 * \param[in] len: buffer length
+		 * \param[in] wIndex: the index field for the setup packet
 		 * \return false when transfer fails, true otherwise
 		 */
 		int write_ctrl(uint8_t bRequest, uint16_t wValue,
-				uint8_t *buff, uint16_t len);
+				uint8_t *buff, uint16_t len, uint16_t wIndex=0x0000);
 		/*!
 		 * \brief control write
 		 * \param[in] bRequest
 		 * \param[in] wValue
 		 * \param[in] buff: buffer to write
 		 * \param[in] len: buffer length
+		 * \param[in] wIndex: the index field for the setup packet
 		 * \return false when transfer fails, true otherwise
 		 */
 		int read_ctrl(uint8_t bRequest, uint16_t wValue,
-				uint8_t *buff, uint16_t len);
+				uint8_t *buff, uint16_t len, uint16_t wIndex=0x0000);
 
 	private:
 		/*!

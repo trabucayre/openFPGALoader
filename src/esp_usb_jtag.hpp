@@ -12,6 +12,8 @@
 
 #include <libusb.h>
 
+#include <string>
+
 #include "jtagInterface.hpp"
 
 /*!
@@ -23,7 +25,9 @@
 
 class esp_usb_jtag : public JtagInterface {
 	public:
-		esp_usb_jtag(uint32_t clkHZ, int8_t verbose, int vid, int pid);
+		esp_usb_jtag(uint32_t clkHZ, int8_t verbose, int vid, int pid,
+				uint8_t bus_addr, uint8_t dev_addr,
+				const std::string &serial);
 		virtual ~esp_usb_jtag();
 
 		int setClkFreq(uint32_t clkHZ) override;

@@ -436,7 +436,7 @@ void Gowin::checkCRC()
 	 * is used, try to compare with this value
 	 */
 	try {
-		std::string hdr = _fs->getHeaderVal("checkSum");
+		std::string hdr = _fs->getHeaderVal("CheckSum");
 		if (!hdr.empty()) {
 			if (ucode == strtol(hdr.c_str(), NULL, 16))
 				goto success;

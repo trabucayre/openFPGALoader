@@ -30,6 +30,7 @@ enum communication_type {
 	MODE_CH347,            /*! CH347 JTAG mode */
 	MODE_GWU2X,            /*! Gowin GWU2X JTAG mode */
 	MODE_ESP,              /*! esp32c3, esp32s3 */
+	MODE_XPCU,             /*! Xilinx Platform Cable USB (XPCU) */
 };
 
 /*!
@@ -99,6 +100,7 @@ static std::map <std::string, cable_t> cable_list = {
 	{"dfu",                CABLE_DEF(MODE_DFU, 0, 0                                    )},
 	{"digilent",           FTDI_SER(0x0403, 0x6010, FTDI_INTF_A, 0xe8, 0xeb, 0x00, 0x60)},
 	{"digilent_b",         FTDI_SER(0x0403, 0x6010, FTDI_INTF_B, 0xe8, 0xeb, 0x00, 0x60)},
+	{"digilent_ft4232",    FTDI_SER(0x0403, 0x6011, FTDI_INTF_A, 0x08, 0x2B, 0x08, 0x0B)},
 	{"digilent_hs2",       FTDI_SER(0x0403, 0x6014, FTDI_INTF_A, 0xe8, 0xeb, 0x00, 0x60)},
 	{"digilent_hs3",       FTDI_SER(0x0403, 0x6014, FTDI_INTF_A, 0x88, 0x8B, 0x20, 0x30)},
 	{"digilent_ad",        FTDI_SER(0x0403, 0x6014, FTDI_INTF_A, 0x08, 0x0B, 0x80, 0x80)},
@@ -136,6 +138,7 @@ static std::map <std::string, cable_t> cable_list = {
 	{"usb-blasterII",      CABLE_DEF(MODE_USBBLASTER, 0x09Fb, 0x6810                   )},
 	{"usb-blasterII_1",    CABLE_DEF(MODE_USBBLASTER, 0x09Fb, 0x6010                   )},
 	{"usb-blasterIII",     FTDI_SER(0x09fb, 0x6022, FTDI_INTF_A, 0x08, 0x3B, 0x58, 0xb0)},
+	{"xilinxPlatformCableUsb", CABLE_DEF(MODE_XPCU,         0x03fd, 0x0013)},
 	{"xvc-client",         CABLE_DEF(MODE_XVC_CLIENT, 0x0000, 0x0000                   )},
 #ifdef ENABLE_LIBGPIOD
 	{"libgpiod",           CABLE_DEF(MODE_LIBGPIOD_BITBANG, 0, 0x0000                  )},

@@ -76,3 +76,37 @@ After changing groups or rules, reload udev rules, then unplug/replug the
 converter and log out/login again.
 
 Reference: `install guide (udev rules section) <https://trabucayre.github.io/openFPGALoader/guide/install.html#udev-rules>`_.
+
+
+Unable to flash device on OpenBSD: `JTAG init failed with: DirtyJtag: fails to open device`
+===========================================================================================
+Certain evaluation boards may show the following error message when running openFPGAloader on OpenBSD:
+
+.. code:: bash
+    fail to read data usb bulk read failed
+    JTAG init failed with: low level FTDI init failed
+
+This issue is most likely caused by the uftdi module, which has already locked the device. 
+Disabling the module can be achieved with the following commands:
+
+.. code:: bash
+    # doas config -e -f -o /bsd.nouftdi /bsd
+    OpenBSD 7.8 (GENERIC) #54: Sun Oct 12 12:45:58 MDT 2025
+        deraadt@amd64.openbsd.org:/usr/src/sys/arch/amd64/compile/GENERIC
+    Enter 'help' for information
+    ukc> disable uftdi*
+    356 uftdi* disabled
+    ukc> disable uftdi0
+    ukc> disable uftdi1
+    ukc> quit
+    Saving modified kernel.
+    # reboot
+
+At the boot prompt, typing in
+
+.. code:: bash
+    boot> boot /bsd.nouftdi
+
+will boot the new kernel with the disabled module. 
+Afterwards, openFPGALoader will access the development board as a generic USB device. 
+

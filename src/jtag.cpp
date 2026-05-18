@@ -58,6 +58,9 @@
 #ifdef ENABLE_XVC_CLIENT
 #include "xvc_client.hpp"
 #endif
+#ifdef ENABLE_XILINX_PLATFORM_CABLE_USB
+#include "xilinxPlatformCableUSB.hpp"
+#endif
 
 
 #define DEBUG 0
@@ -162,7 +165,8 @@ Jtag::Jtag(const cable_t &cable, const jtag_pins_conf_t *pin_conf,
 		break;
 	case MODE_ESP:
 #ifdef ENABLE_ESP_USB
-		_jtag = new esp_usb_jtag(clkHZ, verbose, 0x303a, 0x1001);
+		_jtag = new esp_usb_jtag(clkHZ, verbose, 0x303a, 0x1001,
+			cable.bus_addr, cable.device_addr, serial);
 #else
 		std::cerr << "Jtag: support for esp32s3 cable was not enabled at compile time" << std::endl;
 		throw std::exception();
@@ -206,6 +210,15 @@ Jtag::Jtag(const cable_t &cable, const jtag_pins_conf_t *pin_conf,
 	case MODE_REMOTEBITBANG:
 		_jtag = new RemoteBitbang_client(ip_adr, port, verbose);
 		break;
+#endif
+	case MODE_XPCU:
+#ifdef ENABLE_XILINX_PLATFORM_CABLE_USB
+		_jtag = new XilinxPlatformCableUSB(0x03fd, 0x0013, clkHZ,
+			firmware_path, verbose);
+		break;
+#else
+		printError("Jtag: support for Xilinx Platform Cable USB (XPCU) was not enabled at compile time");
+		throw std::exception();
 #endif
 	default:
 		std::cerr << "Jtag: unknown cable type" << std::endl;
