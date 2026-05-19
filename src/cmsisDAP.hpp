@@ -15,6 +15,12 @@
 #include "cable.hpp"
 #include "jtagInterface.hpp"
 
+enum cmsisdap_backend_type {
+	BACKEND_AUTOSELECT = -1,
+	BACKEND_HID = 0,
+	BACKEND_USBBULK = 1,
+};
+
 class CmsisDAP: public JtagInterface {
 	public:
 		/*!
@@ -23,9 +29,11 @@ class CmsisDAP: public JtagInterface {
 		 * \param[in] vid: vendor id
 		 * \param[in] pid: product id
 		 * \param[in] index: interface number
-		 * \param[in] verbose: verbose level 0 normal, 1 verbose
+		 * \param[in] clkHZ: clock frequency
+		 * \param[in] verbose: verbose level (0 normal, 1 verbose)
+		 * \param[in] backend: backend type (0 HID, 1 USB bulk)
 		 */
-		CmsisDAP(const cable_t &cable, int index, int8_t verbose);
+		CmsisDAP(const cable_t &cable, int index, uint32_t clkHZ, int8_t verbose, int backend);
 
 		~CmsisDAP();
 
@@ -48,7 +56,7 @@ class CmsisDAP: public JtagInterface {
 
 		/*!
 		 * \brief write and read len bits with optional tms set to 1 if end
-		 * \param[in] tx: serie of tdi state to send 
+		 * \param[in] tx: serie of tdi state to send
 		 * \param[out] rx: buffer to store tdo bits from device
 		 * \param[in] len: number of bit to read/write
 		 * \param[in] end: if true tms is set to one with the last tdi bit
@@ -89,6 +97,9 @@ class CmsisDAP: public JtagInterface {
 		 */
 		int dapDisconnect();
 		int dapResetTarget();
+
+		void initWithHID(const cable_t &cable, int index, int8_t verbose);
+		void initWithBulk(const cable_t &cable, int8_t verbose);
 		int read_info(uint8_t info, uint8_t *rd_info, int max_len);
 		int xfer(int tx_len, uint8_t *rx_buff, int rx_len);
 		int xfer(uint8_t instruction, int tx_len,
@@ -103,13 +114,21 @@ class CmsisDAP: public JtagInterface {
 		uint16_t _vid;                /**< device Vendor ID */
 		uint16_t _pid;                /**< device Product ID */
 		std::wstring _serial_number;  /**< device serial number */
+		std::wstring _vendor; 		  /**< device manufacturer */
+		std::wstring _product_name;   /**< device product name */
 
-		hid_device *_dev;          /**< hid device used to communicate */
-
+		hid_device *_hid_dev;           /**< hid device used to communicate */
+		libusb_device_handle *_usb_dev; /**< libusb device used to communicate */
+		libusb_context *_ctx;       /**< libusb context */
 		unsigned char *_ll_buffer; /**< message buffer */
 		unsigned char *_buffer;    /**< subset of _ll_buffer */
+		size_t _ll_buffer_size;		/**< message buffer size*/
+		size_t _packet_size;		   /**< USB bulk packet size */
+		int _ep_in;				   /**< USB bulk in endpoint */
+		int _ep_out;			   /**< USB bulk out endpoint */
 		int _num_tms;              /**< current tms length */
 		int _is_connect;           /**< device status ((dis)connected) */
+		int _backend;			   /**< type of USB backend */
 };
 
 #endif  // SRC_CMSISDAP_HPP_
