@@ -138,6 +138,82 @@ CmsisDAP::CmsisDAP(const cable_t &cable, int index, uint32_t clkHZ, int8_t verbo
 #endif
 	if (_backend == BACKEND_NONE)
 		throw std::runtime_error("Error: no USB backend available");
+
+	if (verbose) {
+		display_info(INFO_ID_VID               , DAPLINK_INFO_STRING);
+		display_info(INFO_ID_PID               , DAPLINK_INFO_STRING);
+		display_info(INFO_ID_SERNUM            , DAPLINK_INFO_STRING);
+		display_info(INFO_ID_FWVERS            , DAPLINK_INFO_STRING);
+		display_info(INFO_ID_TARGET_DEV_VENDOR , DAPLINK_INFO_STRING);
+		display_info(INFO_ID_TARGET_DEV_NAME   , DAPLINK_INFO_STRING);
+		display_info(INFO_ID_HWCAP             , DAPLINK_INFO_BYTE);
+		display_info(INFO_ID_SWO_TRACE_BUF_SIZE, DAPLINK_INFO_WORD);
+		display_info(INFO_ID_MAX_PKT_CNT       , DAPLINK_INFO_BYTE);
+		display_info(INFO_ID_MAX_PKT_SZ        , DAPLINK_INFO_SHORT);
+	}
+
+	/* read device capabilities -> check if it's JTAG compatible
+	 * 0 -> info
+	 * 1 -> len (1: info0, 2: info0, info1)
+	 * Available transfer protocols to target:
+		Info0 - Bit 0: 1 = SWD Serial Wire Debug communication is implemented
+					   0 = SWD Commands not implemented
+		Info0 - Bit 1: 1 = JTAG communication is implemented
+					   0 = JTAG Commands not implemented
+	   Serial Wire Trace (SWO) support:
+		Info0 - Bit 2: 1 = SWO UART - UART Serial Wire Output is implemented
+					   0 = not implemented
+		Info0 - Bit 3: 1 = SWO Manchester - Manchester Serial Wire Output is implemented
+					   0 = not implemented
+	   Command extensions for transfer protocol:
+		Info0 - Bit 4: 1 = Atomic Commands - Atomic Commands support is implemented
+					   0 = Atomic Commands not implemented
+	   Time synchronisation via Test Domain Timer:
+		Info0 - Bit 5: 1 = Test Domain Timer - debug unit support for Test Domain Timer is implemented
+					   0 = not implemented
+	   SWO Streaming Trace support:
+		Info0 - Bit 6: 1 = SWO Streaming Trace is implemented (0 = not implemented).
+	*/
+	bool is_error = false;
+	memset(_buffer, 0, 63);
+	int res = read_info(INFO_ID_HWCAP, _buffer, 63);
+	if (res < 0) {
+		is_error = true;
+		char t[256];
+		snprintf(t, sizeof(t), "Error %d for command %d\n", res, INFO_ID_HWCAP);
+		printError(t);
+	}
+
+	if (verbose)
+		printf("Hardware cap %02x %02x %02x\n", _buffer[0], _buffer[1], _buffer[2]);
+
+	if ((!is_error) && (!(_buffer[2] & (1 << 1)))) {
+		is_error = true;
+		printError("JTAG is not supported by the probe");
+	}
+
+	/* send connect */
+	if (!is_error && dapConnect() != 1) {
+		is_error = true;
+		printError("DAP connection in JTAG mode failed");
+	}
+
+	if (is_error) {
+		if (BACKEND_HID) {
+			hid_close(_hid_dev);
+			hid_exit();
+		} else {
+			libusb_close(_usb_dev);
+			libusb_exit(_ctx);
+		}
+		throw std::runtime_error("cmsisDAP: init Failed");
+	} else {
+		if (BACKEND_HID) {
+			printInfo("HID init successful");
+		} else {
+			printInfo("USB bulk init successful");
+		}
+	}
 	if (clkHZ > 0)
 		setClkFreq(clkHZ);
 }
@@ -252,70 +328,6 @@ bool CmsisDAP::initWithHID(const cable_t &cable, int index, int8_t verbose){
 	/* cleanup enumeration */
 	hid_free_enumeration(devs);
 
-	if (verbose) {
-		display_info(INFO_ID_VID               , DAPLINK_INFO_STRING);
-		display_info(INFO_ID_PID               , DAPLINK_INFO_STRING);
-		display_info(INFO_ID_SERNUM            , DAPLINK_INFO_STRING);
-		display_info(INFO_ID_FWVERS            , DAPLINK_INFO_STRING);
-		display_info(INFO_ID_TARGET_DEV_VENDOR , DAPLINK_INFO_STRING);
-		display_info(INFO_ID_TARGET_DEV_NAME   , DAPLINK_INFO_STRING);
-		display_info(INFO_ID_HWCAP             , DAPLINK_INFO_BYTE);
-		display_info(INFO_ID_SWO_TRACE_BUF_SIZE, DAPLINK_INFO_WORD);
-		display_info(INFO_ID_MAX_PKT_CNT       , DAPLINK_INFO_BYTE);
-		display_info(INFO_ID_MAX_PKT_SZ        , DAPLINK_INFO_SHORT);
-	}
-
-	/* read device capabilities -> check if it's JTAG compatible
-	 * 0 -> info
-	 * 1 -> len (1: info0, 2: info0, info1)
-	 * Available transfer protocols to target:
-		Info0 - Bit 0: 1 = SWD Serial Wire Debug communication is implemented
-					   0 = SWD Commands not implemented
-		Info0 - Bit 1: 1 = JTAG communication is implemented
-					   0 = JTAG Commands not implemented
-	   Serial Wire Trace (SWO) support:
-		Info0 - Bit 2: 1 = SWO UART - UART Serial Wire Output is implemented
-					   0 = not implemented
-		Info0 - Bit 3: 1 = SWO Manchester - Manchester Serial Wire Output is implemented
-					   0 = not implemented
-	   Command extensions for transfer protocol:
-		Info0 - Bit 4: 1 = Atomic Commands - Atomic Commands support is implemented
-					   0 = Atomic Commands not implemented
-	   Time synchronisation via Test Domain Timer:
-		Info0 - Bit 5: 1 = Test Domain Timer - debug unit support for Test Domain Timer is implemented
-					   0 = not implemented
-	   SWO Streaming Trace support:
-		Info0 - Bit 6: 1 = SWO Streaming Trace is implemented (0 = not implemented).
-	*/
-	memset(_buffer, 0, 63);
-	int res = read_info(INFO_ID_HWCAP, _buffer, 63);
-	if (res < 0) {
-		hid_close(_hid_dev);
-		hid_exit();
-		char t[256];
-		snprintf(t, sizeof(t), "Error %d for command %d\n", res, INFO_ID_HWCAP);
-		printError(t);
-		return false;
-	}
-
-	if (verbose)
-		printf("Hardware cap %02x %02x %02x\n", _buffer[0], _buffer[1], _buffer[2]);
-	if (!(_buffer[2] & (1 << 1))) {
-		hid_close(_hid_dev);
-		hid_exit();
-		printError("JTAG is not supported by the probe");
-		return false;
-	}
-
-	/* send connect */
-	if (dapConnect() != 1) {
-		hid_close(_hid_dev);
-		hid_exit();
-		printError("DAP connection in JTAG mode failed");
-		return false;
-	}
-
-	printInfo("HID init successful");
 	return true;
 }
 #endif
@@ -403,48 +415,6 @@ bool CmsisDAP::initWithBulk(const cable_t &cable, int8_t verbose, bool err_as_in
 		return false;
 	}
 
-	if (verbose) {
-		display_info(INFO_ID_VID               , DAPLINK_INFO_STRING);
-		display_info(INFO_ID_PID               , DAPLINK_INFO_STRING);
-		display_info(INFO_ID_SERNUM            , DAPLINK_INFO_STRING);
-		display_info(INFO_ID_FWVERS            , DAPLINK_INFO_STRING);
-		display_info(INFO_ID_TARGET_DEV_VENDOR , DAPLINK_INFO_STRING);
-		display_info(INFO_ID_TARGET_DEV_NAME   , DAPLINK_INFO_STRING);
-		display_info(INFO_ID_HWCAP             , DAPLINK_INFO_BYTE);
-		display_info(INFO_ID_SWO_TRACE_BUF_SIZE, DAPLINK_INFO_WORD);
-		display_info(INFO_ID_MAX_PKT_CNT       , DAPLINK_INFO_BYTE);
-		display_info(INFO_ID_MAX_PKT_SZ        , DAPLINK_INFO_SHORT);
-	}
-
-	memset(_buffer, 0, 63);
-	int res = read_info(INFO_ID_HWCAP, _buffer, 63);
-	if (res < 0) {
-		libusb_close(_usb_dev);
-		libusb_exit(_ctx);
-		char t[256];
-		snprintf(t, sizeof(t), "Error %d for command %d\n", res, INFO_ID_HWCAP);
-		disp_error_info(t, err_as_info);
-		return false;
-	}
-
-	if (verbose)
-		printf("Hardware cap %02x %02x %02x\n", _buffer[0], _buffer[1], _buffer[2]);
-
-	if (!(_buffer[2] & (1 << 1))) {
-		libusb_close(_usb_dev);
-		libusb_exit(_ctx);
-		disp_error_info("JTAG is not supported by the probe", err_as_info);
-		return false;
-	}
-
-	if (dapConnect() != 1) {
-		libusb_close(_usb_dev);
-		libusb_exit(_ctx);
-		disp_error_info("DAP connection in JTAG mode failed", err_as_info);
-		return false;
-	}
-
-	printInfo("USB bulk init successful");
 	return true;
 }
 
