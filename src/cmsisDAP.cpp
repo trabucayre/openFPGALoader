@@ -116,23 +116,22 @@ CmsisDAP::CmsisDAP(const cable_t &cable, int index, uint32_t clkHZ, int8_t verbo
 	_buffer = _ll_buffer+2;
 	char t[256];
 #ifdef ENABLE_CMSISDAP_V2
-	try {
-		_backend = BACKEND_USBBULK;
-		initWithBulk(cable, verbose);
-	} catch (std::runtime_error const& e) {
-		snprintf(t, sizeof(t), "try USB bulk init but failed with: %s", e.what());
-		printInfo(t);
+#ifdef ENABLE_CMSISDAP_V1
+	const bool err_as_info = true;
+#else
+	const bool err_as_info = false;
+#endif
+	_backend = BACKEND_USBBULK;
+	if (!initWithBulk(cable, verbose, err_as_info)) {
+		printInfo("cmsisDAP v2: try USB bulk init but failed");
 		_backend = BACKEND_NONE;
 	}
 #endif
 #ifdef ENABLE_CMSISDAP_V1
 	if (_backend == BACKEND_NONE) {
-		try {
-			_backend = BACKEND_HID;
-			initWithHID(cable, index, verbose);
-		} catch (std::runtime_error const& e) {
-			snprintf(t, sizeof(t), "try HID init but failed with: %s", e.what());
-			printInfo(t);
+		_backend = BACKEND_HID;
+		if (!initWithHID(cable, index, verbose)) {
+			printInfo("cmsisDAP v1: try HID init but failed");
 			_backend = BACKEND_NONE;
 		}
 	}
@@ -172,14 +171,15 @@ CmsisDAP::~CmsisDAP()
 }
 
 #ifdef ENABLE_CMSISDAP_V1
-void CmsisDAP::initWithHID(const cable_t &cable, int index, int8_t verbose){
+bool CmsisDAP::initWithHID(const cable_t &cable, int index, int8_t verbose){
 		std::vector<struct hid_device_info *> dev_found;
 
 	/* only hid support */
 	struct hid_device_info *devs, *cur_dev;
 
 	if (hid_init() != 0) {
-		throw std::runtime_error("hidapi init failed");
+		printError("hidapi init failed");
+		return false;
 	}
 
 	/* search for HID compatible devices
@@ -195,13 +195,15 @@ void CmsisDAP::initWithHID(const cable_t &cable, int index, int8_t verbose){
 	/* no devices: stop */
 	if (dev_found.empty()) {
 		hid_exit();
-		throw std::runtime_error("No device found");
+		printError("cmsisDAP: No CMSIS-DAP v1 device found");
+		return false;
 	}
 	/* more than one device: can't continue without more information */
 	if (dev_found.size() > 1 && index == -1) {
 		hid_exit();
-		throw std::runtime_error(
-				"Error: more than one device. Please provides VID/PID or cable-index");
+		printError(
+			"cmsisDAP: more than one CMSIS-DAP v1 device. Please provides VID/PID or cable-index");
+		return false;
 	}
 
 	/* if index check for if interface exist */
@@ -216,8 +218,9 @@ void CmsisDAP::initWithHID(const cable_t &cable, int index, int8_t verbose){
 		}
 		if (!found) {
 			hid_exit();
-			throw std::runtime_error(
-				"Error: no compatible interface with index " + std::to_string(_device_idx));
+			printError(
+				"CmsisDAP: no compatible interface with index " + std::to_string(_device_idx));
+			return false;
 		}
 	}
 
@@ -242,8 +245,9 @@ void CmsisDAP::initWithHID(const cable_t &cable, int index, int8_t verbose){
 	/* open the device */
 	_hid_dev = hid_open_path(dev_found[_device_idx]->path);
 	if (!_hid_dev) {
-		throw std::runtime_error(
-				std::string("Couldn't open device. Check permissions for ") + dev_found[_device_idx]->path);
+		printError(
+			std::string("Couldn't open device. Check permissions for ") + dev_found[_device_idx]->path);
+		return false;
 	}
 	/* cleanup enumeration */
 	hid_free_enumeration(devs);
@@ -290,7 +294,8 @@ void CmsisDAP::initWithHID(const cable_t &cable, int index, int8_t verbose){
 		hid_exit();
 		char t[256];
 		snprintf(t, sizeof(t), "Error %d for command %d\n", res, INFO_ID_HWCAP);
-		throw std::runtime_error(t);
+		printError(t);
+		return false;
 	}
 
 	if (verbose)
@@ -298,25 +303,38 @@ void CmsisDAP::initWithHID(const cable_t &cable, int index, int8_t verbose){
 	if (!(_buffer[2] & (1 << 1))) {
 		hid_close(_hid_dev);
 		hid_exit();
-		throw std::runtime_error("JTAG is not supported by the probe");
+		printError("JTAG is not supported by the probe");
+		return false;
 	}
 
 	/* send connect */
 	if (dapConnect() != 1) {
 		hid_close(_hid_dev);
 		hid_exit();
-		throw std::runtime_error("DAP connection in JTAG mode failed");
+		printError("DAP connection in JTAG mode failed");
+		return false;
 	}
 
 	printInfo("HID init successful");
+	return true;
 }
 #endif
 
 #ifdef ENABLE_CMSISDAP_V2
-void CmsisDAP::initWithBulk(const cable_t &cable, int8_t verbose)
+void disp_error_info(const std::string &mess, bool disp_as_info)
 {
-	if (libusb_init(&_ctx) != 0)
-		throw std::runtime_error("libusb init failed");
+	if (disp_as_info)
+		printInfo(mess);
+	else
+		printError(mess);
+}
+
+bool CmsisDAP::initWithBulk(const cable_t &cable, int8_t verbose, bool err_as_info)
+{
+	if (libusb_init(&_ctx) != 0) {
+		disp_error_info("cmsisDAP v2: libusb init failed", err_as_info);
+		return false;
+	}
 
 	std::vector<cmsis_dap_v2_dev_t> devices = findCmsisDapDevices(cable.vid, cable.pid);
 
@@ -325,14 +343,15 @@ void CmsisDAP::initWithBulk(const cable_t &cable, int8_t verbose)
 	 */
 	if (devices.empty()) {
 		libusb_exit(_ctx);
-		throw std::runtime_error("Error: failed to find compatible CMSIS-DAP device");
+		disp_error_info("cmsisDAP: failed to find compatible CMSIS-DAP v2 device", err_as_info);
+		return false;
 	}
 	if (devices.size() > 1) {
 		for (auto &d : devices)
 			libusb_close(d.handle);
 		libusb_exit(_ctx);
-		throw std::runtime_error(
-			"Error: more than one device. Please provide VID/PID");
+		disp_error_info("Error: more than one CMSIS-DAP v2 device. Please provide VID/PID", err_as_info);
+		return false;
 	}
 
 	cmsis_dap_v2_dev_t &dev = devices[0];
@@ -352,7 +371,8 @@ void CmsisDAP::initWithBulk(const cable_t &cable, int8_t verbose)
 	if (libusb_get_configuration(_usb_dev, &current_config) != 0) {
 		libusb_close(_usb_dev);
 		libusb_exit(_ctx);
-		throw std::runtime_error("could not find current configuration");
+		disp_error_info("cmsisDAP: could not find current configuration", err_as_info);
+		return false;
 	}
 
 	if (dev.config_num != current_config) {
@@ -360,14 +380,16 @@ void CmsisDAP::initWithBulk(const cable_t &cable, int8_t verbose)
 		if (ret != 0 && ret != LIBUSB_ERROR_NOT_SUPPORTED) {
 			libusb_close(_usb_dev);
 			libusb_exit(_ctx);
-			throw std::runtime_error("could not set current configuration");
+			disp_error_info("cmsisDAP: could not set current configuration", err_as_info);
+			return false;
 		}
 	}
 
 	if (libusb_claim_interface(_usb_dev, dev.interface_num) != 0) {
 		libusb_close(_usb_dev);
 		libusb_exit(_ctx);
-		throw std::runtime_error("could not claim interface");
+		disp_error_info("cmsisDAP: could not claim interface", err_as_info);
+		return false;
 	}
 
 	_packet_size = dev.packet_size;
@@ -377,7 +399,8 @@ void CmsisDAP::initWithBulk(const cable_t &cable, int8_t verbose)
 	if (!libusb_dev_mem_alloc(_usb_dev, _packet_size)) {
 		libusb_close(_usb_dev);
 		libusb_exit(_ctx);
-		throw std::runtime_error("failed to alloc DMA memory for device");
+		disp_error_info("cmsisDAP: failed to alloc DMA memory for device", err_as_info);
+		return false;
 	}
 
 	if (verbose) {
@@ -400,7 +423,8 @@ void CmsisDAP::initWithBulk(const cable_t &cable, int8_t verbose)
 		libusb_exit(_ctx);
 		char t[256];
 		snprintf(t, sizeof(t), "Error %d for command %d\n", res, INFO_ID_HWCAP);
-		throw std::runtime_error(t);
+		disp_error_info(t, err_as_info);
+		return false;
 	}
 
 	if (verbose)
@@ -409,16 +433,19 @@ void CmsisDAP::initWithBulk(const cable_t &cable, int8_t verbose)
 	if (!(_buffer[2] & (1 << 1))) {
 		libusb_close(_usb_dev);
 		libusb_exit(_ctx);
-		throw std::runtime_error("JTAG is not supported by the probe");
+		disp_error_info("JTAG is not supported by the probe", err_as_info);
+		return false;
 	}
 
 	if (dapConnect() != 1) {
 		libusb_close(_usb_dev);
 		libusb_exit(_ctx);
-		throw std::runtime_error("DAP connection in JTAG mode failed");
+		disp_error_info("DAP connection in JTAG mode failed", err_as_info);
+		return false;
 	}
 
 	printInfo("USB bulk init successful");
+	return true;
 }
 
 /* Enumerate all USB devices and return those that expose a CMSIS-DAP v2
