@@ -96,7 +96,7 @@ class CmsisDAP: public JtagInterface {
 		int dapResetTarget();
 
 #ifdef ENABLE_CMSISDAP_V1
-		void initWithHID(const cable_t &cable, int index, int8_t verbose);
+		bool initWithHID(const cable_t &cable, int index, int8_t verbose);
 #endif
 #ifdef ENABLE_CMSISDAP_V2
 		struct cmsis_dap_v2_dev_t {
@@ -114,7 +114,7 @@ class CmsisDAP: public JtagInterface {
 		};
 
 		std::vector<cmsis_dap_v2_dev_t> findCmsisDapDevices(uint16_t vid, uint16_t pid);
-		void initWithBulk(const cable_t &cable, int8_t verbose);
+		bool initWithBulk(const cable_t &cable, int8_t verbose, bool err_as_info);
 #endif
 		int read_info(uint8_t info, uint8_t *rd_info, int max_len);
 		int xfer(int tx_len, uint8_t *rx_buff, int rx_len);
