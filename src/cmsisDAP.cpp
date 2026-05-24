@@ -295,7 +295,7 @@ bool CmsisDAP::initWithHID(const cable_t &cable, int index, int8_t verbose){
 		if (!found) {
 			hid_exit();
 			printError(
-				"CmsisDAP: no compatible interface with index " + std::to_string(_device_idx));
+				"CmsisDAP: no compatible interface with index " + std::to_string(index));
 			return false;
 		}
 	}
