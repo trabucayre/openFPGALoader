@@ -143,7 +143,7 @@ class CmsisDAP: public JtagInterface {
 		unsigned char *_ll_buffer; /**< message buffer */
 		unsigned char *_buffer;    /**< subset of _ll_buffer */
 #ifdef ENABLE_CMSISDAP_V2
-		int _packet_size;          /**< USB bulk packet size */
+		int _pkt_sz;               /**< USB bulk packet size */
 		int _ep_in;                /**< USB bulk in endpoint */
 		int _ep_out;               /**< USB bulk out endpoint */
 #endif

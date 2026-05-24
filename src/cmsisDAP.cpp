@@ -107,7 +107,7 @@ CmsisDAP::CmsisDAP(const cable_t &cable, int index, uint32_t clkHZ, int8_t verbo
 #ifdef ENABLE_CMSISDAP_V2
 		_usb_dev(NULL), _ctx(NULL),
 #endif
-		_packet_size(0),
+		_pkt_sz(0),
 		_ep_in(0), _ep_out(0), _num_tms(0), _is_connect(false), _backend(BACKEND_NONE)
 {
 	_ll_buffer = (unsigned char *)malloc(sizeof(unsigned char) * 1024);
@@ -129,6 +129,7 @@ CmsisDAP::CmsisDAP(const cable_t &cable, int index, uint32_t clkHZ, int8_t verbo
 #endif
 #ifdef ENABLE_CMSISDAP_V1
 	if (_backend == BACKEND_NONE) {
+		_pkt_sz = 64;
 		_backend = BACKEND_HID;
 		if (!initWithHID(cable, index, verbose)) {
 			printInfo("cmsisDAP v1: try HID init but failed");
@@ -328,6 +329,23 @@ bool CmsisDAP::initWithHID(const cable_t &cable, int index, int8_t verbose){
 	/* cleanup enumeration */
 	hid_free_enumeration(devs);
 
+	/* query actual HID packet size and grow buffer if needed */
+	uint8_t buf[65];
+	memset(buf, 0, 65);
+	if (read_info(INFO_ID_MAX_PKT_SZ, buf, 64) == 2) {
+		const uint16_t sz = (static_cast<uint16_t>(buf[3]) << 8) | buf[2];
+		if (sz > 64) {
+			_pkt_sz = sz;
+			if (sz > 1024) {
+				unsigned char *tmp = (unsigned char *)realloc(_ll_buffer, _pkt_sz + 1);
+				if (!tmp)
+					throw std::runtime_error("internal buffer reallocation failed");
+				_ll_buffer = tmp;
+				_buffer = _ll_buffer + 2;
+			}
+		}
+	}
+
 	return true;
 }
 #endif
@@ -404,11 +422,11 @@ bool CmsisDAP::initWithBulk(const cable_t &cable, int8_t verbose, bool err_as_in
 		return false;
 	}
 
-	_packet_size = dev.packet_size;
+	_pkt_sz = dev.packet_size;
 	_ep_out = dev.ep_out;
 	_ep_in = dev.ep_in;
 
-	if (!libusb_dev_mem_alloc(_usb_dev, _packet_size)) {
+	if (!libusb_dev_mem_alloc(_usb_dev, _pkt_sz)) {
 		libusb_close(_usb_dev);
 		libusb_exit(_ctx);
 		disp_error_info("cmsisDAP: failed to alloc DMA memory for device", err_as_info);
@@ -697,8 +715,8 @@ int CmsisDAP::writeJtagSequence(uint8_t tms, const uint8_t *tx, uint8_t *rx,
 		 * => one sequence == 9Bytes and 9*7 == 63
 		 * then we have 6 * 8 fully filled sequence + one up to 56bits
 		 */
-		if (xfer_byte_len + 1 + pos > 63) {
-			xfer_byte_len = 63 - pos - 1;  // number of free bytes
+		if (xfer_byte_len + 1 + pos > _pkt_sz - 1) {
+			xfer_byte_len = _pkt_sz - pos - 2;  // number of free bytes
 			xfer_bit_len = xfer_byte_len * 8;
 		}
 
@@ -819,12 +837,12 @@ int CmsisDAP::xfer(uint8_t instruction, int tx_len,
 	switch(_backend){
 #ifdef ENABLE_CMSISDAP_V1
 		case BACKEND_HID:
-			ret = hid_write(_hid_dev, _ll_buffer, 65);
+			ret = hid_write(_hid_dev, _ll_buffer, _pkt_sz + 1);
 			if (ret == -1) {
 				printError("Error: HID write failed\n");
 				return ret;
 			}
-			ret = hid_read_timeout(_hid_dev, _ll_buffer, 65, 1000);
+			ret = hid_read_timeout(_hid_dev, _ll_buffer, _pkt_sz + 1, 1000);
 			if (ret <= 0) {
 				if (ret == 0)
 					printError("Error: HID read timeout\n");
@@ -843,7 +861,7 @@ int CmsisDAP::xfer(uint8_t instruction, int tx_len,
 				return ret;
 			}
 			memset(&_ll_buffer[0], 0, 1024);
-			ret = libusb_bulk_transfer(_usb_dev, _ep_in, &_ll_buffer[0], _packet_size, &bulk_len, 1000);
+			ret = libusb_bulk_transfer(_usb_dev, _ep_in, &_ll_buffer[0], _pkt_sz, &bulk_len, 1000);
 			// sleep for 1ms to ensure that polling behavior aligns with HID backend
 			usleep(1000);
 			if (ret != 0 && ret != LIBUSB_ERROR_TIMEOUT) {
@@ -891,12 +909,12 @@ int CmsisDAP::xfer(int tx_len, uint8_t *rx_buff, int rx_len)
 	switch(_backend){
 #ifdef ENABLE_CMSISDAP_V1
 		case BACKEND_HID:
-			ret = hid_write(_hid_dev, _ll_buffer, 65);
+			ret = hid_write(_hid_dev, _ll_buffer, _pkt_sz + 1);
 			if (ret == -1) {
 				printError("Error: HID write failed\n");
 				return ret;
 			}
-			ret = hid_read_timeout(_hid_dev, _ll_buffer, 65, 1000);
+			ret = hid_read_timeout(_hid_dev, _ll_buffer, _pkt_sz + 1, 1000);
 			if (ret <= 0) {
 				if (ret == 0)
 					printError("Error: HID read timeout\n");
@@ -915,7 +933,7 @@ int CmsisDAP::xfer(int tx_len, uint8_t *rx_buff, int rx_len)
 				return ret;
 			}
 			memset(&_ll_buffer[0], 0, 1024);
-			ret = libusb_bulk_transfer(_usb_dev, _ep_in, &_ll_buffer[0], _packet_size, &bulk_len, 1000);
+			ret = libusb_bulk_transfer(_usb_dev, _ep_in, &_ll_buffer[0], _pkt_sz, &bulk_len, 1000);
 			// sleep for 1ms to ensure that polling behavior aligns with HID backend
 			usleep(1000);
 			if (ret != 0 && ret != LIBUSB_ERROR_TIMEOUT) {
