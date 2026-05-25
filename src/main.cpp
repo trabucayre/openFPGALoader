@@ -986,7 +986,7 @@ int parse_opt(int argc, char **argv, struct arguments *args,
 				cxxopts::value<unsigned int>(args->offset))
 			("pins", "pin config TDI:TDO:TCK:TMS or MOSI:MISO:SCK:CS[:HOLDN:WPN]",
 				cxxopts::value<std::vector<std::string>>(pins))
-			("probe-firmware", "firmware for JTAG probe (usbBlasterII)",
+			("probe-firmware", "firmware for JTAG probe (usbBlasterII/xilinxPlatformCableUsb)",
 				cxxopts::value<std::string>(args->probe_firmware))
 			("protect-flash",   "protect SPI flash area",
 				cxxopts::value<uint32_t>(args->protect_flash))
