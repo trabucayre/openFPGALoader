@@ -18,6 +18,7 @@ option(ENABLE_OPTIM       "Enable build with -O3 optimization level"            
 option(BUILD_STATIC       "Whether or not to build with static libraries"        OFF)
 option(USE_PKGCONFIG      "Use pkgconfig to find libraries"                      ON)
 option(LINK_CMAKE_THREADS "Use CMake find_package to link the threading library" OFF)
+option(LINK_CMAKE_LIBFTDI1 "Use CMake find_package to link the libftdi1 library" ON)
 option(WINDOWS_CROSSCOMPILE "Enable cross-compile on windows"                    OFF)
 option(WINDOWS_STATIC_ZLIB "Link zlib statically for Windows builds"             ON)
 
@@ -188,7 +189,7 @@ add_definitions(-DVIVADO_DIR=\"${VIVADO_PATH}\")
 # Dependencies check/search
 ####################################################################################################
 
-if (USE_LIBFTDI)
+if (USE_LIBFTDI AND LINK_CMAKE_LIBFTDI1)
 	# Try to find the LibFTDI1 with cmake
 	find_package(LibFTDI1 QUIET)
 endif()
@@ -825,7 +826,7 @@ if (LINK_CMAKE_THREADS)
 	target_link_libraries(openFPGALoader Threads::Threads)
 endif()
 
-if (USE_LIBFTDI)
+if (USE_LIBFTDI AND LINK_CMAKE_LIBFTDI1)
 	# libftdi < 1.4 as no usb_addr
 	# libftdi >= 1.5 as purge_buffer obsolete
 	math(EXPR FTDI_VAL "${LIBFTDI_VERSION_MAJOR} * 100 + ${LIBFTDI_VERSION_MINOR}")
