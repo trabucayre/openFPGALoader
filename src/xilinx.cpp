@@ -337,7 +337,10 @@ Xilinx::Xilinx(Jtag *jtag, const std::string &filename,
 		_fpga_family = SPARTAN7_FAMILY;
 	} else if (family == "zynq") {
 		_fpga_family = ZYNQ_FAMILY;
-		if (_mode != Device::MEM_MODE) {
+		/* DNA read uses a 7-series PL JTAG instruction and should not
+		 * be blocked by the Zynq PS-side SPI flash restriction.
+		 */
+		if (_mode != Device::MEM_MODE && !read_dna) {
 			char mess[256];
 			snprintf(mess, 256, "Error: can't flash non-volatile memory for "
 				"Zynq7000 devices\n"
@@ -408,11 +411,12 @@ Xilinx::Xilinx(Jtag *jtag, const std::string &filename,
 	}
 
 	if (read_dna) {
-		if (_fpga_family == ARTIX_FAMILY || _fpga_family == KINTEXUS_FAMILY) {
+		if (_fpga_family == ARTIX_FAMILY || _fpga_family == KINTEXUS_FAMILY ||
+			_fpga_family == ZYNQ_FAMILY) {
 			uint64_t dna = Xilinx::fuse_dna_read();
 			printf("{\"dna\": \"0x%016" PRIx64 "\"}\n", dna);
 		} else {
-			throw std::runtime_error("Error: read_xadc only supported for Artix 7");
+			throw std::runtime_error("Error: read_dna only supported for 7-series style Xilinx FPGA");
 		}
 	}
 
