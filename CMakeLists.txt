@@ -188,24 +188,17 @@ add_definitions(-DVIVADO_DIR=\"${VIVADO_PATH}\")
 # Dependencies check/search
 ####################################################################################################
 
-if (USE_LIBFTDI)
-	# Try to find the LibFTDI1 with cmake
-	find_package(LibFTDI1 QUIET)
-endif()
-
 if (USE_PKGCONFIG)
 	find_package(PkgConfig REQUIRED)
 
 	# Backward compat when the libftdi is not found
 	# by using cmake
 	if (USE_LIBFTDI)
-		if (NOT LIBFTDI_FOUND)
-			pkg_check_modules(LIBFTDI REQUIRED libftdi1)
-			string(REPLACE "." ";" VERSION_LIST ${LIBFTDI_VERSION})
-			list(GET VERSION_LIST 0 LIBFTDI_VERSION_MAJOR)
-			list(GET VERSION_LIST 1 LIBFTDI_VERSION_MINOR)
-			string(REGEX REPLACE "[^0-9].*" "" LIBFTDI_VERSION_MINOR "${LIBFTDI_VERSION_MINOR}")
-		endif()
+		pkg_check_modules(LIBFTDI REQUIRED libftdi1)
+		string(REPLACE "." ";" VERSION_LIST ${LIBFTDI_VERSION})
+		list(GET VERSION_LIST 0 LIBFTDI_VERSION_MAJOR)
+		list(GET VERSION_LIST 1 LIBFTDI_VERSION_MINOR)
+		string(REGEX REPLACE "[^0-9].*" "" LIBFTDI_VERSION_MINOR "${LIBFTDI_VERSION_MINOR}")
 	else()
 		set(LIBFTDI_LIBRARY_DIRS "")
 		set(LIBFTDI_INCLUDE_DIRS "")
