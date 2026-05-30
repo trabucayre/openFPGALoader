@@ -83,13 +83,28 @@ Unable to flash device on OpenBSD: `JTAG init failed with: DirtyJtag: fails to o
 Certain evaluation boards may show the following error message when running openFPGAloader on OpenBSD:
 
 .. code:: bash
+
     fail to read data usb bulk read failed
     JTAG init failed with: low level FTDI init failed
 
-This issue is most likely caused by the uftdi module, which has already locked the device. 
-Disabling the module can be achieved with the following commands:
+This issue is most likely caused by the uftdi(4) module, which has attached itself to the device, whereas openFPGALoader requires it to be accessible as a ugen(4) device.
+
+Unfortunately, due to the security concept of OpenBSD, it is not possible to detach it without modifying the kernel and rebooting the system. However, there are two ways to resolve the issue: Either by patching and recompiling the kernel; or by deactivating the uftdi(4) module.
+
+After COMMENTING OUT the problematic devices in `/usr/src/sys/dev/usb/uftdi.c`, the code would look like this:
+
+.. code:: c
+
+    { USB_VENDOR_FTDI, USB_PRODUCT_FTDI_SEMC_DSS20 },
+    //{ USB_VENDOR_FTDI, USB_PRODUCT_FTDI_SERIAL_2232C },
+    { USB_VENDOR_FTDI, USB_PRODUCT_FTDI_SERIAL_2232L },
+
+With this manual patch applied, the steps in `https://www.openbsd.org/faq/faq5.html <https://www.openbsd.org/faq/faq5.html#Custom>` can be used to recompile the kernel.
+
+Without recompilation, DEACTIVATING uftdi(4) can be achieved using the following commands:
 
 .. code:: bash
+
     # doas config -e -f -o /bsd.nouftdi /bsd
     OpenBSD 7.8 (GENERIC) #54: Sun Oct 12 12:45:58 MDT 2025
         deraadt@amd64.openbsd.org:/usr/src/sys/arch/amd64/compile/GENERIC
@@ -105,8 +120,10 @@ Disabling the module can be achieved with the following commands:
 At the boot prompt, typing in
 
 .. code:: bash
+
     boot> boot /bsd.nouftdi
 
 will boot the new kernel with the disabled module. 
-Afterwards, openFPGALoader will access the development board as a generic USB device. 
+
+Either way, openFPGALoader will then be able to access the development board as a generic USB device via ugen(4).
 

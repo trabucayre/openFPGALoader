@@ -569,7 +569,7 @@ int main(int argc, char **argv)
 			fpga = new CologneChip(jtag, args.bit_file, args.file_type,
 				args.prg_type, args.board, args.cable, args.verify, args.verbose);
 #else
-			printError("Support for Gowin FPGAs was not enabled at compile time");
+			printError("Support for Cologne Chip FPGAs was not enabled at compile time");
 			delete(jtag);
 			return EXIT_FAILURE;
 #endif
@@ -756,7 +756,7 @@ int spi_comm(struct arguments args, const cable_t &cable,
 				board->reset_pin, board->done_pin, DBUS6, board->oe_pin,
 				args.verify, args.verbose);
 #else
-			printError("Support for Gowin FPGAs was not enabled at compile time");
+			printError("Support for Cologne Chip FPGAs was not enabled at compile time");
 			return EXIT_FAILURE;
 #endif
 		} else {
