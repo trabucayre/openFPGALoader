@@ -87,9 +87,9 @@ Certain evaluation boards may show the following error message when running open
     fail to read data usb bulk read failed
     JTAG init failed with: low level FTDI init failed
 
-This issue is most likely caused by the uftdi module, which has attached itself to the device, whereas openFPGALoader requires it to be accessible as a ugen device.
+This issue is most likely caused by the uftdi(4) module, which has attached itself to the device, whereas openFPGALoader requires it to be accessible as a ugen(4) device.
 
-Unfortunately, due to the security concept of OpenBSD, it is not possible to detach it without modifying the kernel and rebooting the system. However, there are two ways to resolve the issue: Either by patching and recompiling the kernel; or by deactivating the uftdi module.
+Unfortunately, due to the security concept of OpenBSD, it is not possible to detach it without modifying the kernel and rebooting the system. However, there are two ways to resolve the issue: Either by patching and recompiling the kernel; or by deactivating the uftdi(4) module.
 
 After COMMENTING OUT the problematic devices in `/usr/src/sys/dev/usb/uftdi.c`, the code would look like this:
 
@@ -99,9 +99,9 @@ After COMMENTING OUT the problematic devices in `/usr/src/sys/dev/usb/uftdi.c`, 
     //{ USB_VENDOR_FTDI, USB_PRODUCT_FTDI_SERIAL_2232C },
     { USB_VENDOR_FTDI, USB_PRODUCT_FTDI_SERIAL_2232L },
 
-Afterwards, the steps in `https://www.openbsd.org/faq/faq5.html <https://www.openbsd.org/faq/faq5.html#Custom>` can be used to recompile the kernel.
+With this manual patch applied, the steps in `https://www.openbsd.org/faq/faq5.html <https://www.openbsd.org/faq/faq5.html#Custom>` can be used to recompile the kernel.
 
-Without recompilation, DEACTIVATING the uftdi module can be achieved using the following commands:
+Without recompilation, DEACTIVATING uftdi(4) can be achieved using the following commands:
 
 .. code:: bash
 
@@ -125,5 +125,5 @@ At the boot prompt, typing in
 
 will boot the new kernel with the disabled module. 
 
-Either way, openFPGALoader will then be able to access the development board as a generic USB device. 
+Either way, openFPGALoader will then be able to access the development board as a generic USB device via ugen(4).
 
