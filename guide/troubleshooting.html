@@ -92,11 +92,39 @@ converter and log out/login again.</p>
 <section id="unable-to-flash-device-on-openbsd-jtag-init-failed-with-dirtyjtag-fails-to-open-device">
 <h2>Unable to flash device on OpenBSD: <cite>JTAG init failed with: DirtyJtag: fails to open device</cite><a class="headerlink" href="#unable-to-flash-device-on-openbsd-jtag-init-failed-with-dirtyjtag-fails-to-open-device" title="Link to this heading">¶</a></h2>
 <p>Certain evaluation boards may show the following error message when running openFPGAloader on OpenBSD:</p>
-<p>This issue is most likely caused by the uftdi module, which has already locked the device.
-Disabling the module can be achieved with the following commands:</p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>fail<span class="w"> </span>to<span class="w"> </span><span class="nb">read</span><span class="w"> </span>data<span class="w"> </span>usb<span class="w"> </span>bulk<span class="w"> </span><span class="nb">read</span><span class="w"> </span>failed
+JTAG<span class="w"> </span>init<span class="w"> </span>failed<span class="w"> </span>with:<span class="w"> </span>low<span class="w"> </span>level<span class="w"> </span>FTDI<span class="w"> </span>init<span class="w"> </span>failed
+</pre></div>
+</div>
+<p>This issue is most likely caused by the uftdi(4) module, which has attached itself to the device, whereas openFPGALoader requires it to be accessible as a ugen(4) device.</p>
+<p>Unfortunately, due to the security concept of OpenBSD, it is not possible to detach it without modifying the kernel and rebooting the system. However, there are two ways to resolve the issue: Either by patching and recompiling the kernel; or by deactivating the uftdi(4) module.</p>
+<p>After COMMENTING OUT the problematic devices in <cite>/usr/src/sys/dev/usb/uftdi.c</cite>, the code would look like this:</p>
+<div class="highlight-c notranslate"><div class="highlight"><pre><span></span><span class="p">{</span><span class="w"> </span><span class="n">USB_VENDOR_FTDI</span><span class="p">,</span><span class="w"> </span><span class="n">USB_PRODUCT_FTDI_SEMC_DSS20</span><span class="w"> </span><span class="p">},</span>
+<span class="c1">//{ USB_VENDOR_FTDI, USB_PRODUCT_FTDI_SERIAL_2232C },</span>
+<span class="p">{</span><span class="w"> </span><span class="n">USB_VENDOR_FTDI</span><span class="p">,</span><span class="w"> </span><span class="n">USB_PRODUCT_FTDI_SERIAL_2232L</span><span class="w"> </span><span class="p">},</span>
+</pre></div>
+</div>
+<p>With this manual patch applied, the steps in <cite>https://www.openbsd.org/faq/faq5.html &lt;https://www.openbsd.org/faq/faq5.html#Custom&gt;</cite> can be used to recompile the kernel.</p>
+<p>Without recompilation, DEACTIVATING uftdi(4) can be achieved using the following commands:</p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span><span class="c1"># doas config -e -f -o /bsd.nouftdi /bsd</span>
+OpenBSD<span class="w"> </span><span class="m">7</span>.8<span class="w"> </span><span class="o">(</span>GENERIC<span class="o">)</span><span class="w"> </span><span class="c1">#54: Sun Oct 12 12:45:58 MDT 2025</span>
+<span class="w">    </span>deraadt@amd64.openbsd.org:/usr/src/sys/arch/amd64/compile/GENERIC
+Enter<span class="w"> </span><span class="s1">&#39;help&#39;</span><span class="w"> </span><span class="k">for</span><span class="w"> </span>information
+ukc&gt;<span class="w"> </span>disable<span class="w"> </span>uftdi*
+<span class="m">356</span><span class="w"> </span>uftdi*<span class="w"> </span>disabled
+ukc&gt;<span class="w"> </span>disable<span class="w"> </span>uftdi0
+ukc&gt;<span class="w"> </span>disable<span class="w"> </span>uftdi1
+ukc&gt;<span class="w"> </span>quit
+Saving<span class="w"> </span>modified<span class="w"> </span>kernel.
+<span class="c1"># reboot</span>
+</pre></div>
+</div>
 <p>At the boot prompt, typing in</p>
-<p>will boot the new kernel with the disabled module.
-Afterwards, openFPGALoader will access the development board as a generic USB device.</p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>boot&gt;<span class="w"> </span>boot<span class="w"> </span>/bsd.nouftdi
+</pre></div>
+</div>
+<p>will boot the new kernel with the disabled module.</p>
+<p>Either way, openFPGALoader will then be able to access the development board as a generic USB device via ugen(4).</p>
 </section>
 </section>
 
