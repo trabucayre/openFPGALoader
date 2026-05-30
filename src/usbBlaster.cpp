@@ -49,8 +49,8 @@ UsbBlaster::UsbBlaster(const cable_t &cable, const std::string &firmware_path,
 #else
 		throw std::runtime_error("usb-blasterI: Not build");
 #endif
-#ifdef ENABLE_USB_BLASTERII
 	else if (cable.pid == 0x6810 || cable.pid == 0x6010)
+#ifdef ENABLE_USB_BLASTERII
 		ll_driver = new UsbBlasterII(firmware_path);
 #else
 		throw std::runtime_error("usb-blasterII: Not build");
@@ -459,7 +459,7 @@ UsbBlasterII::UsbBlasterII(const std::string &firmware_path)
 	else
 		fpath = firmware_path;
 	fx2 = new FX2_ll(0x09fb, 0x6810, 0x09fb, 0x6010, fpath);
-	if (!fx2->read_ctrl(0x94, 0, buf, 5)) {
+	if (!fx2->read_ctrl(0x94, 0, buf, 5, 0x0000)) {
 		throw std::runtime_error("Unable to read firmware version.");
 	}
 	printInfo("USB-Blaster II firmware version: " + std::string((char *)buf));

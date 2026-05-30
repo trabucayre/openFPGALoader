@@ -34,6 +34,13 @@
   Memory: OK
   Flash: NT
 
+- ID: axc3000
+  Description: Arrow AXC3000
+  URL: https://www.arrow.com/de/products/axc3000/trenz-electronic-gmbh.html
+  FPGA: Altera Agilex 3 A3CY100BM16AE7S
+  Memory: OK
+  Flash: NT
+
 - ID: axe5000
   Description: A5EC008BM16AE6S FPGA Starter Kit
   URL: https://www.arrow.com/en/products/axe5000/trenz-electronic-gmbh.html
@@ -380,8 +387,8 @@
   Memory: OK
   Flash: OK
   Constraints:
-    - ECPIX-5-45F
-    - ECPIX-5-85F
+      - ECPIX-5-45F
+      - ECPIX-5-85F
 
 - ID: ecpix5_r03
   Description: LambdaConcept ECPIX-5 (FT4232)
@@ -390,8 +397,8 @@
   Memory: OK
   Flash: OK
   Constraints:
-    - ECPIX-5-45F
-    - ECPIX-5-85F
+      - ECPIX-5-45F
+      - ECPIX-5-85F
 
 - ID: fireant
   Description: Fireant Trion T8
@@ -451,8 +458,8 @@
   Memory: NA
   Flash: OK
   Constraints:
-    - iCEBreaker-bitsy-v0
-    - iCEBreaker-bitsy-v1
+      - iCEBreaker-bitsy-v0
+      - iCEBreaker-bitsy-v1
 
 - ID: ice40_generic
   Description: icestick
@@ -751,6 +758,13 @@
   Memory: OK
   Flash: NT
 
+- ID: sp701
+  Description: Xilinx SP701
+  URL: https://www.amd.com/en/products/adaptive-socs-and-fpgas/evaluation-boards/sp701.html
+  FPGA: Spartan 7 xc7s100-2-fgga676
+  Memory: OK
+  Flash: OK
+
 - ID: spartanEdgeAccelBoard
   Description: SeeedStudio Spartan Edge Accelerator Board
   URL: http://wiki.seeedstudio.com/Spartan-Edge-Accelerator-Board
@@ -855,6 +869,13 @@
   Memory: OK
   Flash: IF
 
+- ID: brs-100-gw1nr9
+  Description: BrisbaneSilicon BRS-100-GW1NR9
+  URL: https://brisbanesilicon.com.au/brs-100-gw1nr9/
+  FPGA: littleBee GW1NR-9C
+  Memory: OK
+  Flash: IF/EF
+
 - ID: trion_t20_bga256_jtag
   Description: Efinix Trion T20 BGA256 Dev Kit
   URL: https://www.efinixinc.com/products-devkits-triont20.html
@@ -904,10 +925,10 @@
   Memory: OK
   Flash: OK
   Constraints:
-    - ULX3S-12F
-    - ULX3S-25F
-    - ULX3S-45F
-    - ULX3S-85F
+      - ULX3S-12F
+      - ULX3S-25F
+      - ULX3S-45F
+      - ULX3S-85F
 
 - ID: ulx3s_dfu
   Description: Radiona ULX3S DFU mode

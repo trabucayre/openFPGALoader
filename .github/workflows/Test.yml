@@ -118,6 +118,7 @@ jobs:
       run: |
         #brew update
         brew install --only-dependencies openFPGALoader
+        brew install hidapi
 
     - name: '🚧 Build tarball'
       run: |

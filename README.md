@@ -107,7 +107,8 @@ openFPGALoader -- a program to flash FPGA
                                 non volatile memory (default: 0)
       --pins arg                pin config TDI:TDO:TCK:TMS or
                                 MOSI:MISO:SCK:CS[:HOLDN:WPN]
-      --probe-firmware arg      firmware for JTAG probe (usbBlasterII)
+      --probe-firmware arg      firmware for JTAG probe
+                                (usbBlasterII/xilinxPlatformCableUsb)
       --protect-flash arg       protect SPI flash area
       --quiet                   Produce quiet output (no progress bar)
   -r, --reset                   reset FPGA after operations

@@ -307,6 +307,7 @@ static std::map <uint32_t, fpga_model> fpga_list = {
 	{0x02e050dd, {"altera", "arria 10", "SX660",  10}},
 
 	/* Altera Agilex 3 */
+	{0x4361b0dd, {"altera", "agilex 3", "A3CY100", 10}},
 	{0x436db0dd, {"altera", "agilex 3", "A3CZ135", 10}},
 
 	/* Altera Agilex 5 */

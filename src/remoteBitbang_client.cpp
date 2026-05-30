@@ -76,25 +76,27 @@ RemoteBitbang_client::~RemoteBitbang_client()
 }
 
 int RemoteBitbang_client::writeTMS(const uint8_t *tms, uint32_t len,
-		bool flush_buffer, __attribute__((unused)) const uint8_t tdi)
+		bool flush_buffer, const uint8_t tdi)
 {
 	// empty buffer
 	// if asked flush
 	if (len == 0)
 		return ((flush_buffer) ? flush() : 0);
 
+	_last_tdi = (tdi) ? TDI_BIT : 0;
+
 	uint8_t base_v = '0' + _last_tdi;
 	for (uint32_t pos = 0; pos < len; pos++) {
 		// buffer full -> write
-		if (_num_bytes == _buffer_size)
-			ll_write(NULL);
+		if ((_num_bytes + 2) >= _buffer_size)
+			flush();
 		_last_tms = (tms[pos >> 3] & (1 << (pos & 0x07))) ? TMS_BIT : 0;
 		_xfer_buf[_num_bytes++] = base_v + _last_tms;
 		_xfer_buf[_num_bytes++] = base_v + _last_tms + TCK_BIT;
 	}
 
 	// flush where it's asked or if the buffer is full
-	if (flush_buffer || _num_bytes == _buffer_size * 8)
+	if (flush_buffer || _num_bytes == _buffer_size)
 		return flush();
 	return len;
 }
@@ -107,9 +109,11 @@ int RemoteBitbang_client::writeTDI(const uint8_t *tx, uint8_t *rx, uint32_t len,
 
 	uint8_t base_v = '0' + _last_tms;
 	for (uint32_t pos = 0; pos < len; pos++) {
-		if (_num_bytes == _buffer_size)
-			ll_write(NULL);  // NULL because _num_bytes is always 0 when read
-		_last_tdi = (tx[pos >> 3] & (1 << (pos & 0x07))) ? TDI_BIT : 0;
+		const uint32_t pos_byte = (pos >> 3);
+		const uint32_t pos_bit  = (1 << (pos & 0x07));
+		if ((_num_bytes + 2) >= _buffer_size)
+			flush();
+		_last_tdi = (tx[pos_byte] & pos_bit) ? TDI_BIT : 0;
 		if (end && pos == len - 1) {
 			_last_tms = TMS_BIT;
 			base_v = '0' + _last_tms;
@@ -120,9 +124,9 @@ int RemoteBitbang_client::writeTDI(const uint8_t *tx, uint8_t *rx, uint32_t len,
 			uint8_t tdo;
 			ll_write(&tdo);
 			if (tdo == '1')
-				rx[pos >> 3] |= (1 << (pos & 0x07));
+				rx[pos_byte] |= pos_bit;
 			else
-				rx[pos >> 3] &= ~(1 << (pos & 0x07));
+				rx[pos_byte] &= ~pos_bit;
 		}
 	}
 
@@ -130,30 +134,23 @@ int RemoteBitbang_client::writeTDI(const uint8_t *tx, uint8_t *rx, uint32_t len,
 }
 
 // toggle clk with constant TDI and TMS.
-int RemoteBitbang_client::toggleClk(uint8_t tms, uint8_t tdi, uint32_t clk_len)
+int RemoteBitbang_client::toggleClk([[maybe_unused]] uint8_t tms,
+	[[maybe_unused]] uint8_t tdi, uint32_t clk_len)
 {
 	// nothing to do
 	if (clk_len == 0)
 		return 0;
-	if (_num_bytes != 0)
-		flush();
 
-	_last_tms = tms;
-	_last_tdi = tdi;
-	uint8_t val = (_last_tms | _last_tdi);
-
-	// flush buffer before starting
-	if (_num_bytes != 0)
-		flush();
+	const uint8_t val = (_last_tms | _last_tdi);
 
 	for (uint32_t len = 0; len < clk_len; len++) {
-		if (len == _num_bytes)
-			ll_write(NULL);
+		if ((_num_bytes + 2) >= _buffer_size)
+			flush();
 		_xfer_buf[_num_bytes++] = '0' + val;
 		_xfer_buf[_num_bytes++] = '0' + (val | TCK_BIT);
 	}
 
-	ll_write(NULL);
+	flush();
 
 	return clk_len;
 }

@@ -56,6 +56,7 @@ option(ENABLE_USB_BLASTERII    "enable Altera USB Blaster II support"         ${
 
 set(BLASTERII_PATH           "" CACHE STRING "usbBlasterII firmware directory")
 set(ISE_PATH "/opt/Xilinx/14.7" CACHE STRING "ise root directory (default: /opt/Xilinx/14.7)")
+set(VIVADO_PATH              "" CACHE STRING "Vivado root directory (something like /opt/Xilinx/Vivado/VERSION)")
 
 # Libgpiod is only available on Linux OS.
 if (${CMAKE_SYSTEM_NAME} MATCHES "Linux")
@@ -63,6 +64,8 @@ if (${CMAKE_SYSTEM_NAME} MATCHES "Linux")
 else()
 	set(ENABLE_LIBGPIOD OFF)
 endif()
+
+option(ENABLE_XILINX_PLATFORM_CABLE_USB "enable Xilinx Platform Cable USB (XPCU) support" ${ENABLE_CABLE_ALL})
 
 # XVC and RemoteBitbang are not available on Windows OS.
 if (NOT ${CMAKE_SYSTEM_NAME} MATCHES "Windows")
@@ -102,6 +105,11 @@ set(USE_LIBFTDI   OFF)
 set(USE_LIBUSB    OFF)
 set(USE_LIBUSB_LL OFF)
 
+# USB BlasterII and Xilinx Platform Cable USB requires FX2 driver
+if (ENABLE_XILINX_PLATFORM_CABLE_USB OR ENABLE_USB_BLASTERII)
+	set(USE_FX2_LL ON)
+endif()
+
 # Only adds libftdi as dependency when a cable
 # need this library.
 if (ENABLE_FTDI_BASED_CABLE OR ENABLE_USB_BLASTERI OR ENABLE_XILINX_VIRTUAL_CABLE_SERVER)
@@ -112,17 +120,12 @@ endif(ENABLE_FTDI_BASED_CABLE OR ENABLE_USB_BLASTERI OR ENABLE_XILINX_VIRTUAL_CA
 
 # Only adds libusb as dependency when a cable need this library
 if (ENABLE_DFU OR ENABLE_ANLOGIC_CABLE OR ENABLE_CH347 OR ENABLE_DIRTYJTAG
-		OR ENABLE_ESP_USB OR ENABLE_JLINK OR ENABLE_GOWIN_GWU2X OR ENABLE_USB_BLASTERII OR ENABLE_USB_SCAN)
+		OR ENABLE_ESP_USB OR ENABLE_JLINK OR ENABLE_GOWIN_GWU2X OR USE_FX2_LL OR ENABLE_USB_SCAN)
 	set(USE_LIBUSB ON)
 endif()
 
 if (ENABLE_USB_SCAN OR ENABLE_GOWIN_GWU2X)
 	set(USE_LIBUSB_LL ON)
-endif()
-
-# Only enable fx2_ll when cable using it
-if (ENABLE_USB_BLASTERII)
-	set(USE_FX2_LL ON)
 endif()
 
 ####################################################################################################
@@ -179,15 +182,11 @@ include(GNUInstallDirs)
 add_definitions(-DDATA_DIR=\"${CMAKE_INSTALL_FULL_DATAROOTDIR}\")
 
 add_definitions(-DISE_DIR=\"${ISE_PATH}\")
+add_definitions(-DVIVADO_DIR=\"${VIVADO_PATH}\")
 
 ####################################################################################################
 # Dependencies check/search
 ####################################################################################################
-
-if (USE_LIBFTDI)
-	# Try to find the LibFTDI1 with cmake
-	find_package(LibFTDI1 QUIET)
-endif()
 
 if (USE_PKGCONFIG)
 	find_package(PkgConfig REQUIRED)
@@ -195,12 +194,11 @@ if (USE_PKGCONFIG)
 	# Backward compat when the libftdi is not found
 	# by using cmake
 	if (USE_LIBFTDI)
-		if (NOT LIBFTDI_FOUND)
-			pkg_check_modules(LIBFTDI REQUIRED libftdi1)
-			string(REPLACE "." ";" VERSION_LIST ${LIBFTDI_VERSION})
-			list(GET VERSION_LIST 0 LIBFTDI_VERSION_MAJOR)
-			list(GET VERSION_LIST 1 LIBFTDI_VERSION_MINOR)
-		endif()
+		pkg_check_modules(LIBFTDI REQUIRED libftdi1)
+		string(REPLACE "." ";" VERSION_LIST ${LIBFTDI_VERSION})
+		list(GET VERSION_LIST 0 LIBFTDI_VERSION_MAJOR)
+		list(GET VERSION_LIST 1 LIBFTDI_VERSION_MINOR)
+		string(REGEX REPLACE "[^0-9].*" "" LIBFTDI_VERSION_MINOR "${LIBFTDI_VERSION_MINOR}")
 	else()
 		set(LIBFTDI_LIBRARY_DIRS "")
 		set(LIBFTDI_INCLUDE_DIRS "")
@@ -590,6 +588,12 @@ list (APPEND OPENFPGALOADER_HEADERS src/svf_jtag.hpp)
 add_definitions(-DENABLE_SVF_JTAG)
 endif()
 
+# Xilinx Platform Cable USB
+if (ENABLE_XILINX_PLATFORM_CABLE_USB)
+	list(APPEND OPENFPGALOADER_SOURCE  src/xilinxPlatformCableUSB.cpp)
+	list(APPEND OPENFPGALOADER_HEADERS src/xilinxPlatformCableUSB.hpp)
+endif()
+
 # Xilinx Virtual Cable
 if (ENABLE_XILINX_VIRTUAL_CABLE_CLIENT)
 list (APPEND OPENFPGALOADER_SOURCE  src/xvc_client.cpp)
@@ -772,6 +776,13 @@ else()
 	message("Remote bitbang client support disabled")
 endif()
 
+if (ENABLE_XILINX_PLATFORM_CABLE_USB)
+	add_definitions(-DENABLE_XILINX_PLATFORM_CABLE_USB=1)
+	message("Xilinx Platform Cable USB (XPCU) support enabled")
+else()
+	message("Xilinx Platform Cable USB (XCPU) support disabled")
+endif()
+
 if (ENABLE_XILINX_VIRTUAL_CABLE_CLIENT)
 	add_definitions(-DENABLE_XVC_CLIENT=1)
 	set(CMAKE_EXE_LINKER_FLAGS "-pthread ${CMAKE_EXE_LINKER_FLAGS}")
@@ -799,6 +810,7 @@ if (ZLIB_FOUND)
 	add_definitions(-DHAS_ZLIB=1)
 else()
 	message("zlib library not found: can't flash intel/altera devices")
+	message("or reads compressed bitstreams")
 endif()
 
 if (LINK_CMAKE_THREADS)
@@ -812,7 +824,6 @@ if (USE_LIBFTDI)
 	math(EXPR FTDI_VAL "${LIBFTDI_VERSION_MAJOR} * 100 + ${LIBFTDI_VERSION_MINOR}")
 	add_definitions(-DFTDI_VERSION=${FTDI_VAL})
 endif()
-
 
 install(TARGETS openFPGALoader DESTINATION bin)
 
