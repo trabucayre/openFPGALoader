@@ -370,6 +370,22 @@ static std::map <uint32_t, flash_t> flash_list = {
 		.quad_mask = 0,
 		.global_lock = false,
 	}},
+	{0x856016, {
+		.manufacturer = "PUYA",
+		.model = "P25Q32H",
+		.nr_sector = 64,
+		.sector_erase = true,
+		.subsector_erase = true,
+		.has_extended = false,
+		.tb_otp = true,
+		.tb_offset = 0, // unused
+		.tb_register = NONER,
+		.bp_len = 4,
+		.bp_offset = {(1 << 2), (1 << 3), (1 << 4), (1 << 5)},
+		.quad_register = NONER,
+		.quad_mask = 0,
+		.global_lock = false,
+	}},
 	{0x9d6016, {
 		.manufacturer = "ISSI",
 		.model = "IS25LP032",
