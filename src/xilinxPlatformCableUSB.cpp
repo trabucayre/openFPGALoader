@@ -70,9 +70,17 @@ XilinxPlatformCableUSB::XilinxPlatformCableUSB(const uint16_t vid,
 	if (!firmware_path.empty())
 		firmware_file = firmware_path;
 	else if (strlen(VIVADO_DIR) > 0)
-		firmware_file = VIVADO_DIR "/data/xicom/xusb_xp2.hex";
+		firmware_file = VIVADO_DIR "/data/xicom/";
 	else if (strlen(ISE_DIR) > 0)
-		firmware_file = ISE_DIR "/ISE_DS/ISE/bin/lin64/xusb_xp2.hex";
+		firmware_file = ISE_DIR "/ISE_DS/ISE/bin/lin64/";
+
+	if (firmware_path.empty()) {
+		if (pid == 0x0d)
+			firmware_file += "xusb_emb.hex";
+		else
+			firmware_file += "xusb_xp2.hex";
+	}
+	printInfo("firmware_file : " + firmware_file);
 
 	try {
 		fx2 = std::make_unique<FX2_ll>(vid, pid, XPCU_INITIALIZED_VID,
