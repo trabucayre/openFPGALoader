@@ -337,6 +337,13 @@ xilinxPlatformCableUsb:
     URL: https://www.amd.com/en/products/adaptive-socs-and-fpgas/board-accessories/hw-usb-ii-g.html
 
 
+xilinxPlatformCableUsb_alt:
+
+  - Name: Xilinx Platform Cable USB (XPCU). Alternate VID/PID (found in SP601).
+    Description: Xilinx Platform Cable USB (XPCU) from AMD/Xilinx
+    URL: https://www.amd.com/en/products/adaptive-socs-and-fpgas/board-accessories/hw-usb-ii-g.html
+
+
 xvc-client:
 
   - Name: Xilinx Virtual Cable
