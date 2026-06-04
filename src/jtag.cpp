@@ -213,7 +213,7 @@ Jtag::Jtag(const cable_t &cable, const jtag_pins_conf_t *pin_conf,
 #endif
 	case MODE_XPCU:
 #ifdef ENABLE_XILINX_PLATFORM_CABLE_USB
-		_jtag = new XilinxPlatformCableUSB(0x03fd, 0x0013, clkHZ,
+		_jtag = new XilinxPlatformCableUSB(cable.vid, cable.pid, clkHZ,
 			firmware_path, verbose);
 		break;
 #else
