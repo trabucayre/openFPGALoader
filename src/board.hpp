@@ -118,6 +118,7 @@ static std::map <std::string, target_board_t> board_list = {
 	JTAG_BOARD("litex-acorn-baseboard-mini", "xc7a200tsbg484", "",        SPI_FLASH, 0, 0, CABLE_DEFAULT),
 	JTAG_BOARD("alchitry_au",     "xc7a35tftg256",        "ft2232",       SPI_FLASH, 0, 0, CABLE_DEFAULT),
 	JTAG_BOARD("alchitry_au_plus","xc7a100tftg256",       "ft2232",       SPI_FLASH, 0, 0, CABLE_DEFAULT),
+	JTAG_BOARD("alibaba_u3p",     "xcku3p-ffvb676",       "",             SPI_FLASH, 0, 0, CABLE_DEFAULT),
 	JTAG_BOARD("alinx_ax516",     "xc6slx16csg324",       "",             SPI_FLASH, 0, 0, CABLE_DEFAULT),
 	JTAG_BOARD("alinx_ax7101",    "xc7a100tfgg484",       "",             SPI_FLASH, 0, 0, CABLE_DEFAULT),
 	JTAG_BOARD("alinx_ax7102",    "xc7a100tfgg484",       "",             SPI_FLASH, 0, 0, CABLE_DEFAULT),
