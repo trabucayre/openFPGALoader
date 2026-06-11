@@ -82,12 +82,24 @@ class UsbBlaster : public JtagInterface {
 
 	int flush() override;
 
+	/*!
+	 * \brief configure an FPGA using the passive serial pin mapping
+	 * TCK=DCLK, TDO=CONF_DONE, TMS=nCONFIG and TDI=DATA0
+	 * \param data raw configuration bytes, shifted LSB first
+	 * \param length number of bytes to send
+	 */
+	void programPassiveSerial(const uint8_t *data, uint32_t length);
+
  private:
 	UsbBlaster_ll *ll_driver;
 	int writeByte(uint8_t *tdo, int nb_byte);
 	int writeBit(uint8_t *tdo, int nb_bit);
 	int write(bool read, int rd_len);
 	int setBitmode(uint8_t mode);
+	int setPassiveSerialPins(bool dclk, bool nconfig, bool data0);
+	bool readConfDone();
+	int shiftPassiveSerial(const uint8_t *data, uint32_t length);
+	int clockPassiveSerial(uint32_t cycles);
 	uint8_t *_in_buf;
 
 	int8_t _verbose;
@@ -97,6 +109,7 @@ class UsbBlaster : public JtagInterface {
 	int _nb_bit;
 	uint8_t _curr_tms;
 	uint16_t _buffer_size;
+	bool _passive_serial_mode;
 };
 
 #ifdef ENABLE_USB_BLASTERI
