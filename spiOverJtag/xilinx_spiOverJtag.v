@@ -32,6 +32,13 @@ module spiOverJtag
 	wire capture, drck, sel, update, shift;
 	wire tdi, tdo;
 
+`ifdef xilinxultrascale
+	/* For ultrascale these signals are internal wires (not module ports);
+	   declare them here so they are visible to spiOverJtag_core_prim below. */
+	wire csn;
+	wire sdi_dq0, sdo_dq1, wpn_dq2, hldn_dq3;
+`endif
+
 `ifndef spartan3e
 `ifndef virtex6
 	/* Version Interface. */
@@ -75,7 +82,6 @@ module spiOverJtag
 `else // !spartan6 && !spartan3e
 
 `ifdef xilinxultrascale
-	assign sck = drck;
 	wire [3:0] di;
 	assign sdo_dq1 = di[1];
 
