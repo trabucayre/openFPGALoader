@@ -634,6 +634,23 @@ static std::map <uint32_t, flash_t> flash_list = {
 		.quad_mask = (1 << 6),
 		.global_lock = false,
 	}},
+	{0xc86019, {
+		/* https://www.gigadevice.com/datasheet/gd25q256e/ */
+		.manufacturer = "GigaDevice",
+		.model = "GD25Q256E",
+		.nr_sector = 512,
+		.sector_erase = true,
+		.subsector_erase = true,
+		.has_extended = false,
+		.tb_otp = false,
+		.tb_offset = (1 << 14),  // CMP
+		.tb_register = STATR,
+		.bp_len = 4,
+		.bp_offset = {(1 << 2), (1 << 3), (1 << 4), (1 << 5)},
+		.quad_register = STATR,
+		.quad_mask = (1 << 9),
+		.global_lock = false,
+	}},
 	{0xc22817, {
 		/* https://www.macronix.com/Lists/Datasheet/Attachments/8868/MX25R6435F,%20Wide%20Range,%2064Mb,%20v1.6.pdf */
 		.manufacturer = "Macronix",
