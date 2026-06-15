@@ -151,6 +151,7 @@ if tool in ["ise", "vivado"]:
         "xcvu37p-fsvh2892" : "xcvu37p_fsvh2892",
         "xcku3p-ffva676"   : "xcku3p_ffva676",
         "xcku5p-ffvb676"   : "xcku5p_ffvb676",
+        "xcau7p-sbvc484"   : "xcau7p_sbvc484",
         "xcau10p-ffvb676"  : "xcau10p_ffvb676",
         "xcau15p-ffvb676"  : "xcau15p_ffvb676",
     }.get(part, pkg_name)
@@ -213,6 +214,8 @@ if tool in ["ise", "vivado"]:
                     'paramtype': 'vlogdefine',
                     'description': 'secondary flash',
                     'default': 1}
+            elif part == "xcau7p-sbvc484":
+                tool_options = {'part': part + '-1-e'}
             elif part == "xcau10p-ffvb676":
                 tool_options = {'part': part + '-1-e'}
             elif part == "xcau15p-ffvb676":
