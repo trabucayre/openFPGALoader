@@ -74,7 +74,8 @@ module spiOverJtag
 	assign sck = drck;
 `else // !spartan6 && !spartan3e
 `ifdef xilinxultrascale
-	assign sck = drck;
+	wire csn;
+	wire sdi_dq0, sdo_dq1, wpn_dq2, hldn_dq3;
 	wire [3:0] di;
 	assign sdo_dq1 = di[1];
 	wire [3:0] do = {hldn_dq3, wpn_dq2, 1'b0, sdi_dq0};
