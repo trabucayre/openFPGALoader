@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: Apache-2.0
 /*
  * Copyright (C) 2019 Gwenhael Goavec-Merou <gwenhael.goavec-merou@trabucayre.com>
- * Copyright © 2026 Apple Inc.
+ * Copyright (C) 2026 Apple Inc.
  */
 
 #define __STDC_FORMAT_MACROS
