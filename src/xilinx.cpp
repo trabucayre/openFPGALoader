@@ -1,6 +1,7 @@
 // SPDX-License-Identifier: Apache-2.0
 /*
  * Copyright (C) 2019 Gwenhael Goavec-Merou <gwenhael.goavec-merou@trabucayre.com>
+ * Copyright (C) 2026 Apple Inc.
  */
 
 #define __STDC_FORMAT_MACROS
@@ -171,6 +172,26 @@ static std::map<std::string, std::map<std::string, std::vector<uint8_t>>>
 				{ "ISC_PROGRAM", {0b01010001, 0b00010100, 0b01} },
 				{ "ISC_DISABLE", {0b10010110, 0b01100101, 0b01} },
 				{ "BYPASS",      {0b11111111, 0b11111111, 0b11} },
+			}
+		},
+		{
+			/* Xilinx Virtex UltraScale+ VU19P (xcvu19p_fsva3824) */
+			/* 4-SLR SSI; SLR1 is master per BSDL */
+			"virtexusp_vu19p",
+			{
+				{ "USER1",       {0b00100100, 0b01001001, 0b00001010} },
+				{ "USER2",       {0b00100100, 0b01001001, 0b00001110} },
+				{ "CFG_IN",      {0b00100100, 0b01001001, 0b00010110} },
+				{ "CFG_OUT",     {0b00100100, 0b01001001, 0b00010010} },
+				{ "USERCODE",    {0b00100100, 0b01001001, 0b00100010} },
+				{ "IDCODE",      {0b01001001, 0b10010010, 0b00100100} },
+				{ "ISC_ENABLE",  {0b00010000, 0b00000100, 0b01000001} },
+				{ "JPROGRAM",    {0b11001011, 0b10110010, 0b00101100} },
+				{ "JSTART",      {0b00001100, 0b11000011, 0b00110000} },
+				{ "JSHUTDOWN",   {0b01001101, 0b11010011, 0b00110100} },
+				{ "ISC_PROGRAM", {0b01010001, 0b00010100, 0b01000101} },
+				{ "ISC_DISABLE", {0b10010110, 0b01100101, 0b01011001} },
+				{ "BYPASS",      {0b11111111, 0b11111111, 0b11111111} },
 			}
 		}
 };
@@ -375,7 +396,10 @@ Xilinx::Xilinx(Jtag *jtag, const std::string &filename,
 		_fpga_family = VIRTEXUS_FAMILY;
 	} else if (family == "virtexusp") {
 		_fpga_family = VIRTEXUSP_FAMILY;
-		_ircode_map = ircode_mapping.at("virtexusp");
+		if (model == "xcvu19p")
+			_ircode_map = ircode_mapping.at("virtexusp_vu19p");
+		else
+			_ircode_map = ircode_mapping.at("virtexusp");
 	} else if (family.substr(0, 8) == "spartan3") {
 		_fpga_family = SPARTAN3_FAMILY;
 	} else if (family == "xcf") {
