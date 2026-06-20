@@ -120,7 +120,21 @@ else:
     os.sys.exit()
 
 if model in ["xc7a", "xc7s"]:
-    pkg      = packages[family][part][0]
+    # Accept either a bare device (e.g. "xc7a100t" -> first package) or a
+    # device suffixed with a package (e.g. "xc7a100tfgg676" -> "fgg676").
+    if part in packages[family]:
+        pkg = packages[family][part][0]
+        device = part
+    else:
+        m = re.match(r"(xc7[as]\d+t?)([a-z]+\d+)", part)
+        if not m or m.group(1) not in packages[family]:
+            print(f"Error: cannot parse part/package from '{part}'")
+            os.sys.exit()
+        device = m.group(1)
+        pkg = m.group(2)
+        if pkg not in packages[family][device]:
+            print(f"Error: package '{pkg}' not listed for device '{device}'")
+            os.sys.exit()
     pkg_name = f"{model}_{pkg}"
 if model in ["xc7k"]:
     m        = re.match(r"(xc7k\d+t)(\w+)", part)
@@ -193,7 +207,7 @@ if tool in ["ise", "vivado"]:
         cst_type = "xdc"
         # Artix/Spartan 7 Specific use case:
         if family in ["Artix", "Spartan 7"]:
-            tool_options = {'part': f"{part}{pkg}-1"}
+            tool_options = {'part': f"{device}{pkg}-1"}
         elif family == "Xilinx UltraScale":
             if part in ["xcvu9p-flga2104", "xcku5p-ffvb676"]:
                 tool_options = {'part': part + '-1-e'}
@@ -285,10 +299,17 @@ if tool in ["vivado", "ise"]:
         with gzip.open(f"{flash_type}OverJtag_{part}.bit.gz", 'wb', compresslevel=9) as bit_gz:
             shutil.copyfileobj(bit, bit_gz)
 
-    # Create Symbolic links for all supported packages.
-    if family in ["Artix", "Spartan 7"]:
+    # Create Symbolic links for all supported packages — only when building
+    # the bare device target (e.g. "xc7a100t"). When the explicit
+    # device+package form is used (e.g. "xc7a100tfgg676"), the bitstream is
+    # package-specific and must not be aliased to other packages.
+    if family in ["Artix", "Spartan 7"] and part in packages[family]:
         in_file = f"{flash_type}OverJtag_{part}.bit.gz"
         for pkg in packages[family][part]:
             out_file = f"{flash_type}OverJtag_{part}{pkg}.bit.gz"
-            if not os.path.exists(out_file):
+            # Don't overwrite a package-specific bitstream with a symlink to
+            # the first-package build (this was the original bug).
+            if os.path.islink(out_file) or not os.path.exists(out_file):
+                if os.path.islink(out_file):
+                    os.unlink(out_file)
                 subprocess.run(["ln", "-s", in_file, out_file])
