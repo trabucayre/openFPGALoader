@@ -261,9 +261,26 @@ int sendall(int sock, const void* raw, size_t cnt, int flags)
 	return cnt; // success
 }
 
+static
+ssize_t recvall(int sock, void* raw, size_t cnt, int flags)
+{
+	char *buf = (char*)raw;
+	size_t remaining = cnt;
+	while (remaining) {
+		ssize_t ret = recv(sock, buf, remaining, flags);
+		if (ret < 0)
+			return ret;
+		if (ret == 0)  // peer closed the connection mid-reply
+			break;
+		buf += ret;
+		remaining -= ret;
+	}
+	return cnt - remaining;
+}
+
 ssize_t XVC_client::xfer_pkt(const std::string &instr,
 		const uint8_t *tx, uint32_t tx_size,
-		uint8_t *rx, uint32_t rx_size)
+		uint8_t *rx, uint32_t rx_size, bool rx_exact)
 {
 	ssize_t len = tx_size;
 	std::vector<uint8_t> buffer(instr.size() + ((tx) ? tx_size : 0));
@@ -277,9 +294,14 @@ ssize_t XVC_client::xfer_pkt(const std::string &instr,
 	}
 
 	if (rx) {
-		len = recv(_sock, rx, rx_size, 0);
+		if (rx_exact) {
+			len = recvall(_sock, rx, rx_size, 0);
+		} else {
+			len = recv(_sock, rx, rx_size, 0);
+		}
 		if (len < 0) {
 			printError("Receive error");
+			return len;
 		} else if (len == 0) {
 			fprintf(stderr, "Client orderly shut down the connection.\n");
 		}
@@ -312,7 +334,7 @@ bool XVC_client::ll_write(uint8_t *tdo)
 	memcpy(_xfer_buf + 4 + numbytes, _tditdo, numbytes);
 
 	if ((ret = xfer_pkt("shift:\0", _xfer_buf, (2 * numbytes) + 4,
-					_tditdo, numbytes)) < 0)
+					_tditdo, numbytes, true)) < 0)
 		return false;
 	_num_bits = 0;  // clear counter
 

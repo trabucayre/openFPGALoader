@@ -95,11 +95,12 @@ class XVC_client: public JtagInterface {
 		 * \param[in] tx_size: tx size (in Byte)
 		 * \param[in] rx: server answer buffer (may be NULL)
 		 * \param[in] rx_size: rx size (in Byte) or (0 when unused)
+		 * \param[in] rx_exact: block until exactly rx_size bytes received
 		 * \return -1 when error, 0 when disconnected or tx_size/rx_size
 		 */
 		ssize_t xfer_pkt(const std::string &instr,
 				const uint8_t *tx, uint32_t tx_size,
-				uint8_t *rx, uint32_t rx_size);
+				uint8_t *rx, uint32_t rx_size, bool rx_exact = false);
 
 		/*!
 		 * \brief lowlevel write: EMU_CMD_HW_JTAGx implementation
