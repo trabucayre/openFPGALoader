@@ -7,6 +7,7 @@
 
 #include "svf_jtag.hpp"
 
+#include <stdexcept>
 #include <unistd.h>
 
 #include <algorithm>
@@ -17,14 +18,18 @@
 #include <vector>
 
 #include "jtag.hpp"
+#include "progressBar.hpp"
 
 
 void SVF_jtag::split_str(std::string const &str, std::vector<std::string> &vparse)
 {
 	std::string token;
 	std::istringstream tokenStream(str);
-	while (getline(tokenStream, token, ' '))
-		vparse.push_back(token);
+	while (tokenStream >> token){
+		if(!token.empty()){
+			vparse.push_back(token);
+		}
+	}
 }
 
 void SVF_jtag::clear_XYR(svf_XYR &t)
@@ -89,6 +94,11 @@ void SVF_jtag::parse_XYR(std::vector<std::string> const &vstr, svf_XYR &t)
 		return;
 	for (size_t pos = 2; pos < vstr.size(); pos++) {
 		s = vstr[pos];
+
+		if (s.empty()){
+			throw std::runtime_error("Error parsing instruction: extraneous spaces");
+			return;
+		}
 
 		if (!s.compare("TDO")) {
 			mode = 1;
@@ -370,8 +380,19 @@ void SVF_jtag::parse(std::string filename)
 		return;
 	}
 	unsigned int lineno = 0;
+	int lines_total = std::count(std::istreambuf_iterator<char>(fs),
+             std::istreambuf_iterator<char>(), '\n') + 1;
+	fs.clear();
+	fs.seekg(0,std::ios::beg);
+	printf("Reading %s with %d lines", filename.c_str(), lines_total);
+
+	ProgressBar progress("Writing SVF " + filename, lines_total, 50, _verbose);
+
 	try	{
 		while (getline(fs, str)) {
+			if(str.empty()){
+				continue;
+			}
 			/* sanity check: DOS CR */
 			if (str.back() == '\r')
 				str.pop_back();
@@ -397,13 +418,16 @@ void SVF_jtag::parse(std::string filename)
 				handle_instruction(vstr);
 				vstr.clear();
 			}
+			progress.display(lineno);
 		}
 	}
 	catch (std::exception &e)
 	{
-		std::cerr << "Cannot proceed because of error(s) at line " << lineno << std::endl;
+		std::cerr << "Cannot proceed because of error(s) at line " << std::dec << lineno << std::endl;
+		progress.fail();
 		throw;
 	}
 
+	progress.done();
 	std::cout << "end of SVF file" << std::endl;
 }
