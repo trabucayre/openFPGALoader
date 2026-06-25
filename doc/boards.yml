@@ -13,6 +13,13 @@
   Memory: OK
   Flash: OK
 
+- ID: alibaba_u3p
+  Description: AS02MC04 (Alibaba Cloud) Kintex UltraScale+ NIC
+  URL: https://www.controlpaths.com/2026/01/18/as02mc04-kintex-ultrascale-plus/
+  FPGA: Kintex UltraScale+ xcku3p-ffvb676
+  Memory: OK
+  Flash: OK
+
 - ID: alinx_ax7201
   Description: AX7201 FPGA Dev Board & Kit with AMD Artix 7
   URL: https://www.en.alinx.com/Product/FPGA-Development-Boards/Artix-7/AX7201.html

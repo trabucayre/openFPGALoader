@@ -73,11 +73,13 @@ module spiOverJtag
 `ifdef spartan3e
 	assign sck = drck;
 `else // !spartan6 && !spartan3e
+
 `ifdef xilinxultrascale
 	assign sck = drck;
 	wire [3:0] di;
 	assign sdo_dq1 = di[1];
-	wire [3:0] do = {hldn_dq3, wpn_dq2, 1'b0, sdi_dq0};
+
+	wire [3:0] do  = {hldn_dq3, wpn_dq2, 1'b0, sdi_dq0};
 	wire [3:0] dts = 4'b0010;
 	// secondary BSCANE3 signals
 	wire sel_sec, spi_clk_sec;
