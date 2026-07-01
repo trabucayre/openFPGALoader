@@ -841,6 +841,35 @@ void Xilinx::program_bpi(ConfigBitstreamParser *bit, unsigned int offset)
 	printInfo("BPI flash programming complete");
 }
 
+bool Xilinx::dumpFlash_bpi(uint32_t base_addr, uint32_t len)
+{
+	if (!_bpi_flash) {
+		if (!load_bpi_bridge())
+			return false;
+	}
+	if (!_bpi_flash->detect()) {
+		printError("BPI flash detection failed");
+		return false;
+	}
+	if (len == 0)
+		len = _bpi_flash->capacity();
+	std::vector<uint8_t> buf(len);
+	printInfo("Reading BPI flash (slow, one word per USB round-trip)...");
+	if (!_bpi_flash->read(buf.data(), base_addr, len)) {
+		printError("BPI Flash read failed");
+		return false;
+	}
+	FILE *fd = fopen(_filename.c_str(), "wb");
+	if (!fd) {
+		printError("Can't open dump file");
+		return false;
+	}
+	fwrite(buf.data(), 1, len, fd);
+	fclose(fd);
+	printSuccess("BPI dump DONE");
+	return post_flash_access();
+}
+
 float Xilinx::get_spiOverJtag_version()
 {
 	uint8_t jtx[6] = {0x01, 0x00, 0x00, 0x00, 0x00, 0x00};
@@ -1254,6 +1283,10 @@ void Xilinx::displayRegister(const std::string reg_name, const uint32_t reg_val)
 
 bool Xilinx::dumpFlash(uint32_t base_addr, uint32_t len)
 {
+	/* BPI parallel NOR dump (added: upstream dumpFlash lacks a BPI path) */
+	if (_is_bpi_board)
+		return dumpFlash_bpi(base_addr, len);
+
 	if (_fpga_family == XC95_FAMILY || _fpga_family == XCF_FAMILY) {
 		std::string buffer;
 		if (_fpga_family == XC95_FAMILY) {
