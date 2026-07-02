@@ -407,6 +407,13 @@
       - ECPIX-5-45F
       - ECPIX-5-85F
 
+- ID: epm11
+  Description: BrisbaneSilicon EPM11
+  URL: https://brisbanesilicon.com.au/epm11/
+  FPGA: littleBee GW1NR-9C
+  Memory: OK
+  Flash: IF
+
 - ID: fireant
   Description: Fireant Trion T8
   URL: https://www.crowdsupply.com/jungle-elec/fireant
