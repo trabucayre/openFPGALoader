@@ -651,6 +651,23 @@ static std::map <uint32_t, flash_t> flash_list = {
 		.quad_mask = (1 << 6),
 		.global_lock = false,
 	}},
+	{0xc86019, {
+		/* https://www.gigadevice.com/product/flash/spi-nor-flash/gd25lq256h */
+		.manufacturer = "GigaDevice",
+		.model = "GD25LQ256H",
+		.nr_sector = 512,
+		.sector_erase = true,
+		.subsector_erase = true,
+		.has_extended = false,
+		.tb_otp = false,
+		.tb_offset = (1 << 6),  // BP4
+		.tb_register = STATR,
+		.bp_len = 4,
+		.bp_offset = {(1 << 2), (1 << 3), (1 << 4), (1 << 5)},
+		.quad_register = CONFR,
+		.quad_mask = (1 << 1),  // QE = SR2 S9 = bit1 of byte read by RDSR-2 (0x35)
+		.global_lock = false,
+	}},
 	{0xc22817, {
 		/* https://www.macronix.com/Lists/Datasheet/Attachments/8868/MX25R6435F,%20Wide%20Range,%2064Mb,%20v1.6.pdf */
 		.manufacturer = "Macronix",
@@ -764,6 +781,40 @@ static std::map <uint32_t, flash_t> flash_list = {
 		.bp_offset = {(1 << 2), (1 << 3), (1 << 4), 0},
 		.quad_register = NONER,
 		.quad_mask = 0,
+		.global_lock = false,
+	}},
+	{0xef6019, {
+		/* Winbond W25Q25PW (1.8V), 256 Mbit / 32 MiB. Requires 4-byte addressing. */
+		.manufacturer = "Winbond",
+		.model = "W25Q25PW",
+		.nr_sector = 512,
+		.sector_erase = true,
+		.subsector_erase = true,
+		.has_extended = false,
+		.tb_otp = false,
+		.tb_offset = (1 << 6),  // TB (SR1 S6)
+		.tb_register = STATR,
+		.bp_len = 4,
+		.bp_offset = {(1 << 2), (1 << 3), (1 << 4), (1 << 5)},
+		.quad_register = CONFR,
+		.quad_mask = (1 << 1),  // QE = SR2 S9 = bit1 of byte read by RDSR-2 (0x35)
+		.global_lock = false,
+	}},
+	{0xef8019, {
+		/* Winbond W25Q25PW newer-gen die that reports memory-type 0x80. */
+		.manufacturer = "Winbond",
+		.model = "W25Q25PW",
+		.nr_sector = 512,
+		.sector_erase = true,
+		.subsector_erase = true,
+		.has_extended = false,
+		.tb_otp = false,
+		.tb_offset = (1 << 6),  // TB (SR1 S6)
+		.tb_register = STATR,
+		.bp_len = 4,
+		.bp_offset = {(1 << 2), (1 << 3), (1 << 4), (1 << 5)},
+		.quad_register = CONFR,
+		.quad_mask = (1 << 1),  // QE = SR2 S9 = bit1 of byte read by RDSR-2 (0x35)
 		.global_lock = false,
 	}},
 	{0x6bbb14, {

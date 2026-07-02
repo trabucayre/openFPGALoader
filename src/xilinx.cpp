@@ -207,20 +207,24 @@ static void open_bitfile(
 	const std::string &filename, const std::string &extension,
 	ConfigBitstreamParser **parser, bool reverse, bool verbose)
 {
-	printInfo("Open file ", false);
-	if (extension == "bit") {
-		*parser = new BitParser(filename, reverse, verbose);
-	} else if (extension == "mcs") {
-		*parser = new McsParser(filename, reverse, verbose);
-	} else {
-		*parser = new RawParser(filename, reverse);
+	printInfo("Open file " + filename + " ", false);
+	try {
+		if (extension == "bit") {
+			*parser = new BitParser(filename, reverse, verbose);
+		} else if (extension == "mcs") {
+			*parser = new McsParser(filename, reverse, verbose);
+		} else {
+			*parser = new RawParser(filename, reverse);
+		}
+	} catch (const std::exception &e) {
+		throw std::runtime_error("Unable to open '" + filename + "': " + e.what());
 	}
 
 	printSuccess("DONE");
 
 	printInfo("Parse file ", false);
 	if ((*parser)->parse() == EXIT_FAILURE) {
-		throw std::runtime_error("Failed to parse bitstream");
+		throw std::runtime_error("Failed to parse bitstream '" + filename + "'");
 	}
 
 	printSuccess("DONE");
@@ -662,12 +666,11 @@ void Xilinx::program(unsigned int offset, bool unprotect_flash)
 				&secondary_bit, reverse, _verbose);
 		}
 	} catch (std::exception &e) {
-		printError("FAIL");
 		if (bit)
 			delete bit;
 		if (secondary_bit)
 			delete secondary_bit;
-		return;
+		throw std::runtime_error(e.what());
 	}
 
 	if (_verbose) {
@@ -899,11 +902,13 @@ void Xilinx::program_spi(ConfigBitstreamParser * bit, std::string extention,
 		throw std::runtime_error("called with null bitstream");
 	if (extention == "mcs") {
 		McsParser *parser = (McsParser *)bit;
-		FlashInterface::write(parser->getRecords(), unprotect_flash, true);
+		if (!FlashInterface::write(parser->getRecords(), unprotect_flash, true))
+			throw std::runtime_error("SPI flash write failed");
 	} else {
 		const uint8_t *data = bit->getData();
 		int length = bit->getLength() / 8;
-		FlashInterface::write(offset, data, length, unprotect_flash);
+		if (!FlashInterface::write(offset, data, length, unprotect_flash))
+			throw std::runtime_error("SPI flash write failed");
 	}
 }
 

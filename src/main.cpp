@@ -804,14 +804,14 @@ int spi_comm(struct arguments args, const cable_t &cable,
 				bit = new RawParser(args.bit_file, false);
 				printSuccess("DONE");
 			} catch (std::exception &e) {
-				printError("FAIL");
+				printError("FAIL: unable to open '" + args.bit_file + "': " + std::string(e.what()));
 				delete spi;
 				return EXIT_FAILURE;
 			}
 
 			printInfo("Parse file ", false);
 			if (bit->parse() == EXIT_FAILURE) {
-				printError("FAIL");
+				printError("FAIL: unable to parse '" + args.bit_file + "'");
 				delete bit;
 				delete spi;
 				return EXIT_FAILURE;
