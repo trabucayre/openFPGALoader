@@ -3,8 +3,14 @@
  * Copyright (c) 2021 Gwenhael Goavec-Merou <gwenhael.goavec-merou@trabucayre.com>
  */
 
+#include <cstdint>
+#include <cstring>
+#ifdef ENABLE_CMSISDAP_V1
 #include <hidapi.h>
+#endif
+#ifdef ENABLE_CMSISDAP_V2
 #include <libusb.h>
+#endif
 #include <stdio.h>
 #include <stdlib.h>
 #include <strings.h>
@@ -87,86 +93,52 @@ enum cmsisdap_status {
 	DAP_ERROR = 0xff
 };
 
-CmsisDAP::CmsisDAP(const cable_t &cable, int index, int8_t verbose):_verbose(verbose>0),
-		_device_idx(0),  _vid(cable.vid), _pid(cable.pid),
-		_serial_number(L""), _dev(NULL), _num_tms(0), _is_connect(false)
+enum cmsisdap_backend_type {
+	BACKEND_NONE = -1,
+	BACKEND_HID = 0,
+	BACKEND_USBBULK = 1,
+};
+
+CmsisDAP::CmsisDAP(const cable_t &cable, int index, uint32_t clkHZ, int8_t verbose):_verbose(verbose>0),
+		_device_idx(0),  _vid(cable.vid), _pid(cable.pid), _serial_number(L""),
+#ifdef ENABLE_CMSISDAP_V1
+		_hid_dev(NULL),
+#endif
+#ifdef ENABLE_CMSISDAP_V2
+		_usb_dev(NULL), _ctx(NULL),
+#endif
+		_pkt_sz(0),
+		_ep_in(0), _ep_out(0), _num_tms(0), _is_connect(false), _backend(BACKEND_NONE)
 {
-	std::vector<struct hid_device_info *> dev_found;
-	_ll_buffer = (unsigned char *)malloc(sizeof(unsigned char) * 65);
+	_ll_buffer = (unsigned char *)malloc(sizeof(unsigned char) * 1024);
 	if (!_ll_buffer)
 		throw std::runtime_error("internal buffer allocation failed");
 	_buffer = _ll_buffer+2;
-
-	/* only hid support */
-	struct hid_device_info *devs, *cur_dev;
-
-	if (hid_init() != 0) {
-		throw std::runtime_error("hidapi init failed");
+	char t[256];
+#ifdef ENABLE_CMSISDAP_V2
+#ifdef ENABLE_CMSISDAP_V1
+	const bool err_as_info = true;
+#else
+	const bool err_as_info = false;
+#endif
+	_backend = BACKEND_USBBULK;
+	if (!initWithBulk(cable, verbose, err_as_info)) {
+		printInfo("cmsisDAP v2: try USB bulk init but failed");
+		_backend = BACKEND_NONE;
 	}
-
-	/* search for HID compatible devices
-	 * if vid/pid are 0 this function return all;
-	 * if vid/pid are >0 only one (or 0) device returned
-	 */
-	devs = hid_enumerate(cable.vid, cable.pid);
-
-	for (cur_dev = devs; NULL != cur_dev; cur_dev = cur_dev->next) {
-		dev_found.push_back(cur_dev);
-	}
-
-	/* no devices: stop */
-	if (dev_found.empty()) {
-		hid_exit();
-		throw std::runtime_error("No device found");
-	}
-	/* more than one device: can't continue without more information */
-	if (dev_found.size() > 1 && index == -1) {
-		hid_exit();
-		throw std::runtime_error(
-				"Error: more than one device. Please provides VID/PID or cable-index");
-	}
-
-	/* if index check for if interface exist */
-	if (index != -1) {
-		bool found = false;
-		for (size_t i = 0; i < dev_found.size(); i++) {
-			if (dev_found[i]->interface_number == index) {
-				found = true;
-				_device_idx = i;
-				break;
-			}
-		}
-		if (!found) {
-			hid_exit();
-			throw std::runtime_error(
-				"Error: no compatible interface with index " + std::to_string(_device_idx));
+#endif
+#ifdef ENABLE_CMSISDAP_V1
+	if (_backend == BACKEND_NONE) {
+		_pkt_sz = 64;
+		_backend = BACKEND_HID;
+		if (!initWithHID(cable, index, verbose)) {
+			printInfo("cmsisDAP v1: try HID init but failed");
+			_backend = BACKEND_NONE;
 		}
 	}
-
-	printInfo("Found " + std::to_string(dev_found.size()) + " compatible device:");
-	for (size_t i = 0; i < dev_found.size(); i++) {
-		char val[256];
-		snprintf(val, sizeof(val), "\t0x%04x 0x%04x 0x%d %ls",
-				dev_found[i]->vendor_id,
-				dev_found[i]->product_id,
-				dev_found[i]->interface_number,
-				dev_found[i]->product_string);
-		printInfo(val);
-	}
-
-	/* store params about device to use */
-	_vid = dev_found[_device_idx]->vendor_id;
-	_pid = dev_found[_device_idx]->product_id;
-	if (dev_found[_device_idx]->serial_number != NULL)
-		_serial_number = std::wstring(dev_found[_device_idx]->serial_number);
-	/* open the device */
-	_dev = hid_open_path(dev_found[_device_idx]->path);
-	if (!_dev) {
-		throw std::runtime_error(
-				std::string("Couldn't open device. Check permissions for ") + dev_found[_device_idx]->path);
-	}
-	/* cleanup enumeration */
-	hid_free_enumeration(devs);
+#endif
+	if (_backend == BACKEND_NONE)
+		throw std::runtime_error("Error: no USB backend available");
 
 	if (verbose) {
 		display_info(INFO_ID_VID               , DAPLINK_INFO_STRING);
@@ -203,30 +175,48 @@ CmsisDAP::CmsisDAP(const cable_t &cable, int index, int8_t verbose):_verbose(ver
 	   SWO Streaming Trace support:
 		Info0 - Bit 6: 1 = SWO Streaming Trace is implemented (0 = not implemented).
 	*/
+	bool is_error = false;
 	memset(_buffer, 0, 63);
 	int res = read_info(INFO_ID_HWCAP, _buffer, 63);
 	if (res < 0) {
-		hid_close(_dev);
-		hid_exit();
+		is_error = true;
 		char t[256];
 		snprintf(t, sizeof(t), "Error %d for command %d\n", res, INFO_ID_HWCAP);
-		throw std::runtime_error(t);
+		printError(t);
 	}
 
 	if (verbose)
 		printf("Hardware cap %02x %02x %02x\n", _buffer[0], _buffer[1], _buffer[2]);
-	if (!(_buffer[2] & (1 << 1))) {
-		hid_close(_dev);
-		hid_exit();
-		throw std::runtime_error("JTAG is not supported by the probe");
+
+	if ((!is_error) && (!(_buffer[2] & (1 << 1)))) {
+		is_error = true;
+		printError("JTAG is not supported by the probe");
 	}
 
 	/* send connect */
-	if (dapConnect() != 1) {
-		hid_close(_dev);
-		hid_exit();
-		throw std::runtime_error("DAP connection in JTAG mode failed");
+	if (!is_error && dapConnect() != 1) {
+		is_error = true;
+		printError("DAP connection in JTAG mode failed");
 	}
+
+	if (is_error) {
+		if (BACKEND_HID) {
+			hid_close(_hid_dev);
+			hid_exit();
+		} else {
+			libusb_close(_usb_dev);
+			libusb_exit(_ctx);
+		}
+		throw std::runtime_error("cmsisDAP: init Failed");
+	} else {
+		if (BACKEND_HID) {
+			printInfo("HID init successful");
+		} else {
+			printInfo("USB bulk init successful");
+		}
+	}
+	if (clkHZ > 0)
+		setClkFreq(clkHZ);
 }
 
 CmsisDAP::~CmsisDAP()
@@ -234,15 +224,351 @@ CmsisDAP::~CmsisDAP()
 	/* disconnect and close device
 	 * and free context
 	 */
-	if (_is_connect)
-		dapDisconnect();
-	if (_dev)
-		hid_close(_dev);
-	hid_exit();
-
+	switch(_backend){
+#ifdef ENABLE_CMSISDAP_V1
+		case BACKEND_HID:
+			if (_is_connect)
+				dapDisconnect();
+			if (_hid_dev)
+				hid_close(_hid_dev);
+			hid_exit();
+			break;
+#endif
+#ifdef ENABLE_CMSISDAP_V2
+		case BACKEND_USBBULK:
+			libusb_close(_usb_dev);
+			libusb_exit(_ctx);
+			break;
+#endif
+		default:
+			break;
+	}
 	if (_ll_buffer)
 		free(_ll_buffer);
 }
+
+#ifdef ENABLE_CMSISDAP_V1
+bool CmsisDAP::initWithHID(const cable_t &cable, int index, int8_t verbose){
+		std::vector<struct hid_device_info *> dev_found;
+
+	/* only hid support */
+	struct hid_device_info *devs, *cur_dev;
+
+	if (hid_init() != 0) {
+		printError("hidapi init failed");
+		return false;
+	}
+
+	/* search for HID compatible devices
+	 * if vid/pid are 0 this function return all;
+	 * if vid/pid are >0 only one (or 0) device returned
+	 */
+	devs = hid_enumerate(cable.vid, cable.pid);
+
+	for (cur_dev = devs; NULL != cur_dev; cur_dev = cur_dev->next) {
+		dev_found.push_back(cur_dev);
+	}
+
+	/* no devices: stop */
+	if (dev_found.empty()) {
+		hid_exit();
+		printError("cmsisDAP: No CMSIS-DAP v1 device found");
+		return false;
+	}
+	/* more than one device: can't continue without more information */
+	if (dev_found.size() > 1 && index == -1) {
+		hid_exit();
+		printError(
+			"cmsisDAP: more than one CMSIS-DAP v1 device. Please provides VID/PID or cable-index");
+		return false;
+	}
+
+	/* if index check for if interface exist */
+	if (index != -1) {
+		bool found = false;
+		for (size_t i = 0; i < dev_found.size(); i++) {
+			if (dev_found[i]->interface_number == index) {
+				found = true;
+				_device_idx = i;
+				break;
+			}
+		}
+		if (!found) {
+			hid_exit();
+			printError(
+				"CmsisDAP: no compatible interface with index " + std::to_string(index));
+			return false;
+		}
+	}
+
+	printInfo("Found " + std::to_string(dev_found.size()) + " compatible device:");
+	for (size_t i = 0; i < dev_found.size(); i++) {
+		char val[256];
+		snprintf(val, sizeof(val), "\t0x%04x 0x%04x 0x%d %ls",
+				dev_found[i]->vendor_id,
+				dev_found[i]->product_id,
+				dev_found[i]->interface_number,
+				dev_found[i]->product_string);
+		printInfo(val);
+	}
+
+	/* store params about device to use */
+	_vid = dev_found[_device_idx]->vendor_id;
+	_pid = dev_found[_device_idx]->product_id;
+	_vendor = dev_found[_device_idx]->manufacturer_string;
+	_product_name = dev_found[_device_idx]->product_string;
+	if (dev_found[_device_idx]->serial_number != NULL)
+		_serial_number = std::wstring(dev_found[_device_idx]->serial_number);
+	/* open the device */
+	_hid_dev = hid_open_path(dev_found[_device_idx]->path);
+	if (!_hid_dev) {
+		printError(
+			std::string("Couldn't open device. Check permissions for ") + dev_found[_device_idx]->path);
+		return false;
+	}
+	/* cleanup enumeration */
+	hid_free_enumeration(devs);
+
+	/* query actual HID packet size and grow buffer if needed */
+	uint8_t buf[65];
+	memset(buf, 0, 65);
+	if (read_info(INFO_ID_MAX_PKT_SZ, buf, 64) == 2) {
+		const uint16_t sz = (static_cast<uint16_t>(buf[3]) << 8) | buf[2];
+		if (sz > 64) {
+			_pkt_sz = sz;
+			if (sz > 1024) {
+				unsigned char *tmp = (unsigned char *)realloc(_ll_buffer, _pkt_sz + 1);
+				if (!tmp)
+					throw std::runtime_error("internal buffer reallocation failed");
+				_ll_buffer = tmp;
+				_buffer = _ll_buffer + 2;
+			}
+		}
+	}
+
+	return true;
+}
+#endif
+
+#ifdef ENABLE_CMSISDAP_V2
+void disp_error_info(const std::string &mess, bool disp_as_info)
+{
+	if (disp_as_info)
+		printInfo(mess);
+	else
+		printError(mess);
+}
+
+bool CmsisDAP::initWithBulk(const cable_t &cable, int8_t verbose, bool err_as_info)
+{
+	if (libusb_init(&_ctx) != 0) {
+		disp_error_info("cmsisDAP v2: libusb init failed", err_as_info);
+		return false;
+	}
+
+	std::vector<cmsis_dap_v2_dev_t> devices = findCmsisDapDevices(cable.vid, cable.pid);
+
+	/* Check if one and only device is found
+	 * otherwise fails when no devices found or more than one present
+	 */
+	if (devices.empty()) {
+		libusb_exit(_ctx);
+		disp_error_info("cmsisDAP: failed to find compatible CMSIS-DAP v2 device", err_as_info);
+		return false;
+	}
+	if (devices.size() > 1) {
+		for (auto &d : devices)
+			libusb_close(d.handle);
+		libusb_exit(_ctx);
+		disp_error_info("Error: more than one CMSIS-DAP v2 device. Please provide VID/PID", err_as_info);
+		return false;
+	}
+
+	cmsis_dap_v2_dev_t &dev = devices[0];
+	_usb_dev = dev.handle;
+	_vid = dev.vid;
+	_pid = dev.pid;
+	_serial_number = dev.serial;
+	_vendor = dev.vendor;
+	_product_name = dev.product;
+
+	printInfo("Found 1 compatible device:");
+	char val[256];
+	snprintf(val, sizeof(val), "\t0x%04x 0x%04x", _vid, _pid);
+	printInfo(val);
+
+	int current_config;
+	if (libusb_get_configuration(_usb_dev, &current_config) != 0) {
+		libusb_close(_usb_dev);
+		libusb_exit(_ctx);
+		disp_error_info("cmsisDAP: could not find current configuration", err_as_info);
+		return false;
+	}
+
+	if (dev.config_num != current_config) {
+		int ret = libusb_set_configuration(_usb_dev, dev.config_num);
+		if (ret != 0 && ret != LIBUSB_ERROR_NOT_SUPPORTED) {
+			libusb_close(_usb_dev);
+			libusb_exit(_ctx);
+			disp_error_info("cmsisDAP: could not set current configuration", err_as_info);
+			return false;
+		}
+	}
+
+	if (libusb_claim_interface(_usb_dev, dev.interface_num) != 0) {
+		libusb_close(_usb_dev);
+		libusb_exit(_ctx);
+		disp_error_info("cmsisDAP: could not claim interface", err_as_info);
+		return false;
+	}
+
+	_pkt_sz = dev.packet_size;
+	_ep_out = dev.ep_out;
+	_ep_in = dev.ep_in;
+
+	if (!libusb_dev_mem_alloc(_usb_dev, _pkt_sz)) {
+		libusb_close(_usb_dev);
+		libusb_exit(_ctx);
+		disp_error_info("cmsisDAP: failed to alloc DMA memory for device", err_as_info);
+		return false;
+	}
+
+	return true;
+}
+
+/* Enumerate all USB devices and return those that expose a CMSIS-DAP v2
+ * bulk interface.
+ * Enumerate may be filtered when vid and pid are non-zero.
+ * Each returned entry carries an already-open libusb handle; the caller
+ * is responsible for closing handles it does not use.
+ */
+std::vector<CmsisDAP::cmsis_dap_v2_dev_t>
+CmsisDAP::findCmsisDapDevices(uint16_t vid, uint16_t pid)
+{
+	std::vector<cmsis_dap_v2_dev_t> result;
+	struct libusb_device **devs;
+
+	int devs_len = libusb_get_device_list(_ctx, &devs);
+	if (devs_len <= 0)
+		return result;
+
+	for (int i = 0; i < devs_len; i++) {
+		struct libusb_device *dev = devs[i];
+		struct libusb_device_descriptor dev_desc;
+
+		if (libusb_get_device_descriptor(dev, &dev_desc) != 0) {
+			printWarn("could not get device descriptor for device " + std::to_string(i));
+			continue;
+		}
+
+		/* optional VID/PID filter: if either is non-zero, both must match */
+		if ((vid != 0 || pid != 0) &&
+			(dev_desc.idVendor != vid || dev_desc.idProduct != pid))
+			continue;
+
+		libusb_device_handle *handle = NULL;
+		if (libusb_open(dev, &handle) != 0 || !handle)
+			continue;
+
+		cmsis_dap_v2_dev_t candidate = {};
+		candidate.handle = handle;
+		candidate.vid = dev_desc.idVendor;
+		candidate.pid = dev_desc.idProduct;
+
+		char str[256];
+
+		memset(str, 0, sizeof(str));
+		if (libusb_get_string_descriptor_ascii(handle, dev_desc.iSerialNumber,
+				(uint8_t *)str, sizeof(str)) >= 0)
+			candidate.serial = std::wstring(str, str + std::strlen(str));
+
+		memset(str, 0, sizeof(str));
+		if (libusb_get_string_descriptor_ascii(handle, dev_desc.iManufacturer,
+				(uint8_t *)str, sizeof(str)) >= 0)
+			candidate.vendor = std::wstring(str, str + std::strlen(str));
+
+		memset(str, 0, sizeof(str));
+		if (libusb_get_string_descriptor_ascii(handle, dev_desc.iProduct,
+				(uint8_t *)str, sizeof(str)) >= 0)
+			candidate.product = std::wstring(str, str + std::strlen(str));
+
+		bool intf_found = false;
+		for (int cfg = 0; cfg < dev_desc.bNumConfigurations && !intf_found; cfg++) {
+			struct libusb_config_descriptor *cfg_desc;
+			if (libusb_get_config_descriptor(dev, cfg, &cfg_desc) != 0) {
+				char t[256];
+				snprintf(t, sizeof(t), "could not get configuration descriptor %d "
+						 "for device 0x%04x:0x%04x", cfg, candidate.vid, candidate.pid);
+				printError(t);
+				continue;
+			}
+
+			for (int intf = 0; intf < cfg_desc->bNumInterfaces && !intf_found; intf++) {
+				const struct libusb_interface_descriptor *intf_desc =
+					&cfg_desc->interface[intf].altsetting[0];
+
+				/* require two bulk endpoints: [0] OUT, [1] IN */
+				if (intf_desc->bNumEndpoints < 2 ||
+					(intf_desc->endpoint[0].bmAttributes & 3) != LIBUSB_TRANSFER_TYPE_BULK  ||
+					(intf_desc->endpoint[0].bEndpointAddress & 0x80) != LIBUSB_ENDPOINT_OUT ||
+					(intf_desc->endpoint[1].bmAttributes & 3) != LIBUSB_TRANSFER_TYPE_BULK  ||
+					(intf_desc->endpoint[1].bEndpointAddress & 0x80) != LIBUSB_ENDPOINT_IN)
+					continue;
+
+				/* check whether the interface string contains "CMSIS-DAP" */
+				bool intf_str_valid = false;
+				if (intf_desc->iInterface != 0) {
+					char intf_str[256] = {0};
+					if (libusb_get_string_descriptor_ascii(handle, intf_desc->iInterface,
+							(uint8_t *)intf_str, sizeof(intf_str)) >= 0 &&
+						std::strstr(intf_str, "CMSIS-DAP"))
+						intf_str_valid = true;
+				}
+
+				/* CMSIS-DAP v2 spec requires vendor-specific class/subclass/protocol.
+				 * Accept deviations (e.g. KitProg3 uses class 0) only when the
+				 * interface string reliably identifies the interface as CMSIS-DAP
+				 * and the class is not a well-known one (CDC, MSC …). */
+				if (intf_desc->bInterfaceClass != LIBUSB_CLASS_VENDOR_SPEC ||
+					intf_desc->bInterfaceSubClass != 0 ||
+					intf_desc->bInterfaceProtocol != 0) {
+					if (intf_str_valid &&
+						(intf_desc->bInterfaceClass == 0 ||
+						 intf_desc->bInterfaceClass > 0x12)) {
+						char t[256];
+						snprintf(t, sizeof(t), "Using interface %d with wrong class %d, "
+							"subclass %d or protocol %d",
+							intf_desc->bInterfaceNumber,
+							intf_desc->bInterfaceClass,
+							intf_desc->bInterfaceSubClass,
+							intf_desc->bInterfaceProtocol);
+						printWarn(t);
+					} else {
+						continue;
+					}
+				}
+
+				candidate.interface_num = intf_desc->bInterfaceNumber;
+				candidate.config_num = cfg_desc->bConfigurationValue;
+				candidate.ep_out = intf_desc->endpoint[0].bEndpointAddress;
+				candidate.ep_in = intf_desc->endpoint[1].bEndpointAddress;
+				candidate.packet_size = intf_desc->endpoint[0].wMaxPacketSize;
+				intf_found = true;
+			}
+
+			libusb_free_config_descriptor(cfg_desc);
+		}
+
+		if (intf_found)
+			result.push_back(candidate);
+		else
+			libusb_close(handle);
+	}
+
+	libusb_free_device_list(devs, true);
+	return result;
+}
+#endif
 
 /* send connect instruction (0x02) to switch
  * in JTAG mode (0x02)
@@ -389,8 +715,8 @@ int CmsisDAP::writeJtagSequence(uint8_t tms, const uint8_t *tx, uint8_t *rx,
 		 * => one sequence == 9Bytes and 9*7 == 63
 		 * then we have 6 * 8 fully filled sequence + one up to 56bits
 		 */
-		if (xfer_byte_len + 1 + pos > 63) {
-			xfer_byte_len = 63 - pos - 1;  // number of free bytes
+		if (xfer_byte_len + 1 + pos > _pkt_sz - 1) {
+			xfer_byte_len = _pkt_sz - pos - 2;  // number of free bytes
 			xfer_bit_len = xfer_byte_len * 8;
 		}
 
@@ -504,34 +830,70 @@ int CmsisDAP::flush()
 int CmsisDAP::xfer(uint8_t instruction, int tx_len,
 		uint8_t *rx_buff, int rx_len)
 {
-	(void)tx_len;
-
+	int ret = -1, bulk_len = 0;
 	_ll_buffer[0] = 0;
 	_ll_buffer[1] = instruction;
 
-	int ret = hid_write(_dev, _ll_buffer, 65);
-	if (ret == -1) {
-		printf("Error\n");
-		return ret;
+	switch(_backend){
+#ifdef ENABLE_CMSISDAP_V1
+		case BACKEND_HID:
+			ret = hid_write(_hid_dev, _ll_buffer, _pkt_sz + 1);
+			if (ret == -1) {
+				printError("Error: HID write failed\n");
+				return ret;
+			}
+			ret = hid_read_timeout(_hid_dev, _ll_buffer, _pkt_sz + 1, 1000);
+			if (ret <= 0) {
+				if (ret == 0)
+					printError("Error: HID read timeout\n");
+				else if (ret == -1)
+					printError("Error: HID comm failed\n");
+				return ret;
+			}
+			break;
+#endif
+#ifdef ENABLE_CMSISDAP_V2
+		case BACKEND_USBBULK:
+			memset(&_ll_buffer[1 + tx_len + 1], 0, 64 - (tx_len + 1));
+			ret = libusb_bulk_transfer(_usb_dev, _ep_out, &_ll_buffer[1], 64, &bulk_len, 1000);
+			if (ret != 0) {
+				printError("Error: Bulk write failed\n");
+				return ret;
+			}
+			memset(&_ll_buffer[0], 0, 1024);
+			ret = libusb_bulk_transfer(_usb_dev, _ep_in, &_ll_buffer[0], _pkt_sz, &bulk_len, 1000);
+			// sleep for 1ms to ensure that polling behavior aligns with HID backend
+			usleep(1000);
+			if (ret != 0 && ret != LIBUSB_ERROR_TIMEOUT) {
+				printError("Error: Bulk read failed\n");
+				return ret;
+			}
+			if(bulk_len == 0){
+				printError("Error: Bulk timeout\n");
+				return -1;
+			}
+			// if (rx_buff && bulk_len < rx_len + 2) {
+                // printf("bulk short read: expected %d, got %d\n", rx_len + 2, bulk_len);
+            // }
+			ret = bulk_len;
+			break;
+#endif
+		default:
+			printError("Error: unknown USB backend\n");
+			break;
 	}
 
-	ret = hid_read_timeout(_dev, _ll_buffer, 65, 1000);
-	if (ret <= 0) {
-		if (ret == 0)
-			printError("Error timeout\n");
-		else if (ret == -1)
-			printError("Error comm\n");
-		return ret;
-	}
-	if (_ll_buffer[0] != instruction && _ll_buffer[1] != DAP_OK) {
-		printf("Error: command error");
+	if (_ll_buffer[0] != instruction) {
+		printError("Error: command error\n");
 		return -1;
 	}
-
+	if (_ll_buffer[1] != DAP_OK) {
+		printError("Error: DAP status error\n");
+		return -1;
+	}
 	if (rx_buff) {
 		memcpy(rx_buff, _buffer, rx_len);
 	}
-
 	return ret;
 }
 
@@ -541,27 +903,60 @@ int CmsisDAP::xfer(uint8_t instruction, int tx_len,
  */
 int CmsisDAP::xfer(int tx_len, uint8_t *rx_buff, int rx_len)
 {
-	(void)tx_len;
-
+	int ret = -1, bulk_len = 0;
 	_ll_buffer[0] = 0;
 
-	int ret = hid_write(_dev, _ll_buffer, 65);
-	if (ret == -1) {
-		printf("Error\n");
-		return ret;
+	switch(_backend){
+#ifdef ENABLE_CMSISDAP_V1
+		case BACKEND_HID:
+			ret = hid_write(_hid_dev, _ll_buffer, _pkt_sz + 1);
+			if (ret == -1) {
+				printError("Error: HID write failed\n");
+				return ret;
+			}
+			ret = hid_read_timeout(_hid_dev, _ll_buffer, _pkt_sz + 1, 1000);
+			if (ret <= 0) {
+				if (ret == 0)
+					printError("Error: HID read timeout\n");
+				else if (ret == -1)
+					printError("Error: HID comm failed\n");
+				return ret;
+			}
+			break;
+#endif
+#ifdef ENABLE_CMSISDAP_V2
+		case BACKEND_USBBULK:
+			memset(&_ll_buffer[1 + tx_len + 1], 0, 64 - (tx_len + 1));
+			ret = libusb_bulk_transfer(_usb_dev, _ep_out, &_ll_buffer[1], 64, &bulk_len, 1000);
+			if (ret != 0) {
+				printError("Error: Bulk write failed\n");
+				return ret;
+			}
+			memset(&_ll_buffer[0], 0, 1024);
+			ret = libusb_bulk_transfer(_usb_dev, _ep_in, &_ll_buffer[0], _pkt_sz, &bulk_len, 1000);
+			// sleep for 1ms to ensure that polling behavior aligns with HID backend
+			usleep(1000);
+			if (ret != 0 && ret != LIBUSB_ERROR_TIMEOUT) {
+				printError("Error: Bulk read failed\n");
+				return ret;
+			}
+			if(bulk_len == 0){
+				printError("Error: Bulk timeout\n");
+				return -1;
+			}
+			// if (rx_buff && bulk_len < rx_len + 2) {
+                // printf("bulk short read: expected %d, got %d\n", rx_len + 2, bulk_len);
+            // }
+			ret = bulk_len;
+			break;
+#endif
+		default:
+			printError("Error: unknown USB backend\n");
+			break;
 	}
 
-	ret = hid_read_timeout(_dev, _ll_buffer, 65, 1000);
-	if (ret <= 0) {
-		if (ret == 0)
-			printf("Error timeout\n");
-		else if (ret == -1)
-			printf("Error comm\n");
-		return ret;
-	}
 	if (rx_len)
 		memmove(rx_buff, _ll_buffer, rx_len);
-
 
 	return ret;
 }
@@ -604,10 +999,22 @@ void CmsisDAP::display_info(uint8_t info, uint8_t type)
 				printError("\t" + cmsisdap_info_id_str[info] + " : NA");
 				return;
 			}
-		} else if (info == INFO_ID_TARGET_DEV_NAME || \
-				info == INFO_ID_TARGET_DEV_VENDOR) {
-			/* nothing */
-			return;
+		} else if (info == INFO_ID_TARGET_DEV_NAME) {
+			if (!_product_name.empty()){
+				snprintf(val, sizeof(val), "\t%s: %ls",
+					cmsisdap_info_id_str[info].c_str(), _product_name.c_str());
+			} else {
+				printError("\t" + cmsisdap_info_id_str[info] + " : NA");
+				return;
+			}
+		} else if (info == INFO_ID_TARGET_DEV_VENDOR) {
+			if (!_vendor.empty()){
+				snprintf(val, sizeof(val), "\t%s: %ls",
+					cmsisdap_info_id_str[info].c_str(), _vendor.c_str());
+			} else {
+				printError("\t" + cmsisdap_info_id_str[info] + " : NA");
+				return;
+			}
 		} else {
 			printError("\t" + cmsisdap_info_id_str[info] + " : NA");
 			return;

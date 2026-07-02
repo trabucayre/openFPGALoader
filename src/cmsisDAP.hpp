@@ -6,8 +6,12 @@
 #ifndef SRC_CMSISDAP_HPP_
 #define SRC_CMSISDAP_HPP_
 
+#ifdef ENABLE_CMSISDAP_V1
 #include <hidapi.h>
+#endif
+#ifdef ENABLE_CMSISDAP_V2
 #include <libusb.h>
+#endif
 
 #include <string>
 #include <vector>
@@ -23,9 +27,10 @@ class CmsisDAP: public JtagInterface {
 		 * \param[in] vid: vendor id
 		 * \param[in] pid: product id
 		 * \param[in] index: interface number
-		 * \param[in] verbose: verbose level 0 normal, 1 verbose
+		 * \param[in] clkHZ: clock frequency
+		 * \param[in] verbose: verbose level (0 normal, 1 verbose)
 		 */
-		CmsisDAP(const cable_t &cable, int index, int8_t verbose);
+		CmsisDAP(const cable_t &cable, int index, uint32_t clkHZ, int8_t verbose);
 
 		~CmsisDAP();
 
@@ -48,7 +53,7 @@ class CmsisDAP: public JtagInterface {
 
 		/*!
 		 * \brief write and read len bits with optional tms set to 1 if end
-		 * \param[in] tx: serie of tdi state to send 
+		 * \param[in] tx: serie of tdi state to send
 		 * \param[out] rx: buffer to store tdo bits from device
 		 * \param[in] len: number of bit to read/write
 		 * \param[in] end: if true tms is set to one with the last tdi bit
@@ -89,6 +94,28 @@ class CmsisDAP: public JtagInterface {
 		 */
 		int dapDisconnect();
 		int dapResetTarget();
+
+#ifdef ENABLE_CMSISDAP_V1
+		bool initWithHID(const cable_t &cable, int index, int8_t verbose);
+#endif
+#ifdef ENABLE_CMSISDAP_V2
+		struct cmsis_dap_v2_dev_t {
+			libusb_device_handle *handle;
+			uint16_t vid;
+			uint16_t pid;
+			std::wstring serial;
+			std::wstring vendor;
+			std::wstring product;
+			int interface_num;
+			int config_num;
+			uint8_t ep_in;
+			uint8_t ep_out;
+			int packet_size;
+		};
+
+		std::vector<cmsis_dap_v2_dev_t> findCmsisDapDevices(uint16_t vid, uint16_t pid);
+		bool initWithBulk(const cable_t &cable, int8_t verbose, bool err_as_info);
+#endif
 		int read_info(uint8_t info, uint8_t *rd_info, int max_len);
 		int xfer(int tx_len, uint8_t *rx_buff, int rx_len);
 		int xfer(uint8_t instruction, int tx_len,
@@ -103,13 +130,26 @@ class CmsisDAP: public JtagInterface {
 		uint16_t _vid;                /**< device Vendor ID */
 		uint16_t _pid;                /**< device Product ID */
 		std::wstring _serial_number;  /**< device serial number */
+		std::wstring _vendor;         /**< device manufacturer */
+		std::wstring _product_name;   /**< device product name */
 
-		hid_device *_dev;          /**< hid device used to communicate */
-
+#ifdef ENABLE_CMSISDAP_V1
+		hid_device *_hid_dev;           /**< hid device used to communicate */
+#endif
+#ifdef ENABLE_CMSISDAP_V2
+		libusb_device_handle *_usb_dev; /**< libusb device used to communicate */
+		libusb_context *_ctx;       /**< libusb context */
+#endif
 		unsigned char *_ll_buffer; /**< message buffer */
 		unsigned char *_buffer;    /**< subset of _ll_buffer */
+#ifdef ENABLE_CMSISDAP_V2
+		int _pkt_sz;               /**< USB bulk packet size */
+		int _ep_in;                /**< USB bulk in endpoint */
+		int _ep_out;               /**< USB bulk out endpoint */
+#endif
 		int _num_tms;              /**< current tms length */
 		int _is_connect;           /**< device status ((dis)connected) */
+		int _backend;              /**< type of USB backend */
 };
 
 #endif  // SRC_CMSISDAP_HPP_
