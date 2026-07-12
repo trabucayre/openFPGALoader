@@ -205,6 +205,16 @@ y = 2 or 1) to specify only one sector</p></li>
 and <code class="docutils literal notranslate"><span class="pre">CFM2</span></code> (equivalent to <code class="docutils literal notranslate"><span class="pre">--flash-sector</span> <span class="pre">UFM1,UFM0,CFM2</span></code>)</p></li>
 </ul>
 </section>
+<section id="usb-blaster-passive-serial-mode">
+<h3>USB-Blaster passive serial mode<a class="headerlink" href="#usb-blaster-passive-serial-mode" title="Link to this heading">¶</a></h3>
+<p>USB-Blaster I cables can load a raw RBF directly through the passive
+serial pins:</p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>openFPGALoader<span class="w"> </span>-c<span class="w"> </span>usb-blaster<span class="w"> </span>--passive-serial<span class="w"> </span>project_name.rbf
+</pre></div>
+</div>
+<p>The pin mapping is TCK to DCLK, TDO to CONF_DONE, TMS to nCONFIG, and TDI to
+DATA0. RBF bytes are transmitted LSB first.</p>
+</section>
 </section>
 <section id="intel-altera-old-boards">
 <h2>Intel/Altera (Old Boards)<a class="headerlink" href="#intel-altera-old-boards" title="Link to this heading">¶</a></h2>
@@ -284,6 +294,7 @@ and <code class="docutils literal notranslate"><span class="pre">CFM2</span></co
 <li class="toctree-l3"><a class="reference internal" href="#using-svf">Using <code class="docutils literal notranslate"><span class="pre">svf</span></code></a></li>
 <li class="toctree-l3"><a class="reference internal" href="#using-pof">Using <code class="docutils literal notranslate"><span class="pre">pof</span></code></a></li>
 <li class="toctree-l3"><a class="reference internal" href="#using-an-arbitrary-binary-file">Using an arbitrary binary file</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#usb-blaster-passive-serial-mode">USB-Blaster passive serial mode</a></li>
 </ul>
 </li>
 <li class="toctree-l2"><a class="reference internal" href="#intel-altera-old-boards">Intel/Altera (Old Boards)</a><ul>
