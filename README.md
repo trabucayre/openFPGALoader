@@ -78,6 +78,7 @@ openFPGALoader -- a program to flash FPGA
   -d, --device arg              device to use (/dev/ttyUSBx)
       --detect                  detect FPGA, add -f to show connected flash
       --dfu                     DFU mode
+      --passive-serial          USB-Blaster passive serial mode      
       --dump-flash              Dump flash mode
       --bulk-erase              Bulk erase flash
       --enable-quad             Enable quad mode for SPI Flash

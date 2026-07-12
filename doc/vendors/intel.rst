@@ -199,6 +199,19 @@ default behavior and user must explictly change this by using
 * ``--flash-sector UFM1,CFM2`` to erase and update ``UFM1``, ``UFM0``
   and ``CFM2`` (equivalent to ``--flash-sector UFM1,UFM0,CFM2``)
 
+USB-Blaster passive serial mode
+-------------------------------
+
+USB-Blaster I cables can load a raw RBF directly through the passive
+serial pins:
+
+.. code-block:: bash
+
+    openFPGALoader -c usb-blaster --passive-serial project_name.rbf
+
+The pin mapping is TCK to DCLK, TDO to CONF_DONE, TMS to nCONFIG, and TDI to
+DATA0. RBF bytes are transmitted LSB first. 
+
 Intel/Altera (Old Boards)
 =========================
 

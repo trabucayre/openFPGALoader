@@ -57,6 +57,9 @@
 #include "progressBar.hpp"
 #include "spiFlash.hpp"
 #include "rawParser.hpp"
+#ifdef ENABLE_USBBLASTER
+#include "usbBlaster.hpp"
+#endif
 #ifdef ENABLE_XILINX_SUPPORT
 #include "xilinx.hpp"
 #endif
@@ -93,6 +96,7 @@ struct arguments {
 	bool is_list_command;
 	bool spi;
 	bool dfu;
+	bool passive_serial;
 	std::string file_type;
 	std::string fpga_part;
 	std::string bridge_path;
@@ -157,8 +161,8 @@ int main(int argc, char **argv)
 			false,   false,  false,        false,  false,
 			0, "", "", "", "-", "", -1,
 			-1, 0, false, "-", false, false, false, false, Device::PRG_NONE, false,
-			/* spi dfu    file_type fpga_part bridge_path probe_firmware */
-			false, false, "",       "",       "",         "",
+			/* spi dfu   passive_serial file_type fpga_part bridge_path probe_firmware */
+			false, false, false,          "",       "",       "",         "",
 			/* index_chain file_size target_flash external_flash spi_flash_type altsetting */
 			-1,            0,        "primary",   false,         true,          -1,
 			/* vid, pid, index bus_addr, device_addr */
@@ -380,6 +384,36 @@ int main(int argc, char **argv)
 		}
 	}
 #endif
+
+	/* ------------------------------ */
+	/* USB-Blaster passive serial mode */
+	/* ------------------------------ */
+	if (args.passive_serial) {
+#ifdef ENABLE_USBBLASTER
+		if (cable.type != MODE_USBBLASTER) {
+			printError("Passive serial mode requires a USB-Blaster cable");
+			return EXIT_FAILURE;
+		}
+
+		try {
+			RawParser bit(args.bit_file, false);
+			if (bit.parse() != EXIT_SUCCESS)
+				throw std::runtime_error("Failed to parse raw RBF file");
+
+			UsbBlaster blaster(cable, args.probe_firmware, args.verbose);
+			blaster.programPassiveSerial(bit.getData(), bit.getLength() / 8);
+		} catch (std::exception &e) {
+			printError("Passive serial programming failed: " + std::string(e.what()));
+			return EXIT_FAILURE;
+		}
+
+		printSuccess("Passive serial programming DONE");
+		return EXIT_SUCCESS;
+#else
+		printError("USB-Blaster support was not enabled at compile time");
+		return EXIT_FAILURE;
+#endif
+	}
 
 	/* jtag base */
 
@@ -941,6 +975,8 @@ int parse_opt(int argc, char **argv, struct arguments *args,
 			("detect",      "detect FPGA, add -f to show connected flash",
 				cxxopts::value<bool>(args->detect))
 			("dfu",   "DFU mode", cxxopts::value<bool>(args->dfu))
+			("passive-serial", "USB-Blaster passive serial mode",
+				cxxopts::value<bool>(args->passive_serial))
 			("dump-flash",  "Dump flash mode")
 			("bulk-erase",   "Bulk erase flash",
 				cxxopts::value<bool>(args->bulk_erase_flash))
@@ -1110,6 +1146,14 @@ int parse_opt(int argc, char **argv, struct arguments *args,
 			args->prg_type = Device::RD_FLASH;
 		else if (result.count("external-flash"))
 			args->prg_type = Device::WR_FLASH;
+
+		if (args->passive_serial) {
+			if (args->spi || args->dfu || args->xvc || args->detect) {
+				printError("Error: --passive-serial cannot be combined with "
+					"--spi, --dfu, --xvc or --detect");
+				return -1;
+			}
+		}
 
 		if (result.count("freq")) {
 			double freq;
