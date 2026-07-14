@@ -207,6 +207,29 @@ make<span class="w"> </span>-j
 </section>
 <section id="windows">
 <h2>Windows<a class="headerlink" href="#windows" title="Link to this heading">¶</a></h2>
+<section id="wsl">
+<h3>WSL<a class="headerlink" href="#wsl" title="Link to this heading">¶</a></h3>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>sudo<span class="w"> </span>apt<span class="w"> </span>install<span class="w"> </span><span class="se">\</span>
+<span class="w">  </span>mingw-w64<span class="w"> </span><span class="se">\</span>
+<span class="w">  </span>libz-mingw-w64-dev<span class="w"> </span><span class="se">\</span>
+<span class="w">  </span>clang<span class="w"> </span><span class="se">\</span>
+<span class="w">  </span>lld<span class="w"> </span><span class="se">\</span>
+<span class="w">  </span>cmake<span class="w"> </span><span class="se">\</span>
+<span class="w">  </span>pkg-config<span class="w"> </span><span class="se">\</span>
+<span class="w">  </span>p7zip-full
+
+cmake<span class="w"> </span>-S<span class="w"> </span>.<span class="w"> </span>-B<span class="w"> </span>build-win64-cross<span class="w"> </span><span class="se">\</span>
+<span class="w">    </span>-DCMAKE_TOOLCHAIN_FILE<span class="o">=</span><span class="s2">&quot;</span><span class="nv">$PWD</span><span class="s2">/cmake/Toolchain-x86_64-w64-mingw32.cmake&quot;</span><span class="w"> </span><span class="se">\</span>
+<span class="w">    </span>-DWINDOWS_CROSSCOMPILE<span class="o">=</span>ON<span class="w"> </span><span class="se">\</span>
+<span class="w">    </span>-DCROSS_COMPILE_DEPS<span class="o">=</span>ON<span class="w"> </span><span class="se">\</span>
+<span class="w">    </span>-DCMAKE_BUILD_TYPE<span class="o">=</span>Release
+
+cmake<span class="w"> </span>--build<span class="w"> </span>build-win64-cross<span class="w"> </span>--parallel<span class="w"> </span><span class="s2">&quot;</span><span class="k">$(</span>nproc<span class="k">)</span><span class="s2">&quot;</span>
+
+file<span class="w"> </span>build-win64-cross/openFPGALoader.exe
+</pre></div>
+</div>
+</section>
 <section id="msys2-native-build">
 <h3>MSYS2 (Native Build)<a class="headerlink" href="#msys2-native-build" title="Link to this heading">¶</a></h3>
 <p>openFPGALoader can be installed via MSYS2:</p>
@@ -411,6 +434,7 @@ vendor drivers are also disabled (<em>iCE40</em>, <em>Cologne Chip</em>, <em>Efi
 </li>
 <li class="toctree-l2"><a class="reference internal" href="#macos">macOS</a></li>
 <li class="toctree-l2"><a class="reference internal" href="#windows">Windows</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="#wsl">WSL</a></li>
 <li class="toctree-l3"><a class="reference internal" href="#msys2-native-build">MSYS2 (Native Build)</a></li>
 <li class="toctree-l3"><a class="reference internal" href="#cross-compilation-from-linux">Cross-compilation from Linux</a></li>
 </ul>

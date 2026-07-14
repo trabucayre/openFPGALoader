@@ -12,7 +12,7 @@ Debian/Ubuntu
 openFPGALoader is available in the default repositories:
 
 .. code-block:: bash
-    
+
     sudo apt install openfpgaloader
 
 Guix
@@ -59,7 +59,7 @@ openFPGALoader is available as a Copr repository:
     sudo dnf copr enable mobicarte/openFPGALoader
     sudo dnf install openFPGALoader
 
-From source 
+From source
 ----------------------------
 
 This application uses ``libftdi1``, so this library must be installed (and, depending on the distribution, headers too):
@@ -217,6 +217,31 @@ Alternatively, if you want to build it by hand:
 
 Windows
 =======
+
+WSL
+---
+
+.. code-block:: bash
+
+    sudo apt install \
+      mingw-w64 \
+      libz-mingw-w64-dev \
+      clang \
+      lld \
+      cmake \
+      pkg-config \
+      p7zip-full
+
+    cmake -S . -B build-win64-cross \
+        -DCMAKE_TOOLCHAIN_FILE="$PWD/cmake/Toolchain-x86_64-w64-mingw32.cmake" \
+        -DWINDOWS_CROSSCOMPILE=ON \
+        -DCROSS_COMPILE_DEPS=ON \
+        -DCMAKE_BUILD_TYPE=Release
+
+    cmake --build build-win64-cross --parallel "$(nproc)"
+
+    file build-win64-cross/openFPGALoader.exe
+
 
 MSYS2 (Native Build)
 --------------------
