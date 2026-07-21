@@ -175,6 +175,27 @@ static std::map<std::string, std::map<std::string, std::vector<uint8_t>>>
 			}
 		},
 		{
+			/* Xilinx Virtex UltraScale+ */
+			/* <vivado_dir>/data/parts/xilinx/virtexuplus/public/bsdl/xcvu7p_flvb2104.bsd */
+			"virtexusp_vu7p",
+			{
+				{ "USER1",       {0b10100100, 0b0000} },
+				{ "USER2",       {0b11100100, 0b0000} },
+				{ "USER4",       {0b11100100, 0b1000} },
+				{ "CFG_IN",      {0b01100100, 0b0001} }, // CFG_IN_SLR0
+				{ "CFG_OUT",     {0b00100100, 0b0001} }, // CFG_OUT_SLR0
+				{ "USERCODE",    {0b00100100, 0b0010} },
+				{ "IDCODE",      {0b01001001, 0b0010} },
+				{ "ISC_ENABLE",  {0b00010000, 0b0100} },
+				{ "JPROGRAM",    {0b11001011, 0b0010} },
+				{ "JSTART",      {0b00001100, 0b0011} },
+				{ "JSHUTDOWN",   {0b01001101, 0b0011} },
+				{ "ISC_PROGRAM", {0b01010001, 0b0100} },
+				{ "ISC_DISABLE", {0b10010110, 0b0101} },
+				{ "BYPASS",      {0b11111111, 0b1111} }
+			}
+		},
+		{
 			/* Xilinx Virtex UltraScale+ VU19P (xcvu19p_fsva3824) */
 			/* 4-SLR SSI; SLR1 is master per BSDL */
 			"virtexusp_vu19p",
@@ -405,6 +426,8 @@ Xilinx::Xilinx(Jtag *jtag, const std::string &filename,
 		_fpga_family = VIRTEXUSP_FAMILY;
 		if (model == "xcvu19p")
 			_ircode_map = ircode_mapping.at("virtexusp_vu19p");
+		else if (model == "xcvu7p")
+			_ircode_map = ircode_mapping.at("virtexusp_vu7p");
 		else
 			_ircode_map = ircode_mapping.at("virtexusp");
 	} else if (family.substr(0, 8) == "spartan3") {
@@ -879,7 +902,14 @@ float Xilinx::get_spiOverJtag_version()
 	uint8_t jrx[7];
 	uint8_t rx[6];
 
-	_jtag->shiftIR(USER4, _irlen, Jtag::UPDATE_IR);
+	/* Select the correct device and its associated USER4 register */
+	if (fpga_list[listDev[0]].family = "virtexusp" & fpga_list[listDev[0]].model == "xcvu7p") {
+		_jtag->shiftIR(get_ircode(_ircode_map, "USER4"), NULL, _irlen);
+	}
+	else {
+		_jtag->shiftIR(USER4, _irlen, Jtag::UPDATE_IR);
+	}
+
 	printf("jtag_chain_len: %d\n", _jtag_chain_len);
 	if (_jtag_chain_len > 1)
 		_jtag->shiftDR(jtx, NULL, _jtag_chain_len - 1, Jtag::SHIFT_DR);
