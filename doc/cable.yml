@@ -262,6 +262,13 @@ jtag-smt2-nc:
     URL: https://digilent.com/shop/jtag-smt2-nc-surface-mount-programming-module
 
 
+jtag-smt4:
+
+  - Name: jtag-smt4
+    Description: JTAG-SMT4 Surface-mount Programming Module
+    URL: https://digilent.com/shop/jtag-smt4-surface-mount-programming-module/
+
+
 libgpiod:
 
   - Name: Bitbang GPIO
