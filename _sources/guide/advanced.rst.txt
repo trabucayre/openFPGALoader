@@ -98,13 +98,13 @@ To read the primary flash memory:
 
 .. code-block:: bash
 
-    openFPGALoader -b kcu105 -f --target-flash primary --dump-flash --file-size N_BYTES mydump.bin
+    openFPGALoader -b kcu105 --target-flash primary --dump-flash --file-size N_BYTES mydump.bin
 
 and the second flash memory:
 
 .. code-block:: bash
 
-    openFPGALoader -b kcu105 -f --target-flash secondary --dump-flash --file-size N_BYTES --secondary-bitstream mydump.bin
+    openFPGALoader -b kcu105 --target-flash secondary --dump-flash --file-size N_BYTES --secondary-bitstream mydump.bin
 
 To write on secondary flash memory:
 

@@ -132,11 +132,11 @@ one to write raw binary file to an arbitrary adress in FLASH.</p>
 </pre></div>
 </div>
 <p>To read the primary flash memory:</p>
-<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>openFPGALoader<span class="w"> </span>-b<span class="w"> </span>kcu105<span class="w"> </span>-f<span class="w"> </span>--target-flash<span class="w"> </span>primary<span class="w"> </span>--dump-flash<span class="w"> </span>--file-size<span class="w"> </span>N_BYTES<span class="w"> </span>mydump.bin
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>openFPGALoader<span class="w"> </span>-b<span class="w"> </span>kcu105<span class="w"> </span>--target-flash<span class="w"> </span>primary<span class="w"> </span>--dump-flash<span class="w"> </span>--file-size<span class="w"> </span>N_BYTES<span class="w"> </span>mydump.bin
 </pre></div>
 </div>
 <p>and the second flash memory:</p>
-<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>openFPGALoader<span class="w"> </span>-b<span class="w"> </span>kcu105<span class="w"> </span>-f<span class="w"> </span>--target-flash<span class="w"> </span>secondary<span class="w"> </span>--dump-flash<span class="w"> </span>--file-size<span class="w"> </span>N_BYTES<span class="w"> </span>--secondary-bitstream<span class="w"> </span>mydump.bin
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>openFPGALoader<span class="w"> </span>-b<span class="w"> </span>kcu105<span class="w"> </span>--target-flash<span class="w"> </span>secondary<span class="w"> </span>--dump-flash<span class="w"> </span>--file-size<span class="w"> </span>N_BYTES<span class="w"> </span>--secondary-bitstream<span class="w"> </span>mydump.bin
 </pre></div>
 </div>
 <p>To write on secondary flash memory:</p>
