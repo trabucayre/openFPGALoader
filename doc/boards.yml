@@ -34,6 +34,20 @@
   Memory: OK
   Flash: OK
 
+- ID: alinx_axku042
+  Description: ALINX AXKU042 Kintex UltraScale FPGA Dev Board
+  URL: https://www.en.alinx.com/Product/FPGA-Development-Boards/Kintex-UltraScale/AXKU042.html
+  FPGA: Kintex UltraScale xcku040-ffva1156
+  Memory: OK
+  Flash: OK
+
+- ID: alinx_axku062
+  Description: ALINX AXKU062 Kintex UltraScale FPGA Dev Board
+  URL: https://www.en.alinx.com/Product/FPGA-Development-Boards/Kintex-UltraScale/AXKU062.html
+  FPGA: Kintex UltraScale xcku060-ffva1156
+  Memory: OK
+  Flash: OK
+
 - ID: alinx_axku095
   Description: ALINX AXKU095 Kintex UltraScale FPGA Dev Board
   URL: https://www.en.alinx.com/Product/FPGA-Development-Boards/Kintex-UltraScale/AXKU095.html
