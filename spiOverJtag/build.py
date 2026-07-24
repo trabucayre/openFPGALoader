@@ -163,6 +163,7 @@ if tool in ["ise", "vivado"]:
         "xcku060-ffva1156" : "xcku060_ffva1156",
         "xcvu9p-flga2104"  : "xcvu9p_flga2104",
         "xcvu37p-fsvh2892" : "xcvu37p_fsvh2892",
+        "xcvu7p-flvb2104"  : "xcvu7p_flvb2104",
         "xcku3p-ffva676"   : "xcku3p_ffva676",
         "xcku3p-ffvb676"   : "xcku3p_ffvb676",
         "xcku5p-ffvb676"   : "xcku5p_ffvb676",
@@ -224,6 +225,8 @@ if tool in ["ise", "vivado"]:
                 tool_options = {"part": part + "-2-e"}
             elif part == "xcku3p-ffvb676":
                 tool_options = {"part": part + "-2-e"}
+            elif part == "xcvu7p-flvb2104":
+                tool_options = {"part": part + "-1-e"}
             elif part == "xcvu37p-fsvh2892":
                 tool_options = {"part": part + "-2L-e"}
             elif part in ["xcku040-ffva1156", "xcku060-ffva1156"]:
