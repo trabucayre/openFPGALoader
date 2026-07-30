@@ -99,6 +99,29 @@ enum cmsisdap_backend_type {
 	BACKEND_USBBULK = 1,
 };
 
+/* Some third-gen Atmel/Microchip EDBG-based tools enumerate as ordinary
+ * CMSIS-DAP HID devices but actually use a 512 byte HID report size
+ * instead of the CMSIS-DAP default of 64 bytes. Keep track of those
+ * quirks here.
+ */
+struct hid_report_size_quirk {
+	uint16_t vid;
+	uint16_t pid;
+	uint16_t report_size;
+};
+
+static const struct hid_report_size_quirk hid_report_size_quirks[] = {
+	{0x03eb, 0x2140, 512},  // Atmel JTAG-ICE 3
+	{0x03eb, 0x2141, 512},  // Atmel-ICE
+	{0x03eb, 0x2144, 512},  // Atmel Power Debugger
+	{0x03eb, 0x2111, 512},  // EDBG (found on Xplained Pro boards)
+	{0x03eb, 0x2157, 512},  // Zero (???)
+	{0x03eb, 0x2169, 512},  // EDBG with Mass Storage (Xplained Pro boards)
+	{0x03eb, 0x216a, 512},  // Commercially available EDBG (third-party use)
+	{0x03eb, 0x2170, 512},  // Kraken (???)
+	{0, 0, 0}
+};
+
 CmsisDAP::CmsisDAP(const cable_t &cable, int index, uint32_t clkHZ, int8_t verbose):_verbose(verbose>0),
 		_device_idx(0),  _vid(cable.vid), _pid(cable.pid), _serial_number(L""),
 #ifdef ENABLE_CMSISDAP_V1
@@ -247,6 +270,31 @@ CmsisDAP::~CmsisDAP()
 		free(_ll_buffer);
 }
 
+/* apply known report-size quirks *before* any communication is
+ * attempted: the INFO_ID_MAX_PKT_SZ probe below relies on
+ * transactions already being correctly framed, which isn't the
+ * case for quirky devices until _pkt_sz is fixed up here.
+ */
+bool CmsisDAP::applyQuirk()
+{
+	for (const struct hid_report_size_quirk *q = &hid_report_size_quirks[0]; q->vid != 0; q++) {
+		if (q->vid == _vid && q->pid == _pid) {
+			_pkt_sz = q->report_size;
+			break;
+		}
+	}
+	if (_pkt_sz + 1 > 1024) {
+		unsigned char *tmp = (unsigned char *)realloc(_ll_buffer, _pkt_sz + 1);
+		if (!tmp) {
+			printError("internal buffer reallocation failed");
+			return false;
+		}
+		_ll_buffer = tmp;
+		_buffer = _ll_buffer + 2;
+	}
+	return true;
+}
+
 #ifdef ENABLE_CMSISDAP_V1
 bool CmsisDAP::initWithHID(const cable_t &cable, int index, int8_t verbose){
 		std::vector<struct hid_device_info *> dev_found;
@@ -328,6 +376,10 @@ bool CmsisDAP::initWithHID(const cable_t &cable, int index, int8_t verbose){
 	}
 	/* cleanup enumeration */
 	hid_free_enumeration(devs);
+
+	/* quirk handling */
+	if (!applyQuirk())
+		return false;
 
 	/* query actual HID packet size and grow buffer if needed */
 	uint8_t buf[65];
