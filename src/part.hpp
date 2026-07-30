@@ -248,6 +248,7 @@ static std::map <uint32_t, fpga_model> fpga_list = {
 
 	/* Altera Cyclone II/III/IV/10 LP */
 	{0x020b10dd, {"altera", "cyclone II",           "EP2C5",                         10}},
+	{0x020b40dd, {"altera", "cyclone II",           "EP2C35",                        10}},
 	{0x020f10dd, {"altera", "cyclone III/IV/10 LP", "EP3C5/EP3C10/EP4CE6/EP4CE10",   10}},
 	{0x020f20dd, {"altera", "cyclone III/IV/10 LP", "EP3C16/EP4CE15/10CL016",        10}},
 	{0x020f30dd, {"altera", "cyclone III/IV/10 LP", "EP3C25/EP4CE22/10CL025",        10}},
