@@ -248,6 +248,29 @@ CmsisDAP::~CmsisDAP()
 }
 
 #ifdef ENABLE_CMSISDAP_V1
+/* Some third-gen Atmel/Microchip EDBG-based tools enumerate as ordinary
+ * CMSIS-DAP HID devices but actually use a 512 byte HID report size
+ * instead of the CMSIS-DAP default of 64 bytes. Keep track of those
+ * quirks here.
+ */
+struct hid_report_size_quirk {
+	uint16_t vid;
+	uint16_t pid;
+	uint16_t report_size;
+};
+
+static const struct hid_report_size_quirk hid_report_size_quirks[] = {
+	{0x03eb, 0x2140, 512},  // Atmel JTAG-ICE 3
+	{0x03eb, 0x2141, 512},  // Atmel-ICE
+	{0x03eb, 0x2144, 512},  // Atmel Power Debugger
+	{0x03eb, 0x2111, 512},  // EDBG (found on Xplained Pro boards)
+	{0x03eb, 0x2157, 512},  // Zero (???)
+	{0x03eb, 0x2169, 512},  // EDBG with Mass Storage (Xplained Pro boards)
+	{0x03eb, 0x216a, 512},  // Commercially available EDBG (third-party use)
+	{0x03eb, 0x2170, 512},  // Kraken (???)
+	{0, 0, 0}
+};
+
 bool CmsisDAP::initWithHID(const cable_t &cable, int index, int8_t verbose){
 		std::vector<struct hid_device_info *> dev_found;
 
@@ -328,6 +351,26 @@ bool CmsisDAP::initWithHID(const cable_t &cable, int index, int8_t verbose){
 	}
 	/* cleanup enumeration */
 	hid_free_enumeration(devs);
+
+	/* apply known report-size quirks *before* any communication is
+	 * attempted: the INFO_ID_MAX_PKT_SZ probe below relies on
+	 * transactions already being correctly framed, which isn't the
+	 * case for quirky devices until _pkt_sz is fixed up here.
+	 */
+	for (int i = 0; hid_report_size_quirks[i].vid != 0; i++) {
+		if (hid_report_size_quirks[i].vid == _vid &&
+				hid_report_size_quirks[i].pid == _pid) {
+			_pkt_sz = hid_report_size_quirks[i].report_size;
+			break;
+		}
+	}
+	if (_pkt_sz + 1 > 1024) {
+		unsigned char *tmp = (unsigned char *)realloc(_ll_buffer, _pkt_sz + 1);
+		if (!tmp)
+			throw std::runtime_error("internal buffer reallocation failed");
+		_ll_buffer = tmp;
+		_buffer = _ll_buffer + 2;
+	}
 
 	/* query actual HID packet size and grow buffer if needed */
 	uint8_t buf[65];
