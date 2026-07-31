@@ -200,19 +200,37 @@ CmsisDAP::CmsisDAP(const cable_t &cable, int index, uint32_t clkHZ, int8_t verbo
 	}
 
 	if (is_error) {
-		if (BACKEND_HID) {
-			hid_close(_hid_dev);
-			hid_exit();
-		} else {
-			libusb_close(_usb_dev);
-			libusb_exit(_ctx);
+		switch(_backend){
+#ifdef ENABLE_CMSISDAP_V1
+			case BACKEND_HID:
+				hid_close(_hid_dev);
+				hid_exit();
+				break;
+#endif
+#ifdef ENABLE_CMSISDAP_V2
+			case BACKEND_USBBULK:
+				libusb_close(_usb_dev);
+				libusb_exit(_ctx);
+				break;
+#endif
+			default:
+				break;
 		}
 		throw std::runtime_error("cmsisDAP: init Failed");
 	} else {
-		if (BACKEND_HID) {
-			printInfo("HID init successful");
-		} else {
-			printInfo("USB bulk init successful");
+		switch(_backend){
+#ifdef ENABLE_CMSISDAP_V1
+			case BACKEND_HID:
+				printInfo("HID init successful");
+				break;
+#endif
+#ifdef ENABLE_CMSISDAP_V2
+			case BACKEND_USBBULK:
+				printInfo("USB bulk init successful");
+				break;
+#endif
+			default:
+				break;
 		}
 	}
 	if (clkHZ > 0)
