@@ -468,9 +468,10 @@ bool SPIFlash::erase_and_prog(const std::vector<FlashDataSection> &sections, boo
 	uint32_t len = 0, flash_len;
 	uint32_t base_addr = 0;
 	/* For full erase and to check BP: consider the full flash size */
-	if (full_erase) {
+	if (_flash_model && full_erase) {
 		flash_len = _flash_model->nr_sector * 0x10000;
 	} else { /* not a full erase: consider bottom base_addr and upper address */
+		full_erase = false;
 		base_addr = sections.front().getStartAddr();
 		flash_len = sections.back().getCurrentAddr() - base_addr;
 	}
@@ -489,12 +490,8 @@ bool SPIFlash::erase_and_prog(const std::vector<FlashDataSection> &sections, boo
 			return false;
 	} else {
 		printInfo("Erase Flash: ", false);
-		if (sectors_erase(base_addr, len) == -1) {
-			printError("FAIL");
-			return -1;
-		} else {
-			printSuccess("DONE");
-		}
+		if (sectors_erase(base_addr, len) == -1)
+			return false;
 	}
 
 	ProgressBar progress("Writing", len, 50, _verbose < 0);
@@ -511,7 +508,7 @@ bool SPIFlash::erase_and_prog(const std::vector<FlashDataSection> &sections, boo
 				size = 1;
 			}
 			if (write_page(base_addr + addr, ptr, size) == -1)
-				return -1;
+				return false;
 			progress.display(len_done);
 		}
 	}
