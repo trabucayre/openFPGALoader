@@ -15,6 +15,7 @@
 FsParser::FsParser(const std::string &filename, bool reverseByte, bool verbose):
 			ConfigBitstreamParser(filename, ConfigBitstreamParser::ASCII_MODE,
 			verbose), _reverseByte(reverseByte), _end_header(0), _checksum(0),
+			_transfer_checksum(0), _has_transfer_checksum(false),
 			_8Zero(0xff), _4Zero(0xff), _2Zero(0xff),
 			_idcode(0), _compressed(false)
 {
@@ -264,6 +265,19 @@ int FsParser::parse()
 	if (stoul(_hdr["ConfDataLength"]) < nb_line)
 		nb_line = stoi(_hdr["ConfDataLength"]);
 
+	const size_t footer_start = _end_header + 1 + nb_line;
+	for (size_t index = footer_start; index < _lstRawData.size(); ++index) {
+		const string &line = _lstRawData[index];
+		if (line.size() != 64)
+			continue;
+		const uint8_t key = bitToVal(line.c_str(), 8) & 0x7f;
+		if (key == 0x0a) {
+			_transfer_checksum = bitToVal(line.c_str(), line.size()) & 0xffff;
+			_has_transfer_checksum = true;
+			break;
+		}
+	}
+
 	/* drop now useless header */
 	_lstRawData.erase(_lstRawData.begin(), _lstRawData.begin() + _end_header + 1);
 	_lstRawData.resize(nb_line);
@@ -333,7 +347,8 @@ int FsParser::parse()
 		_checksum += (uint16_t)bitToVal(&tmp[pos], 16);
 
 	if (_verbose)
-		printf("checksum 0x%04x\n", _checksum);
+		printf("checksum 0x%04x, transfer checksum 0x%04x\n",
+			_checksum, transferChecksum());
 
 	printSuccess("Done");
 
