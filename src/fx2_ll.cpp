@@ -31,7 +31,7 @@ FX2_ll::FX2_ll(uint16_t uninit_vid, uint16_t uninit_pid,
 	}
 
 	/* try to open uninitialized device */
-	if (uninit_vid != 0 && uninit_pid != 0) {
+	if (uninit_vid != 0 && uninit_pid != 0 && !firmware_path.empty()) {
 		dev_handle = libusb_open_device_with_vid_pid(usb_ctx,
 				uninit_vid, uninit_pid);
 		if (dev_handle) {
@@ -41,6 +41,7 @@ FX2_ll::FX2_ll(uint16_t uninit_vid, uint16_t uninit_pid,
 				libusb_exit(usb_ctx);
 				throw std::runtime_error("claim interface failed");
 			}
+			printInfo("firmware_file : " + firmware_path);
 			/* load firmware */
 			if (!load_firmware(firmware_path)) {
 				libusb_close(dev_handle);
@@ -53,16 +54,31 @@ FX2_ll::FX2_ll(uint16_t uninit_vid, uint16_t uninit_pid,
 	}
 
 	/* try to open an already init device
-	 * since fx2 may be not immediatly ready
+	 * since fx2 may be not immediately ready
 	 * retry with a delay
+	 * bus powered FX2 enumerates at full speed first (< 100 mA)
+	 * and renumerates at high speed once configured: wait for it,
+	 * but accept a full speed device if it never switches
 	 */
 	ProgressBar progress("Waiting reload", 100, 50, false);
 	int timeout = 100;
+	int fs_wait = 10;
+	int speed = LIBUSB_SPEED_UNKNOWN;
 	do {
 		dev_handle = libusb_open_device_with_vid_pid(usb_ctx,
 				vid, pid);
 		timeout--;
 		progress.display(100-timeout);
+		if (dev_handle) {
+			speed = libusb_get_device_speed(libusb_get_device(dev_handle));
+			if ((speed == LIBUSB_SPEED_LOW || speed == LIBUSB_SPEED_FULL) &&
+					fs_wait > 0) {
+				libusb_close(dev_handle);
+				dev_handle = NULL;
+				fs_wait--;
+				reenum = true;
+			}
+		}
 		if (!dev_handle)
 			sleep(1);
 	} while (!dev_handle && timeout > 0 && reenum);
@@ -72,6 +88,9 @@ FX2_ll::FX2_ll(uint16_t uninit_vid, uint16_t uninit_pid,
 		throw std::runtime_error("FX2: fail to open device");
 	}
 	progress.done();
+
+	if (speed == LIBUSB_SPEED_LOW || speed == LIBUSB_SPEED_FULL)
+		printWarn("FX2: device is not running at high speed");
 
 	ret = libusb_claim_interface(dev_handle, 0);
 	if (ret) {
