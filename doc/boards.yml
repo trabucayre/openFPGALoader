@@ -1149,3 +1149,10 @@
   FPGA: Lattice LCMXO2-4000HC-4MG132CC
   Memory: OK
   Flash: OK
+
+- ID: step-mxo2_v1.1
+  Description: STEP MXO2 V1.1
+  URL: https://wiki.stepfpga.com/xo2-4000hc
+  FPGA: Lattice LCMXO2-4000HC-4MG132CC
+  Memory: OK
+  Flash: OK
