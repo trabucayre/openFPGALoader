@@ -267,7 +267,7 @@ int FsParser::parse()
 
 	const size_t footer_start = _end_header + 1 + nb_line;
 	for (size_t index = footer_start; index < _lstRawData.size(); ++index) {
-		const string &line = _lstRawData[index];
+		const std::string &line = _lstRawData[index];
 		if (line.size() != 64)
 			continue;
 		const uint8_t key = bitToVal(line.c_str(), 8) & 0x7f;
