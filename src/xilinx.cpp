@@ -854,7 +854,8 @@ void Xilinx::program_mem(ConfigBitstreamParser *bitfile)
 {
 	std::cout << "load program" << std::endl;
 	unsigned char *tx_buf;
-	unsigned char rx_buf[(_irlen >> 3) + 1];
+	std::vector<unsigned char> rx_buf;
+	rx_buf.resize((_irlen >> 3) + 1);
 
 	/*            comment                                TDI   TMS TCK
 	 * 1: On power-up, place a logic 1 on the TMS,
@@ -879,7 +880,7 @@ void Xilinx::program_mem(ConfigBitstreamParser *bitfile)
 	/* Poll INIT_B (bit 4 of IR capture) until config memory is cleared */
 	tx_buf = get_ircode(_ircode_map, "BYPASS");
 	do {
-		_jtag->shiftIR(tx_buf, rx_buf, _irlen);
+		_jtag->shiftIR(tx_buf, rx_buf.data(), _irlen);
 	} while (!(rx_buf[0] & 0x10));
 	/*
 	 * 8: Move into the RTI state.                        X     0   10,000(1)
@@ -978,7 +979,7 @@ void Xilinx::program_mem(ConfigBitstreamParser *bitfile)
 		*/
 		_jtag->go_test_logic_reset();
 		/* Some xc7s50 does not detect correct connected flash w/o this shift*/
-		_jtag->shiftIR(tx_buf, rx_buf, _irlen);
+		_jtag->shiftIR(tx_buf, rx_buf.data(), _irlen);
 		uint8_t ir_c = rx_buf[0] & 0x03;
 		uint8_t isc_done = ((rx_buf[0] >> 2) & 0x01);
 		uint8_t isc_ena  = ((rx_buf[0] >> 3) & 0x01);
@@ -2182,10 +2183,12 @@ int Xilinx::spi_put(uint8_t cmd,
 		return spi_put_v2(cmd, tx, rx, len);
 
 	int xfer_len = len + 1 + ((rx == NULL) ? 0 : 1);
-	uint8_t jtx[xfer_len];
+	std::vector<uint8_t> jtx;
+	jtx.resize(xfer_len);
 	jtx[0] = McsParser::reverseByte(cmd);
 	/* uint8_t jtx[xfer_len] = {McsParser::reverseByte(cmd)}; */
-	uint8_t jrx[xfer_len];
+	std::vector<uint8_t> jrx;
+	jrx.resize(xfer_len);
 	if (tx != NULL) {
 		for (uint32_t i=0; i < len; i++)
 			jtx[i+1] = McsParser::reverseByte(tx[i]);
@@ -2196,7 +2199,7 @@ int Xilinx::spi_put(uint8_t cmd,
 	 * in the same time store each byte
 	 * to next
 	 */
-	_jtag->shiftDR(jtx, (rx == NULL)? NULL: jrx, 8*xfer_len);
+	_jtag->shiftDR(jtx.data(), (rx == NULL)? NULL: jrx.data(), 8*xfer_len);
 
 	if (rx != NULL) {
 		for (uint32_t i=0; i < len; i++)
@@ -2208,8 +2211,9 @@ int Xilinx::spi_put(uint8_t cmd,
 int Xilinx::spi_put(const uint8_t *tx, uint8_t *rx, uint32_t len)
 {
 	int xfer_len = len + ((rx == NULL) ? 0 : 1);
-	uint8_t jtx[xfer_len];
-	uint8_t jrx[xfer_len];
+	std::vector<uint8_t> jtx, jrx;
+	jtx.resize(xfer_len);
+	jrx.resize(xfer_len);
 	if (tx != NULL) {
 		for (uint32_t i=0; i < len; i++)
 			jtx[i] = McsParser::reverseByte(tx[i]);
@@ -2220,7 +2224,7 @@ int Xilinx::spi_put(const uint8_t *tx, uint8_t *rx, uint32_t len)
 	 * in the same time store each byte
 	 * to next
 	 */
-	_jtag->shiftDR(jtx, (rx == NULL)? NULL: jrx, 8*xfer_len);
+	_jtag->shiftDR(jtx.data(), (rx == NULL)? NULL: jrx.data(), 8*xfer_len);
 
 	if (rx != NULL) {
 		for (uint32_t i=0; i < len; i++)
@@ -2288,8 +2292,9 @@ int Xilinx::spi_put_v2(uint8_t cmd, const uint8_t *tx, uint8_t *rx,
 
 	const uint32_t xfer_bit_len = (kPktLen - 1) * 8 + (rx ? 8 : 1);
 
-	uint8_t jrx[kPktLen];
-	uint8_t pkt[kPktLen];
+	std::vector<uint8_t> jrx, pkt;
+	jrx.resize(kPktLen);
+	pkt.resize(kPktLen);
 	uint32_t idx = 0;
 
 	pkt[idx++] = ((0x1f & real_len) << 3) | ((0x03 & mode) << 1) | 1;
@@ -2307,7 +2312,7 @@ int Xilinx::spi_put_v2(uint8_t cmd, const uint8_t *tx, uint8_t *rx,
 
 	/* addr BSCAN user1 */
 	_jtag->shiftIR(get_ircode(_ircode_map, _user_instruction), NULL, _irlen);
-	_jtag->shiftDR(pkt, (rx == NULL) ? NULL : jrx, xfer_bit_len);
+	_jtag->shiftDR(pkt.data(), (rx == NULL) ? NULL : jrx.data(), xfer_bit_len);
 	_jtag->go_test_logic_reset();
 	_jtag->flush();
 

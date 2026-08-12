@@ -155,8 +155,9 @@ int FtdiJtagMPSSE::writeTMS(const uint8_t *tms, uint32_t len, bool flush_buffer,
 				printf("writeTMS: error\n");
 
 			if (_ch552WA) {
-				uint8_t c[len/8+1];
-				int ret = ftdi_read_data(_ftdi, c, len/8+1);
+				std::vector<uint8_t> c;
+				c.resize(len/8+1);
+				int ret = ftdi_read_data(_ftdi, c.data(), len/8+1);
 				if (ret != 0) {
 					printf("ret : %d\n", ret);
 				}
@@ -167,8 +168,9 @@ int FtdiJtagMPSSE::writeTMS(const uint8_t *tms, uint32_t len, bool flush_buffer,
 	if (flush_buffer)
 		mpsse_write();
 	if (_ch552WA) {
-		uint8_t c[len/8+1];
-		ftdi_read_data(_ftdi, c, len/8+1);
+		std::vector<uint8_t> c;
+		c.resize(len/8+1);
+		ftdi_read_data(_ftdi, c.data(), len/8+1);
 	}
 
 	return len;
@@ -210,9 +212,10 @@ int FtdiJtagMPSSE::toggleClk(uint8_t tms, uint8_t tdi, uint32_t clk_len)
 		ret = clk_len;
 	} else {
 		int byteLen = (len+7)/8;
-		uint8_t buf_tms[byteLen];
-		memset(buf_tms, (tms) ? 0xff : 0x00, byteLen);
-		ret = writeTMS(buf_tms, len, false);
+		std::vector<uint8_t> buf_tms;
+		buf_tms.resize(byteLen);
+		memset(buf_tms.data(), (tms) ? 0xff : 0x00, byteLen);
+		ret = writeTMS(buf_tms.data(), len, false);
 	}
 
 	return ret;
@@ -243,8 +246,9 @@ int FtdiJtagMPSSE::writeTDI(const uint8_t *tdi, uint8_t *tdo, uint32_t len, bool
 	int nb_byte = real_len >> 3;     // number of byte to send
 	int nb_bit = (real_len & 0x07);  // residual bits
 	int xfer = tx_buff_size - 3;
-	unsigned char c[xfer];
-	unsigned char rev[xfer];
+	std::vector<unsigned char> c, rev;
+	c.resize(xfer);
+	rev.resize(xfer);
 	unsigned char *rx_ptr = (unsigned char *)tdo;
 	unsigned char *tx_ptr = (unsigned char *)tdi;
 	bool use_msb_first = _msb_first && !tdo;
@@ -284,7 +288,7 @@ int FtdiJtagMPSSE::writeTDI(const uint8_t *tdi, uint8_t *tdo, uint32_t len, bool
 					rev[i] = bit_reverse(tx_ptr[i]); 
 				}
 			}
-			mpsse_store(use_msb_first ? rev : tx_ptr, xfer_len);
+			mpsse_store(use_msb_first ? rev.data() : tx_ptr, xfer_len);
 			tx_ptr += xfer_len;
 		}
 		if (tdo) {
@@ -292,7 +296,7 @@ int FtdiJtagMPSSE::writeTDI(const uint8_t *tdi, uint8_t *tdo, uint32_t len, bool
 			rx_ptr += xfer_len;
 		} else if (_ch552WA) {
 			mpsse_write();
-			ftdi_read_data(_ftdi, c, xfer_len);
+			ftdi_read_data(_ftdi, c.data(), xfer_len);
 		} else if (!last) {
 			mpsse_write();
 		}
@@ -329,7 +333,7 @@ int FtdiJtagMPSSE::writeTDI(const uint8_t *tdi, uint8_t *tdo, uint32_t len, bool
 				*rx_ptr >>= (8 - nb_bit);
 			} else {
 				mpsse_write();
-				ftdi_read_data(_ftdi, c, nb_bit);
+				ftdi_read_data(_ftdi, c.data(), nb_bit);
 			}
 		} else if (!last) {
 			mpsse_write();
@@ -367,7 +371,7 @@ int FtdiJtagMPSSE::writeTDI(const uint8_t *tdi, uint8_t *tdo, uint32_t len, bool
 			*rx_ptr |= (((c[index]) & 0x80) >> (7 - nb_bit));
 		} else if (_ch552WA) {
 			mpsse_write();
-			ftdi_read_data(_ftdi, c, 1);
+			ftdi_read_data(_ftdi, c.data(), 1);
 		} else {
 			mpsse_write();
 		}
@@ -444,12 +448,14 @@ bool FtdiJtagMPSSE::writeTMSTDI(const uint8_t *tms, const uint8_t *tdi,
 	int32_t ret;
 	uint32_t max_len = 1024;
 	uint8_t mode = 0;          // current state: 0 none, 1 TDI, 2 TMS
-	uint8_t tdi_buf[max_len];  // buffer to store TDI sequence
 	uint8_t tms_tmp = 0;       // buffer to store TMS sequence (limited to 6bits per cmd)
-	uint8_t tdo_tmp[max_len];  // local TDO sequence
+	std::vector<uint8_t> tdi_buf; // buffer to store TDI sequence
+	std::vector<uint8_t> tdo_tmp; // local TDO sequence
+	tdi_buf.resize(max_len);
+	tdo_tmp.resize(max_len);
 	uint32_t buff_len = 0;     // current bits stored
-	memset(tdi_buf, 0, max_len);
-	memset(tdo_tmp, 0, max_len);
+	memset(tdi_buf.data(), 0, max_len);
+	memset(tdo_tmp.data(), 0, max_len);
 	_tdo_pos = 0;  // current bits read
 
 	if (_verbose)
@@ -525,9 +531,9 @@ bool FtdiJtagMPSSE::writeTMSTDI(const uint8_t *tms, const uint8_t *tdi,
 					buff_len++;
 					is_end = true;
 				}
-				writeTDI(tdi_buf, tdo_tmp, buff_len, is_end);
-				update_tdo_buff(tdo_tmp, tdo, buff_len);
-				memset(tdi_buf, 0, max_len);
+				writeTDI(tdi_buf.data(), tdo_tmp.data(), buff_len, is_end);
+				update_tdo_buff(tdo_tmp.data(), tdo, buff_len);
+				memset(tdi_buf.data(), 0, max_len);
 				buff_len = 0;
 				if (is_end) {
 					_curr_tdi = tdi_bit;
@@ -554,9 +560,9 @@ bool FtdiJtagMPSSE::writeTMSTDI(const uint8_t *tms, const uint8_t *tdi,
 
 		/* buffer full? */
 		if (buff_len == 8*max_len && mode == 1) {
-			writeTDI(tdi_buf, tdo_tmp, buff_len, false);
-			update_tdo_buff(tdo_tmp, tdo, buff_len);
-			memset(tdi_buf, 0, max_len);
+			writeTDI(tdi_buf.data(), tdo_tmp.data(), buff_len, false);
+			update_tdo_buff(tdo_tmp.data(), tdo, buff_len);
+			memset(tdi_buf.data(), 0, max_len);
 			buff_len = 0;
 		} else if (buff_len == 6 && mode == 2) {
 			ret = update_tms_buff(&tms_tmp, 0, buff_len, _curr_tdi, tdo, true);
@@ -574,8 +580,8 @@ bool FtdiJtagMPSSE::writeTMSTDI(const uint8_t *tms, const uint8_t *tdi,
 	if (buff_len > 0) {
 		switch (mode) {
 		case 1:
-			writeTDI(tdi_buf, tdo_tmp, buff_len, false);
-			update_tdo_buff(tdo_tmp, tdo, buff_len);
+			writeTDI(tdi_buf.data(), tdo_tmp.data(), buff_len, false);
+			update_tdo_buff(tdo_tmp.data(), tdo, buff_len);
 			break;
 		case 2:
 			if (update_tms_buff(&tms_tmp, 0, buff_len, _curr_tdi,

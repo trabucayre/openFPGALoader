@@ -197,8 +197,9 @@ int Anlogic::spi_put(uint8_t cmd, const uint8_t *tx, uint8_t *rx, uint32_t len)
 	int xfer_len = len + 1;
 	if (rx)
 		xfer_len++;
-	uint8_t jtx[xfer_len];
-	uint8_t jrx[xfer_len];
+	std::vector<uint8_t> jtx, jrx;
+	jtx.resize(xfer_len);
+	jrx.resize(xfer_len);
 
 	jtx[0] = AnlogicBitParser::reverseByte(cmd);
 	if (tx != NULL) {
@@ -210,7 +211,7 @@ int Anlogic::spi_put(uint8_t cmd, const uint8_t *tx, uint8_t *rx, uint32_t len)
 	uint8_t op = 0x60;
 	_jtag->shiftDR(&op, NULL, 8);
 
-	_jtag->shiftDR(jtx, (rx == NULL)? NULL: jrx, 8*xfer_len);
+	_jtag->shiftDR(jtx.data(), (rx == NULL)? NULL: jrx.data(), 8*xfer_len);
 	if (rx != NULL) {
 		for (uint32_t i=0; i < len; i++)
 			rx[i] = AnlogicBitParser::reverseByte(jrx[i+1]>>1)
@@ -223,8 +224,9 @@ int Anlogic::spi_put(const uint8_t *tx, uint8_t *rx, uint32_t len)
 	int xfer_len = len;
 	if (rx)
 		xfer_len++;
-	uint8_t jtx[xfer_len];
-	uint8_t jrx[xfer_len];
+	std::vector<uint8_t> jtx, jrx;
+	jtx.resize(xfer_len);
+	jrx.resize(xfer_len);
 
 	if (tx != NULL) {
 		for (uint32_t i = 0; i < len; i++)
@@ -235,7 +237,7 @@ int Anlogic::spi_put(const uint8_t *tx, uint8_t *rx, uint32_t len)
 	uint8_t op = 0x60;
 	_jtag->shiftDR(&op, NULL, 8);
 
-	_jtag->shiftDR(jtx, (rx == NULL)? NULL: jrx, 8*xfer_len);
+	_jtag->shiftDR(jtx.data(), (rx == NULL)? NULL: jrx.data(), 8*xfer_len);
 	if (rx != NULL) {
 		for (uint32_t i=0; i < len; i++)
 			rx[i] = AnlogicBitParser::reverseByte(jrx[i]>>1) |

@@ -669,7 +669,8 @@ int esp_usb_jtag::writeTDI(const uint8_t *tx, uint8_t *rx, uint32_t len, bool en
 	}
 	int ret;
 	const uint32_t kTdiLen = (len+7) >> 3; // TDI/RX len in byte
-	uint8_t tdi[kTdiLen]; // TDI buffer (required when tx is NULL)
+	std::vector<uint8_t> tdi; // TDI buffer (required when tx is NULL)
+	tdi.resize(kTdiLen);
 	uint8_t tx_buf[OUT_EP_SZ];
 	const uint8_t tdo = !(rx == NULL); // only set cap/tdo when something to read
 	uint8_t *rx_ptr = NULL;
@@ -687,9 +688,9 @@ int esp_usb_jtag::writeTDI(const uint8_t *tx, uint8_t *rx, uint32_t len, bool en
 
 	/* Copy RX or fill the buffer with TDI current level */
 	if (tx)
-		memcpy(tdi, tx, kTdiLen);
+		memcpy(tdi.data(), tx, kTdiLen);
 	else
-		memset(tdi, _tdi ? 0xff : 0x00, kTdiLen);
+		memset(tdi.data(), _tdi ? 0xff : 0x00, kTdiLen);
 
 	if (_verbose) {
 		snprintf(mess, 256, "len=0x%08x\n", len);

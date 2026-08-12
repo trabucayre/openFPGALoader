@@ -1303,8 +1303,9 @@ int Altera::spi_put(uint8_t cmd, const uint8_t *tx, uint8_t *rx, uint32_t len)
 	 * one bit
 	 */
 	int xfer_len = len + 1 + ((rx == NULL) ? 0 : 1);
-	uint8_t jtx[xfer_len];
-	uint8_t jrx[xfer_len];
+	std::vector<uint8_t> jtx, jrx;
+	jtx.resize(xfer_len);
+	jrx.resize(xfer_len);
 
 	if (tx != NULL) {
 		for (uint32_t i = 0; i < len; i++)
@@ -1312,7 +1313,7 @@ int Altera::spi_put(uint8_t cmd, const uint8_t *tx, uint8_t *rx, uint32_t len)
 	}
 
 	shiftVIR(RawParser::reverseByte(cmd));
-	shiftVDR(jtx, (rx) ? jrx : NULL, 8 * xfer_len);
+	shiftVDR(jtx.data(), (rx) ? jrx.data() : NULL, 8 * xfer_len);
 
 	if (rx) {
 		for (uint32_t i = 0; i < len; i++) {
