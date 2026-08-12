@@ -256,15 +256,16 @@ int DirtyJtag::writeTDI(const uint8_t *tx, uint8_t *rx, uint32_t len, bool end)
 	uint32_t real_bit_len = len - (end ? 1 : 0);
 	const uint32_t kRealByteLen = (len + 7) / 8;
 
-	uint8_t tx_cpy[kRealByteLen];
+	std::vector<uint8_t> tx_cpy;
+	tx_cpy.resize(kRealByteLen);
 	uint8_t tx_buf[512], rx_buf[512];
 	uint8_t *tx_ptr, *rx_ptr = rx;
 
+	tx_ptr = tx_cpy.data();
 	if (tx)
-		memcpy(tx_cpy, tx, kRealByteLen);
+		memcpy(tx_ptr, tx, kRealByteLen);
 	else
-		memset(tx_cpy, 0, kRealByteLen);
-	tx_ptr = tx_cpy;
+		memset(tx_ptr, 0, kRealByteLen);
 
 	tx_buf[0] = CMD_XFER | (rx ? 0 : v_options[_version].no_read);
 	uint16_t max_bit_transfer_length = v_options[_version].max_bits;

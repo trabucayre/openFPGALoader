@@ -1264,9 +1264,9 @@ bool Lattice::wr_rd(uint8_t cmd,
 	if (tx_len > rx_len)
 		kXferLen = tx_len;
 
-	uint8_t xfer_tx[kXferLen];
-	uint8_t xfer_rx[kXferLen];
-	memset(xfer_tx, 0, kXferLen);
+	std::vector<uint8_t> xfer_tx, xfer_rx;
+	xfer_tx.resize(kXferLen, 0);
+	xfer_rx.resize(kXferLen, 0);
 	int i;
 	if (tx != NULL && tx_len > 0) {
 		for (i = 0; i < tx_len; i++)
@@ -1275,7 +1275,7 @@ bool Lattice::wr_rd(uint8_t cmd,
 
 	_jtag->shiftIR(&cmd, NULL, 8, Jtag::PAUSE_IR);
 	if (rx || tx) {
-		_jtag->shiftDR(xfer_tx, (rx) ? xfer_rx : NULL, 8 * kXferLen,
+		_jtag->shiftDR(xfer_tx.data(), (rx) ? xfer_rx.data() : NULL, 8 * kXferLen,
 			Jtag::PAUSE_DR);
 	}
 	if (rx) {
@@ -1774,11 +1774,9 @@ int Lattice::spi_put(uint8_t cmd, const uint8_t *tx, uint8_t *rx, uint32_t len)
 {
 	const uint32_t xfer_len = len + 1 + ((rx != NULL) && ((_fpga_family == ECP3_FAMILY)) ? 1 : 0);
 	const uint32_t xfer_bit_len = (len + 1) * 8 + ((rx != NULL) && ((_fpga_family == ECP3_FAMILY)) ? 1 : 0);
-	uint8_t jtx[xfer_len];
-	uint8_t jrx[xfer_len];
-
-	memset(jrx, 0, xfer_len);
-	memset(jtx, 0, xfer_len);
+	std::vector<uint8_t> jtx, jrx;
+	jtx.resize(xfer_len, 0);
+	jrx.resize(xfer_len, 0);
 
 	jtx[0] = LatticeBitParser::reverseByte(cmd);
 
@@ -1791,7 +1789,7 @@ int Lattice::spi_put(uint8_t cmd, const uint8_t *tx, uint8_t *rx, uint32_t len)
 	 * in the same time store each byte
 	 * to next
 	 */
-	_jtag->shiftDR(jtx, (!rx)? NULL: jrx, xfer_bit_len);
+	_jtag->shiftDR(jtx.data(), (!rx)? NULL: jrx.data(), xfer_bit_len);
 
 	if (rx) {
 		if (_fpga_family == ECP3_FAMILY) {
@@ -1811,22 +1809,19 @@ int Lattice::spi_put(const uint8_t *tx, uint8_t *rx, uint32_t len)
 {
 	if (len == 0)
 		return 0;
-	uint8_t jtx[len];
-	uint8_t jrx[len];
-
-	memset(jrx, 0, len);
+	std::vector<uint8_t> jtx, jrx;
+	jtx.resize(len, 0);
+	jrx.resize(len, 0);
 
 	if (tx)
 		for (uint32_t i = 0; i < len; ++i)
 			jtx[i] = LatticeBitParser::reverseByte(tx[i]);
-	else
-		memset(jtx, 0, len);
 
 	/* send first already stored cmd,
 	 * in the same time store each byte
 	 * to next
 	 */
-	_jtag->shiftDR(jtx, (rx) ? jrx : nullptr, 8 * len);
+	_jtag->shiftDR(jtx.data(), (rx) ? jrx.data() : nullptr, 8 * len);
 
 	if (rx) {
 		for (uint32_t i = 0; i < len; ++i)
