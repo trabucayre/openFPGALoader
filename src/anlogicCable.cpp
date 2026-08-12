@@ -148,7 +148,7 @@ int AnlogicCable::setClkFreq(uint32_t clkHZ)
 }
 
 int AnlogicCable::writeTMS(const uint8_t *tms, uint32_t len, bool flush_buffer,
-		__attribute((unused)) const uint8_t tdi)
+		[[maybe_unused]] const uint8_t tdi)
 {
 	(void) flush_buffer;
 

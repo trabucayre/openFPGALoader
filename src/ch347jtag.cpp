@@ -302,8 +302,8 @@ int CH347Jtag::writeTMS(const uint8_t *tms, uint32_t len, bool flush_buffer,
 	return len;
 }
 
-int CH347Jtag::toggleClk(__attribute__((unused)) uint8_t tms,
-	__attribute__((unused)) uint8_t tdi, uint32_t len)
+int CH347Jtag::toggleClk([[maybe_unused]] uint8_t tms,
+	[[maybe_unused]] uint8_t tdi, uint32_t len)
 {
 	const uint8_t bits = _tms | _tdi;
 

@@ -566,8 +566,8 @@ int esp_usb_jtag::writeTMS(const uint8_t *tms, uint32_t len, bool flush_buffer,
 
 /* Here we have to write len bit or 2xlen Bytes
  */
-int esp_usb_jtag::toggleClk(__attribute__((unused))uint8_t tms,
-	uint8_t __attribute__((unused))tdi, uint32_t len)
+int esp_usb_jtag::toggleClk([[maybe_unused]]uint8_t tms,
+	[[maybe_unused]]uint8_t tdi, uint32_t len)
 {
 	uint8_t buf[OUT_BUF_SZ];
 	char mess[256];
