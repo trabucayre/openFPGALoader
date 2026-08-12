@@ -3,7 +3,7 @@
  * Copyright (C) 2019 Gwenhael Goavec-Merou <gwenhael.goavec-merou@trabucayre.com>
  */
 
-#include <unistd.h>
+#include "portability/unistd.hpp"
 
 #include <iostream>
 #include <string>

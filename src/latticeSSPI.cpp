@@ -6,7 +6,7 @@
 #include "latticeSSPI.hpp"
 
 #include <string.h>
-#include <unistd.h>
+#include "portability/unistd.hpp"
 
 #define __STDC_FORMAT_MACROS
 #include <cinttypes>
