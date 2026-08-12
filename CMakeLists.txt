@@ -187,6 +187,8 @@ if (MSVC)
 		"/wd4244"
 		# truncation from int to bool
 		"/wd4305"
+		# unsafe use of type 'bool' in operation - usually `_verbose > 0` where `_verbose` is bool
+		"/wd4804"
 	)
 endif()
 
