@@ -5,7 +5,7 @@
 
 #ifndef _FTDIPP_MPSSE_H
 #define _FTDIPP_MPSSE_H
-#include <ftdi.h>
+#include "portability/ftdi.hpp"
 #include <string>
 
 #include "cable.hpp"

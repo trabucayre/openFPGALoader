@@ -6,7 +6,7 @@
 #ifndef SRC_FTDISPI_HPP_
 #define SRC_FTDISPI_HPP_
 
-#include <ftdi.h>
+#include "portability/ftdi.hpp"
 #include <iostream>
 #include <vector>
 

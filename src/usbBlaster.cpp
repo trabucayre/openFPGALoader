@@ -6,12 +6,13 @@
 #include <libusb.h>
 #include <stdio.h>
 #include <string.h>
-#include <unistd.h>
 
 #include <iostream>
 #include <map>
 #include <string>
 #include <vector>
+
+#include "portability/unistd.hpp"
 
 #include "display.hpp"
 #ifdef USE_LIBFTDI

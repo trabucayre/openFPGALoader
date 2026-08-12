@@ -6,7 +6,7 @@
 #include "efinix.hpp"
 
 #include <string.h>
-#include <unistd.h>
+#include "portability/unistd.hpp"
 
 #include <algorithm>
 #include <iostream>
