@@ -172,6 +172,24 @@ if(NOT CMAKE_CXX_COMPILER_ID STREQUAL "MSVC")
 	# "actually everything" - including "This feature requires C++20" warnings even in C++20/23 mode.
 endif()
 
+if (MSVC)
+	# Suppress warnings we don't care about
+	add_compile_options(
+		# By default, Windows headers define `min()` and `max()` as macros,
+		# which makes `std::min()` and `std::max()` syntax errors
+		"/DNOMINMAX"
+		# MS considers the names of some POSIX functions like `isatty()` to be deprecated,
+		# in favor of MS-specific names like `_isatty()`
+		"/wd4996"
+		# size_t -> int conversion
+		"/wd4267"
+		# uint16_t -> uint8_t conversion
+		"/wd4244"
+		# truncation from int to bool
+		"/wd4305"
+	)
+endif()
+
 if(ENABLE_OPTIM AND NOT(CMAKE_BUILD_TYPE STREQUAL "Debug"))
 	if (NOT CMAKE_CXX_COMPILER_ID STREQUAL "MSVC")
 		set(CMAKE_CXX_FLAGS "-O3 ${CMAKE_CXX_FLAGS}")
