@@ -384,9 +384,9 @@ bool Altera::max10_program_ufm(const Altera::max10_mem_t *mem, uint32_t offset,
 	uint32_t end_addr = 0; // 32bit align
 	uint8_t erase_sectors_mask;
 
-	/* check CFM0 is not mentionned */
+	/* check CFM0 is not mentioned */
 	if (update_sectors & (1 << 4))
-		std::runtime_error("Error: CFM0 cant't be used to store User Binary");
+		throw std::runtime_error("Error: CFM0 can't be used to store User Binary");
 
 	/* First task: search for the first and the last sector to use */
 	sectors_mask_start_end_addr(mem, update_sectors,
