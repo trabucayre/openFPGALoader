@@ -23,7 +23,7 @@
 void printError(const std::string &err, bool eol)
 {
 	if (isatty(STDERR_FILENO))
-		std::cerr << KRED << err << "\e[0m";
+		std::cerr << KRED << err << "\033[0m";
 	else
 		std::cerr << err;
 	std::cerr << std::flush;
@@ -34,7 +34,7 @@ void printError(const std::string &err, bool eol)
 void printWarn(const std::string &warn, bool eol)
 {
 	if (isatty(STDOUT_FILENO))
-		std::cout << KYEL << warn << "\e[0m" << std::flush;
+		std::cout << KYEL << warn << "\033[0m" << std::flush;
 	else
 		std::cout << warn;
 	std::cout << std::flush;
@@ -45,7 +45,7 @@ void printWarn(const std::string &warn, bool eol)
 void printInfo(const std::string &info, bool eol)
 {
 	if (isatty(STDOUT_FILENO))
-		std::cout << KBLUL << info << "\e[0m" << std::flush;
+		std::cout << KBLUL << info << "\033[0m" << std::flush;
 	else
 		std::cout << info;
 	std::cout << std::flush;
@@ -56,7 +56,7 @@ void printInfo(const std::string &info, bool eol)
 void printSuccess(const std::string &success, bool eol)
 {
 	if (isatty(STDOUT_FILENO))
-		std::cout << KGRN << success << "\e[0m" << std::flush;
+		std::cout << KGRN << success << "\033[0m" << std::flush;
 	else
 		std::cout << success;
 	std::cout << std::flush;
