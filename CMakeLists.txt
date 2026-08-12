@@ -178,6 +178,10 @@ if (MSVC)
 		# By default, Windows headers define `min()` and `max()` as macros,
 		# which makes `std::min()` and `std::max()` syntax errors
 		"/DNOMINMAX"
+		# <Windows.h> pulls in a lot of headers by default, and a lot of problematic
+		# macros which can cause conflicts, e.g. `interface` and `byte`; this trims it down
+		# a lot
+		"/DWIN32_LEAN_AND_MEAN"
 		# MS considers the names of some POSIX functions like `isatty()` to be deprecated,
 		# in favor of MS-specific names like `_isatty()`
 		"/wd4996"
