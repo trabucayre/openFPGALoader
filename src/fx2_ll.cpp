@@ -31,7 +31,7 @@ FX2_ll::FX2_ll(uint16_t uninit_vid, uint16_t uninit_pid,
 	}
 
 	/* try to open uninitialized device */
-	if (uninit_vid != 0 && uninit_pid != 0) {
+	if (uninit_vid != 0 && uninit_pid != 0 && !firmware_path.empty()) {
 		dev_handle = libusb_open_device_with_vid_pid(usb_ctx,
 				uninit_vid, uninit_pid);
 		if (dev_handle) {
@@ -41,6 +41,7 @@ FX2_ll::FX2_ll(uint16_t uninit_vid, uint16_t uninit_pid,
 				libusb_exit(usb_ctx);
 				throw std::runtime_error("claim interface failed");
 			}
+			printInfo("firmware_file : " + firmware_path);
 			/* load firmware */
 			if (!load_firmware(firmware_path)) {
 				libusb_close(dev_handle);
@@ -53,16 +54,25 @@ FX2_ll::FX2_ll(uint16_t uninit_vid, uint16_t uninit_pid,
 	}
 
 	/* try to open an already init device
-	 * since fx2 may be not immediatly ready
+	 * since fx2 may be not immediately ready
 	 * retry with a delay
 	 */
 	ProgressBar progress("Waiting reload", 100, 50, false);
 	int timeout = 100;
+	int speed = LIBUSB_SPEED_UNKNOWN;
 	do {
 		dev_handle = libusb_open_device_with_vid_pid(usb_ctx,
 				vid, pid);
 		timeout--;
 		progress.display(100-timeout);
+		if (dev_handle) {
+			speed = libusb_get_device_speed(libusb_get_device(dev_handle));
+			if (speed != LIBUSB_SPEED_HIGH) {
+				libusb_close(dev_handle);
+				dev_handle = NULL;
+				reenum = true;
+			}
+		}
 		if (!dev_handle)
 			sleep(1);
 	} while (!dev_handle && timeout > 0 && reenum);
