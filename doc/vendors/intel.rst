@@ -89,6 +89,7 @@ Supported Boards:
 
 * step-max10_v1
 * analogMax
+* de10lite
 
 Supported File Types:
 

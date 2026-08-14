@@ -374,6 +374,7 @@
   URL: https://www.terasic.com.tw/cgi-bin/page/archive.pl?Language=English&CategoryNo=218&No=1021&PartNo=1
   FPGA: MAX 10 10M50DAF484C7G
   Memory: OK
+  Flash: IF
 
 - ID: de10nano
   Description: Terasic de10Nano
