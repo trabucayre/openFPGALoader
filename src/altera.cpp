@@ -376,9 +376,9 @@ const std::map<uint32_t, Altera::max10_mem_t> Altera::max10_memory_map = {
 		.check_addr0 = 0x80009,  // check_addr0
 		.dsm_addr = 0x0000, .dsm_len = 2048,  // DSM
 		.ufm_addr = 0x0800, .ufm_len = {8192, 8192},  // UFM
-		.cfm_addr = 0x2400, .cfm_len = {172032, 73728, 98304},  // CFM
+		.cfm_addr = 0x4800, .cfm_len = {172032, 73728, 98304},  // CFM
 		.sectors_erase_addr = {0x17ffff, 0x27ffff, 0x37ffff, 0x47ffff, 0x57ffff}, // sectors erase address
-		.done_bit_addr = 0x0015,  // done bit
+		.done_bit_addr = 0x0011,  // done bit
 		.pgm_success_addr = 0x0015}  // program success addr
 	},
 };
