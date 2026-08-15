@@ -6,7 +6,7 @@
 
 #define __STDC_FORMAT_MACROS
 #include <inttypes.h>
-#include <unistd.h>
+#include "portability/unistd.hpp"
 
 #include <cstring>
 #include <fstream>
