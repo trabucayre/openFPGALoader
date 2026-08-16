@@ -410,6 +410,7 @@ int32_t FtdiJtagMPSSE::update_tms_buff(uint8_t *buffer, uint8_t bit,
 		uint8_t tdo_tmp;
 		if ((ret = mpsse_read(&tdo_tmp, 1)) < 0)
 			return ret;
+		tdo_tmp >>= (8 - offset);
 		update_tdo_buff(&tdo_tmp, tdo, offset);
 		offset = 0;
 		buffer[0] = 0;
