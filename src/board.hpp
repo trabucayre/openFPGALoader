@@ -19,7 +19,11 @@ enum {
 	FT232RL_DTR = 4,
 	FT232RL_DSR = 5,
 	FT232RL_DCD = 6,
-	FT232RL_RI  = 7
+	FT232RL_RI  = 7,
+	FT232RL_CBUS0 = 8,
+	FT232RL_CBUS1 = 9,
+	FT232RL_CBUS2 = 10,
+	FT232RL_CBUS3 = 11,
 };
 
 /* AN_108_Command_Processor_for_MPSSE_and_MCU_Host_Bus_Emulation_Modes */

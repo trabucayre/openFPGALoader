@@ -53,6 +53,7 @@ class FtdiJtagBitBang : public JtagInterface, private FTDIpp_MPSSE {
 	int setBitmode(uint8_t mode);
 
 	uint8_t _bitmode;
+	uint8_t _async_bitmode;
 	uint8_t _tck_pin; /*!< tck pin: 1 << pin id */
 	uint8_t _tms_pin; /*!< tms pin: 1 << pin id */
 	uint8_t _tdo_pin; /*!< tdo pin: 1 << pin id */
