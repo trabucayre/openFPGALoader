@@ -97,11 +97,11 @@ to GND).</p>
 </div>
 <div class="highlight-tcl notranslate"><div class="highlight"><pre><span></span><span class="k">set</span><span class="w"> </span>project<span class="w"> </span><span class="k">[</span><span class="nb">lindex</span><span class="w"> </span><span class="nv">$argv</span><span class="w"> </span><span class="mi">0</span><span class="k">]</span>
 
-<span class="k">set</span><span class="w"> </span>bitfile<span class="w"> </span><span class="s2">&quot;${project}.runs/impl_1/${project}.bit&quot;</span>
-<span class="k">set</span><span class="w"> </span>mcsfile<span class="w"> </span><span class="s2">&quot;${project}.runs/impl_1/${project}.mcs&quot;</span>
+<span class="k">set</span><span class="w"> </span>bitfile<span class="w"> </span><span class="s2">"${project}.runs/impl_1/${project}.bit"</span>
+<span class="k">set</span><span class="w"> </span>mcsfile<span class="w"> </span><span class="s2">"${project}.runs/impl_1/${project}.mcs"</span>
 
 <span class="nv">write_cfgmem</span><span class="w"> </span><span class="o">-</span>format<span class="w"> </span>mcs<span class="w"> </span><span class="o">-</span>interface<span class="w"> </span>spix4<span class="w"> </span><span class="o">-</span>size<span class="w"> </span><span class="mi">16</span><span class="w"> </span><span class="err">\</span>
-<span class="w">   </span><span class="nv">-loadbit</span><span class="w"> </span><span class="s2">&quot;up 0x0 $bitfile&quot;</span><span class="w"> </span><span class="o">-</span>loaddata<span class="w"> </span><span class="s2">&quot;&quot;</span><span class="w"> </span><span class="err">\</span>
+<span class="w">   </span><span class="nv">-loadbit</span><span class="w"> </span><span class="s2">"up 0x0 $bitfile"</span><span class="w"> </span><span class="o">-</span>loaddata<span class="w"> </span><span class="s2">""</span><span class="w"> </span><span class="err">\</span>
 <span class="w">   </span><span class="nv">-file</span><span class="w"> </span><span class="nv">$mcsfile</span><span class="w"> </span><span class="o">-</span>force
 </pre></div>
 </div>

@@ -51,7 +51,7 @@
 </pre></div>
 </div>
 <p>To use openFPGALoader under GuixSystem without root privileges it is necessary to install the necessary udev rules. This can be done by extending <code class="docutils literal notranslate"><span class="pre">udev-service-type</span></code> in the <code class="docutils literal notranslate"><span class="pre">operating-system</span></code> configuration file with this package</p>
-<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span><span class="o">(</span>udev-rules-service<span class="w"> </span><span class="s1">&#39;openfpgaloader openfpgaloader #:groups &#39;</span><span class="o">(</span><span class="se">\&quot;</span>plugdev<span class="se">\&quot;</span><span class="o">)</span>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span><span class="o">(</span>udev-rules-service<span class="w"> </span><span class="s1">'openfpgaloader openfpgaloader #:groups '</span><span class="o">(</span><span class="se">\"</span>plugdev<span class="se">\"</span><span class="o">)</span>
 </pre></div>
 </div>
 <p>Additionally, <code class="docutils literal notranslate"><span class="pre">plugdev</span></code> group should be registered in the <code class="docutils literal notranslate"><span class="pre">supplementary-groups</span></code> field of your <code class="docutils literal notranslate"><span class="pre">user-account``declaration.</span>&#160; <span class="pre">Refer</span> <span class="pre">to</span> <span class="pre">``Base</span> <span class="pre">Services</span></code> section in the manual for examples.</p>
@@ -113,7 +113,7 @@ If you don’t want this option, use:</p>
 -DLIBUSB_LIBRARIES<span class="o">=</span>&lt;path_to_libusb&gt;<span class="w"> </span><span class="se">\</span>
 -DLIBFTDI_LIBRARIES<span class="o">=</span>&lt;path_to_libftdi&gt;<span class="w"> </span><span class="se">\</span>
 -DLIBFTDI_VERSION<span class="o">=</span>&lt;version&gt;<span class="w"> </span><span class="se">\</span>
--DCMAKE_CXX_FLAGS<span class="o">=</span><span class="s2">&quot;-I&lt;libusb_include_dir&gt; -I&lt;libftdi1_include_dir&gt;&quot;</span>
+-DCMAKE_CXX_FLAGS<span class="o">=</span><span class="s2">"-I&lt;libusb_include_dir&gt; -I&lt;libftdi1_include_dir&gt;"</span>
 </pre></div>
 </div>
 <p>You may also need to add this if you see link errors between <code class="docutils literal notranslate"><span class="pre">libusb</span></code> and <code class="docutils literal notranslate"><span class="pre">pthread</span></code>:</p>
@@ -219,12 +219,12 @@ make<span class="w"> </span>-j
 <span class="w">  </span>p7zip-full
 
 cmake<span class="w"> </span>-S<span class="w"> </span>.<span class="w"> </span>-B<span class="w"> </span>build-win64-cross<span class="w"> </span><span class="se">\</span>
-<span class="w">    </span>-DCMAKE_TOOLCHAIN_FILE<span class="o">=</span><span class="s2">&quot;</span><span class="nv">$PWD</span><span class="s2">/cmake/Toolchain-x86_64-w64-mingw32.cmake&quot;</span><span class="w"> </span><span class="se">\</span>
+<span class="w">    </span>-DCMAKE_TOOLCHAIN_FILE<span class="o">=</span><span class="s2">"</span><span class="nv">$PWD</span><span class="s2">/cmake/Toolchain-x86_64-w64-mingw32.cmake"</span><span class="w"> </span><span class="se">\</span>
 <span class="w">    </span>-DWINDOWS_CROSSCOMPILE<span class="o">=</span>ON<span class="w"> </span><span class="se">\</span>
 <span class="w">    </span>-DCROSS_COMPILE_DEPS<span class="o">=</span>ON<span class="w"> </span><span class="se">\</span>
 <span class="w">    </span>-DCMAKE_BUILD_TYPE<span class="o">=</span>Release
 
-cmake<span class="w"> </span>--build<span class="w"> </span>build-win64-cross<span class="w"> </span>--parallel<span class="w"> </span><span class="s2">&quot;</span><span class="k">$(</span>nproc<span class="k">)</span><span class="s2">&quot;</span>
+cmake<span class="w"> </span>--build<span class="w"> </span>build-win64-cross<span class="w"> </span>--parallel<span class="w"> </span><span class="s2">"</span><span class="k">$(</span>nproc<span class="k">)</span><span class="s2">"</span>
 
 file<span class="w"> </span>build-win64-cross/openFPGALoader.exe
 </pre></div>

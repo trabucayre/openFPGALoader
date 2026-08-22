@@ -44,6 +44,7 @@
 <li><p>C10LP-RefKit</p></li>
 <li><p>DE0</p></li>
 <li><p>de0nano</p></li>
+<li><p>DE23-Lite</p></li>
 </ul>
 </div>
 <section id="loading-a-bitstream">
@@ -74,7 +75,20 @@ Keep in mind to disable this option.</p>
 openFPGALoader<span class="w"> </span>-b<span class="w"> </span>boardname<span class="w"> </span>project_name.rbf
 </pre></div>
 </div>
-<p>with <code class="docutils literal notranslate"><span class="pre">boardname</span></code> = <code class="docutils literal notranslate"><span class="pre">de0</span></code>, <code class="docutils literal notranslate"><span class="pre">cyc1000</span></code>, <code class="docutils literal notranslate"><span class="pre">c10lp-refkit</span></code>, <code class="docutils literal notranslate"><span class="pre">de0nano</span></code>, <code class="docutils literal notranslate"><span class="pre">de0nanoSoc</span></code> or <code class="docutils literal notranslate"><span class="pre">qmtechCycloneV</span></code>.</p>
+<p>with <code class="docutils literal notranslate"><span class="pre">boardname</span></code> = <code class="docutils literal notranslate"><span class="pre">de0</span></code>, <code class="docutils literal notranslate"><span class="pre">cyc1000</span></code>, <code class="docutils literal notranslate"><span class="pre">c10lp-refkit</span></code>, <code class="docutils literal notranslate"><span class="pre">de0nano</span></code>, <code class="docutils literal notranslate"><span class="pre">de0nanoSoc</span></code>, <code class="docutils literal notranslate"><span class="pre">de23lite</span></code> or <code class="docutils literal notranslate"><span class="pre">qmtechCycloneV</span></code>.</p>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p>Agilex 3 and Agilex 5 devices, including the DE23-Lite, must use an
+uncompressed <code class="docutils literal notranslate"><span class="pre">rbf</span></code> file for SRAM configuration. SVF loading is not
+supported for these devices.</p>
+<p>Quartus Prime Pro 26.1 does not generate RBF files as part of the compilation
+flow and does not support Agilex 3 with <code class="docutils literal notranslate"><span class="pre">quartus_cpf</span></code>. Generate and check
+the RBF with the Programming File Generator instead:</p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>quartus_pfg<span class="w"> </span>-c<span class="w"> </span>project_name.sof<span class="w"> </span>project_name.rbf
+quartus_pfg<span class="w"> </span>--check_integrity<span class="w"> </span>project_name.rbf
+</pre></div>
+</div>
+</div>
 </section>
 <section id="spi-flash">
 <h3>SPI flash<a class="headerlink" href="#spi-flash" title="Link to this heading">¶</a></h3>

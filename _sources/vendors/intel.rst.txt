@@ -12,6 +12,7 @@ Intel/Altera
   * C10LP-RefKit
   * DE0
   * de0nano
+  * DE23-Lite
 
 Loading a bitstream
 -------------------
@@ -50,7 +51,21 @@ file load:
     # or
     openFPGALoader -b boardname project_name.rbf
 
-with ``boardname`` = ``de0``, ``cyc1000``, ``c10lp-refkit``, ``de0nano``, ``de0nanoSoc`` or ``qmtechCycloneV``.
+with ``boardname`` = ``de0``, ``cyc1000``, ``c10lp-refkit``, ``de0nano``, ``de0nanoSoc``, ``de23lite`` or ``qmtechCycloneV``.
+
+.. NOTE::
+  Agilex 3 and Agilex 5 devices, including the DE23-Lite, must use an
+  uncompressed ``rbf`` file for SRAM configuration. SVF loading is not
+  supported for these devices.
+
+  Quartus Prime Pro 26.1 does not generate RBF files as part of the compilation
+  flow and does not support Agilex 3 with ``quartus_cpf``. Generate and check
+  the RBF with the Programming File Generator instead:
+
+  .. code-block:: bash
+
+      quartus_pfg -c project_name.sof project_name.rbf
+      quartus_pfg --check_integrity project_name.rbf
 
 SPI flash
 ---------
