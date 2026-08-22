@@ -450,6 +450,13 @@
   Memory: NA
   Flash: AS
 
+- ID: flea-ohm
+  Description: FleaFPGA Ohm
+  URL: https://www.indiegogo.com/en/projects/valentinangelovski/fleafpga-ohm-fpga-experimenter-board
+  FPGA: ECP5 LFE5U-25F
+  Memory: OK
+  Flash: OK
+
 - ID: fomu
   Description: Fomu PVT
   URL: https://tomu.im/fomu.html
