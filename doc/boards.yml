@@ -388,6 +388,13 @@
   FPGA: Cyclone V SoC 5CSEMA5F31C6
   Memory: OK
 
+- ID: de23lite
+  Description: Terasic DE23-Lite
+  URL: https://www.terasic.com.tw/cgi-bin/page/archive.pl?Language=English&No=1383
+  FPGA: Altera Agilex 3 A3CZ135BB18AE7S
+  Memory: RBF
+  Flash: NT
+
 - ID: deca
   Description: Arrow/Terasic DECA
   URL: https://www.terasic.com.tw/cgi-bin/page/archive.pl?Language=English&CategoryNo=&No=944&PartNo=1
