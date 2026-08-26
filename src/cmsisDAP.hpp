@@ -125,6 +125,9 @@ class CmsisDAP: public JtagInterface {
 		int writeJtagSequence(uint8_t tms, const uint8_t *tx, uint8_t *rx,
 				uint32_t len, bool end);
 
+		/* apply quirk for some specifics probes */
+		bool applyQuirk();
+
 		bool _verbose;                /**< display more message */
 		int16_t _device_idx;          /**< device index */
 		uint16_t _vid;                /**< device Vendor ID */
