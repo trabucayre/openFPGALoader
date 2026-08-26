@@ -61,8 +61,8 @@ SI  (ADBUS1)  Pin 8
 SCK (ADBUS0)  Pin 9
 SO  (ADBUS2)  Pin 7
 CS  (ABDUS4)  Pin 10
-RST (ADBUS6   Pin 6
-DONE (ADBUS7) Pin 5
+RST (ADBUS7)  Pin 6
+DONE (ADBUS6) Pin 5
 ============= ===============
 
 Bin file load:
