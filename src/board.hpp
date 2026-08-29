@@ -19,7 +19,11 @@ enum {
 	FT232RL_DTR = 4,
 	FT232RL_DSR = 5,
 	FT232RL_DCD = 6,
-	FT232RL_RI  = 7
+	FT232RL_RI  = 7,
+	FT232RL_CBUS0 = 8,
+	FT232RL_CBUS1 = 9,
+	FT232RL_CBUS2 = 10,
+	FT232RL_CBUS3 = 11,
 };
 
 /* AN_108_Command_Processor_for_MPSSE_and_MCU_Host_Bus_Emulation_Modes */
@@ -299,7 +303,9 @@ static std::map <std::string, target_board_t> board_list = {
 	JTAG_BOARD("vmm3",            "xc7s50csga324",        "ft2232",       SPI_FLASH, 0, 0, CABLE_DEFAULT),
 	JTAG_BOARD("step-max10_v1",   "10m02scm153c8g",       "usb-blaster",  SPI_FLASH, 0, 0, CABLE_DEFAULT),
 	JTAG_BOARD("step-mxo2_v1.1",  "lcmxo2-1200hc-4mg132c", "ft232",       SPI_FLASH, 0, 0, CABLE_DEFAULT),
-	JTAG_BOARD("step-mxo2_v2",    "lcmxo2-4000hc-4mg132c", "ft232",       SPI_FLASH, 0, 0, CABLE_DEFAULT)
+	JTAG_BOARD("step-mxo2_v2",    "lcmxo2-4000hc-4mg132c", "ft232",       SPI_FLASH, 0, 0, CABLE_DEFAULT),
+	JTAG_BITBANG_BOARD("flea-ohm","LFE5U-25F-6BG381C",    "ft230X",       SPI_FLASH, 0, 0,
+			FT232RL_TXD, FT232RL_CTS, FT232RL_RTS, FT232RL_CBUS1, CABLE_DEFAULT),
 };
 
 #endif
