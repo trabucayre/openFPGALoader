@@ -10,10 +10,11 @@
 #ifndef SRC_XVC_SERVER_HPP_
 #define SRC_XVC_SERVER_HPP_
 
-#include <netinet/in.h>
+#include "xvc_sockcompat.hpp"
 
 #include <string>
 #include <thread>
+#include <vector>
 
 #include "jtag.hpp"
 
@@ -64,7 +65,7 @@ class XVC_server {
 		 * \return 2 when connection is closed, 1 when transactions fails,
 		 *         0 otherwise
 		 */
-		int handle_data(int fd);
+		int handle_data(SOCKET fd);
 		/*!
 		 * \brief read len bytes from client
 		 * \param fd: socket descriptor
@@ -72,12 +73,28 @@ class XVC_server {
 		 * \param len: number of bytes to read
 		 * \return 3 when failure, 2 when connection closed, 1 otherwise
 		 */
-		int sread(int fd, void *target, int len);
+		int sread(SOCKET fd, void *target, int len);
+		/*!
+		 * \brief software fallback for cables without a native
+		 *        writeTMSTDI(): decomposes the (tms, tdi) bit vector
+		 *        into runs and drives them through writeTMS() (pure
+		 *        TAP navigation runs) and writeTDI() (runs shifting
+		 *        through the current data register, tms held low
+		 *        except possibly the last bit of the run), both of
+		 *        which every cable is required to implement.
+		 * \param tms: array of TMS values, lsb first
+		 * \param tdi: array of TDI values, lsb first
+		 * \param tdo: array of TDO values (output), lsb first
+		 * \param len: number of bits to send/receive
+		 * \return true on success, false otherwise
+		 */
+		bool generic_writeTMSTDI(const uint8_t *tms, const uint8_t *tdi,
+			uint8_t *tdo, uint32_t len);
 
 	    int _verbose;          /*!< verbose level */
 		JtagInterface *_jtag;  /*!< jtag interface */
 		int _port;             /*!< network port */
-		int _sock;             /*!< server socket descriptor */
+		SOCKET _sock;          /*!< server socket descriptor */
 		struct sockaddr_in _sock_addr;
 		std::thread *_thread;  /*!< connection thread */
 		volatile bool _is_stopped;      /*!< true when thread is stopped */

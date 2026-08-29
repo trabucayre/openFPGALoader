@@ -5,15 +5,9 @@
 
 #include "xvc_client.hpp"
 
-#include <arpa/inet.h>
-#include <netinet/in.h>
-#include <sys/types.h>
-#include <sys/socket.h>
 #include <stdio.h>
 #include <stdlib.h>
-#include <strings.h>
 #include <string.h>
-#include <unistd.h>
 #include <math.h>
 
 #include <map>
@@ -29,9 +23,12 @@
 XVC_client::XVC_client(const std::string &ip_addr, int port,
 		uint32_t clkHz, int8_t verbose):
 	_verbose(verbose > 0), _xfer_buf(NULL), _tms(NULL), _tditdo(NULL),
-	_num_bits(0), _last_tms(0), _last_tdi(0), _buffer_size(0), _sock(0),
-	_port(port)
+	_num_bits(0), _last_tms(0), _last_tdi(0), _buffer_size(0),
+	_sock(INVALID_SOCKET), _port(port)
 {
+	if (!xvc_socket_init())
+		throw std::runtime_error("socket layer initialization failure");
+
 	if (!open_connection(ip_addr))
 		throw std::runtime_error("connection failure");
 
@@ -83,7 +80,8 @@ XVC_client::~XVC_client()
 	if (_tditdo)
 		free(_tditdo);
 	// close socket
-	close(_sock);
+	xvc_close_socket(_sock);
+	xvc_socket_cleanup();
 }
 
 int XVC_client::writeTMS(const uint8_t *tms, uint32_t len, bool flush_buffer,
@@ -224,50 +222,76 @@ int XVC_client::setClkFreq(uint32_t clkHz)
 
 bool XVC_client::open_connection(const std::string &ip_addr)
 {
-	struct sockaddr_in addr;
-	addr.sin_family = AF_INET;
-	addr.sin_port = htons(_port);
-	addr.sin_addr.s_addr = inet_addr(ip_addr.c_str());
+	struct addrinfo hints;
+	struct addrinfo *res = nullptr;
+	memset(&hints, 0, sizeof(hints));
+	hints.ai_family = AF_INET;
+	hints.ai_socktype = SOCK_STREAM;
+	hints.ai_protocol = IPPROTO_TCP;
 
-	_sock = socket(AF_INET, SOCK_STREAM, IPPROTO_TCP);
-	if (_sock == -1) {
+	/* NOTE: this used to build the sockaddr_in "by hand" with
+	 * inet_addr(ip_addr.c_str()) -- but inet_addr() only understands
+	 * dotted-decimal IP literals ("192.168.1.5"), NOT hostnames. Given
+	 * a hostname it silently fails and returns INADDR_NONE
+	 * (255.255.255.255), and connect()ing to that bogus address is
+	 * what produces "WSA error 10049" (WSAEADDRNOTAVAIL) on Windows
+	 * (and a similar failure on POSIX). getaddrinfo() resolves both
+	 * IP literals and hostnames correctly, on every platform. */
+	int gai_ret = getaddrinfo(ip_addr.c_str(), std::to_string(_port).c_str(),
+			&hints, &res);
+	if (gai_ret != 0) {
+		printError("Address resolution error for \"" + ip_addr + "\": " +
+#if defined(_WIN32) || defined(_WIN64)
+			xvc_last_socket_error());
+#else
+			std::string(gai_strerror(gai_ret)));
+#endif
+		return false;
+	}
+
+	_sock = socket(res->ai_family, res->ai_socktype, res->ai_protocol);
+	if (_sock == INVALID_SOCKET) {
 		printError("Socket creation error");
+		freeaddrinfo(res);
 		return false;
 	}
 
-	if (connect(_sock, (struct sockaddr *)&addr, sizeof(addr)) == -1) {
-		printError("Connection error");
-		close(_sock);
+	if (connect(_sock, res->ai_addr,
+			static_cast<socklen_t>(res->ai_addrlen)) == SOCKET_ERROR) {
+		printError("Connection error: " + xvc_last_socket_error());
+		xvc_close_socket(_sock);
+		freeaddrinfo(res);
 		return false;
 	}
 
+	freeaddrinfo(res);
 	return true;
 }
 
 static
-int sendall(int sock, const void* raw, size_t cnt, int flags)
+long sendall(SOCKET sock, const void* raw, size_t cnt)
 {
-	const char *buf = (const char*)raw;
+	const uint8_t *buf = (const uint8_t*)raw;
 	size_t remaining = cnt;
 	while (remaining) {
-		ssize_t ret = send(sock, buf, remaining, flags);
-		if (ret==0) // should not happen on Linux for a TCP socket
+		long ret = xvc_send(sock, buf, remaining);
+		if (ret==0) // should not happen on a connected TCP socket
 			throw std::logic_error("platform TCP send() returns zero?!?");
 		if (ret < 0)
 			return ret;
 		buf += ret;
 		remaining -= ret;
 	}
-	return cnt; // success
+	return (long)cnt; // success
 }
 
 static
-ssize_t recvall(int sock, void* raw, size_t cnt, int flags)
+ssize_t recvall(SOCKET sock, void* raw, size_t cnt)
 {
-	char *buf = (char*)raw;
+	uint8_t *buf = (uint8_t*)raw;
 	size_t remaining = cnt;
 	while (remaining) {
-		ssize_t ret = recv(sock, buf, remaining, flags);
+		long ret = xvc_recv(sock, buf, remaining);
 		if (ret < 0)
 			return ret;
 		if (ret == 0)  // peer closed the connection mid-reply
@@ -288,19 +312,19 @@ ssize_t XVC_client::xfer_pkt(const std::string &instr,
 	if (tx)
 		memcpy(buffer.data() + instr.size(), tx, tx_size);
 
-	if (sendall(_sock, buffer.data(), buffer.size(), 0) == -1) {
+	if (sendall(_sock, buffer.data(), buffer.size()) == -1) {
 		printError("Send failed");
 		return -1;
 	}
 
 	if (rx) {
 		if (rx_exact) {
-			len = recvall(_sock, rx, rx_size, 0);
+			len = recvall(_sock, rx, rx_size);
 		} else {
-			len = recv(_sock, rx, rx_size, 0);
+			len = xvc_recv(_sock, rx, rx_size);
 		}
 		if (len < 0) {
-			printError("Receive error");
+			printError("Receive error: " + xvc_last_socket_error());
 			return len;
 		} else if (len == 0) {
 			fprintf(stderr, "Client orderly shut down the connection.\n");
