@@ -8,7 +8,7 @@
 #include "svf_jtag.hpp"
 
 #include <stdexcept>
-#include <unistd.h>
+#include "portability/unistd.hpp"
 
 #include <algorithm>
 #include <iostream>
