@@ -273,7 +273,8 @@ int SPIFlash::write_page(int addr, const uint8_t *data, int len)
 		write_cmd = FLASH_4PP;
 	}
 
-	uint8_t tx[len+addr_len];
+	std::vector<uint8_t> tx;
+	tx.resize(len+addr_len);
 
 	if (write_cmd == FLASH_4PP)
 		tx[i++] = (uint8_t)(0xff & (addr >> 24));
@@ -281,12 +282,12 @@ int SPIFlash::write_page(int addr, const uint8_t *data, int len)
 	tx[i++] = (uint8_t)(0xff & (addr >>  8));
 	tx[i++] = (uint8_t)(0xff & (addr      ));
 
-	memcpy(tx+addr_len, data, len);
+	memcpy(tx.data()+addr_len, data, len);
 
 	if (write_enable() == -1)
 		return -1;
 
-	_spi->spi_put(write_cmd, tx, NULL, len+addr_len);
+	_spi->spi_put(write_cmd, tx.data(), NULL, len+addr_len);
 	return _spi->spi_wait(FLASH_RDSR, FLASH_RDSR_WIP, 0x00, 1000);
 }
 
@@ -304,8 +305,9 @@ int SPIFlash::read(int base_addr, uint8_t *data, int len)
 		read_cmd = FLASH_4READ;
 	}
 
-	uint8_t tx[len+addr_len];
-	uint8_t rx[len+addr_len];
+	std::vector<uint8_t> tx, rx;
+	tx.resize(len+addr_len);
+	rx.resize(len+addr_len);
 
 	if (read_cmd == FLASH_4READ)
 		tx[i++] = (uint8_t)(0xff & (base_addr >> 24));
@@ -313,9 +315,9 @@ int SPIFlash::read(int base_addr, uint8_t *data, int len)
 	tx[i++] = (uint8_t)(0xff & (base_addr >>  8));
 	tx[i++] = (uint8_t)(0xff & (base_addr      ));
 
-	int ret = _spi->spi_put(read_cmd, tx, rx, len+addr_len);
+	int ret = _spi->spi_put(read_cmd, tx.data(), rx.data(), len+addr_len);
 	if (ret == 0)
-		memcpy(data, rx+addr_len, len);
+		memcpy(data, rx.data()+addr_len, len);
 	else
 		printf("error\n");
 	return ret;
