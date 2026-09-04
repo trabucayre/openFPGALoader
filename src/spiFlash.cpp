@@ -98,7 +98,8 @@ int SPIFlash::bulk_erase(bool verbose, bool skip_bp_check)
 {
 	int ret = 0, ret2 = 0;
 	uint8_t bp = 0;
-	uint32_t timeout=1000000;
+    // timeout my be selected on flash size 
+	uint32_t timeout=2000000;
 	if (!skip_bp_check) {
 		if (verbose)
 			printInfo("Check Flash Protection: ", false);
