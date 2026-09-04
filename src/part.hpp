@@ -44,6 +44,7 @@ static std::map <uint32_t, fpga_model> fpga_list = {
 	{0x06e5d093, {"xilinx", "xc2c",     "xc2c64a",   8}},
 	{0x06e5e093, {"xilinx", "xc2c",     "xc2c64a",   8}},
 	{0x06e1c093, {"xilinx", "xc2c",     "xc2c32a",   8}},
+	{0x16d4a093, {"xilinx", "xc2c",     "xc2c256",   8}},
 
 	/* Xilinx XC9 */
 	{0x09602093, {"xilinx", "xc9500xl", "xc9536xl",  8}},
@@ -162,6 +163,7 @@ static std::map <uint32_t, fpga_model> fpga_list = {
 	{0x14B29093, {"xilinx", "virtexusp", "xcvu7p",  12}},
 
 	{0x04B31093, {"xilinx", "virtexusp", "xcvu9p",  18}},
+	{0x14B31093, {"xilinx", "virtexusp", "xcvu9p",  18}},
 	{0x04B35093, {"xilinx", "virtexusp", "xcvu9p",  18}},
 	{0x14B79093, {"xilinx", "virtexusp", "xcvu37p", 18}},
 	{0x04B49093, {"xilinx", "virtexusp", "xcvu11p", 18}},

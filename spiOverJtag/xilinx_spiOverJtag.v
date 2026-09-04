@@ -286,7 +286,7 @@ module spiOverJtag
 `endif /* !virtex6 */
 
 `ifdef secondaryflash
-	wire drck_sec;
+	wire drck_sec, tdo_sec;
 
 	spiOverJtag_core spiOverJtag_core_sec (
 		/* JTAG state/controls */
