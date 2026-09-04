@@ -83,8 +83,8 @@ static std::map <uint32_t, flash_t> flash_list = {
 		.tb_register = CONFR,
 		.bp_len = 3,
 		.bp_offset = {(1 << 2), (1 << 3), (1 << 4), 0},
-		.quad_register = NONER,
-		.quad_mask = 0,
+		.quad_register = CONFR,
+		.quad_mask = (1 << 1),
 		.global_lock = false,
 	}},
 	{0x012018, {

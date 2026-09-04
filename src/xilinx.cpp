@@ -158,11 +158,14 @@ static std::map<std::string, std::map<std::string, std::vector<uint8_t>>>
 		{
 			/* Xilinx Virtex UltraScale+ */
 			/* <vivado_dir>/data/parts/xilinx/virtexuplus/public/bsdl/xcvu9p_flga2104.bsd */
+                        /* SLR1 is the master SLR  */
 			"virtexusp",
 			{
 				{ "USER1",       {0b00100100, 0b00101001, 0b00} },
 				{ "USER2",       {0b00100100, 0b00111001, 0b00} },
+				{ "USER4",       {0b00100100, 0b00111001, 0b10} },
 				{ "CFG_IN",      {0b00100100, 0b01011001, 0b00} },  // CFG_IN_SLR1
+				{ "CFG_OUT",     {0b00100100, 0b01001001, 0b00} },  // CFG_OUT_SLR1
 				{ "USERCODE",    {0b00100100, 0b10001001, 0b00} },
 				{ "IDCODE",      {0b01001001, 0b10010010, 0b00} },
 				{ "ISC_ENABLE",  {0b00010000, 0b00000100, 0b01} },
@@ -366,7 +369,7 @@ Xilinx::Xilinx(Jtag *jtag, const std::string &filename,
 		_secondary_file_extension = secondary_filename.substr(
 			secondary_filename.find_last_of(".") + 1);
 		_mode = Device::SPI_MODE;
-		if (!(_device_package == "xcvu9p-flga2104" || _device_package == "xcku5p-ffvb676" || _device_package == "xcku040-ffva1156")) {
+		if (!(_device_package == "xcvu9p-flga2104" || _device_package == "xcvu9p-flgb2104" || _device_package == "xcku5p-ffvb676" || _device_package == "xcku040-ffva1156")) {
 			throw std::runtime_error("Error: secondary flash unavailable");
 		}
 	}
@@ -907,6 +910,9 @@ float Xilinx::get_spiOverJtag_version()
 	/* Select the correct device and its associated USER4 register */
 	if (fpga_list[idcode].family == "virtexusp" & fpga_list[idcode].model == "xcvu7p") {
 		_jtag->shiftIR(get_ircode(_ircode_map, "USER4"), NULL, _irlen);
+	}
+	else if (fpga_list[idcode].family == "virtexusp" & fpga_list[idcode].model == "xcvu9p") {
+        	_jtag->shiftIR(get_ircode(_ircode_map, "USER4"), NULL, _irlen);
 	}
 	else {
 		_jtag->shiftIR(USER4, _irlen, Jtag::UPDATE_IR);
