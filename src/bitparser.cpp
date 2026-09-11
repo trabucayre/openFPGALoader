@@ -179,3 +179,91 @@ int BitParser::parse()
 
 	return 0;
 }
+
+static uint32_t reverseBitIn32(const uint32_t in)
+{
+	uint32_t out = 0;
+	for (int i = 0; i < 4; i++)
+		out |= static_cast<uint32_t>(
+			BitParser::reverseByte(in >> (8 * i))) << (8 * i);
+	return out;
+}
+
+/* Convert a char array to an uint32_t
+ * char array is big-endian
+ */
+static uint32_t arrayCharToWord(const uint8_t *in, bool is_reversed)
+{
+	uint32_t out =
+		(static_cast<uint32_t>(in[3]) <<  0) |
+		(static_cast<uint32_t>(in[2]) <<  8) |
+		(static_cast<uint32_t>(in[1]) << 16) |
+		(static_cast<uint32_t>(in[0]) << 24);
+	if (is_reversed)
+		out = reverseBitIn32(out);
+	return out;
+}
+
+/* See UG470 p.96-97: Bitstream Composition
+ * the bitstream is composed by a serie of big-endian words
+ * Search for a specific key followed by the idcode
+ */
+#define SYNC_WORD_D   0xAA995566
+#define IDCODE_PKT_D 0x30018001
+uint32_t BitParser::get_idcode(const uint8_t *data, uint32_t length,
+	bool is_reversed)
+{
+	if (!data || length == 0) {
+		printError("Empty bitstream");
+		return 0;
+	}
+
+	/* configuration data section starts with a sync word */
+	const uint32_t sync_w = is_reversed ? reverseBitIn32(SYNC_WORD_D) :
+		SYNC_WORD_D;
+	const uint32_t opcode_w = is_reversed ? reverseBitIn32(IDCODE_PKT_D) :
+		IDCODE_PKT_D;
+	/* According to UG470 the bitstream starts with
+	 * 8 dummy words
+	 * 2 bus width auto detect (2 x 32bits)
+	 * 2 dummy words
+	 * followed by the sync word
+	 * So the sync word start at 12 x 4 Bytes
+	 */
+	const uint32_t sync_offset = 12 * 4;
+	if ((sync_offset + 4) > length) {
+		printError("Invalid bitstream: too short");
+		return 0;
+	}
+
+	// 1. check sync word (just to be sure)
+	const uint32_t sync_word = arrayCharToWord(&data[sync_offset], false);
+	if (sync_word != sync_w) {
+		printf("Invalid sync word %08x instead of %08x\n", sync_word,
+			sync_w);
+		return 0;
+	}
+
+	// 2. search magic key and IDCODE
+	uint32_t idcode = 0;
+	for (uint32_t i = sync_offset + 4; i < length; i += 4) {
+		if ((length - i) < 4) {
+			printError("Bitstream too small/corrupted\n");
+			break;
+		}
+		const uint32_t dword = arrayCharToWord(&data[i], false);
+		/* search for Packet Type 1: Write IDCODE register, WORD_COUNT=1 */
+		if (dword == opcode_w) {
+			if ((length - i) < 8) {
+				printError("Invalid bitstream\n");
+				break;
+			}
+			idcode = arrayCharToWord(&data[i + 4], is_reversed);
+			break;
+		}
+	}
+	if (idcode == 0)
+		printError("IDCODE not found");
+
+	return idcode;
+}
