@@ -335,6 +335,14 @@ Xilinx:
     Memory: OK
     Flash: OK
 
+  - Description: Kria
+    Model:
+      - xck24
+      - xck26
+    URL: https://docs.amd.com/v/u/en-US/kria-som-psg
+    Memory: OK
+    Flash: NA
+
   - Description: Virtex 6
     Model:
       - xc6vlx130t

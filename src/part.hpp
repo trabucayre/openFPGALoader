@@ -240,6 +240,15 @@ static std::map <uint32_t, fpga_model> fpga_list = {
 	{0x047fb093, {"xilinx", "zynqmp",      "xczu48dr", 6}},
 	{0x047fe093, {"xilinx", "zynqmp",      "xczu49dr", 6}},
 
+	/* Xilinx Kria PL: these Devices are based on zynqmp
+	 * so we keep family
+	 */
+	{0x08e24126, {"xilinx", "zynqmp_cfgn", "xck24",    4}},
+	{0x08e48126, {"xilinx", "zynqmp_cfgn", "xck26",    4}},
+
+	{0x04712093, {"xilinx", "zynqmp",      "xck24",    6}},
+	{0x04724093, {"xilinx", "zynqmp",      "xck26",    6}},
+
 	/**************************************************************************/
 	/*                             Altera                                     */
 	/**************************************************************************/
