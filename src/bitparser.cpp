@@ -262,6 +262,64 @@ static uint16_t arrayCharTo16b(const uint8_t *in, bool is_reversed)
 #define S7_IDCODE_PKT ((HDR_TYPE1 << S7_TYPE_OFF) | \
 	(OPCODE_WRITE << S7_OP_OFF) | (S7_OP_IDCODE << S7_REG_OFF) | 1)
 
+/* UG380 ch5 p.99-101: Spartan6
+ */
+#define S6_OP_IDCODE 0x0e
+
+#define S6_TYPE_OFF  13
+#define S6_TYPE_MASK 0x07
+#define S6_OP_OFF    11
+#define S6_OP_MASK   0x03
+#define S6_REG_OFF   5
+#define S6_REG_MASK  0x3f
+#define S6_WC_OFF    0
+#define S6_WC_MASK   0x1F
+
+#define SP6_IDCODE_PKT ((HDR_TYPE1 << S6_TYPE_OFF) | \
+	(OPCODE_WRITE << S6_OP_OFF) | (S6_OP_IDCODE << S6_REG_OFF) | 2)
+
+static int spartan6_get_idcode(const uint8_t *data, uint32_t length,
+	uint32_t *offset, bool is_reversed)
+{
+	uint32_t word_count = 0;
+	for (; *offset < length; *offset += word_count * 2) {
+		if ((length - *offset) < 2)
+			return -1;
+		const uint16_t pkt = arrayCharTo16b(&data[*offset], is_reversed);
+		/* next position */
+		*offset += 2;
+		/* check if current packet is the one searched */
+		if (pkt == SP6_IDCODE_PKT)
+			return 0;
+
+		/* otherwise: parse packet to jump to the next packet */
+		const uint8_t type = (pkt >> S6_TYPE_OFF) & S6_TYPE_MASK;
+		if (type != HDR_TYPE1 && type != HDR_TYPE2)
+			return -1;
+		/* for pkt Type 1 the word cound is directly provided
+		 * for pkt Type 2 this information is contained into
+		 * the 2 next 16bits ie (One word)
+		 */
+		if (type == HDR_TYPE1) {
+			word_count = ((pkt >> S6_WC_OFF) & S6_WC_MASK);
+		} else {
+			if ((length - *offset) < 4)
+				return -1;
+			/* Read two 16bits to form the word count */
+			word_count = arrayCharToWord(&data[*offset], is_reversed);
+			*offset += 4;
+		}
+		/* check if configuration data as enough space for
+		 * Packet data
+		 * It's not really mandatory with for loop be it's
+		 * to return bad file instead of not found
+		 */
+		if (word_count > (length - *offset) / 2)
+			return -1;
+	}
+	return -3;
+}
+
 /* serie 7 (Artix7/Spartan7) but also Virtex6
  * In fact this function covers quite all devices
  * not spartan3 (FIXME) and sprtan6
