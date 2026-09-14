@@ -230,10 +230,79 @@ static uint16_t arrayCharTo16b(const uint8_t *in, bool is_reversed)
 	return out;
 }
 
+/* Xilinx Bitstream Packet Type1 and Type2 decoding/structure */
+
+/* Common between families */
+#define SYNC_WORD_D   0xAA995566
+#define HDR_TYPE1     0x01
+#define HDR_TYPE2     0x02
+#define OPCODE_NOP    0
+#define OPCODE_READ   1
+#define OPCODE_WRITE  2
+#define OPCODE_RES    3
+
 /* See UG470 p.96-97: Bitstream Composition
  * the bitstream is composed by a serie of big-endian words
  * Search for a specific key followed by the idcode
+ * This is compatible with Virtex6 (UG380 p.107)
  */
+#define S7_OP_IDCODE  0x0C
+
+#define S7_TYPE_OFF   29
+#define S7_TYPE_MASK  0x07
+#define S7_OP_OFF     27
+#define S7_OP_MASK    0x03
+#define S7_REG_OFF    13
+#define S7_REG_MASK   0x1f
+#define S7_T1_WC_OFF  0
+#define S7_T1_WC_MASK 0x7FF
+#define S7_T2_WC_OFF  0
+#define S7_T2_WC_MASK 0x7FFFFFF
+
+#define S7_IDCODE_PKT ((HDR_TYPE1 << S7_TYPE_OFF) | \
+	(OPCODE_WRITE << S7_OP_OFF) | (S7_OP_IDCODE << S7_REG_OFF) | 1)
+
+/* serie 7 (Artix7/Spartan7) but also Virtex6
+ * In fact this function covers quite all devices
+ * not spartan3 (FIXME) and sprtan6
+ */
+static int serie7_get_idcode(const uint8_t *data, uint32_t length,
+	uint32_t *offset, bool is_reversed)
+{
+	uint32_t word_count = 0;
+	// Search magic key and IDCODE
+	for (; *offset < length; *offset += word_count * 4) {
+		if ((length - *offset) < 4)
+			return -1;
+		const uint32_t pkt = arrayCharToWord(&data[*offset], is_reversed);
+		/* next position */
+		*offset += 4;
+		/* search for Packet Type 1: Write IDCODE register, WORD_COUNT=1 */
+		if (pkt == S7_IDCODE_PKT)
+			return 0;
+
+		/* otherwise: parse packet to jump to the next packet */
+		const uint8_t type = (pkt >> S7_TYPE_OFF) & S7_TYPE_MASK;
+		if (type != HDR_TYPE1 && type != HDR_TYPE2)
+			return -1;
+		/* word count is directly contained in the packet
+		 * but size differs between Type1 and Type2
+		 */
+		word_count = type == HDR_TYPE1 ?
+			((pkt >> S7_T1_WC_OFF) & S7_T1_WC_MASK) :
+			((pkt >> S7_T2_WC_OFF) & S7_T2_WC_MASK);
+
+		/* check if configuration data as enough space for
+		 * Packet data
+		 * It's not really mandatory with for loop be it's
+		 * to return bad file instead of not found
+		 */
+		if (word_count > (length - *offset) / 4)
+			return -1;
+	}
+	return -3;
+}
+
 #define SYNC_WORD_D   0xAA995566
 #define IDCODE_PKT_D 0x30018001
 uint32_t BitParser::get_idcode(const uint8_t *data, uint32_t length,
