@@ -180,17 +180,33 @@ int BitParser::parse()
 	return 0;
 }
 
+/* perform a bit reversal of each byte [31:24], [23:16], [15:8] and [7:0] */
 static uint32_t reverseBitIn32(const uint32_t in)
 {
-	uint32_t out = 0;
-	for (int i = 0; i < 4; i++)
-		out |= static_cast<uint32_t>(
-			BitParser::reverseByte(in >> (8 * i))) << (8 * i);
-	return out;
+	return static_cast<uint32_t>(
+		(static_cast<uint32_t>(
+			BitParser::reverseByte(static_cast<uint8_t>(in >> 24))) << 24) |
+		(static_cast<uint32_t>(
+			BitParser::reverseByte(static_cast<uint8_t>(in >> 16))) << 16) |
+		(static_cast<uint32_t>(
+			BitParser::reverseByte(static_cast<uint8_t>(in >>  8))) <<  8) |
+		(static_cast<uint32_t>(
+			BitParser::reverseByte(static_cast<uint8_t>(in >>  0))) <<  0));
+}
+
+/* perform a bit reversal of each byte [15:8] and [7:0] */
+static uint16_t reverseBitIn16(const uint16_t in)
+{
+	return static_cast<uint16_t>(
+		(static_cast<uint16_t>(
+			BitParser::reverseByte(static_cast<uint8_t>(in >> 8))) << 8) |
+		(static_cast<uint16_t>(
+			BitParser::reverseByte(static_cast<uint8_t>(in >> 0))) << 0));
 }
 
 /* Convert a char array to an uint32_t
  * char array is big-endian
+ * an optional reverseByte is performed
  */
 static uint32_t arrayCharToWord(const uint8_t *in, bool is_reversed)
 {
@@ -200,7 +216,17 @@ static uint32_t arrayCharToWord(const uint8_t *in, bool is_reversed)
 		(static_cast<uint32_t>(in[1]) << 16) |
 		(static_cast<uint32_t>(in[0]) << 24);
 	if (is_reversed)
-		out = reverseBitIn32(out);
+		return reverseBitIn32(out);
+	return out;
+}
+
+static uint16_t arrayCharTo16b(const uint8_t *in, bool is_reversed)
+{
+	uint16_t out = static_cast<uint16_t>(
+		(static_cast<uint16_t>(in[1]) <<  0) |
+		(static_cast<uint16_t>(in[0]) <<  8));
+	if (is_reversed)
+		return reverseBitIn16(out);
 	return out;
 }
 
