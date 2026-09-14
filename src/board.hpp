@@ -205,6 +205,7 @@ static std::map <std::string, target_board_t> board_list = {
 	JTAG_BOARD("kc705",           "",                     "digilent",     SPI_FLASH, 0, 0, CABLE_DEFAULT),
 	JTAG_BOARD("kcu105",          "xcku040-ffva1156",     "jtag-smt2-nc", SPI_FLASH, 0, 0, CABLE_DEFAULT),
 	JTAG_BOARD("kcu116",          "xcku5p-ffvb676",       "jtag-smt2-nc", SPI_FLASH, 0, 0, CABLE_DEFAULT),
+	JTAG_BOARD("kr260",           "xck26",                "digilent_ft4232", SPI_FLASH, 0, 0, CABLE_DEFAULT),
 	JTAG_BOARD("LD-SCHOKO",       "LFE5U-45F-6CABGA256",  "",             SPI_FLASH, 0, 0, CABLE_MHZ(6)),
 	DFU_BOARD("LD-SCHOKO-DFU",    "", "dfu", 0x16d0, 0x116d, 0),
 	JTAG_BOARD("LD-KONFEKT",      "LFE5U-12F-6BG256C",    "",             SPI_FLASH, 0, 0, CABLE_MHZ(6)),

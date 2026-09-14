@@ -581,6 +581,13 @@
   Memory: OK
   Flash: OK
 
+- ID: kr260
+  Description: AMD Kria KR260 Robotics Starter Kit
+  URL: https://docs.amd.com/r/en-US/ug1092-kr260-starter-kit/Interfaces
+  FPGA: Kria K26 xck26
+  Memory: OK
+  Flash: NA
+
 - ID: LD-KONFEKT
   Description: Lone Dynamics Corporation - Machdyne Konfekt computer
   URL: https://machdyne.com/product/konfekt-computer/
