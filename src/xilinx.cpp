@@ -302,7 +302,7 @@ Xilinx::Xilinx(Jtag *jtag, const std::string &filename,
 	bool skip_load_bridge, bool skip_reset, bool read_dna, bool read_xadc):
 	Device(jtag, filename, file_type, verify, verbose),
 	FlashInterface(filename, verbose, 256, verify, skip_load_bridge,
-				 skip_reset),
+				 skip_reset), _idcode(0),
 	_device_package(device_package), _spiOverJtagPath(spiOverJtagPath),
 	_irlen(6), _secondary_filename(secondary_filename), _soj_is_v2(false),
 	_jtag_chain_len(1), _is_bpi_board(!spi_flash_type)
@@ -347,10 +347,10 @@ Xilinx::Xilinx(Jtag *jtag, const std::string &filename,
 		}
 	}
 
-	uint32_t idcode = _jtag->get_target_device_id();
-	std::string family = fpga_list[idcode].family;
-	std::string model = fpga_list[idcode].model;
-	_irlen = fpga_list[idcode].irlength;
+	_idcode = _jtag->get_target_device_id();
+	_model = fpga_list[_idcode].model;
+	std::string family = fpga_list[_idcode].family;
+	_irlen = fpga_list[_idcode].irlength;
 	_ircode_map = ircode_mapping.at("default");
 
 	if (family.substr(0, 5) == "artix") {
@@ -400,9 +400,9 @@ Xilinx::Xilinx(Jtag *jtag, const std::string &filename,
 		_fpga_family = VIRTEXUS_FAMILY;
 	} else if (family == "virtexusp") {
 		_fpga_family = VIRTEXUSP_FAMILY;
-		if (model == "xcvu19p")
+		if (_model == "xcvu19p")
 			_ircode_map = ircode_mapping.at("virtexusp_vu19p");
-		else if (model == "xcvu7p")
+		else if (_model == "xcvu7p")
 			_ircode_map = ircode_mapping.at("virtexusp_vu7p");
 		else
 			_ircode_map = ircode_mapping.at("virtexusp");
@@ -416,10 +416,10 @@ Xilinx::Xilinx(Jtag *jtag, const std::string &filename,
 	} else if (family == "spartan6") {
 		_fpga_family = SPARTAN6_FAMILY;
 	} else if (family == "xc2c") {
-		xc2c_init(idcode);
+		xc2c_init(_idcode);
 	} else if (family == "xc9500xl") {
 		_fpga_family = XC95_FAMILY;
-		switch (idcode) {
+		switch (_idcode) {
 		case 0x09602093:
 			_xc95_line_len = 2;
 			break;
@@ -514,13 +514,15 @@ bool Xilinx::open_bitfile(const std::string &filename,
 	bool reverse)
 {
 	printInfo("Open file " + filename + " ", false);
+	std::unique_ptr<ConfigBitstreamParser> bitstream;
+
 	try {
 		if (extension == "bit") {
-			*parser = new BitParser(filename, reverse, _verbose);
+			bitstream.reset(new BitParser(filename, reverse, _verbose));
 		} else if (extension == "mcs") {
-			*parser = new McsParser(filename, reverse, _verbose);
+			bitstream.reset(new McsParser(filename, reverse, _verbose));
 		} else {
-			*parser = new RawParser(filename, reverse);
+			bitstream.reset(new RawParser(filename, reverse));
 		}
 	} catch (const std::exception &e) {
 		printError("Unable to open '" + filename + "': " + e.what());
@@ -530,12 +532,61 @@ bool Xilinx::open_bitfile(const std::string &filename,
 	printSuccess("DONE");
 
 	printInfo("Parse file ", false);
-	if ((*parser)->parse() == EXIT_FAILURE) {
+	if (bitstream->parse() == EXIT_FAILURE) {
 		printError("Failed to parse bitstream '" + filename + "'");
 		return false;
 	}
 
 	printSuccess("DONE");
+
+	/* Check whether the bitstream IDCODE matches the current target IDCODE. */
+	if (extension == "bit" || extension == "bin") {
+		printInfo("Check bitstream IDCODE ", false);
+		uint32_t bit_idcode = 0;
+		int ret = BitParser::get_idcode(bitstream->getData(),
+			bitstream->getLength() / 8, _model,  &bit_idcode, reverse);
+		switch (ret) {
+			case -1:  // bad/corrupted file
+			case -3:  // no IDCODE
+				printError("FAIL");
+				printError("Error: Invalid bitstream. Please check file.");
+				return false;
+			case -2:  // no sync word
+				/* This may be an arbitrary binary file */
+				if (_mode == Device::SPI_MODE && extension == "bin") {
+					printWarn("IDCODE not found. "
+						"Maybe an arbitrary binary file");
+					*parser = bitstream.release();
+					return true;
+				} else {
+					printError("FAIL");
+					printError("Error: Invalid bitstream. No IDCODE found");
+					return false;
+				}
+			case -4:  // unsupported
+				printWarn("Not supported for current target");
+				*parser = bitstream.release();
+				return true;
+		}
+
+		/* Compares IDCODEs between the target and the bitstream.
+		 * A mask is applied because some/most of IDCODE in part.hpp
+		 * have their revision bit set to 0
+		 */
+		if ((_idcode & 0x0fffffff) != (bit_idcode & 0x0fffffff)) {
+			printError("FAIL");
+			char mess[256];
+			snprintf(mess, sizeof(mess),
+				"mismatch between target's idcode and bitstream idcode\n"
+				"\tbitstream has 0x%08x hardware requires 0x%08x",
+				bit_idcode, _idcode);
+			printError(mess);
+			return false;
+		}
+		printSuccess("DONE");
+	}
+
+	*parser = bitstream.release();
 	return true;
 }
 

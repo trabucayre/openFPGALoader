@@ -276,6 +276,8 @@ class Xilinx: public Device, FlashInterface {
 		 */
 		void select_flash_chip(xilinx_flash_chip_t flash_chip);
 
+		uint32_t _idcode; /**< current/target IDCODE */
+		std::string _model; /**< current/target FPGA model */
 		std::string _device_package;
 		std::string _spiOverJtagPath; /**< spiOverJtag explicit path */
 		int _xc95_line_len; /**< xc95 only: number of col by flash line */
