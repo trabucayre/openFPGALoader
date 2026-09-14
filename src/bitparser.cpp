@@ -278,6 +278,60 @@ static uint16_t arrayCharTo16b(const uint8_t *in, bool is_reversed)
 #define SP6_IDCODE_PKT ((HDR_TYPE1 << S6_TYPE_OFF) | \
 	(OPCODE_WRITE << S6_OP_OFF) | (S6_OP_IDCODE << S6_REG_OFF) | 2)
 
+/* XAP452 p.9-10: Spartan3 */
+#define S3_OP_IDCODE 0x0e
+
+#define S3_TYPE_OFF   29
+#define S3_TYPE_MASK  0x07
+#define S3_OP_OFF     27
+#define S3_OP_MASK    0x03
+#define S3_REG_OFF    13
+#define S3_REG_MASK   0x3fff
+#define S3_T1_WC_OFF  0
+#define S3_T1_WC_MASK 0x7FF
+#define S3_T2_WC_OFF  0
+#define S3_T2_WC_MASK 0x7FFFFFF
+
+#define S3_IDCODE_PKT ((HDR_TYPE1 << S3_TYPE_OFF) | \
+	(OPCODE_WRITE << S3_OP_OFF) | (S3_OP_IDCODE << S3_REG_OFF) | 1)
+
+static int spartan3_get_idcode(const uint8_t *data, uint32_t length,
+	uint32_t *offset, bool is_reversed)
+{
+	uint32_t word_count = 0;
+	// Search magic key and IDCODE
+	for (; *offset < length; *offset += word_count * 4) {
+		if ((length - *offset) < 4)
+			return -1;
+		const uint32_t pkt = arrayCharToWord(&data[*offset], is_reversed);
+		/* next position */
+		*offset += 4;
+		/* search for Packet Type 1: Write IDCODE register, WORD_COUNT=1 */
+		if (pkt == S3_IDCODE_PKT)
+			return 0;
+
+		/* otherwise: parse packet to jump to the next packet */
+		const uint8_t type = (pkt >> S3_TYPE_OFF) & S3_TYPE_MASK;
+		if (type != HDR_TYPE1 && type != HDR_TYPE2)
+			return -1;
+		/* word count is directly contained in the packet
+		 * but size differs between Type1 and Type2
+		 */
+		word_count = type == HDR_TYPE1 ?
+			((pkt >> S3_T1_WC_OFF) & S3_T1_WC_MASK) :
+			((pkt >> S3_T2_WC_OFF) & S3_T2_WC_MASK);
+
+		/* check if configuration data as enough space for
+		 * Packet data
+		 * It's not really mandatory with for loop be it's
+		 * to return bad file instead of not found
+		 */
+		if (word_count > (length - *offset) / 4)
+			return -1;
+	}
+	return -3;
+}
+
 static int spartan6_get_idcode(const uint8_t *data, uint32_t length,
 	uint32_t *offset, bool is_reversed)
 {
