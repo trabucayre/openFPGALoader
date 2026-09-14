@@ -28,12 +28,20 @@ class BitParser: public ConfigBitstreamParser {
 		 *                 Any .bit file header must already have been removed.
 		 *                 For .bin this header is absent.
 		 * \param[in] length of data in bytes.
+		 * \param[in] part_name is the model of the FPGA (see part.hpp)
+		 * \param[out] idcode: pointer to idcode (0 if something fails, valid
+		 *                 idcode otherwise)
 		 * \param[in] is_reversed True if the bits are reversed within each byte.
-		 * \return The device IDCODE, or 0 if the data is invalid or the required
-		 *         synchronization word or Write IDCODE packet is not found.
+		 * \return 0 or error type:
+		 *          0: IDCODE found
+		 *         -1: bad file/corrupted/empty or idcode null
+		 *         -2: sync word not found
+		 *         -3: IDCODE not found
+		 *         -4: unsupported family
 		 */
-		static uint32_t get_idcode(const uint8_t *data, uint32_t length,
-			bool is_reversed);
+		static int get_idcode(const uint8_t *data,
+			uint32_t length, const std::string &part_name,
+			uint32_t *idcode, bool is_reversed);
 
 	private:
 		int parseHeader();

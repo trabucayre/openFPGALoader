@@ -415,62 +415,82 @@ static int serie7_get_idcode(const uint8_t *data, uint32_t length,
 	return -3;
 }
 
-#define SYNC_WORD_D   0xAA995566
-#define IDCODE_PKT_D 0x30018001
-uint32_t BitParser::get_idcode(const uint8_t *data, uint32_t length,
-	bool is_reversed)
+/*
+ * return code:
+ *  0: IDCODE found
+ * -1: bad file/corrupted/empty or idcode null
+ * -2: sync word not found
+ * -3: IDCODE not found
+ * -4: unsupported family
+ */
+int BitParser::get_idcode(const uint8_t *data,
+	uint32_t length, const std::string &part_name,
+	uint32_t *idcode, bool is_reversed)
 {
-	if (!data || length == 0) {
-		printError("Empty bitstream");
-		return 0;
+	const std::string part = part_name.substr(0, 3);
+	const std::string part2 = part_name.substr(0, 4);
+	if (!(part == "xc6" || part == "xc7" || part == "xc3" ||
+		part == "xca" || part == "xck" || part == "xcv")) {
+		return -4;
 	}
+
+	if (!data || length == 0 || !idcode) {
+		return -1;
+	}
+	*idcode = 0;
 
 	/* configuration data section starts with a sync word */
 	const uint32_t sync_w = is_reversed ? reverseBitIn32(SYNC_WORD_D) :
 		SYNC_WORD_D;
-	const uint32_t opcode_w = is_reversed ? reverseBitIn32(IDCODE_PKT_D) :
-		IDCODE_PKT_D;
-	/* According to UG470 the bitstream starts with
-	 * 8 dummy words
-	 * 2 bus width auto detect (2 x 32bits)
-	 * 2 dummy words
-	 * followed by the sync word
-	 * So the sync word start at 12 x 4 Bytes
+	const uint8_t sync_first_key = (sync_w >> 24) & 0xff;
+	uint32_t off = 0;
+	uint32_t sync_word = 0;
+	/* limit the search to a not to small nor to big
+	 * bitstream's section
 	 */
-	const uint32_t sync_offset = 12 * 4;
-	if ((sync_offset + 4) > length) {
-		printError("Invalid bitstream: too short");
-		return 0;
-	}
-
-	// 1. check sync word (just to be sure)
-	const uint32_t sync_word = arrayCharToWord(&data[sync_offset], false);
-	if (sync_word != sync_w) {
-		printf("Invalid sync word %08x instead of %08x\n", sync_word,
-			sync_w);
-		return 0;
-	}
-
-	// 2. search magic key and IDCODE
-	uint32_t idcode = 0;
-	for (uint32_t i = sync_offset + 4; i < length; i += 4) {
-		if ((length - i) < 4) {
-			printError("Bitstream too small/corrupted\n");
-			break;
-		}
-		const uint32_t dword = arrayCharToWord(&data[i], false);
-		/* search for Packet Type 1: Write IDCODE register, WORD_COUNT=1 */
-		if (dword == opcode_w) {
-			if ((length - i) < 8) {
-				printError("Invalid bitstream\n");
+	const uint32_t search_length = length < 0x100 ? length : 0x100;
+	/* read Byte per Byte to find SYNC WORD MSB */
+	while (off + 4 <= search_length) {
+		/* KEY found ? */
+		if (data[off] == sync_first_key) {
+			/* Full Word read */
+			const uint32_t word = arrayCharToWord(&data[off], false);
+			/* Is the SYNC WORD ? */
+			if (word == sync_w) {
+				sync_word = word;
+				off += 4;
 				break;
 			}
-			idcode = arrayCharToWord(&data[i + 4], is_reversed);
-			break;
 		}
+		off += 1;
 	}
-	if (idcode == 0)
-		printError("IDCODE not found");
+	/* SYNC WORD not found */
+	if (sync_word == 0)
+		return -2;
 
-	return idcode;
+	/* Search for IDCODE:
+	 * since bitstream structure differs between serie / FPGA
+	 * one implementation is present for spartan6 and another one for serie7
+	 */
+	int ret = 0;
+	if (part2 == "xc6s")
+		ret = spartan6_get_idcode(data, length, &off, is_reversed);
+	else if (part == "xc7" || part == "xca" || part == "xck" ||
+		part == "xcv" || part2 == "xc6v")
+		ret = serie7_get_idcode(data, length, &off, is_reversed);
+	else if (part == "xc3")
+		ret = spartan3_get_idcode(data, length, &off, is_reversed);
+	else
+		/* Never be here */
+		ret = -4;
+
+	/* Error? stop and return */
+	if (ret != 0)
+		return ret;
+
+	/* Otherwise extract IDCODE */
+	if ((length - off) < 4)
+		return -1;
+	*idcode = arrayCharToWord(&data[off], is_reversed);
+	return 0;
 }
