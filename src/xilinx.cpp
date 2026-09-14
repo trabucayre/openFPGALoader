@@ -227,33 +227,6 @@ static uint8_t *get_ircode(
 	return inst_map.at(inst).data();
 }
 
-static void open_bitfile(
-	const std::string &filename, const std::string &extension,
-	ConfigBitstreamParser **parser, bool reverse, bool verbose)
-{
-	printInfo("Open file " + filename + " ", false);
-	try {
-		if (extension == "bit") {
-			*parser = new BitParser(filename, reverse, verbose);
-		} else if (extension == "mcs") {
-			*parser = new McsParser(filename, reverse, verbose);
-		} else {
-			*parser = new RawParser(filename, reverse);
-		}
-	} catch (const std::exception &e) {
-		throw std::runtime_error("Unable to open '" + filename + "': " + e.what());
-	}
-
-	printSuccess("DONE");
-
-	printInfo("Parse file ", false);
-	if ((*parser)->parse() == EXIT_FAILURE) {
-		throw std::runtime_error("Failed to parse bitstream '" + filename + "'");
-	}
-
-	printSuccess("DONE");
-}
-
 #define FUSE_DNA	0x32
 
 uint64_t Xilinx::fuse_dna_read(void)
@@ -536,6 +509,36 @@ Xilinx::Xilinx(Jtag *jtag, const std::string &filename,
 }
 Xilinx::~Xilinx() {}
 
+bool Xilinx::open_bitfile(const std::string &filename,
+	const std::string &extension, ConfigBitstreamParser **parser,
+	bool reverse)
+{
+	printInfo("Open file " + filename + " ", false);
+	try {
+		if (extension == "bit") {
+			*parser = new BitParser(filename, reverse, _verbose);
+		} else if (extension == "mcs") {
+			*parser = new McsParser(filename, reverse, _verbose);
+		} else {
+			*parser = new RawParser(filename, reverse);
+		}
+	} catch (const std::exception &e) {
+		printError("Unable to open '" + filename + "': " + e.what());
+		return false;
+	}
+
+	printSuccess("DONE");
+
+	printInfo("Parse file ", false);
+	if ((*parser)->parse() == EXIT_FAILURE) {
+		printError("Failed to parse bitstream '" + filename + "'");
+		return false;
+	}
+
+	printSuccess("DONE");
+	return true;
+}
+
 bool Xilinx::zynqmp_init(const std::string &family)
 {
 	/* by default, at powering a zynqmp has
@@ -683,21 +686,16 @@ void Xilinx::program(unsigned int offset, bool unprotect_flash)
 	if (_file_extension == "pdi")
 		reverse = false;
 
-	try {
-		if (_flash_chips & PRIMARY_FLASH) {
-			open_bitfile(_filename, _file_extension, &bit, reverse, _verbose);
+	if (_flash_chips & PRIMARY_FLASH)
+		if (!open_bitfile(_filename, _file_extension, &bit, reverse))
+			throw std::runtime_error("Error: Failed to open " + _filename);
+	if (_flash_chips & SECONDARY_FLASH)
+		if (!open_bitfile(_secondary_filename, _secondary_file_extension,
+			&secondary_bit, reverse)) {
+			if (bit)
+				delete bit;
+			throw std::runtime_error("Error: Failed to open " + _filename);
 		}
-		if (_flash_chips & SECONDARY_FLASH) {
-			open_bitfile(_secondary_filename, _secondary_file_extension,
-				&secondary_bit, reverse, _verbose);
-		}
-	} catch (std::exception &e) {
-		if (bit)
-			delete bit;
-		if (secondary_bit)
-			delete secondary_bit;
-		throw std::runtime_error(e.what());
-	}
 
 	if (_verbose) {
 		if (bit)
