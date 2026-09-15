@@ -838,14 +838,15 @@ bool Xilinx::load_bridge()
 
 	/* first: load spi over jtag */
 	try {
-		BitParser bridge(bitname, true, _verbose);
-		printSuccess("Use: " + bridge.getFilename());
+		printInfo("Use spiOverJtag: " + bitname);
+		ConfigBitstreamParser *bridge;
+		if (!open_bitfile(bitname, ".bit", &bridge, false))
+			return false;
 
-		bridge.parse();
 		if (_fpga_family == SPARTAN3_FAMILY)
-			xc3s_flow_program(&bridge);
+			xc3s_flow_program(bridge);
 		else
-			program_mem(&bridge);
+			program_mem(bridge);
 	} catch (std::exception &e) {
 		printError(e.what());
 		throw std::runtime_error(e.what());
@@ -872,11 +873,12 @@ bool Xilinx::load_bpi_bridge()
 
 	/* Load BPI over JTAG bridge */
 	try {
-		BitParser bridge(bitname, true, _verbose);
-		printSuccess("Use: " + bridge.getFilename());
+		printInfo("Use spiOverJtag: " + bitname);
+		ConfigBitstreamParser *bridge;
+		if (!open_bitfile(bitname, ".bit", &bridge, false))
+			return false;
 
-		bridge.parse();
-		program_mem(&bridge);
+		program_mem(bridge);
 	} catch (std::exception &e) {
 		printError(e.what());
 		throw std::runtime_error(e.what());
