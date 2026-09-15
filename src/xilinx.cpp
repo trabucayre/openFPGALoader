@@ -545,12 +545,32 @@ bool Xilinx::open_bitfile(const std::string &filename,
 		uint32_t bit_idcode = 0;
 		int ret = BitParser::get_idcode(bitstream->getData(),
 			bitstream->getLength() / 8, _model,  &bit_idcode, reverse);
+
+		/* Compares IDCODEs between the target and the bitstream.
+		 * A mask is applied because some/most of IDCODE in part.hpp
+		 * have their revision bit set to 0
+		 */
+		if (ret == 0) {
+			if ((_idcode & 0x0fffffff) != (bit_idcode & 0x0fffffff)) {
+				printError("FAIL");
+				char mess[256];
+				snprintf(mess, sizeof(mess),
+					"mismatch between target's idcode and bitstream idcode\n"
+					"\tbitstream has 0x%08x hardware requires 0x%08x",
+					bit_idcode, _idcode);
+				printError(mess);
+				return false;
+			}
+			printSuccess("DONE");
+			*parser = bitstream.release();
+			return true;
+		}
 		switch (ret) {
 			case -1:  // bad/corrupted file
 			case -3:  // no IDCODE
 				printError("FAIL");
 				printError("Error: Invalid bitstream. Please check file.");
-				return false;
+				break;
 			case -2:  // no sync word
 				/* This may be an arbitrary binary file */
 				if (_mode == Device::SPI_MODE && extension == "bin") {
@@ -561,33 +581,17 @@ bool Xilinx::open_bitfile(const std::string &filename,
 				} else {
 					printError("FAIL");
 					printError("Error: Invalid bitstream. No IDCODE found");
-					return false;
 				}
+				break;
 			case -4:  // unsupported
 				printWarn("Not supported for current target");
 				*parser = bitstream.release();
 				return true;
 		}
 
-		/* Compares IDCODEs between the target and the bitstream.
-		 * A mask is applied because some/most of IDCODE in part.hpp
-		 * have their revision bit set to 0
-		 */
-		if ((_idcode & 0x0fffffff) != (bit_idcode & 0x0fffffff)) {
-			printError("FAIL");
-			char mess[256];
-			snprintf(mess, sizeof(mess),
-				"mismatch between target's idcode and bitstream idcode\n"
-				"\tbitstream has 0x%08x hardware requires 0x%08x",
-				bit_idcode, _idcode);
-			printError(mess);
-			return false;
-		}
-		printSuccess("DONE");
 	}
 
-	*parser = bitstream.release();
-	return true;
+	return false;
 }
 
 bool Xilinx::zynqmp_init(const std::string &family)
