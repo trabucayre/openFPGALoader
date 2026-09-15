@@ -77,6 +77,7 @@ class FtdiJtagMPSSE : public JtagInterface, public FTDIpp_MPSSE {
 	 */
 	bool writeTMSTDI(const uint8_t *tms, const uint8_t *tdi, uint8_t *tdo,
 		uint32_t len) override;
+	bool hasNativeTMSTDI() const override { return true; }
 	/*!
 	 * \brief return internal buffer size (in byte).
 	 * \return _buffer_size -3 for mpsse cmd + size, -1 for potential SEND_IMMEDIATE

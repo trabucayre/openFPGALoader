@@ -435,3 +435,77 @@ int CH347Jtag::writeTDI(const uint8_t *tx, uint8_t *rx, uint32_t len, bool end)
 	}
 	return len;
 }
+
+bool CH347Jtag::writeTMSTDI(const uint8_t *tms, const uint8_t *tdi,
+		uint8_t *tdo, uint32_t len)
+{
+	if (len == 0)
+		return true;
+
+	/* make sure obuf/the deferred-write queue is empty before we start
+	 * building our own "CMD_BITS_WR" packets by hand below. */
+	flush();
+
+	/* one CMD_BITS_WR packet: 3 header bytes + 2 bytes/bit (state,
+	 * state|TCK) + 1 trailing byte to release TCK, all within
+	 * MAX_BUFFER; the device replies with 3 header bytes + 1 TDO byte
+	 * per bit, also within MAX_BUFFER. */
+	const uint32_t max_bits_chunk = (MAX_BUFFER - 4) / 2;
+
+	uint32_t bit_pos = 0;
+	while (bit_pos < len) {
+		uint32_t chunk_bits = len - bit_pos;
+		if (chunk_bits > max_bits_chunk)
+			chunk_bits = max_bits_chunk;
+
+		uint8_t *ptr = obuf;
+		*ptr++ = CMD_BITS_WR;
+		ptr += 2;  // length placeholder, filled in below
+
+		uint8_t last_val = 0;
+		for (uint32_t i = 0; i < chunk_bits; ++i) {
+			uint32_t bit = bit_pos + i;
+			uint8_t tms_bit = (tms[bit >> 3] >> (bit & 7)) & 1;
+			uint8_t tdi_bit = (tdi[bit >> 3] >> (bit & 7)) & 1;
+			_tms = tms_bit ? SIG_TMS : 0;
+			_tdi = tdi_bit ? SIG_TDI : 0;
+			last_val = _tms | _tdi;
+			*ptr++ = last_val;
+			*ptr++ = last_val | SIG_TCK;
+		}
+		*ptr++ = last_val;  // release TCK, hold final TMS/TDI state
+
+		unsigned wlen = ptr - obuf;
+		obuf[1] = wlen - 3;
+		obuf[2] = (wlen - 3) >> 8;
+
+		unsigned actual_length = 0;
+		int ret = usb_xfer(wlen, chunk_bits + 3, &actual_length, false);
+		if (ret < 0) {
+			printError(std::string("writeTMSTDI: usb bulk transfer failed: ")
+				+ std::string(libusb_strerror(static_cast<libusb_error>(ret))));
+			return false;
+		}
+
+		unsigned size = ibuf[1] + ibuf[2] * 0x100;
+		if (ibuf[0] != CMD_BITS_WR || actual_length - 3 != size
+				|| size != chunk_bits) {
+			printError("writeTMSTDI: invalid read data");
+			return false;
+		}
+
+		if (tdo) {
+			for (uint32_t i = 0; i < size; ++i) {
+				uint32_t bit = bit_pos + i;
+				if (ibuf[3 + i] == 0x01)
+					tdo[bit >> 3] |= (1 << (bit & 7));
+				else
+					tdo[bit >> 3] &= ~(1 << (bit & 7));
+			}
+		}
+
+		bit_pos += chunk_bits;
+	}
+
+	return true;
+}

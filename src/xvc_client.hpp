@@ -6,6 +6,8 @@
 #ifndef SRC_XVC_CLIENT_HPP_
 #define SRC_XVC_CLIENT_HPP_
 
+#include "xvc_sockcompat.hpp"
+
 #include <string>
 
 #include "jtagInterface.hpp"
@@ -121,7 +123,7 @@ class XVC_client: public JtagInterface {
 		uint32_t _buffer_size;
 		std::string _server_name;
 		std::string _server_vers;
-		int _sock;
+		SOCKET _sock;
 		int _port;                /*!< target port */
 };
 #endif  // SRC_XVC_CLIENT_HPP_
