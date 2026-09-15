@@ -171,6 +171,11 @@ ft231X:
     Description: generic USB<->UART converters in bitbang mode (with some limitations and workaround)
     URL: https://www.ftdichip.com/old2020/Products/ICs/FT231X.html
 
+ft230X:
+
+  - Name: FT230X
+    Description: version of FT231X in a smaller package, missing some handshake pins
+    URL: https://www.ftdichip.com/old2020/Products/ICs/FT230X.html
 
 ft232:
 
