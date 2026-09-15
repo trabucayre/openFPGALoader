@@ -20,6 +20,9 @@ class FsParser: public ConfigBitstreamParser {
 		int parse() override;
 
 		uint16_t checksum() {return _checksum;}
+		uint16_t transferChecksum() const {
+			return _has_transfer_checksum ? _transfer_checksum : _checksum;
+		}
 
 	private:
 		int parseHeader();
@@ -36,6 +39,8 @@ class FsParser: public ConfigBitstreamParser {
 		bool _reverseByte; /*!< direct or reverse bit */
 		uint16_t _end_header; /*!< last header line */
 		uint16_t _checksum; /*!< locally computed data checksum */
+		uint16_t _transfer_checksum; /*!< checksum embedded in the bitstream footer */
+		bool _has_transfer_checksum;
 		uint8_t _8Zero; /*!< in compress mode, used to replace 8 * 0x00 */
 		uint8_t _4Zero; /*!< in compress mode, used to replace 8 * 0x00 */
 		uint8_t _2Zero; /*!< in compress mode, used to replace 8 * 0x00 */
