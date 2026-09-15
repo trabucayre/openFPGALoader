@@ -11,6 +11,7 @@
 #include <unistd.h>
 
 #include <algorithm>
+#include <iomanip>
 #include <iostream>
 #include <sstream>
 #include <fstream>
@@ -179,7 +180,7 @@ void SVF_jtag::parse_XYR(std::vector<std::string> const &vstr, svf_XYR &t)
 				if ((read_buffer[i] ^ tdobuf[i]) & maskbuf[i]) {
 					std::cerr << "TDO value ";
 					for (int j = byte_len - 1; j >= 0; j--) {
-						std::cerr << std::uppercase << std::hex << int(read_buffer[j]);
+						std::cerr << std::setw(2) << std::setfill('0') << std::uppercase << std::hex << int(read_buffer[j]);
 					}
 					std::cerr << " isn't the one expected: " << std::uppercase << t.tdo << std::endl;
 					delete[] tdobuf;
