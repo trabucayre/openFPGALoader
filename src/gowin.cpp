@@ -8,7 +8,7 @@
 #include <stdlib.h>
 #include <string.h>
 #include <strings.h>
-#include <unistd.h>
+#include "portability/unistd.hpp"
 
 #include <iostream>
 #include <stdexcept>

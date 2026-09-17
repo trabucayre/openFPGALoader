@@ -5,7 +5,7 @@
 
 #ifndef SRC_CH552_JTAG_HPP_
 #define SRC_CH552_JTAG_HPP_
-#include <ftdi.h>
+#include "portability/ftdi.hpp"
 #include <iostream>
 #include <string>
 #include <vector>
