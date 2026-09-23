@@ -179,7 +179,7 @@ void Efinix::program(unsigned int offset, bool unprotect_flash)
 	ConfigBitstreamParser *bit;
 	try {
 		if (_file_extension == "hex" || _file_extension == "bit") {
-			bit = new EfinixHexParser(_filename);
+			bit = new EfinixHexParser(_filename, _mode == MEM_MODE);
 		} else {
 			if (offset == 0 && _spi) {
 				printError("Error: can't write raw data at the beginning of the flash");
@@ -360,7 +360,6 @@ bool Efinix::programJTAG(const uint8_t *data, const int length)
 	 * bridge via getinfo) to cut down on shiftDR()/wire round-trips */
 	int xfer_len = _jtag->preferred_xfer_bits(512*8) / 8;
 	Jtag::tapState_t tx_end;
-	std::vector<uint8_t> tx(xfer_len);
 
 	if (_fpga_family == TITANIUM_FAMILY)
 		_jtag->set_state(Jtag::RUN_TEST_IDLE);
@@ -396,10 +395,8 @@ bool Efinix::programJTAG(const uint8_t *data, const int length)
 		} else {
 			tx_end = Jtag::SHIFT_DR;
 		}
-		for (int pos = 0; pos < xfer_len; pos++)
-			tx[pos] = EfinixHexParser::reverseByte(data[i+pos]);
 
-		_jtag->shiftDR(tx.data(), NULL, xfer_len*8, tx_end);
+		_jtag->shiftDR(&data[i], NULL, xfer_len*8, tx_end);
 		progress.display(i);
 	}
 
@@ -409,8 +406,9 @@ bool Efinix::programJTAG(const uint8_t *data, const int length)
 
 	_jtag->shiftIR(ENTERUSER, _irlen, Jtag::EXIT1_IR);
 
-	memset(tx.data(), 0, 512);
-	_jtag->shiftDR(tx.data(), NULL, 100);
+	uint8_t tx[100];
+	memset(tx, 0, 100);
+	_jtag->shiftDR(tx, NULL, 100);
 	_jtag->shiftIR(IDCODE, _irlen);
 	uint8_t idc[4];
 	_jtag->shiftDR(NULL, idc, 32);
