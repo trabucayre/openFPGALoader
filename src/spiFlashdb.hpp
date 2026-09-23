@@ -634,6 +634,23 @@ static std::map <uint32_t, flash_t> flash_list = {
 		.quad_mask = (1 << 6),
 		.global_lock = false,
 	}},
+	{0xc84015, {
+		/* https://www.gigadevice.com/product/flash/spi-nor-flash/gd25q16c */
+		.manufacturer = "GigaDevice",
+		.model = "GD25Q16C",
+		.nr_sector = 32,
+		.sector_erase = true,
+		.subsector_erase = true,
+		.has_extended = false,
+		.tb_otp = false,
+		.tb_offset = (1 << 14),  // CMP
+		.tb_register = STATR,
+		.bp_len = 4,
+		.bp_offset = {(1 << 2), (1 << 3), (1 << 4), (1 << 5)},
+		.quad_register = CONFR,
+		.quad_mask = (1 << 1),  // QE = SR2 S9 = bit1 of byte read by RDSR-2 (0x35)
+		.global_lock = false,
+	}},
 	{0xc84016, {
 		/* https://cdn.compacttool.ru/downloads/GD25Q32%20datasheet.pdf */
 		.manufacturer = "GigaDevice",
