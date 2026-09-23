@@ -178,7 +178,7 @@ void Efinix::program(unsigned int offset, bool unprotect_flash)
 	ConfigBitstreamParser *bit;
 	try {
 		if (_file_extension == "hex" || _file_extension == "bit") {
-			bit = new EfinixHexParser(_filename);
+			bit = new EfinixHexParser(_filename, _mode == MEM_MODE);
 		} else {
 			if (offset == 0 && _spi) {
 				printError("Error: can't write raw data at the beginning of the flash");
@@ -355,7 +355,6 @@ bool Efinix::programJTAG(const uint8_t *data, const int length)
 {
 	int xfer_len = 512;
 	Jtag::tapState_t tx_end;
-	uint8_t tx[512];
 
 	if (_fpga_family == TITANIUM_FAMILY)
 		_jtag->set_state(Jtag::RUN_TEST_IDLE);
@@ -391,10 +390,8 @@ bool Efinix::programJTAG(const uint8_t *data, const int length)
 		} else {
 			tx_end = Jtag::SHIFT_DR;
 		}
-		for (int pos = 0; pos < xfer_len; pos++)
-			tx[pos] = EfinixHexParser::reverseByte(data[i+pos]);
 
-		_jtag->shiftDR(tx, NULL, xfer_len*8, tx_end);
+		_jtag->shiftDR(&data[i], NULL, xfer_len*8, tx_end);
 		progress.display(i);
 	}
 
@@ -404,7 +401,8 @@ bool Efinix::programJTAG(const uint8_t *data, const int length)
 
 	_jtag->shiftIR(ENTERUSER, _irlen, Jtag::EXIT1_IR);
 
-	memset(tx, 0, 512);
+	uint8_t tx[100];
+	memset(tx, 0, 100);
 	_jtag->shiftDR(tx, NULL, 100);
 	_jtag->shiftIR(IDCODE, _irlen);
 	uint8_t idc[4];
