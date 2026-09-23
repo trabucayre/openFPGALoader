@@ -17,7 +17,7 @@
 #include <string>
 #include <stdexcept>
 
-#include <unistd.h>
+#include "portability/unistd.hpp"
 #include <sys/fcntl.h>
 #include <sys/mman.h>
 
