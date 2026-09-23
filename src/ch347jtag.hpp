@@ -21,6 +21,10 @@ class CH347Jtag : public JtagInterface {
 	int writeTMS(const uint8_t *tms, uint32_t len, bool flush_buffer, const uint8_t tdi = 1) override;
 	/* TDI */
 	int writeTDI(const uint8_t *tx, uint8_t *rx, uint32_t len, bool end) override;
+	/* combined TMS+TDI shift with TDO capture, used by the XVC server */
+	bool writeTMSTDI(const uint8_t *tms, const uint8_t *tdi, uint8_t *tdo,
+			uint32_t len) override;
+	bool hasNativeTMSTDI() const override { return true; }
 	/* clk */
 	int toggleClk(uint8_t tms, uint8_t tdo, uint32_t clk_len) override;
 
