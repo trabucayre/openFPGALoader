@@ -456,7 +456,7 @@ bool Efinix::prepare_flash_access()
 
 	/* first: load spi over jtag */
 	try {
-		EfinixHexParser bridge(bitname);
+		EfinixHexParser bridge(bitname, true);
 		bridge.parse();
 		const uint8_t *data = bridge.getData();
 		const int length = bridge.getLength() / 8;
