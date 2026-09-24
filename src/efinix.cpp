@@ -486,7 +486,8 @@ int Efinix::spi_put(uint8_t cmd,
 			const uint8_t *tx, uint8_t *rx, uint32_t len)
 {
 	int kXferLen = len + 1 + ((rx == NULL) ? 0 : 1);
-	uint8_t jtx[kXferLen];
+	_xfer_buf.resize(kXferLen);
+	uint8_t *jtx = _xfer_buf.data();
 	jtx[0] = EfinixHexParser::reverseByte(cmd);
 	uint8_t jrx[kXferLen];
 	if (tx != NULL) {
@@ -511,7 +512,8 @@ int Efinix::spi_put(uint8_t cmd,
 int Efinix::spi_put(const uint8_t *tx, uint8_t *rx, uint32_t len)
 {
 	int kXferLen = len + ((rx == NULL) ? 0 : 1);
-	uint8_t jtx[kXferLen];
+	_xfer_buf.resize(kXferLen);
+	uint8_t *jtx = _xfer_buf.data();
 	uint8_t jrx[kXferLen];
 	if (tx != NULL) {
 		for (uint32_t i=0; i < len; i++)

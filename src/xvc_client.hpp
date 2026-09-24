@@ -85,8 +85,8 @@ class XVC_client: public JtagInterface {
 		 */
 		uint32_t preferred_xfer_bits(uint32_t default_bits) override
 		{
-			uint32_t xvc_bits = _buffer_size * 8;
-			return (xvc_bits > default_bits) ? xvc_bits : default_bits;
+			return (_preferred_xfer_bits > default_bits) ?
+				_preferred_xfer_bits : default_bits;
 		}
 
 		bool isFull() override { return false;}
@@ -134,6 +134,8 @@ class XVC_client: public JtagInterface {
 		uint32_t _last_tdi; /*!< last known TDI state */
 
 		uint32_t _buffer_size;
+		uint32_t _preferred_xfer_bits; /*!< _buffer_size*8, computed once
+						  in ctor once negotiated */
 		std::string _server_name;
 		std::string _server_vers;
 		int _sock;
