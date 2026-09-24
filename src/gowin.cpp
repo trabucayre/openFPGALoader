@@ -807,7 +807,8 @@ bool Gowin::writeSRAM(const uint8_t *data, int length)
 	}
 	progress.done();
 	send_command(0x0a);
-	uint32_t checksum = static_cast<FsParser *>(_fs.get())->checksum();
+	FsParser *parser = static_cast<FsParser *>(_fs.get());
+	uint32_t checksum = is_gw5a ? parser->transferChecksum() : parser->checksum();
 	checksum = htole32(checksum);
 	_jtag->shiftDR((uint8_t *)&checksum, NULL, 32);
 	send_command(0x08);
