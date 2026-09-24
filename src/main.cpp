@@ -73,6 +73,8 @@
 #define DEFAULT_FREQ 	6000000
 
 
+
+
 struct arguments {
 	int8_t verbose;
 	bool force_terminal_mode;
@@ -134,6 +136,8 @@ struct arguments {
 	std::string user_flash;
 };
 
+
+
 int run_xvc_server(const struct arguments &args, const cable_t &cable,
 	const jtag_pins_conf_t *pins_config);
 
@@ -174,6 +178,8 @@ int main(int argc, char **argv)
 			false, false, "", // read_dna, read_xadc, read_register
 			"" // user_flash
 	};
+
+
 	/* parse arguments */
 	int ret = parse_opt(argc, argv, &args, &pins_config);
 	if (ret != 0)
@@ -475,19 +481,55 @@ int main(int argc, char **argv)
 	}
 
 	if (found != 0) {
+
 		if (args.index_chain < 0) {
-			for (size_t i = 0; i < found; i++) {
-				if (fpga_list.find(listDev[i]) != fpga_list.end()) {
-					index = i;
-					if (idcode != -1) {
-						printError("Error: more than one FPGA found");
-						printError("Use --index-chain to force selection");
-						for (size_t i = 0; i < found; i++)
-							printf("0x%08x\n", listDev[i]);
-						delete(jtag);
-						return EXIT_FAILURE;
-					} else {
+			if (args.prg_type == Device::WR_FLASH) {
+				for (size_t i = 0; i < found; i++) {
+					if (fpga_list.find(listDev[i]) != fpga_list.end() &&
+					    fpga_list[listDev[i]].family == "xcf") {
+						index = i;
 						idcode = listDev[i];
+						break;
+					}
+				}
+			}
+			if (idcode == -1 && !args.fpga_part.empty()) {
+				for (size_t i = 0; i < found; i++) {
+					if (fpga_list.find(listDev[i]) != fpga_list.end()) {
+						std::string model = fpga_list[listDev[i]].model;
+						if (args.fpga_part.rfind(model, 0) == 0 || model.rfind(args.fpga_part, 0) == 0) {
+							index = i;
+							idcode = listDev[i];
+							break;
+						}
+					}
+				}
+			}
+			if (idcode == -1) {
+				for (size_t i = 0; i < found; i++) {
+					if (fpga_list.find(listDev[i]) != fpga_list.end()) {
+						if (args.prg_type != Device::WR_FLASH && fpga_list[listDev[i]].family == "xcf")
+							continue;
+						index = i;
+						if (idcode != -1) {
+							printError("Error: more than one FPGA found");
+							printError("Use --index-chain to force selection");
+							for (size_t j = 0; j < found; j++)
+								printf("0x%08x\n", listDev[j]);
+							delete(jtag);
+							return EXIT_FAILURE;
+						} else {
+							idcode = listDev[i];
+						}
+					}
+				}
+			}
+			if (idcode == -1) {
+				for (size_t i = 0; i < found; i++) {
+					if (fpga_list.find(listDev[i]) != fpga_list.end()) {
+						index = i;
+						idcode = listDev[i];
+						break;
 					}
 				}
 			}
@@ -1068,7 +1110,9 @@ int parse_opt(int argc, char **argv, struct arguments *args,
 			("user-flash", "User flash file (Gowin LittleBee FPGA only)",
 				cxxopts::value<std::string>(args->user_flash))
 			("V,version", "Print program version")
+
 			("Version", "Print program version (Deprecated)");
+
 
 		options.parse_positional({"bitstream"});
 		auto result = options.parse(argc, argv);
@@ -1283,10 +1327,12 @@ int parse_opt(int argc, char **argv, struct arguments *args,
 			!args->read_dna &&
 			!args->read_xadc &&
 			args->read_register.empty()) {
+
 			printError("Error: bitfile not specified");
 			std::cout << options.help() << std::endl;
 			return -1;
 		}
+
 
 		// user ask detect with flash set
 		// detect/display flash CHIP informations instead
