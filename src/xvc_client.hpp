@@ -70,10 +70,25 @@ class XVC_client: public JtagInterface {
 		 */
 		int flush() override;
 
-		/*
-		 * unused
+		/*!
+		 * \brief return the TDI/TMS buffer size negotiated with the
+		 *        XVC server via getinfo (in byte)
 		 */
-		int get_buffer_size() override { return 2048;}
+		int get_buffer_size() override { return _buffer_size;}
+
+		/*!
+		 * \brief let callers (e.g. Efinix::programJTAG) chunk large
+		 *        writeTDI() bursts by the server's negotiated buffer
+		 *        size instead of a small caller-side default, so a
+		 *        single writeTDI() call maps to a single XVC "shift:"
+		 *        command instead of many small ones
+		 */
+		uint32_t preferred_xfer_bits(uint32_t default_bits) override
+		{
+			return (_preferred_xfer_bits > default_bits) ?
+				_preferred_xfer_bits : default_bits;
+		}
+
 		bool isFull() override { return false;}
 
 		std::string server_name() {return _server_name;}
@@ -119,6 +134,8 @@ class XVC_client: public JtagInterface {
 		uint32_t _last_tdi; /*!< last known TDI state */
 
 		uint32_t _buffer_size;
+		uint32_t _preferred_xfer_bits; /*!< _buffer_size*8, computed once
+						  in ctor once negotiated */
 		std::string _server_name;
 		std::string _server_vers;
 		int _sock;

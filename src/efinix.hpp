@@ -7,6 +7,7 @@
 #define SRC_EFINIX_HPP_
 
 #include <string>
+#include <vector>
 
 #include "device.hpp"
 #include "ftdiJtagMPSSE.hpp"
@@ -71,6 +72,9 @@ class Efinix: public Device, FlashInterface {
 		int _irlen;
 		std::string _device_package;
 		std::string _spiOverJtagPath;
+		/* transfer buffer shared by programJTAG() and the spi_put()
+		 * methods, resized in place instead of reallocated per call */
+		std::vector<uint8_t> _xfer_buf;
 };
 
 #endif  // SRC_EFINIX_HPP_
