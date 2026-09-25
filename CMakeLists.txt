@@ -170,9 +170,18 @@ endif()
 ## specify the C++ standard
 set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_STANDARD_REQUIRED True)
-set(CMAKE_CXX_FLAGS_DEBUG "-g -Wall -Wextra ${CMAKE_CXX_FLAGS_DEBUG}")
+if(NOT CMAKE_CXX_COMPILER_ID STREQUAL "MSVC")
+	set(CMAKE_CXX_FLAGS_DEBUG "-g -Wall -Wextra ${CMAKE_CXX_FLAGS_DEBUG}")
+	# TODO: the equivalent for MSVC is /W4
+	#
+	# /Wall includes some almost always unwanted stuff, and `clang`'s MSVC compatibility mode considers it to mean
+	# "actually everything" - including "This feature requires C++20" warnings even in C++20/23 mode.
+endif()
+
 if(ENABLE_OPTIM AND NOT(CMAKE_BUILD_TYPE STREQUAL "Debug"))
-	set(CMAKE_CXX_FLAGS "-O3 ${CMAKE_CXX_FLAGS}")
+	if (NOT CMAKE_CXX_COMPILER_ID STREQUAL "MSVC")
+		set(CMAKE_CXX_FLAGS "-O3 ${CMAKE_CXX_FLAGS}")
+	endif()
 endif()
 
 if (BUILD_STATIC)
