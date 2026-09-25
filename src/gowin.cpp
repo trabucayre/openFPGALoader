@@ -1004,35 +1004,39 @@ int Gowin::spi_put(uint8_t cmd, const uint8_t *tx, uint8_t *rx, uint32_t len)
 	if (is_gw5a)
 		return spi_put_gw5a(cmd, tx, rx, len);
 
-	uint8_t jrx[len+1], jtx[len+1];
+	std::vector<uint8_t> jrx, jtx;
+	jrx.resize(len+1);
+	jtx.resize(len+1);
 	jtx[0] = cmd;
 	if (tx)
-		memcpy(jtx+1, tx, len);
+		memcpy(&jtx[1], tx, len);
 	else
-		memset(jtx+1, 0, len);
-	int ret = spi_put(jtx, (rx)? jrx : NULL, len+1);
+		memset(&jtx[1], 0, len);
+	int ret = spi_put(jtx.data(), (rx)? jrx.data() : NULL, len+1);
 	if (rx)
-		memcpy(rx, jrx + 1, len);
+		memcpy(rx, &jrx[1], len);
 	return ret;
 }
 
 int Gowin::spi_put(const uint8_t *tx, uint8_t *rx, uint32_t len)
 {
 	if (is_gw5a) {
-		uint8_t jrx[len];
+		std::vector<uint8_t> jrx;
+		jrx.resize(len);
 		int ret = spi_put_gw5a(tx[0], (len > 1) ? &tx[1] : NULL,
-				(rx) ? jrx : NULL, len - 1);
+				(rx) ? jrx.data() : NULL, len - 1);
 		// FIXME: first byte is never read (but in most call it's not an issue
 		if (rx) {
 			rx[0] = 0;
-			memcpy(&rx[1], jrx, len - 1);
+			memcpy(&rx[1], jrx.data(), len - 1);
 		}
 		return ret;
 	}
 
 	if (is_gw2a) {
-		uint8_t jtx[len];
-		uint8_t jrx[len];
+		std::vector<uint8_t> jrx, jtx;
+		jrx.resize(len);
+		jtx.resize(len);
 		if (rx)
 			len++;
 		if (tx != NULL) {
@@ -1043,7 +1047,7 @@ int Gowin::spi_put(const uint8_t *tx, uint8_t *rx, uint32_t len)
 		if (!ret)
 			return -1;
 		_jtag->set_state(Jtag::EXIT2_DR);
-		_jtag->shiftDR(jtx, (rx)? jrx:NULL, 8*len);
+		_jtag->shiftDR(jtx.data(), (rx)? jrx.data():NULL, 8*len);
 		if (rx) {
 			for (uint32_t i=0; i < len; i++) {
 				rx[i] = FsParser::reverseByte(jrx[i]>>1) |
@@ -1283,16 +1287,18 @@ int Gowin::spi_put_gw5a(const uint8_t cmd, const uint8_t *tx, uint8_t *rx,
 {
 		uint32_t kLen = len + (rx ? 1 : 0);  // cppcheck/lint happy
 		uint32_t bit_len = len * 8 + (rx ? 3 : 0);  // 3bits delay when read
-		uint8_t jtx[kLen], jrx[kLen];
 		uint8_t _cmd = FsParser::reverseByte(cmd);  // reverse cmd.
 		uint8_t curr_tdi = cmd & 0x01;
+		std::vector<uint8_t> jtx, jrx;
+		jtx.resize(kLen);
+		jrx.resize(kLen);
 
 		if (tx != NULL) {  // SPI: MSB, JTAG: LSB -> reverse Bytes
 			for (uint32_t i = 0; i < len; i++)
 				jtx[i] = FsParser::reverseByte(tx[i]);
 			curr_tdi = tx[len-1] & 0x01;
 		} else {
-			memset(jtx, curr_tdi, kLen);
+			memset(jtx.data(), curr_tdi, kLen);
 		}
 
 		// set TMS/CS low by moving to a state where TMS == 0,
@@ -1306,7 +1312,7 @@ int Gowin::spi_put_gw5a(const uint8_t cmd, const uint8_t *tx, uint8_t *rx,
 
 		// write/read the sequence. Force set to 0 to manage state here
 		// (with jtag last bit is sent with tms rise)
-		if (0 != _jtag->read_write(jtx, (rx) ? jrx : NULL, bit_len, 0))
+		if (0 != _jtag->read_write(jtx.data(), (rx) ? jrx.data() : NULL, bit_len, 0))
 			return -1;
 		// set TMS/CS high by moving to a state where TMS == 1
 		_jtag->set_state(Jtag::TEST_LOGIC_RESET, curr_tdi);

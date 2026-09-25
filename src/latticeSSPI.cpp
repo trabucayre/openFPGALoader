@@ -97,11 +97,11 @@ bool LatticeSSPI::cmd_class_a(uint8_t cmd, uint8_t *rx, uint32_t len)
 {
 	const uint32_t xferByteLen = (len + 7) / 8;
 	const uint32_t kBytetLen = xferByteLen + 3;  // Convert bits to bytes after adding dummy
-	uint8_t lrx[kBytetLen];
-	uint8_t ltx[kBytetLen];
-	memset(ltx, 0x00, kBytetLen);
+	std::vector<uint8_t> lrx, ltx;
+	lrx.resize(kBytetLen, 0);
+	ltx.resize(kBytetLen, 0);
 
-	_spi->spi_put(cmd, ltx, lrx, kBytetLen);
+	_spi->spi_put(cmd, ltx.data(), lrx.data(), kBytetLen);
 
 	memcpy(rx, &lrx[3], xferByteLen);
 
