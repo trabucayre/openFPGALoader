@@ -104,7 +104,7 @@ uint32_t UsbBlaster::getClkFreq()
 }
 
 int UsbBlaster::writeTMS(const uint8_t *tms, uint32_t len, bool flush_buffer,
-		__attribute__((unused)) const uint8_t tdi)
+		[[maybe_unused]] const uint8_t tdi)
 {
 	int ret;
 
