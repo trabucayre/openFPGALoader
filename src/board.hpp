@@ -141,6 +141,7 @@ static std::map <std::string, target_board_t> board_list = {
 	JTAG_BOARD("arty_z7_20",      "xc7z020clg400",        "digilent",     SPI_FLASH, 0, 0, CABLE_DEFAULT),
 	JTAG_BOARD("axu2cga",         "xczu2cg",              "",             SPI_FLASH, 0, 0, CABLE_DEFAULT),
 	JTAG_BOARD("basys3",          "xc7a35tcpg236",        "digilent",     SPI_FLASH, 0, 0, CABLE_DEFAULT),
+	JTAG_BOARD("blackboard",      "xc7z007sclg400",       "ft2232",       SPI_FLASH, 0, 0, CABLE_MHZ(3)),
 	JTAG_BOARD("c5g",             "",                     "usb-blaster",  SPI_FLASH, 0, 0, CABLE_DEFAULT),
 	JTAG_BOARD("cmod_s7",         "xc7s25csga225",        "digilent",     SPI_FLASH, 0, 0, CABLE_DEFAULT),
 	JTAG_BOARD("cmoda7_15t",      "xc7a15tcpg236",        "digilent",     SPI_FLASH, 0, 0, CABLE_DEFAULT),
