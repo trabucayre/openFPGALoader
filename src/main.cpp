@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: Apache-2.0
-/*
+    /*
  * Copyright (C) 2019 Gwenhael Goavec-Merou <gwenhael.goavec-merou@trabucayre.com>
  */
 
@@ -73,8 +73,6 @@
 #define DEFAULT_FREQ 	6000000
 
 
-
-
 struct arguments {
 	int8_t verbose;
 	bool force_terminal_mode;
@@ -135,8 +133,6 @@ struct arguments {
 	std::string read_register;
 	std::string user_flash;
 };
-
-
 
 int run_xvc_server(const struct arguments &args, const cable_t &cable,
 	const jtag_pins_conf_t *pins_config);
@@ -481,7 +477,6 @@ int main(int argc, char **argv)
 	}
 
 	if (found != 0) {
-
 		if (args.index_chain < 0) {
 			if (args.prg_type == Device::WR_FLASH) {
 				for (size_t i = 0; i < found; i++) {
@@ -1110,9 +1105,7 @@ int parse_opt(int argc, char **argv, struct arguments *args,
 			("user-flash", "User flash file (Gowin LittleBee FPGA only)",
 				cxxopts::value<std::string>(args->user_flash))
 			("V,version", "Print program version")
-
 			("Version", "Print program version (Deprecated)");
-
 
 		options.parse_positional({"bitstream"});
 		auto result = options.parse(argc, argv);
@@ -1327,12 +1320,10 @@ int parse_opt(int argc, char **argv, struct arguments *args,
 			!args->read_dna &&
 			!args->read_xadc &&
 			args->read_register.empty()) {
-
 			printError("Error: bitfile not specified");
 			std::cout << options.help() << std::endl;
 			return -1;
 		}
-
 
 		// user ask detect with flash set
 		// detect/display flash CHIP informations instead
