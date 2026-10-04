@@ -1,8 +1,14 @@
 // SPDX-License-Identifier: Apache-2.0
 /*
- * Digilent Adept JTAG and EPP Driver for openFPGALoader
+ * Digilent Adept JTAG Driver for openFPGALoader
  *
  * Copyright (C) 2026 openFPGALoader contributors
+ *
+ * Based on the reverse engineered protocol and research from adepttool by:
+ *   Marcin Kościelnicki <koriakin@0x04.net> (https://github.com/mwkmwkmwk/adepttool)
+ *
+ * Driver architecture and C++ implementation adapted for openFPGALoader
+ * through AI-assisted coding.
  */
 
 #ifndef SRC_DIGILENTADEPT_HPP_
