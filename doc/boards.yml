@@ -221,6 +221,13 @@
   Memory: OK
   Flash: OK
 
+- ID: blackboard
+  Description: RealDigital Blackboard
+  URL: https://www.realdigital.org/hardware/blackboard
+  FPGA: Zynq7000 xc7z007sclg400
+  Memory: OK
+  Flash: NA
+
 - ID: cmod_s7
   Description: Digilent Cmod S7
   URL: https://https://digilent.com/reference/programmable-logic/cmod-s7/start
