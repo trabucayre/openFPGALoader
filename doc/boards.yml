@@ -20,6 +20,13 @@
   Memory: OK
   Flash: OK
 
+- ID: alinx_ax7035b
+  Description: AX7201 FPGA Dev Board & Kit with AMD Artix 7
+  URL: https://www.en.alinx.com/Product/FPGA-Development-Boards/Artix-7/AX7A035B.html
+  FPGA: Artix xc7a35tfgg484
+  Memory: OK
+  Flash: OK
+
 - ID: alinx_ax7201
   Description: AX7201 FPGA Dev Board & Kit with AMD Artix 7
   URL: https://www.en.alinx.com/Product/FPGA-Development-Boards/Artix-7/AX7201.html
