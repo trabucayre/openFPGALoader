@@ -14,7 +14,7 @@
 #ifndef SRC_DIGILENTADEPT_HPP_
 #define SRC_DIGILENTADEPT_HPP_
 
-#include <libusb-1.0/libusb.h>
+#include <libusb.h>
 #include <cstdint>
 #include <string>
 #include <vector>
