@@ -22,7 +22,7 @@ class EfinixHexParser: public ConfigBitstreamParser {
 		 * \brief constructor
 		 * \param[in] filename: raw file to read
 		 */
-		EfinixHexParser(const std::string &filename);
+		EfinixHexParser(const std::string &filename, bool reverseOrder=false);
 		/*!
 		 * \brief read full content of the file, fill the buffer
 		 * \return EXIT_SUCCESS is file is fully read, EXIT_FAILURE otherwise
@@ -31,6 +31,7 @@ class EfinixHexParser: public ConfigBitstreamParser {
 	
 	private:
 		int parseHeader();
+		bool _reverseOrder;
 };
 
 #endif  // SRC_EFINIXHEXPARSER_HPP_

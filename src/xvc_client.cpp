@@ -29,8 +29,8 @@
 XVC_client::XVC_client(const std::string &ip_addr, int port,
 		uint32_t clkHz, int8_t verbose):
 	_verbose(verbose > 0), _xfer_buf(NULL), _tms(NULL), _tditdo(NULL),
-	_num_bits(0), _last_tms(0), _last_tdi(0), _buffer_size(0), _sock(0),
-	_port(port)
+	_num_bits(0), _last_tms(0), _last_tdi(0), _buffer_size(0),
+	_preferred_xfer_bits(0), _sock(0), _port(port)
 {
 	if (!open_connection(ip_addr))
 		throw std::runtime_error("connection failure");
@@ -51,6 +51,7 @@ XVC_client::XVC_client(const std::string &ip_addr, int port,
 	_server_name = std::move(toto[0]);
 	_server_vers = std::move(toto[1]);
 	_buffer_size = stoi(toto[2]) / 2;  // buffer_size is for tms + tdi
+	_preferred_xfer_bits = _buffer_size * 8;
 
 	_xfer_buf = reinterpret_cast<uint8_t *>(malloc(sizeof(uint8_t)
 				* ((2*_buffer_size) + 4)));

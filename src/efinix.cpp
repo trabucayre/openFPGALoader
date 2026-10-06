@@ -12,6 +12,7 @@
 #include <iostream>
 #include <stdexcept>
 #include <string>
+#include <vector>
 
 #include "common.hpp"
 #include "device.hpp"
@@ -178,7 +179,7 @@ void Efinix::program(unsigned int offset, bool unprotect_flash)
 	ConfigBitstreamParser *bit;
 	try {
 		if (_file_extension == "hex" || _file_extension == "bit") {
-			bit = new EfinixHexParser(_filename);
+			bit = new EfinixHexParser(_filename, _mode == MEM_MODE);
 		} else {
 			if (offset == 0 && _spi) {
 				printError("Error: can't write raw data at the beginning of the flash");
@@ -353,9 +354,12 @@ bool Efinix::programSPI(unsigned int offset, const uint8_t *data,
 
 bool Efinix::programJTAG(const uint8_t *data, const int length)
 {
-	int xfer_len = 512;
+	/* 512B is the historical default for adapters with no opinion;
+	 * an adapter may advertise a larger preferred bulk-transfer size
+	 * (e.g. the XVC client, whose real buffer is negotiated with the
+	 * bridge via getinfo) to cut down on shiftDR()/wire round-trips */
+	int xfer_len = _jtag->preferred_xfer_bits(512*8) / 8;
 	Jtag::tapState_t tx_end;
-	uint8_t tx[512];
 
 	if (_fpga_family == TITANIUM_FAMILY)
 		_jtag->set_state(Jtag::RUN_TEST_IDLE);
@@ -391,10 +395,8 @@ bool Efinix::programJTAG(const uint8_t *data, const int length)
 		} else {
 			tx_end = Jtag::SHIFT_DR;
 		}
-		for (int pos = 0; pos < xfer_len; pos++)
-			tx[pos] = EfinixHexParser::reverseByte(data[i+pos]);
 
-		_jtag->shiftDR(tx, NULL, xfer_len*8, tx_end);
+		_jtag->shiftDR(&data[i], NULL, xfer_len*8, tx_end);
 		progress.display(i);
 	}
 
@@ -404,7 +406,8 @@ bool Efinix::programJTAG(const uint8_t *data, const int length)
 
 	_jtag->shiftIR(ENTERUSER, _irlen, Jtag::EXIT1_IR);
 
-	memset(tx, 0, 512);
+	uint8_t tx[100];
+	memset(tx, 0, 100);
 	_jtag->shiftDR(tx, NULL, 100);
 	_jtag->shiftIR(IDCODE, _irlen);
 	uint8_t idc[4];
@@ -453,7 +456,7 @@ bool Efinix::prepare_flash_access()
 
 	/* first: load spi over jtag */
 	try {
-		EfinixHexParser bridge(bitname);
+		EfinixHexParser bridge(bitname, true);
 		bridge.parse();
 		const uint8_t *data = bridge.getData();
 		const int length = bridge.getLength() / 8;
@@ -483,7 +486,8 @@ int Efinix::spi_put(uint8_t cmd,
 			const uint8_t *tx, uint8_t *rx, uint32_t len)
 {
 	int kXferLen = len + 1 + ((rx == NULL) ? 0 : 1);
-	uint8_t jtx[kXferLen];
+	_xfer_buf.resize(kXferLen);
+	uint8_t *jtx = _xfer_buf.data();
 	jtx[0] = EfinixHexParser::reverseByte(cmd);
 	uint8_t jrx[kXferLen];
 	if (tx != NULL) {
@@ -508,7 +512,8 @@ int Efinix::spi_put(uint8_t cmd,
 int Efinix::spi_put(const uint8_t *tx, uint8_t *rx, uint32_t len)
 {
 	int kXferLen = len + ((rx == NULL) ? 0 : 1);
-	uint8_t jtx[kXferLen];
+	_xfer_buf.resize(kXferLen);
+	uint8_t *jtx = _xfer_buf.data();
 	uint8_t jrx[kXferLen];
 	if (tx != NULL) {
 		for (uint32_t i=0; i < len; i++)
