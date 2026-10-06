@@ -400,7 +400,14 @@ int DirtyJtag::writeTDI(const uint8_t *tx, uint8_t *rx, uint32_t len, bool end)
 			}
 		}
 	}
-	return EXIT_SUCCESS;
+	/* JtagInterface::writeTDI() contract: return len on success (not
+	 * EXIT_SUCCESS/0). Jtag::read_write(), the only caller in the
+	 * normal (non-XVC) flow, discards this return value entirely, so
+	 * this never surfaced there -- but XVC_server::generic_writeTMSTDI()
+	 * does check it strictly, and returning 0 here made every single
+	 * shift look like a failure to it, even on a fully successful
+	 * transfer. */
+	return len;
 }
 
 /* GPIO helpers */

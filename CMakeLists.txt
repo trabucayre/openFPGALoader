@@ -23,6 +23,19 @@ option(WINDOWS_STATIC_ZLIB "Link zlib statically for Windows builds"            
 
 if (${CMAKE_SYSTEM_NAME} MATCHES "Windows")
 	set(ENABLE_UDEV OFF)
+	# NOTE: WIN32_LEAN_AND_MEAN is needed to avoid a <windows.h>/
+	# <winsock2.h> ordering conflict ("Please include winsock2.h before
+	# windows.h"), but only in translation units that pull in both
+	# Winsock (via src/xvc_sockcompat.hpp) and <windows.h> (via
+	# libusb.h, transitively included by cable.hpp/jtag.hpp/
+	# libusb_ll.hpp). It's defined locally, guarded by #ifndef, at the
+	# top of src/xvc_sockcompat.hpp itself -- scoped to exactly the
+	# files that include it (xvc_client.cpp, xvc_server.cpp, main.cpp,
+	# jtag.cpp), rather than globally for every Windows translation
+	# unit. Defining it globally here as well previously affected
+	# unrelated files too (e.g. ch347jtag.cpp), which is unnecessary
+	# and was suspected of interacting badly with libusb's Windows
+	# backend under sustained USB traffic.
 else()
 	option(ENABLE_UDEV "use udev to search JTAG adapter from /dev/xx" ON)
 endif()
@@ -69,15 +82,16 @@ endif()
 
 option(ENABLE_XILINX_PLATFORM_CABLE_USB "enable Xilinx Platform Cable USB (XPCU) support" ${ENABLE_CABLE_ALL})
 
-# XVC and RemoteBitbang are not available on Windows OS.
+# XVC client/server now build on Windows too: src/xvc_client.* and
+# src/xvc_server.* use a small Winsock2 portability shim
+# (src/xvc_sockcompat.hpp) so they no longer require POSIX sockets.
+# RemoteBitbang stays POSIX-only (unrelated to XVC).
+option(ENABLE_XILINX_VIRTUAL_CABLE_CLIENT "enable Xilinx Virtual Cable (XVC) client support" ${ENABLE_CABLE_ALL})
+option(ENABLE_XILINX_VIRTUAL_CABLE_SERVER "enable Xilinx Virtual Cable (XVC) server support" ${ENABLE_CABLE_ALL})
 if (NOT ${CMAKE_SYSTEM_NAME} MATCHES "Windows")
-	option(ENABLE_REMOTEBITBANG               "enable remote bitbang driver"              ${ENABLE_CABLE_ALL})
-	option(ENABLE_XILINX_VIRTUAL_CABLE_CLIENT "enable Xilinx Virtual Cable (XVC) client support" ${ENABLE_CABLE_ALL})
-	option(ENABLE_XILINX_VIRTUAL_CABLE_SERVER "enable Xilinx Virtual Cable (XVC) server support" ${ENABLE_CABLE_ALL})
+	option(ENABLE_REMOTEBITBANG "enable remote bitbang driver" ${ENABLE_CABLE_ALL})
 else()
-	set(ENABLE_REMOTEBITBANG               OFF)
-	set(ENABLE_XILINX_VIRTUAL_CABLE_CLIENT OFF)
-	set(ENABLE_XILINX_VIRTUAL_CABLE_SERVER OFF)
+	set(ENABLE_REMOTEBITBANG OFF)
 endif()
 
 ####################################################################################################
@@ -804,7 +818,9 @@ endif()
 
 if (ENABLE_XILINX_VIRTUAL_CABLE_CLIENT)
 	add_definitions(-DENABLE_XVC_CLIENT=1)
-	set(CMAKE_EXE_LINKER_FLAGS "-pthread ${CMAKE_EXE_LINKER_FLAGS}")
+	if (NOT ${CMAKE_SYSTEM_NAME} MATCHES "Windows")
+		set(CMAKE_EXE_LINKER_FLAGS "-pthread ${CMAKE_EXE_LINKER_FLAGS}")
+	endif()
 	message("Xilinx Virtual Client support enabled")
 else()
 	message("Xilinx Virtual Client support disabled")
@@ -812,7 +828,9 @@ endif()
 
 if (ENABLE_XILINX_VIRTUAL_CABLE_SERVER)
 	add_definitions(-DENABLE_XVC_SERVER=1)
-	set(CMAKE_EXE_LINKER_FLAGS "-pthread ${CMAKE_EXE_LINKER_FLAGS}")
+	if (NOT ${CMAKE_SYSTEM_NAME} MATCHES "Windows")
+		set(CMAKE_EXE_LINKER_FLAGS "-pthread ${CMAKE_EXE_LINKER_FLAGS}")
+	endif()
 	message("Xilinx Virtual Server support enabled")
 else()
 	message("Xilinx Virtual Server support disabled")

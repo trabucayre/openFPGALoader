@@ -3,6 +3,16 @@
  * Copyright (C) 2020 Gwenhael Goavec-Merou <gwenhael.goavec-merou@trabucayre.com>
  */
 
+#if defined(_WIN32) && defined(ENABLE_XVC_CLIENT)
+/* winsock2.h (pulled in by xvc_sockcompat.hpp) must be included before
+ * windows.h. Several cable headers included below (anlogicCable.hpp,
+ * ftdiJtagMPSSE.hpp, jlink.hpp, ...) transitively include <windows.h>
+ * through libusb.h or libftdi's ftdi.h, no matter where xvc_client.hpp
+ * itself appears in this file. Force this header first, unconditionally,
+ * so winsock2.h always wins the race. */
+#include "xvc_sockcompat.hpp"
+#endif
+
 #include <cstring>
 #include <iomanip>
 #include <iostream>

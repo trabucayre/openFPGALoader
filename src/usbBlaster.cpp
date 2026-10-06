@@ -42,7 +42,17 @@
 UsbBlaster::UsbBlaster(const cable_t &cable, const std::string &firmware_path,
 		int8_t verbose):
 			_verbose(verbose > 1), _nb_bit(0),
-			_curr_tms(0), _buffer_size(64),
+			/* Bumped from the original 64 to 1024: confirmed working
+			 * on real USB-BlasterI hardware by the user. Values
+			 * above 1024 caused USB read timeouts on that same
+			 * hardware (the classic FT245 "sync FIFO" protocol
+			 * doesn't sustain much larger write+read transactions
+			 * reliably) -- do not raise this further without
+			 * retesting on real hardware. Note the two `> 64`
+			 * checks a bit further down in this file are left
+			 * exactly as in upstream (not switched to _buffer_size)
+			 * on purpose, matching exactly what was tested. */
+			_curr_tms(0), _buffer_size(1024),
 			_passive_serial_mode(false)
 {
 	if (cable.pid == 0x6001 || cable.pid == 0x6002 || cable.pid == 0x6003)
@@ -169,6 +179,44 @@ int UsbBlaster::writeTDI(const uint8_t *tx, uint8_t *rx, uint32_t len, bool end)
 	 */
 	_in_buf[_nb_bit++] = DEFAULT | DO_BITBB | DO_WRITE | _curr_tms;
 	flush();
+
+	if (_curr_tms != 0 && nb_byte != 0) {
+		/* The fast DO_SHIFT path below does not touch the TMS pin at
+		 * all: it only shifts data while relying on TMS already
+		 * being physically driven low by some earlier bit-banged
+		 * write, tracked here as _curr_tms. When that isn't true --
+		 * e.g. a caller (such as the XVC server's generic TMS+TDI
+		 * fallback) invokes writeTDI() right after a run of pure
+		 * TMS=1 bits, with no intervening writeTMS() call ending on
+		 * tms=0 -- using DO_SHIFT directly would leave the TAP
+		 * outside SHIFT-DR/IR and produce garbage. An earlier version
+		 * of this fix bit-banged the *entire* byte-aligned portion in
+		 * that case (safe, but slow: 2 bytes of USB traffic per bit
+		 * instead of DO_SHIFT's 1:1). Priming with just the first
+		 * byte here is enough: it's bit-banged (still explicitly
+		 * driving TMS=0 for every one of its bits, still capturing
+		 * its TDO correctly -- unlike the very first, buggy version
+		 * of this fix, which silently dropped this data instead), and
+		 * once it's done the wire is genuinely at TMS=0, so the
+		 * *rest* of the byte-aligned data (if any) can go through the
+		 * normal fast DO_SHIFT loop just below, restoring full speed
+		 * for everything but that first byte. */
+		uint8_t mask = DEFAULT | DO_BITBB;
+		for (uint32_t k = 0; k < 8; k++) {
+			uint8_t val = 0;
+			if (tx)
+				val |= ((tx_ptr[0] & (1 << k))? _tdi_pin : 0);
+			_in_buf[_nb_bit++] = mask | val;
+			_in_buf[_nb_bit++] = mask | mode | val | _tck_pin;
+		}
+		if (writeBit((rx)? rx_ptr:NULL, 8) < 0)
+			return -EXIT_FAILURE;
+		if (rx)
+			rx_ptr += 1;
+		tx_ptr += 1;
+		nb_byte -= 1;
+		_curr_tms = 0;
+	}
 
 	if (_curr_tms == 0 && nb_byte != 0) {
 		uint8_t mask = DO_SHIFT | mode;
