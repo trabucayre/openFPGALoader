@@ -31,6 +31,7 @@ enum communication_type {
 	MODE_GWU2X,            /*! Gowin GWU2X JTAG mode */
 	MODE_ESP,              /*! esp32c3, esp32s3 */
 	MODE_XPCU,             /*! Xilinx Platform Cable USB (XPCU) */
+	MODE_DIGILENT_ADEPT,   /*! Digilent Adept USB (Basys 2, etc.) */
 };
 
 /*!
@@ -98,6 +99,7 @@ static std::map <std::string, cable_t> cable_list = {
 	{"gatemate_evb_jtag",  FTDI_SER(0x0403, 0x6010, FTDI_INTF_A, 0x10, 0x1B, 0x00, 0x01)},
 	{"gatemate_evb_spi",   FTDI_SER(0x0403, 0x6010, FTDI_INTF_B, 0x00, 0x1B, 0x00, 0x01)},
 	{"dfu",                CABLE_DEF(MODE_DFU, 0, 0                                    )},
+	{"digilent_adept",     CABLE_DEF(MODE_DIGILENT_ADEPT, 0x1443, 0x0007                )},
 	{"digilent",           FTDI_SER(0x0403, 0x6010, FTDI_INTF_A, 0xe8, 0xeb, 0x00, 0x60)},
 	{"digilent_b",         FTDI_SER(0x0403, 0x6010, FTDI_INTF_B, 0xe8, 0xeb, 0x00, 0x60)},
 	{"digilent_ft4232",    FTDI_SER(0x0403, 0x6011, FTDI_INTF_A, 0x08, 0x2B, 0x08, 0x0B)},

@@ -221,6 +221,13 @@
   Memory: OK
   Flash: NA
 
+- ID: basys2
+  Description: Digilent Basys2
+  URL: https://digilent.com/reference/programmable-logic/basys-2/start
+  FPGA: Spartan3E XC3S100E
+  Memory: OK
+  Flash: OK
+
 - ID: basys3
   Description: Digilent Basys3
   URL: https://reference.digilentinc.com/reference/programmable-logic/basys-3/start
