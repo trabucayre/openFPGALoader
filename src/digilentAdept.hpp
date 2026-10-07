@@ -51,11 +51,9 @@ class DigilentAdept : public JtagInterface {
 	        uint8_t *reply_payload, uint16_t reply_len,
 	        uint32_t *stats_sent = nullptr, uint32_t *stats_recvd = nullptr);
 
-	int cmd_long(uint8_t app, uint8_t cmd_id, uint8_t port,
-	             const uint8_t *payload, uint16_t payload_len,
-	             const uint8_t *tx_data, uint32_t tx_len,
-	             uint8_t *rx_data, uint32_t rx_len,
-	             uint32_t *stats_sent = nullptr, uint32_t *stats_recvd = nullptr);
+	int cmd_long(uint8_t cmd_id, bool oe, bool pin, uint32_t xfer_len,
+		const uint8_t *tx_data, uint8_t *rx_data,
+		uint32_t *stats_sent = nullptr, uint32_t *stats_recvd = nullptr);
 };
 
 #endif  // SRC_DIGILENTADEPT_HPP_

@@ -208,7 +208,7 @@ int DigilentAdept::cmd(uint8_t app, uint8_t cmd_id, uint8_t port,
 
 	int transferred = 0;
 	int ret = libusb_bulk_transfer(_dev_handle, ADEPT_CMD_WRITE_EP,
-	                               pkt.data(), pkt.size(), &transferred, 2000);
+		pkt.data(), pkt.size(), &transferred, 2000);
 	if (ret < 0) {
 		if (_verbose)
 			printError("Adept cmd bulk write failed: " + std::to_string(ret));
@@ -273,26 +273,36 @@ static void LIBUSB_CALL async_cb(struct libusb_transfer *xfer) {
 	ctx->actual_length = xfer->actual_length;
 }
 
-int DigilentAdept::cmd_long(uint8_t app, uint8_t cmd_id, uint8_t port,
-                            const uint8_t *payload, uint16_t payload_len,
-                            const uint8_t *tx_data, uint32_t tx_len,
-                            uint8_t *rx_data, uint32_t rx_len,
-                            uint32_t *stats_sent, uint32_t *stats_recvd)
+int DigilentAdept::cmd_long(uint8_t cmd_id, bool oe, bool pin,
+	uint32_t xfer_len, const uint8_t *tx_data, uint8_t *rx_data,
+	uint32_t *stats_sent, uint32_t *stats_recvd)
 {
-	int ret = cmd(app, cmd_id, port, payload, payload_len, nullptr, 0);
-	if (ret < 0) return ret;
+	const uint32_t tx_len = (tx_data) ? xfer_len : 0;
+	const uint32_t rx_len = (rx_data) ? xfer_len : 0;
+	const uint8_t payload[] {
+		static_cast<uint8_t>(oe  ? 1 : 0),
+		static_cast<uint8_t>(pin ? 1 : 0),
+		static_cast<uint8_t>((xfer_len >>  0) & 0xff),
+		static_cast<uint8_t>((xfer_len >>  8) & 0xff),
+		static_cast<uint8_t>((xfer_len >> 16) & 0xff),
+		static_cast<uint8_t>((xfer_len >> 24) & 0xff)
+	};
+	int ret = cmd(APP_DJTG, cmd_id, 0, payload, 6, nullptr, 0);
+	if (ret < 0)
+		return ret;
 
-	if ((tx_data && tx_len > 0) || (rx_data && rx_len > 0)) {
+	if (tx_len > 0 || rx_len > 0) {
 		AsyncContext tx_ctx, rx_ctx;
 		struct libusb_transfer *tx_xfer = nullptr;
 		struct libusb_transfer *rx_xfer = nullptr;
 
-		if (tx_data && tx_len > 0) {
+		if (tx_len > 0) {
 			tx_xfer = libusb_alloc_transfer(0);
-			if (!tx_xfer) return -1;
+			if (!tx_xfer)
+				return -1;
 			libusb_fill_bulk_transfer(tx_xfer, _dev_handle, ADEPT_DATA_WRITE_EP,
-			                          const_cast<uint8_t*>(tx_data), tx_len,
-			                          async_cb, &tx_ctx, 5000);
+				const_cast<uint8_t*>(tx_data), tx_len,
+				async_cb, &tx_ctx, 5000);
 			ret = libusb_submit_transfer(tx_xfer);
 			if (ret < 0) {
 				libusb_free_transfer(tx_xfer);
@@ -305,15 +315,16 @@ int DigilentAdept::cmd_long(uint8_t app, uint8_t cmd_id, uint8_t port,
 		if (rx_data && rx_len > 0) {
 			rx_xfer = libusb_alloc_transfer(0);
 			if (!rx_xfer) {
-				if (tx_xfer) libusb_free_transfer(tx_xfer);
+				if (tx_xfer)
+					libusb_free_transfer(tx_xfer);
 				return -1;
 			}
 			libusb_fill_bulk_transfer(rx_xfer, _dev_handle, ADEPT_DATA_READ_EP,
-			                          rx_data, rx_len,
-			                          async_cb, &rx_ctx, 5000);
+				rx_data, rx_len, async_cb, &rx_ctx, 5000);
 			ret = libusb_submit_transfer(rx_xfer);
 			if (ret < 0) {
-				if (tx_xfer) libusb_free_transfer(tx_xfer);
+				if (tx_xfer)
+					libusb_free_transfer(tx_xfer);
 				libusb_free_transfer(rx_xfer);
 				return ret;
 			}
@@ -321,31 +332,36 @@ int DigilentAdept::cmd_long(uint8_t app, uint8_t cmd_id, uint8_t port,
 			rx_ctx.done = true;
 		}
 
-		while (!tx_ctx.done || !rx_ctx.done) {
+		int r = 0;
+		while (r >= 0 && (!tx_ctx.done || !rx_ctx.done)) {
 			struct timeval tv = {1, 0};
-			int r = libusb_handle_events_timeout_completed(_ctx, &tv, nullptr);
-			if (r < 0) break;
+			r = libusb_handle_events_timeout_completed(_ctx, &tv, nullptr);
 		}
 
 		if (tx_xfer) {
 			if (tx_ctx.status != LIBUSB_TRANSFER_COMPLETED && _verbose) {
-				printError("Adept cmd_long: tx transfer failed status: " + std::to_string(tx_ctx.status));
+				printError("Adept cmd_long: tx transfer failed status: " +
+					std::to_string(tx_ctx.status));
 			}
 			libusb_free_transfer(tx_xfer);
 		}
 
 		if (rx_xfer) {
 			if (rx_ctx.status != LIBUSB_TRANSFER_COMPLETED && _verbose) {
-				printError("Adept cmd_long: rx transfer failed status: " + std::to_string(rx_ctx.status));
+				printError("Adept cmd_long: rx transfer failed status: " +
+					std::to_string(rx_ctx.status));
 			}
 			libusb_free_transfer(rx_xfer);
 		}
 	}
 
 	uint32_t sent = 0, recvd = 0;
-	ret = cmd(app, cmd_id | 0x80, port, nullptr, 0, nullptr, 0, &sent, &recvd);
-	if (stats_sent) *stats_sent = sent;
-	if (stats_recvd) *stats_recvd = recvd;
+	ret = cmd(APP_DJTG, cmd_id | 0x80, 0, nullptr, 0, nullptr, 0,
+		&sent, &recvd);
+	if (stats_sent)
+		*stats_sent = sent;
+	if (stats_recvd)
+		*stats_recvd = recvd;
 	return ret;
 }
 
@@ -376,16 +392,8 @@ int DigilentAdept::toggleClk(uint8_t tms, uint8_t tdi, uint32_t clk_len)
 {
 	if (clk_len == 0) return 0;
 
-	uint8_t req[6];
-	req[0] = (tms ? 1 : 0);
-	req[1] = (tdi ? 1 : 0);
-	req[2] = clk_len & 0xff;
-	req[3] = (clk_len >> 8) & 0xff;
-	req[4] = (clk_len >> 16) & 0xff;
-	req[5] = (clk_len >> 24) & 0xff;
-
-	int ret = cmd_long(APP_DJTG, CMD_DJTG_CLOCK_TCK, 0, req, sizeof(req),
-	                   nullptr, 0, nullptr, 0);
+	const int ret = cmd_long(CMD_DJTG_CLOCK_TCK, tms, tdi, clk_len,
+		nullptr, nullptr, nullptr, nullptr);
 	return (ret < 0) ? -1 : 0;
 }
 
@@ -408,19 +416,11 @@ int DigilentAdept::writeTMS(const uint8_t *tms, uint32_t len, bool flush_buffer,
 				tx_buf[b >> 3] |= (1 << (b & 7));
 		}
 
-		uint8_t req[6];
-		req[0] = 0; // oe = 0
-		req[1] = (tdi ? 1 : 0);
-		req[2] = chunk_bits & 0xff;
-		req[3] = (chunk_bits >> 8) & 0xff;
-		req[4] = (chunk_bits >> 16) & 0xff;
-		req[5] = (chunk_bits >> 24) & 0xff;
-
 		uint32_t sent = 0;
-		int ret = cmd_long(APP_DJTG, CMD_DJTG_PUT_TMS_BITS, 0, req, sizeof(req),
-		                   tx_buf.data(), byte_count, nullptr, 0, &sent, nullptr);
-		if (ret < 0) return -1;
-
+		const int ret = cmd_long(CMD_DJTG_PUT_TMS_BITS, false, tdi, chunk_bits,
+			tx_buf.data(), nullptr, &sent, nullptr);
+		if (ret < 0)
+			return -1;
 		remaining -= chunk_bits;
 		bit_offset += chunk_bits;
 	}
@@ -434,18 +434,9 @@ int DigilentAdept::writeTDI(const uint8_t *tx, uint8_t *rx, uint32_t len, bool e
 
 	auto shift_raw = [this](const uint8_t *t_buf, uint8_t *r_buf, uint32_t n_bits, uint8_t tms_val, bool oe) -> int {
 		uint32_t n_bytes = (n_bits + 7) / 8;
-		uint8_t req[6];
-		req[0] = (oe ? 1 : 0);
-		req[1] = (tms_val ? 1 : 0);
-		req[2] = n_bits & 0xff;
-		req[3] = (n_bits >> 8) & 0xff;
-		req[4] = (n_bits >> 16) & 0xff;
-		req[5] = (n_bits >> 24) & 0xff;
-
 		uint32_t sent = 0, recvd = 0;
-		int ret = cmd_long(APP_DJTG, CMD_DJTG_PUT_TDI_BITS, 0, req, sizeof(req),
-		                   t_buf, n_bytes, (oe ? r_buf : nullptr), (oe ? n_bytes : 0),
-		                   &sent, &recvd);
+		const int ret = cmd_long(CMD_DJTG_PUT_TDI_BITS, oe, tms_val, n_bytes,
+			t_buf, (oe ? r_buf : nullptr), &sent, &recvd);
 		return ret;
 	};
 
@@ -518,7 +509,6 @@ int DigilentAdept::writeTDI(const uint8_t *tx, uint8_t *rx, uint32_t len, bool e
 }
 
 bool DigilentAdept::configReset(bool assert_reset)
-
 {
 	uint8_t p = (assert_reset ? 1 : 0);
 	return (cmd(APP_DMGT, CMD_DMGT_CONFIG_RESET, 0, &p, 1, nullptr, 0) == 0);
