@@ -120,9 +120,10 @@ int CH552_jtag::writeTMS(const uint8_t *tms, uint32_t len, bool flush_buffer,
 
 		mpsse_store(buf, 3);
 		if (pos >= iter) {
-			uint8_t tmp[_to_read];
+			std::vector<uint8_t> tmp;
+			tmp.resize(_to_read);
 			pos = 0;
-			if (-1 == mpsse_read(tmp, _to_read))
+			if (-1 == mpsse_read(tmp.data(), _to_read))
 				printError("writeTMS: Fail to read/write");
 			_to_read = 0;
 		}
@@ -131,8 +132,9 @@ int CH552_jtag::writeTMS(const uint8_t *tms, uint32_t len, bool flush_buffer,
 
 	if (flush_buffer) {
 		if (_to_read > 0) {
-			uint8_t tmp[_to_read];
-			if (mpsse_read(tmp, _to_read) == -1)
+			std::vector<uint8_t> tmp;
+			tmp.resize(_to_read);
+			if (mpsse_read(tmp.data(), _to_read) == -1)
 				printError("writeTMS: fail to flush");
 			_to_read = 0;
 		}
@@ -149,10 +151,11 @@ int CH552_jtag::toggleClk(uint8_t tms, uint8_t tdi, uint32_t clk_len)
 	(void) tdi;
 
 	int byteLen = (clk_len+7)/8;
-	uint8_t buf_tms[byteLen];
+	std::vector<uint8_t> buf_tms;
+	buf_tms.resize(byteLen);
 
-	memset(buf_tms, (tms) ? 0xff : 0x00, byteLen);
-	return writeTMS(buf_tms, clk_len, false);
+	memset(buf_tms.data(), (tms) ? 0xff : 0x00, byteLen);
+	return writeTMS(buf_tms.data(), clk_len, false);
 }
 
 int CH552_jtag::flush()
@@ -163,8 +166,9 @@ int CH552_jtag::flush()
 		if (ret == -1)
 			printError("flush: fails to write");
 	} else {
-		uint8_t tmp[_to_read];
-		ret = mpsse_read(tmp, _to_read);
+		std::vector<uint8_t> tmp;
+		tmp.resize(_to_read);
+		ret = mpsse_read(tmp.data(), _to_read);
 		if (ret == -1)
 			printError("flush: fails to read/write");
 		_to_read = 0;
@@ -199,8 +203,9 @@ int CH552_jtag::writeTDI(const uint8_t *tdi, uint8_t *tdo, uint32_t len, bool la
 	uint8_t oneshot_buf[3] = {rd_cmd, 0, 0};
 
 	if (_to_read != 0) {
-		uint8_t tmp_[_to_read];
-		if (mpsse_read(tmp_, _to_read) == -1)
+		std::vector<uint8_t> tmp_;
+		tmp_.resize(_to_read);
+		if (mpsse_read(tmp_.data(), _to_read) == -1)
 			printError("writeTDI: fails to flush read");
 		_to_read = 0;
 	}

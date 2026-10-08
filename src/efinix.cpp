@@ -483,9 +483,10 @@ int Efinix::spi_put(uint8_t cmd,
 			const uint8_t *tx, uint8_t *rx, uint32_t len)
 {
 	int kXferLen = len + 1 + ((rx == NULL) ? 0 : 1);
-	uint8_t jtx[kXferLen];
+	std::vector<uint8_t> jtx, jrx;
+	jtx.resize(kXferLen, 0);
+	jrx.resize(kXferLen, 0);
 	jtx[0] = EfinixHexParser::reverseByte(cmd);
-	uint8_t jrx[kXferLen];
 	if (tx != NULL) {
 		for (uint32_t i=0; i < len; i++)
 			jtx[i+1] = EfinixHexParser::reverseByte(tx[i]);
@@ -496,7 +497,7 @@ int Efinix::spi_put(uint8_t cmd,
 	 * in the same time store each byte
 	 * to next
 	 */
-	_jtag->shiftDR(jtx, (rx == NULL)? NULL: jrx, 8*kXferLen);
+	_jtag->shiftDR(jtx.data(), (rx == NULL)? NULL: jrx.data(), 8*kXferLen);
 
 	if (rx != NULL) {
 		for (uint32_t i=0; i < len; i++)
@@ -508,8 +509,9 @@ int Efinix::spi_put(uint8_t cmd,
 int Efinix::spi_put(const uint8_t *tx, uint8_t *rx, uint32_t len)
 {
 	int kXferLen = len + ((rx == NULL) ? 0 : 1);
-	uint8_t jtx[kXferLen];
-	uint8_t jrx[kXferLen];
+	std::vector<uint8_t> jtx, jrx;
+	jtx.resize(kXferLen, 0);
+	jrx.resize(kXferLen, 0);
 	if (tx != NULL) {
 		for (uint32_t i=0; i < len; i++)
 			jtx[i] = EfinixHexParser::reverseByte(tx[i]);
@@ -520,7 +522,7 @@ int Efinix::spi_put(const uint8_t *tx, uint8_t *rx, uint32_t len)
 	 * in the same time store each byte
 	 * to next
 	 */
-	_jtag->shiftDR(jtx, (rx == NULL)? NULL: jrx, 8*kXferLen);
+	_jtag->shiftDR(jtx.data(), (rx == NULL)? NULL: jrx.data(), 8*kXferLen);
 
 	if (rx != NULL) {
 		for (uint32_t i=0; i < len; i++)
