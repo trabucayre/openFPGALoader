@@ -178,7 +178,7 @@ int DirtyJtag::setClkFreq(uint32_t clkHz)
 }
 
 int DirtyJtag::writeTMS(const uint8_t *tms, uint32_t len,
-		__attribute__((unused)) bool flush_buffer,
+		[[maybe_unused]] bool flush_buffer,
 		const uint8_t tdi)
 {
 	int actual_length;
@@ -222,8 +222,8 @@ int DirtyJtag::writeTMS(const uint8_t *tms, uint32_t len,
 	return len;
 }
 
-int DirtyJtag::toggleClk(__attribute__((unused)) uint8_t tms,
-	__attribute__((unused)) uint8_t tdi, uint32_t clk_len)
+int DirtyJtag::toggleClk([[maybe_unused]] uint8_t tms,
+	[[maybe_unused]] uint8_t tdi, uint32_t clk_len)
 {
 	int actual_length;
 	uint8_t buf[] = {CMD_CLK,
