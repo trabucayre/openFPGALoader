@@ -8,7 +8,7 @@
 #include <libusb.h>
 #include <stdio.h>
 #include <string.h>
-#include <unistd.h>
+#include "portability/unistd.hpp"
 
 #include <cassert>
 #include <iostream>

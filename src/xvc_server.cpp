@@ -9,7 +9,7 @@
 #include <sys/socket.h>
 #include <errno.h>
 #include <netinet/tcp.h>
-#include <unistd.h>
+#include "portability/unistd.hpp"
 
 #include <cstring>
 #include <stdexcept>

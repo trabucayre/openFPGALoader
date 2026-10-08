@@ -5,7 +5,7 @@
 
 #include <stdio.h>
 #include <stdlib.h>
-#include <unistd.h>
+#include "portability/unistd.hpp"
 #include <chrono>
 #include <string>
 #include "progressBar.hpp"

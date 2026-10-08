@@ -6,7 +6,7 @@
 #include "ice40.hpp"
 
 #include <string.h>
-#include <unistd.h>
+#include "portability/unistd.hpp"
 
 #include <iostream>
 #include <string>

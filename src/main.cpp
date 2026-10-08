@@ -4,7 +4,7 @@
  */
 
 #include <string.h>
-#include <unistd.h>
+#include "portability/unistd.hpp"
 
 #include <fstream>
 #include <iomanip>

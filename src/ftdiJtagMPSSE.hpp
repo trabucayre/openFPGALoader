@@ -6,7 +6,7 @@
 #ifndef SRC_FTDIJTAGMPSSE_HPP_
 #define SRC_FTDIJTAGMPSSE_HPP_
 
-#include <ftdi.h>
+#include "portability/ftdi.hpp"
 
 #include <cstdint>
 #include <iostream>
