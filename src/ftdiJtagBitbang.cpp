@@ -42,6 +42,9 @@ FtdiJtagBitBang::FtdiJtagBitBang(const cable_t &cable,
 		pin_conf->tdi_pin, pin_conf->tdo_pin};
 	for (uint32_t i = 0; i < sizeof(pins) / sizeof(pins[0]); i++) {
 		if (pins[i] > FT232RL_RI || pins[i] < FT232RL_TXD) {
+			// tdo is allowed to be on a cbus pin
+			if (i == 3 && pins[i] >= FT232RL_CBUS0 && pins[i] <= FT232RL_CBUS3)
+				continue;
 			printf("%d\n", pins[i]);
 			printError("Invalid pin ID");
 			throw std::exception();
@@ -51,12 +54,21 @@ FtdiJtagBitBang::FtdiJtagBitBang(const cable_t &cable,
 	_tck_pin = 1 << pin_conf->tck_pin;
 	_tms_pin = 1 << pin_conf->tms_pin;
 	_tdi_pin = 1 << pin_conf->tdi_pin;
-	_tdo_pin = 1 << pin_conf->tdo_pin;
+	if (pin_conf->tdo_pin >= FT232RL_CBUS0) {
+		_tdo_pin = 1 << (pin_conf->tdo_pin - FT232RL_CBUS0);
+
+		// It's not documented anywhere, but we can set cbus and async at the same time
+		// This is twice as fast as switching between the two modes for every bit.
+		_async_bitmode = BITMODE_CBUS | BITMODE_BITBANG;
+	} else {
+		_tdo_pin = 1 << pin_conf->tdo_pin;
+		_async_bitmode = BITMODE_BITBANG;
+	}
 
 	/* store FTDI TX Fifo size */
 	if (_pid == 0x6001)  // FT232R
 		_rx_size = 256;
-	else if (_pid == 0x6015)  // FT231X
+	else if (_pid == 0x6015)  // FT230X / FT231X
 		_rx_size = 512;
 	else
 		_rx_size = _buffer_size;
@@ -76,9 +88,9 @@ FtdiJtagBitBang::FtdiJtagBitBang(const cable_t &cable,
 
 	setClkFreq(clkHZ);
 
-	if (init(1, _tck_pin | _tms_pin | _tdi_pin, BITMODE_BITBANG) != 0)
+	if (init(1, _tck_pin | _tms_pin | _tdi_pin, _async_bitmode) != 0)
 		throw std::runtime_error("low level FTDI init failed");
-	setBitmode(BITMODE_BITBANG);
+	setBitmode(_async_bitmode);
 }
 
 FtdiJtagBitBang::~FtdiJtagBitBang()
@@ -248,30 +260,72 @@ int FtdiJtagBitBang::write(uint8_t *tdo, int nb_bit)
 	if (_num == 0)
 		return 0;
 
-	setBitmode((tdo) ? BITMODE_SYNCBB : BITMODE_BITBANG);
+	auto apply_tdo = [&](uint8_t pins, int offset) {
+		// Need to reconstruct received data
+		// since jtag is LSB first we need to shift in from top
+		tdo[offset >> 3] = (((pins & _tdo_pin) ? 0x80 : 0x00) | (tdo[offset >> 3] >> 1));
+	};
 
-	ret = ftdi_write_data(_ftdi, _buffer, _num);
-	if (ret != _num) {
-		printf("problem %d written\n", ret);
-		return ret;
-	}
+	// the buffer may contains some tms bit, so start with i
+	// equal to fill exactly nb_bit bits
+	// The even bits are discarded, so start at an odd offset
+	int rx_offset = _num-(nb_bit *2) + 1;
 
-	if (tdo) {
-		ret = ftdi_read_data(_ftdi, _buffer, _num);
+	if (tdo == nullptr || _async_bitmode == BITMODE_BITBANG) {
+		setBitmode((tdo) ? BITMODE_SYNCBB : _async_bitmode);
+
+		ret = ftdi_write_data(_ftdi, _buffer, _num);
 		if (ret != _num) {
-			printf("problem %d read\n", ret);
+			printf("problem %d written\n", ret);
 			return ret;
 		}
-		/* need to reconstruct received word 
-		 * even bit are discarded since JTAG read in rising edge
-		 * since jtag is LSB first we need to shift right content by 1
-		 * and add 0x80 (1 << 7) or 0
-		 * the buffer may contains some tms bit, so start with i
-		 * equal to fill exactly nb_bit bits
-		 * */
-		for (int i = (_num-(nb_bit *2) + 1), offset=0; i < _num; i+=2, offset++) {
-			tdo[offset >> 3] = (((_buffer[i] & _tdo_pin) ? 0x80 : 0x00) |
-							(tdo[offset >> 3] >> 1));
+
+		if (tdo) {
+			ret = ftdi_read_data(_ftdi, _buffer, _num);
+			if (ret != _num) {
+				printf("problem %d read\n", ret);
+				return ret;
+			}
+
+			// Even bit are discarded since JTAG read in rising edge
+			for (int i = rx_offset, offset=0; i < _num; i+=2, offset++) {
+				apply_tdo(_buffer[i], offset);
+			}
+		}
+
+	} else {
+		// We are using a CBUS pin for TDO, so we need to poll it for every single bit.
+		// This is painfully slow, limited to about 500 bits per second.
+
+		setBitmode(_async_bitmode);
+
+		uint8_t pins = 0;
+		size_t w_offset = 0;
+
+		// Alternate between writing out two bits, and reading in the TDO pin
+		for (int i = rx_offset, offset=0; i < _num; i+=2, offset++) {
+			int w_len = i - w_offset;
+
+			if ((ret = ftdi_write_data(_ftdi, _buffer + w_offset, w_len) != w_len)) {
+				printf("problem %d writing pins\n", ret);
+				return ret;
+			}
+
+			// Read in the current bit
+			// when both async and cbus bitbang are set, read_pins returns only the cbus pins
+			if ((ret = ftdi_read_pins(_ftdi, &pins)) < 0) {
+				printf("problem %d reading cbus\n", ret);
+				return ret;
+			}
+
+			apply_tdo(pins, offset);
+			w_offset += w_len;
+		}
+
+		// we still have one final bit to write out
+		if ((ret = ftdi_write_data(_ftdi, _buffer + w_offset, 1) != 1)) {
+			printf("problem %d writing\n", ret);
+			return ret;
 		}
 	}
 	_num = 0;
