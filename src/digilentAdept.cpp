@@ -73,12 +73,10 @@
 #define CMD_DEPP_PUT_REG_SET  6
 #define CMD_DEPP_GET_REG_SET  7
 
-DigilentAdept::DigilentAdept(uint32_t clkHZ, int8_t verbose, uint16_t vid, uint16_t pid,
-                             const std::string &serial):
-	_verbose(verbose > 0),
-	_ctx(nullptr),
-	_dev_handle(nullptr),
-	_speed(4000000)
+DigilentAdept::DigilentAdept(uint32_t clkHZ, int8_t verbose,
+	uint16_t vid, uint16_t pid, const std::string &serial):
+	_verbose(verbose > 0), _ctx(nullptr), _dev_handle(nullptr),
+	_speed(4000000), _cable_enabled(false), _if_claimed(false)
 {
 	int ret = libusb_init(&_ctx);
 	if (ret < 0) {
@@ -88,7 +86,7 @@ DigilentAdept::DigilentAdept(uint32_t clkHZ, int8_t verbose, uint16_t vid, uint1
 	libusb_device **devs = nullptr;
 	ssize_t cnt = libusb_get_device_list(_ctx, &devs);
 	if (cnt < 0) {
-		libusb_exit(_ctx);
+		close();
 		throw std::runtime_error("DigilentAdept: failed to get device list");
 	}
 
@@ -131,7 +129,7 @@ DigilentAdept::DigilentAdept(uint32_t clkHZ, int8_t verbose, uint16_t vid, uint1
 	libusb_free_device_list(devs, 1);
 
 	if (ret < 0 || !_dev_handle) {
-		libusb_exit(_ctx);
+		close();
 		throw std::runtime_error("DigilentAdept: failed to open Digilent Adept USB device (1443:0007)");
 	}
 
@@ -142,10 +140,10 @@ DigilentAdept::DigilentAdept(uint32_t clkHZ, int8_t verbose, uint16_t vid, uint1
 
 	ret = libusb_claim_interface(_dev_handle, 0);
 	if (ret < 0) {
-		libusb_close(_dev_handle);
-		libusb_exit(_ctx);
+		close();
 		throw std::runtime_error("DigilentAdept: failed to claim interface 0: " + std::to_string(ret));
 	}
+	_if_claimed = true;
 
 	/* Read device info if verbose */
 	if (_verbose) {
@@ -170,11 +168,10 @@ DigilentAdept::DigilentAdept(uint32_t clkHZ, int8_t verbose, uint16_t vid, uint1
 	/* Enable DJTG port */
 	ret = cmd(APP_DJTG, CMD_APP_ENABLE, 0, nullptr, 0, nullptr, 0);
 	if (ret < 0) {
-		libusb_release_interface(_dev_handle, 0);
-		libusb_close(_dev_handle);
-		libusb_exit(_ctx);
+		close();
 		throw std::runtime_error("DigilentAdept: failed to enable JTAG port");
 	}
+	_cable_enabled = true;
 
 	if (clkHZ == 0)
 		clkHZ = 4000000;
@@ -183,13 +180,25 @@ DigilentAdept::DigilentAdept(uint32_t clkHZ, int8_t verbose, uint16_t vid, uint1
 
 DigilentAdept::~DigilentAdept()
 {
+	close();
+}
+
+void digilentAdept::close()
+{
 	if (_dev_handle) {
-		cmd(APP_DJTG, CMD_APP_DISABLE, 0, nullptr, 0, nullptr, 0);
-		libusb_release_interface(_dev_handle, 0);
+		if (_cable_enabled)
+			cmd(APP_DJTG, CMD_APP_DISABLE, 0, nullptr, 0, nullptr, 0);
+		if (_if_claimed)
+			libusb_release_interface(_dev_handle, 0);
 		libusb_close(_dev_handle);
+		_cable_enabled = false;
+		_if_claimed = false;
+		_dev_handle = nullptr;
 	}
+	/* FIXME: missing reattach */
 	if (_ctx) {
 		libusb_exit(_ctx);
+		_ctx = nullptr;
 	}
 }
 

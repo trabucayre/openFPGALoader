@@ -41,11 +41,7 @@ class DigilentAdept : public JtagInterface {
 	int queryDone();
 
  private:
-	bool _verbose;
-	libusb_context *_ctx;
-	libusb_device_handle *_dev_handle;
-	uint32_t _speed;
-
+	void close();
 	int cmd(uint8_t app, uint8_t cmd_id, uint8_t port,
 	        const uint8_t *payload, uint16_t payload_len,
 	        uint8_t *reply_payload, uint16_t reply_len,
@@ -54,6 +50,13 @@ class DigilentAdept : public JtagInterface {
 	int cmd_long(uint8_t cmd_id, bool oe, bool pin, uint32_t xfer_len,
 		const uint8_t *tx_data, uint8_t *rx_data,
 		uint32_t *stats_sent = nullptr, uint32_t *stats_recvd = nullptr);
+
+	bool _verbose;
+	libusb_context *_ctx;
+	libusb_device_handle *_dev_handle;
+	uint32_t _speed;
+	bool _cable_enabled;
+	bool _if_claimed;
 };
 
 #endif  // SRC_DIGILENTADEPT_HPP_
