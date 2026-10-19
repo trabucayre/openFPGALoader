@@ -77,6 +77,32 @@ class JtagInterface {
 			uint8_t *tdo, uint32_t len)
 	{ (void)tms; (void)tdi; (void)tdo; (void)len; return false;}
 	/*!
+	 * \brief tells whether writeTMSTDI() above is a genuine
+	 *        hardware-level combined TMS+TDI operation for this cable,
+	 *        or just the inherited no-op stub. Used by the XVC server
+	 *        to pick between the fast native path and a slower,
+	 *        universal software fallback built on top of
+	 *        writeTMS()/writeTDI() (see
+	 *        XVC_server::generic_writeTMSTDI()), which every cable
+	 *        supports since both are pure virtual here.
+	 * \return true when writeTMSTDI() actually talks to the hardware
+	 */
+	virtual bool hasNativeTMSTDI() const { return false; }
+	/*!
+	 * \brief optional safety cap, in Hz, on the clock frequency the
+	 *        XVC server should ever request from this cable via
+	 *        setClkFreq(), regardless of what an XVC client (e.g.
+	 *        Vivado, via its own internal negotiation) asks for. Some
+	 *        cable/wiring combinations are less tolerant of high JTAG
+	 *        clock rates than others, and unlike direct (non-XVC) use
+	 *        -- where the frequency is under the user's own control on
+	 *        the command line -- an XVC client typically picks its own
+	 *        frequency without exposing it to the user. Return 0 (the
+	 *        default) for "no cap, honor whatever the client asks
+	 *        for".
+	 */
+	virtual uint32_t maxSafeXvcFreq() const { return 0; }
+	/*!
 	 * \brief toggle clk without touch of TDI/TMS
 	 * \param tms: state of tms signal
 	 * \param tdi: state of tdi signal

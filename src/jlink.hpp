@@ -66,6 +66,7 @@ class Jlink: public JtagInterface {
 		 */
 		virtual bool writeTMSTDI(const uint8_t *tms, const uint8_t *tdi,
 				uint8_t *tdo, uint32_t numbits) override;
+		bool hasNativeTMSTDI() const override { return true; }
 
 		/*!
 		 * \brief send a serie of clock cycle with constant TMS and TDI
