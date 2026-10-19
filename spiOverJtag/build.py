@@ -158,6 +158,7 @@ if tool in ["ise", "vivado"]:
         "xc6slx150tcsg484" : "xc6s_csg484",
         "xc6slx150tfgg484" : "xc6s_t_fgg484",
         "xc6vlx130tff784"  : "xc6v_ff784",
+        "xc6vlx365tlff1156": "xc6vlx365tl_ff1156",
         "xc7vx330tffg1157" : "xc7v_ffg1157",
         "xcku040-ffva1156" : "xcku040_ffva1156",
         "xcku060-ffva1156" : "xcku060_ffva1156",
@@ -189,6 +190,7 @@ if tool in ["ise", "vivado"]:
                 "xc6slx150tcsg484" : "xc6slx150t",
                 "xc6slx150tfgg484" : "xc6slx150t",
                 "xc6vlx130tff784"  : "xc6vlx130t",
+                "xc6vlx365tlff1156": "xc6vlx365t",
             }.get(part, model),
             "package": {
                 "xc3s500evq100"    : "vq100",
@@ -204,6 +206,7 @@ if tool in ["ise", "vivado"]:
                 "xc6slx150tcsg484" : "csg484",
                 "xc6slx150tfgg484" : "fgg484",
                 "xc6vlx130tff784"  : "ff784",
+                "xc6vlx365tlff1156": "ff1156",
             }.get(part, pkg),
             "speed" : speed,
         }
