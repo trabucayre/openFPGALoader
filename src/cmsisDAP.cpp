@@ -496,13 +496,6 @@ bool CmsisDAP::initWithBulk(const cable_t &cable, int8_t verbose, bool err_as_in
 	_ep_out = dev.ep_out;
 	_ep_in = dev.ep_in;
 
-	if (!libusb_dev_mem_alloc(_usb_dev, _pkt_sz)) {
-		libusb_close(_usb_dev);
-		libusb_exit(_ctx);
-		disp_error_info("cmsisDAP: failed to alloc DMA memory for device", err_as_info);
-		return false;
-	}
-
 	return true;
 }
 
