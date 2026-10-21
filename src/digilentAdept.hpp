@@ -24,11 +24,11 @@
 
 class DigilentAdept : public JtagInterface {
  public:
-	DigilentAdept(uint32_t clkHZ, int8_t verbose, uint16_t vid = 0x1443, uint16_t pid = 0x0007,
+	DigilentAdept(uint32_t clkHz, int8_t verbose, uint16_t vid = 0x1443, uint16_t pid = 0x0007,
 	              const std::string &serial = "");
 	virtual ~DigilentAdept();
 
-	int setClkFreq(uint32_t clkHZ) override;
+	int setClkFreq(uint32_t clkHz) override;
 	int writeTMS(const uint8_t *tms, uint32_t len, bool flush_buffer, const uint8_t tdi = 1) override;
 	int writeTDI(const uint8_t *tx, uint8_t *rx, uint32_t len, bool end) override;
 	int toggleClk(uint8_t tms, uint8_t tdi, uint32_t clk_len) override;
@@ -47,7 +47,18 @@ class DigilentAdept : public JtagInterface {
 	        uint8_t *reply_payload, uint16_t reply_len,
 	        uint32_t *stats_sent = nullptr, uint32_t *stats_recvd = nullptr);
 
-	int cmd_long(uint8_t cmd_id, bool oe, bool pin, uint32_t xfer_len,
+	/* \brief TODO
+	 * \param[in] cmd_id
+	 * \param[in] oe: true read/write, false: write only
+	 * \param[in] pin: TMS pin state (true: high, false: low)
+	 * \param[in] xfer_bits: number of bits to send/receive
+	 * \param[in] tx_data: tx data buffer
+	 * \param[in] rx_data: rx data buffer
+	 * \param[in] stats_sent
+	 * \param[in] stats_recv
+	 * \return TODO
+	 */
+	int cmd_long(uint8_t cmd_id, bool oe, bool pin, uint32_t xfer_bits,
 		const uint8_t *tx_data, uint8_t *rx_data,
 		uint32_t *stats_sent = nullptr, uint32_t *stats_recvd = nullptr);
 

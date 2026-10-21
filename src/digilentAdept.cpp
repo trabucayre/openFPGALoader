@@ -13,6 +13,7 @@
 
 #include "digilentAdept.hpp"
 
+#include <algorithm>
 #include <cstring>
 #include <iostream>
 #include <stdexcept>
@@ -73,7 +74,7 @@
 #define CMD_DEPP_PUT_REG_SET  6
 #define CMD_DEPP_GET_REG_SET  7
 
-DigilentAdept::DigilentAdept(uint32_t clkHZ, int8_t verbose,
+DigilentAdept::DigilentAdept(uint32_t clkHz, int8_t verbose,
 	uint16_t vid, uint16_t pid, const std::string &serial):
 	_verbose(verbose > 0), _ctx(nullptr), _dev_handle(nullptr),
 	_speed(4000000), _cable_enabled(false), _if_claimed(false)
@@ -173,9 +174,9 @@ DigilentAdept::DigilentAdept(uint32_t clkHZ, int8_t verbose,
 	}
 	_cable_enabled = true;
 
-	if (clkHZ == 0)
-		clkHZ = 4000000;
-	setClkFreq(clkHZ);
+	if (clkHz == 0)
+		clkHz = 4000000;
+	setClkFreq(clkHz);
 }
 
 DigilentAdept::~DigilentAdept()
@@ -183,7 +184,7 @@ DigilentAdept::~DigilentAdept()
 	close();
 }
 
-void digilentAdept::close()
+void DigilentAdept::close()
 {
 	if (_dev_handle) {
 		if (_cable_enabled)
@@ -282,19 +283,21 @@ static void LIBUSB_CALL async_cb(struct libusb_transfer *xfer) {
 	ctx->actual_length = xfer->actual_length;
 }
 
+/* FIXME: oe is similar to test if rx_data is nullptr */
 int DigilentAdept::cmd_long(uint8_t cmd_id, bool oe, bool pin,
-	uint32_t xfer_len, const uint8_t *tx_data, uint8_t *rx_data,
+	uint32_t xfer_bits, const uint8_t *tx_data, uint8_t *rx_data,
 	uint32_t *stats_sent, uint32_t *stats_recvd)
 {
+	const uint32_t xfer_len = (xfer_bits + 7) / 8;
 	const uint32_t tx_len = (tx_data) ? xfer_len : 0;
 	const uint32_t rx_len = (rx_data) ? xfer_len : 0;
 	const uint8_t payload[] {
 		static_cast<uint8_t>(oe  ? 1 : 0),
 		static_cast<uint8_t>(pin ? 1 : 0),
-		static_cast<uint8_t>((xfer_len >>  0) & 0xff),
-		static_cast<uint8_t>((xfer_len >>  8) & 0xff),
-		static_cast<uint8_t>((xfer_len >> 16) & 0xff),
-		static_cast<uint8_t>((xfer_len >> 24) & 0xff)
+		static_cast<uint8_t>((xfer_bits >>  0) & 0xff),
+		static_cast<uint8_t>((xfer_bits >>  8) & 0xff),
+		static_cast<uint8_t>((xfer_bits >> 16) & 0xff),
+		static_cast<uint8_t>((xfer_bits >> 24) & 0xff)
 	};
 	int ret = cmd(APP_DJTG, cmd_id, 0, payload, 6, nullptr, 0);
 	if (ret < 0)
@@ -374,21 +377,25 @@ int DigilentAdept::cmd_long(uint8_t cmd_id, bool oe, bool pin,
 	return ret;
 }
 
-int DigilentAdept::setClkFreq(uint32_t clkHZ)
+int DigilentAdept::setClkFreq(uint32_t clkHz)
 {
-	if (clkHZ > 15000000) clkHZ = 15000000;
-	if (clkHZ < 100000) clkHZ = 100000;
+	if (clkHz > 15000000) clkHz = 15000000;
+	if (clkHz < 100000) clkHz = 100000;
 
-	uint8_t req[4];
-	req[0] = clkHZ & 0xff;
-	req[1] = (clkHZ >> 8) & 0xff;
-	req[2] = (clkHZ >> 16) & 0xff;
-	req[3] = (clkHZ >> 24) & 0xff;
+	const uint8_t req[] = {
+		static_cast<uint8_t>((clkHz >>  0) & 0xff),
+		static_cast<uint8_t>((clkHz >>  8) & 0xff),
+		static_cast<uint8_t>((clkHz >> 16) & 0xff),
+		static_cast<uint8_t>((clkHz >> 24) & 0xff)
+	};
 
 	uint8_t rep[4] = {0};
 	int ret = cmd(APP_DJTG, CMD_DJTG_SET_SPEED, 0, req, 4, rep, 4);
 	if (ret == 0) {
-		_speed = rep[0] | (rep[1] << 8) | (rep[2] << 16) | (rep[3] << 24);
+		_speed = (static_cast<uint32_t>(rep[0]) << 0) |
+			(static_cast<uint32_t>(rep[1]) <<  8) |
+			(static_cast<uint32_t>(rep[2]) << 16) |
+			(static_cast<uint32_t>(rep[3]) << 24);
 		_clkHZ = _speed;
 		if (_verbose)
 			printInfo("Adept JTAG speed set to " + std::to_string(_speed) + " Hz");
@@ -406,32 +413,40 @@ int DigilentAdept::toggleClk(uint8_t tms, uint8_t tdi, uint32_t clk_len)
 	return (ret < 0) ? -1 : 0;
 }
 
-int DigilentAdept::writeTMS(const uint8_t *tms, uint32_t len, bool flush_buffer, const uint8_t tdi)
+int DigilentAdept::writeTMS(const uint8_t *tms, uint32_t len,
+	bool flush_buffer, const uint8_t tdi)
 {
 	(void)flush_buffer;
-	if (len == 0) return 0;
+	if (len == 0)
+		return 0;
 
-	uint32_t remaining = len;
+	uint32_t xfer_len = len; // number of bits to emit
 	uint32_t bit_offset = 0;
+	/* size limited to 2048: only one buffer and re-use it
+	 * during all xfer sequences
+	 */
+	std::vector<uint8_t> tx_buf(2048, 0);
 
-	while (remaining > 0) {
-		uint32_t chunk_bits = (remaining > 2048) ? 2048 : remaining;
-		uint32_t byte_count = (chunk_bits + 7) / 8;
+	while (xfer_len > 0) {
+		const uint32_t pkt_len = std::min<uint32_t>(xfer_len, 2048);
 
-		std::vector<uint8_t> tx_buf(byte_count, 0);
-		for (uint32_t b = 0; b < chunk_bits; b++) {
-			uint32_t src_bit = bit_offset + b;
+		for (uint32_t b = 0; b < pkt_len; b++) {
+			const uint32_t src_bit = bit_offset + b;
+			const uint16_t tx_idx = b >> 3;
+			const uint16_t tx_bit = (1 << (b & 7));
 			if (tms[src_bit >> 3] & (1 << (src_bit & 7)))
-				tx_buf[b >> 3] |= (1 << (b & 7));
+				tx_buf[tx_idx] |= tx_bit;
+			else
+				tx_buf[tx_idx] &= ~tx_bit;
 		}
 
 		uint32_t sent = 0;
-		const int ret = cmd_long(CMD_DJTG_PUT_TMS_BITS, false, tdi, chunk_bits,
+		const int ret = cmd_long(CMD_DJTG_PUT_TMS_BITS, false, tdi, pkt_len,
 			tx_buf.data(), nullptr, &sent, nullptr);
 		if (ret < 0)
 			return -1;
-		remaining -= chunk_bits;
-		bit_offset += chunk_bits;
+		xfer_len -= pkt_len;
+		bit_offset += pkt_len;
 	}
 
 	return len;
@@ -439,79 +454,79 @@ int DigilentAdept::writeTMS(const uint8_t *tms, uint32_t len, bool flush_buffer,
 
 int DigilentAdept::writeTDI(const uint8_t *tx, uint8_t *rx, uint32_t len, bool end)
 {
-	if (len == 0) return 0;
-
-	auto shift_raw = [this](const uint8_t *t_buf, uint8_t *r_buf, uint32_t n_bits, uint8_t tms_val, bool oe) -> int {
-		uint32_t n_bytes = (n_bits + 7) / 8;
-		uint32_t sent = 0, recvd = 0;
-		const int ret = cmd_long(CMD_DJTG_PUT_TDI_BITS, oe, tms_val, n_bytes,
-			t_buf, (oe ? r_buf : nullptr), &sent, &recvd);
-		return ret;
-	};
-
+	/* nothing to do ? */
+	if (len == 0)
+		return 0;
 	bool oe = (rx != nullptr);
+	// number of Bytes to send with a round after removing 1 when
+	// end is true (ie last bit is sent during state transition).
+	uint32_t bytes = (len - (end ? 1 : 0)) / 8; // floor(round(xx))
+	// number of residual bits to sent
+	const uint32_t bits = len - bytes * 8;
+	uint8_t *rx_ptr = rx;
+	const uint8_t *tx_ptr = tx;
+	uint32_t sent = 0, recvd = 0;
+	std::vector<uint8_t> tx_buff(2048, 0xff); // temporary buffer with
+											  // the largest size possible
 
-	if (!end) {
-		uint32_t remaining = len;
-		uint32_t bit_offset = 0;
-		while (remaining > 0) {
-			uint32_t chunk_bits = (remaining > 16384) ? 16384 : remaining;
-			uint32_t chunk_bytes = (chunk_bits + 7) / 8;
+	/* sanity check */
+	if (bits >= 8) {
+		printError("bits mismatch expected size < 8");
+		return -1;
+	}
 
-			std::vector<uint8_t> tx_chunk(chunk_bytes, (tx == nullptr ? 0xff : 0x00));
-			if (tx) {
-				for (uint32_t b = 0; b < chunk_bits; b++) {
-					uint32_t src_b = bit_offset + b;
-					if (tx[src_b >> 3] & (1 << (src_b & 7)))
-						tx_chunk[b >> 3] |= (1 << (b & 7));
-				}
-			}
+	/* 1. Send as much as possible bytes in large sequence */
+	while (bytes > 0) {
+		uint32_t xfer_len = std::min<uint32_t>(2048, bytes);
 
-			std::vector<uint8_t> rx_chunk;
-			if (oe) rx_chunk.resize(chunk_bytes, 0);
+		/* clear the buffer or fill with tx data */
+		if (tx)
+			memcpy(tx_buff.data(), tx_ptr, xfer_len);
+		else
+			memset(tx_buff.data(), 0xff, xfer_len);
 
-			int ret = shift_raw(tx_chunk.data(), (oe ? rx_chunk.data() : nullptr), chunk_bits, 0, oe);
-			if (ret < 0) return -1;
+		const int ret = cmd_long(CMD_DJTG_PUT_TDI_BITS, oe, 0, xfer_len * 8,
+			tx_buff.data(), (oe ? rx_ptr : nullptr), &sent, &recvd);
+		if (ret < 0)
+			return -1;
 
-			if (oe) {
-				for (uint32_t b = 0; b < chunk_bits; b++) {
-					uint32_t dst_b = bit_offset + b;
-					if (rx_chunk[b >> 3] & (1 << (b & 7)))
-						rx[dst_b >> 3] |= (1 << (dst_b & 7));
-					else
-						rx[dst_b >> 3] &= ~(1 << (dst_b & 7));
-				}
-			}
+		/* update remaining bytes to sent and tx/rx buffer offset */
+		bytes -= xfer_len;
+		if (tx)
+			tx_ptr += xfer_len;
+		if (rx)
+			rx_ptr += xfer_len;
+	}
 
-			remaining -= chunk_bits;
-			bit_offset += chunk_bits;
-		}
-	} else {
-		if (len == 1) {
-			uint8_t tx_val = (tx ? ((tx[0] & 1) ? 1 : 0) : 1);
-			uint8_t rx_val = 0;
-			int ret = shift_raw(&tx_val, &rx_val, 1, 1, oe);
-			if (ret < 0) return -1;
-			if (oe) {
-				if (rx_val & 1) rx[0] |= 1;
-				else rx[0] &= ~1;
-			}
-		} else {
-			int ret = writeTDI(tx, rx, len - 1, false);
-			if (ret < 0) return -1;
+	/* 2. Send remaining bits. When not end this corresponds to all
+	 * remaining bits. When end the last bit will be sent after.
+	 * In both cases this step will sent up to 7 bits.
+	 */
+	if (bits > 0) {
+		/* no needs to worry about offset, previous command have sent
+		 * bytes so next step start by sending LSB from the last tx
+		 * Byte
+		 */
+		tx_buff[0] = (tx ? tx_ptr[0] : 0xff);
+		const int ret = cmd_long(CMD_DJTG_PUT_TDI_BITS, oe, 0, bits,
+			tx_buff.data(), (oe ? rx_ptr : nullptr), &sent, &recvd);
+		if (ret < 0)
+			return -1;
+		/* Fix rx align */
+		if (rx)
+			*rx_ptr >>= (8 - bits);
+	}
 
-			uint32_t last_bit_idx = len - 1;
-			uint8_t last_tx_bit = (tx ? ((tx[last_bit_idx >> 3] >> (last_bit_idx & 7)) & 1) : 1);
-			uint8_t last_rx_byte = 0;
-			ret = shift_raw(&last_tx_bit, &last_rx_byte, 1, 1, oe);
-			if (ret < 0) return -1;
-			if (oe) {
-				if (last_rx_byte & 1)
-					rx[last_bit_idx >> 3] |= (1 << (last_bit_idx & 7));
-				else
-					rx[last_bit_idx >> 3] &= ~(1 << (last_bit_idx & 7));
-			}
-		}
+	/* 3. Send last bit with tms high only when end is true */
+	if (end) {
+		uint8_t last_rx = 0;
+		const uint8_t last_tx = (tx ? ((*tx_ptr >> bits) & 0x01) : 1);
+		const int ret = cmd_long(CMD_DJTG_PUT_TDI_BITS, oe, 0, bits,
+			&last_tx, (oe ? &last_rx: nullptr), &sent, &recvd);
+		if (ret < 0)
+			return -1;
+		if (rx)
+			*rx_ptr |= (0x80 & last_rx) >> (7 - bits);
 	}
 
 	return len;
@@ -519,7 +534,7 @@ int DigilentAdept::writeTDI(const uint8_t *tx, uint8_t *rx, uint32_t len, bool e
 
 bool DigilentAdept::configReset(bool assert_reset)
 {
-	uint8_t p = (assert_reset ? 1 : 0);
+	const uint8_t p = (assert_reset ? 1 : 0);
 	return (cmd(APP_DMGT, CMD_DMGT_CONFIG_RESET, 0, &p, 1, nullptr, 0) == 0);
 }
 
