@@ -367,13 +367,8 @@ int DigilentAdept::cmd_long(uint8_t cmd_id, bool oe, bool pin,
 		}
 	}
 
-	uint32_t sent = 0, recvd = 0;
 	ret = cmd(APP_DJTG, cmd_id | 0x80, 0, nullptr, 0, nullptr, 0,
-		&sent, &recvd);
-	if (stats_sent)
-		*stats_sent = sent;
-	if (stats_recvd)
-		*stats_recvd = recvd;
+		stats_sent, stats_recvd);
 	return ret;
 }
 
