@@ -7,7 +7,7 @@
 #ifndef SRC_COLOGNECHIP_HPP_
 #define SRC_COLOGNECHIP_HPP_
 
-#include <unistd.h>
+#include "portability/unistd.hpp"
 #include <regex>
 #include <string>
 

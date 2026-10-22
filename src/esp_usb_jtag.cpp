@@ -126,10 +126,12 @@ this description is a copy from openocd/src/jtag/drivers/esp_usb_jtag.c
 /* begin copy from openocd */
 
 #define JTAG_PROTO_CAPS_VER 1	/* Version field. At the moment, only version 1 is defined. */
+#pragma pack(push, 1)
 struct jtag_proto_caps_hdr {
 	uint8_t proto_ver;	/* Protocol version. Expects JTAG_PROTO_CAPS_VER for now. */
 	uint8_t length;	/* of this plus any following descriptors */
-} __attribute__((packed));
+};
+#pragma pack(pop)
 
 /* start of the descriptor headers */
 #define JTAG_BUILTIN_DESCR_START_OFF            0	/* Devices with builtin usb jtag */
@@ -149,18 +151,22 @@ Note: If the JTAG device has larger buffers than endpoint-size-plus-a-bit, we sh
 of caps header to assume this. If no such caps exist, assume a minimum (in) buffer of endpoint size + 4.
 */
 
+#pragma pack(push, 1)
 struct jtag_gen_hdr {
 	uint8_t type;
 	uint8_t length;
-} __attribute__((packed));
+};
+#pragma pack(pop)
 
+#pragma pack(push, 1)
 struct jtag_proto_caps_speed_apb {
 	uint8_t type;					/* Type, always JTAG_PROTO_CAPS_SPEED_APB_TYPE */
 	uint8_t length;					/* Length of this */
 	uint8_t apb_speed_10khz[2];		/* ABP bus speed, in 10KHz increments. Base speed is half this. */
 	uint8_t div_min[2];				/* minimum divisor (to base speed), inclusive */
 	uint8_t div_max[2];				/* maximum divisor (to base speed), inclusive */
-} __attribute__((packed));
+};
+#pragma pack(pop)
 
 #define JTAG_PROTO_CAPS_DATA_LEN                255
 #define JTAG_PROTO_CAPS_SPEED_APB_TYPE          1
@@ -566,8 +572,8 @@ int esp_usb_jtag::writeTMS(const uint8_t *tms, uint32_t len, bool flush_buffer,
 
 /* Here we have to write len bit or 2xlen Bytes
  */
-int esp_usb_jtag::toggleClk(__attribute__((unused))uint8_t tms,
-	uint8_t __attribute__((unused))tdi, uint32_t len)
+int esp_usb_jtag::toggleClk([[maybe_unused]]uint8_t tms,
+	[[maybe_unused]]uint8_t tdi, uint32_t len)
 {
 	uint8_t buf[OUT_BUF_SZ];
 	char mess[256];
@@ -716,7 +722,8 @@ int esp_usb_jtag::writeTDI(const uint8_t *tx, uint8_t *rx, uint32_t len, bool en
 	}
 	int ret;
 	const uint32_t kTdiLen = (len+7) >> 3; // TDI/RX len in byte
-	uint8_t tdi[kTdiLen]; // TDI buffer (required when tx is NULL)
+	std::vector<uint8_t> tdi; // TDI buffer (required when tx is NULL)
+	tdi.resize(kTdiLen);
 	uint8_t tx_buf[OUT_EP_SZ];
 	const uint8_t tdo = !(rx == NULL); // only set cap/tdo when something to read
 	uint8_t *rx_ptr = NULL;
@@ -734,9 +741,9 @@ int esp_usb_jtag::writeTDI(const uint8_t *tx, uint8_t *rx, uint32_t len, bool en
 
 	/* Copy RX or fill the buffer with TDI current level */
 	if (tx)
-		memcpy(tdi, tx, kTdiLen);
+		memcpy(tdi.data(), tx, kTdiLen);
 	else
-		memset(tdi, _tdi ? 0xff : 0x00, kTdiLen);
+		memset(tdi.data(), _tdi ? 0xff : 0x00, kTdiLen);
 
 	if (_verbose) {
 		snprintf(mess, 256, "len=0x%08x\n", len);
