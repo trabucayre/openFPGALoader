@@ -16,8 +16,7 @@
 #include "xilinxPlatformCableUSB.hpp"
 
 #define XPCU_BREQUEST             0xB0
-#define XPCU_INITIALIZED_VID      0x03fd
-#define XPCU_INITIALIZED_PID      0x0008
+#define XPCU_UNINITIALIZED_VID    0x03fd
 #define XPCU_CMD_DISABLE          0x10
 #define XPCU_CMD_ENABLE           0x18
 #define XPCU_CMD_SET_SPEED        0x28
@@ -52,45 +51,88 @@ XilinxPlatformCableUSB::XilinxPlatformCableUSB(const uint16_t vid,
 		_buffer_bit_size((_buffer_size / 2 * 4) - 1)
 {
 	std::string firmware_file;
-	/* firmare path must be known:
-	 * 1/ provided by user
-	 * 2/ from Vivado install directory
-	 * 3/ from ISE install directory
-	 */
-	if (firmware_path.empty() && strlen(ISE_DIR) == 0 && strlen(VIVADO_DIR) == 0) {
-		printError("missing FX2 firmware");
-		printError("use --probe-firmware with something");
-		printError("like /opt/Xilinx/14.7/ISE_DS/ISE/bin/lin64/xusb_xp2.hex for ISE");
-		printError("or   /opt/Xilinx/Vivado/VERSION/data/xicom/xusb_xp2.hex for Vivado");
-		printError("Or use -DISE_DIR=/opt/Xilinx/14.7 / -DVIVADO_DIR=/opt/Xilinx/Vivado/VERSION at build time");
-		throw std::runtime_error("xilinxPlatformCableUSB: missing firmware");
+	int i = 0;
+	uint16_t uninit_pid = 0;
+	libusb_context *usb_ctx;
+	libusb_device** devs;
+	struct libusb_device_descriptor desc;
+	struct libusb_device *dev;
+	if (libusb_init(&usb_ctx) < 0)
+		throw std::runtime_error("libusb init failed");
+	if (libusb_get_device_list(NULL, &devs) >= 0) {
+		while ((dev = devs[i++]) != NULL)  {
+			if (libusb_get_device_descriptor(dev, &desc) < 0)
+				continue;
+			if (desc.idVendor == vid && desc.idProduct == pid) {
+				uninit_pid = 0;
+				break;
+			}
+			if (desc.idVendor == XPCU_UNINITIALIZED_VID) {
+				switch (desc.idProduct) {
+				case 0x07:
+					firmware_file = "xusbdfwu.hex";
+					uninit_pid = desc.idProduct;
+					break;
+				case 0x09:
+					firmware_file = "xusb_xup.hex";
+					uninit_pid = desc.idProduct;
+					break;
+				case 0x0d:
+					firmware_file = "xusb_emb.hex";
+					uninit_pid = desc.idProduct;
+					break;
+				case 0x0f:
+					firmware_file = "xusb_xlp.hex";
+					uninit_pid = desc.idProduct;
+					break;
+				case 0x13:
+					firmware_file = "xusb_xp2.hex";
+					uninit_pid = desc.idProduct;
+					break;
+				case 0x15:
+					firmware_file = "xusb_xse.hex";
+					uninit_pid = desc.idProduct;
+					break;
+				default:
+					break;
+				}
+			}
+		}
+		libusb_free_device_list(devs, 1);
 	}
+	libusb_exit(usb_ctx);
 
 	/* Extract firmware according to possibilities */
 	if (!firmware_path.empty())
 		firmware_file = firmware_path;
-	else if (strlen(VIVADO_DIR) > 0)
-		firmware_file = VIVADO_DIR "/data/xicom/";
-	else if (strlen(ISE_DIR) > 0)
-		firmware_file = ISE_DIR "/ISE_DS/ISE/bin/lin64/";
-
-	if (firmware_path.empty()) {
-		if (pid == 0x0d)
-			firmware_file += "xusb_emb.hex";
-		else
-			firmware_file += "xusb_xp2.hex";
+	else if (!firmware_file.empty() && strlen(VIVADO_DIR) > 0)
+		firmware_file = VIVADO_DIR "/data/xicom/" + firmware_file;
+	else if (!firmware_file.empty() && strlen(ISE_DIR) > 0)
+		firmware_file = ISE_DIR "/ISE_DS/ISE/bin/lin64/" + firmware_file;
+	else if (!firmware_file.empty()) {
+		/* firmware path must be known:
+		 * 1/ provided by user
+		 * 2/ from Vivado install directory
+		 * 3/ from ISE install directory
+		 */
+		printError("missing FX2 firmware");
+		printError("use --probe-firmware with something");
+		printError("like /opt/Xilinx/14.7/ISE_DS/ISE/bin/lin64/xusb_xp2.hex for ISE");
+		printError("or   /opt/Xilinx/Vivado/VERSION/data/xicom/xusb_xp2.hex for Vivado");
+		printError("or use -DISE_DIR=/opt/Xilinx/14.7 / -DVIVADO_DIR=/opt/Xilinx/Vivado/VERSION at build time");
+		throw std::runtime_error("xilinxPlatformCableUSB: missing firmware");
 	}
-	printInfo("firmware_file : " + firmware_file);
 
 	try {
-		fx2 = std::make_unique<FX2_ll>(vid, pid, XPCU_INITIALIZED_VID,
-				XPCU_INITIALIZED_PID, firmware_file);
+		fx2 = std::make_unique<FX2_ll>(XPCU_UNINITIALIZED_VID, uninit_pid, vid,
+				pid, firmware_file);
 	} catch (std::exception &e) {
 		printError(e.what());
 		throw std::runtime_error("lowlevel init failed");
 	}
 
-	fx2->set_interface_alt_setting(0, 1);
+	if (!fx2->set_interface_alt_setting(0, 1))
+		fx2->set_interface_alt_setting(0, 0);
 
 	displayCableVersion();
 

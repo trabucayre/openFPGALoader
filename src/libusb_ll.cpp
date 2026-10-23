@@ -180,6 +180,21 @@ bool libusb_ll::scan()
 				break;
 			}
 			found = true;
+		} else if (desc.idVendor == 0x03fd) {
+			switch (desc.idProduct) {
+			case 0x0007:
+			case 0x0008:
+			case 0x0009:
+			case 0x000d:
+			case 0x000f:
+			case 0x0013:
+			case 0x0015:
+				snprintf(probe_type, 256, "xilinxPlatformCableUsb");
+				found = true;
+				break;
+			default:
+				break;
+			}
 		} else {
 			// FIXME: DFU device can't be detected here
 			for (const auto& b : cable_list) {
