@@ -61,6 +61,9 @@
 #ifdef ENABLE_XILINX_PLATFORM_CABLE_USB
 #include "xilinxPlatformCableUSB.hpp"
 #endif
+#ifdef ENABLE_DIGILENT_ADEPT
+#include "digilentAdept.hpp"
+#endif
 
 
 #define DEBUG 0
@@ -218,6 +221,14 @@ Jtag::Jtag(const cable_t &cable, const jtag_pins_conf_t *pin_conf,
 		break;
 #else
 		printError("Jtag: support for Xilinx Platform Cable USB (XPCU) was not enabled at compile time");
+		throw std::exception();
+#endif
+	case MODE_DIGILENT_ADEPT:
+#ifdef ENABLE_DIGILENT_ADEPT
+		_jtag = new DigilentAdept(clkHZ, verbose, cable.vid, cable.pid, serial);
+		break;
+#else
+		printError("Jtag: support for Digilent Adept cable was not enabled at compile time");
 		throw std::exception();
 #endif
 	default:
