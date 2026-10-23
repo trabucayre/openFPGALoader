@@ -455,9 +455,10 @@ int DigilentAdept::writeTDI(const uint8_t *tx, uint8_t *rx, uint32_t len, bool e
 	bool oe = (rx != nullptr);
 	// number of Bytes to send with a round after removing 1 when
 	// end is true (ie last bit is sent during state transition).
-	uint32_t bytes = (len - (end ? 1 : 0)) / 8; // floor(round(xx))
+	const uint32_t real_len = len - (end ? 1 : 0);
+	uint32_t bytes = real_len / 8; // floor(round(xx))
 	// number of residual bits to sent
-	const uint32_t bits = len - bytes * 8;
+	const uint32_t bits = real_len - bytes * 8;
 	uint8_t *rx_ptr = rx;
 	const uint8_t *tx_ptr = tx;
 	uint32_t sent = 0, recvd = 0;
@@ -507,21 +508,21 @@ int DigilentAdept::writeTDI(const uint8_t *tx, uint8_t *rx, uint32_t len, bool e
 			tx_buff.data(), (oe ? rx_ptr : nullptr), &sent, &recvd);
 		if (ret < 0)
 			return -1;
-		/* Fix rx align */
-		if (rx)
-			*rx_ptr >>= (8 - bits);
 	}
 
 	/* 3. Send last bit with tms high only when end is true */
 	if (end) {
 		uint8_t last_rx = 0;
 		const uint8_t last_tx = (tx ? ((*tx_ptr >> bits) & 0x01) : 1);
-		const int ret = cmd_long(CMD_DJTG_PUT_TDI_BITS, oe, 0, bits,
-			&last_tx, (oe ? &last_rx: nullptr), &sent, &recvd);
+		const int ret = cmd_long(CMD_DJTG_PUT_TDI_BITS, oe, true, 1,
+			&last_tx, (oe ? &last_rx : nullptr), &sent, &recvd);
 		if (ret < 0)
 			return -1;
-		if (rx)
-			*rx_ptr |= (0x80 & last_rx) >> (7 - bits);
+		if (rx) {
+			if (bits == 0)
+				*rx_ptr = 0;
+			*rx_ptr = (*rx_ptr & ~(1 << bits)) | ((last_rx & 0x01) << bits);
+		}
 	}
 
 	return len;
