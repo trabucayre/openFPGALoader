@@ -173,7 +173,6 @@ jobs:
       uses: msys2/setup-msys2/matrix@a5d2c5a565c520efa5f477391e4e3f87c2e08f46
       with:
         systems: >-
-          mingw64
           ucrt64
           clang64
 
