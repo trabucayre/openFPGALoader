@@ -103,7 +103,10 @@ static std::map <uint32_t, fpga_model> fpga_list = {
 	{0x03682093, {"xilinx", "virtex7", "xc7vx415t",   6}},
 	{0x03687093, {"xilinx", "virtex7", "xc7vx485t",   6}},
 	{0x03692093, {"xilinx", "virtex7", "xc7vx550t",   6}},
-	{0x33691093, {"xilinx", "virtex7", "xc7vx690t",   6}},
+	{0x03691093, {"xilinx", "virtex7", "xc7vx690t",   6}},
+	/* FMSH (Shanghai Fudan Microelectronics) fmv700t: Xilinx-compatible 7-series
+	 * device with the same JTAG IR length and instruction set as the XC7VX690T. */
+	{0x02291143, {"xilinx", "virtex7", "xc7vx690t",   6}},
 	{0x03696093, {"xilinx", "virtex7", "xc7vx980t",   6}},
 
 	{0x036d9093, {"xilinx", "virtex7", "xc7vh580t",  22}},
