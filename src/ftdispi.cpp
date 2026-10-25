@@ -246,9 +246,10 @@ int FtdiSpi::ft2232_spi_wr_and_rd(//struct ftdi_spi *spi,
 /* method flashInterface::spi_put */
 int FtdiSpi::spi_put(uint8_t cmd, const uint8_t *tx, uint8_t *rx, uint32_t len)
 {
-	uint32_t xfer_len = len + 1;
-	uint8_t jtx[xfer_len];
-	uint8_t jrx[xfer_len];
+	const uint32_t xfer_len = len + 1;
+	resize_spi_buffers(xfer_len);
+	uint8_t *jtx = _spi_tx_buf.data();
+	uint8_t *jrx = _spi_rx_buf.data();
 
 	jtx[0] = cmd;
 	if (tx != NULL)
@@ -258,7 +259,9 @@ int FtdiSpi::spi_put(uint8_t cmd, const uint8_t *tx, uint8_t *rx, uint32_t len)
 	 * in the same time store each byte
 	 * to next
 	 */
-	ft2232_spi_wr_and_rd(xfer_len, jtx, (rx != NULL)?jrx:NULL);
+	int ret = ft2232_spi_wr_and_rd(xfer_len, jtx, (rx != NULL)?jrx:NULL);
+	if (ret < 0)
+		return ret;
 
 	if (rx != NULL)
 		memcpy(rx, jrx+1, len);
@@ -269,6 +272,8 @@ int FtdiSpi::spi_put(uint8_t cmd, const uint8_t *tx, uint8_t *rx, uint32_t len)
 /* method flashInterface::spi_put */
 int FtdiSpi::spi_put(const uint8_t *tx, uint8_t *rx, uint32_t len)
 {
+	if (len == 0)
+		return 0;
 	return ft2232_spi_wr_and_rd(len, tx, rx);
 }
 

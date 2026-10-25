@@ -194,11 +194,10 @@ void Anlogic::restore_flash_access_frequency()
 
 int Anlogic::spi_put(uint8_t cmd, const uint8_t *tx, uint8_t *rx, uint32_t len)
 {
-	int xfer_len = len + 1;
-	if (rx)
-		xfer_len++;
-	uint8_t jtx[xfer_len];
-	uint8_t jrx[xfer_len];
+	const uint32_t xfer_len = len + 1 + (rx ? 1 : 0);
+	resize_spi_buffers(xfer_len);
+	uint8_t *jtx = _spi_tx_buf.data();
+	uint8_t *jrx = _spi_rx_buf.data();
 
 	jtx[0] = AnlogicBitParser::reverseByte(cmd);
 	if (tx != NULL) {
@@ -220,11 +219,12 @@ int Anlogic::spi_put(uint8_t cmd, const uint8_t *tx, uint8_t *rx, uint32_t len)
 }
 int Anlogic::spi_put(const uint8_t *tx, uint8_t *rx, uint32_t len)
 {
-	int xfer_len = len;
-	if (rx)
-		xfer_len++;
-	uint8_t jtx[xfer_len];
-	uint8_t jrx[xfer_len];
+	if (len == 0)
+		return 0;
+	const uint32_t xfer_len = len + (rx ? 1 : 0);
+	resize_spi_buffers(xfer_len);
+	uint8_t *jtx = _spi_tx_buf.data();
+	uint8_t *jrx = _spi_rx_buf.data();
 
 	if (tx != NULL) {
 		for (uint32_t i = 0; i < len; i++)
