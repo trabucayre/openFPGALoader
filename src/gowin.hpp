@@ -46,9 +46,9 @@ class Gowin: public Device, FlashInterface {
 				return FlashInterface::bulk_erase_flash();
 			printError("bulk erase flash not supported"); return false;}
 		bool dumpFlash(uint32_t base_addr, uint32_t len) override;
+		using FlashInterface::spi_put;
 		int spi_put(uint8_t cmd, const uint8_t *tx, uint8_t *rx,
 			uint32_t len) override;
-		int spi_put(const uint8_t *tx, uint8_t *rx, uint32_t len) override;
 		int spi_wait(uint8_t cmd, uint8_t mask, uint8_t cond,
 			uint32_t timeout, bool verbose) override;
 
