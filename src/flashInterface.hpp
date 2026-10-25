@@ -95,7 +95,7 @@ class FlashInterface {
 	 * \param[in] len: number of byte to send/receive
 	 * \return 0 when success
 	 */
-	virtual int spi_put(const uint8_t *tx, uint8_t *rx, uint32_t len) = 0;
+	virtual int spi_put(const uint8_t *tx, uint8_t *rx, uint32_t len);
 
 	/*!
 	 * \brief wait until register content and mask match cond, or timeout
@@ -130,5 +130,16 @@ class FlashInterface {
 
  private:
 	std::string _spif_filename;
+
+ protected:
+	/*!
+	 * \brief compares spi_xx_buf size with parameters, growth capacity
+	 *    when buffers are too small
+	 * \param[in] size: requested min size
+	 */
+	void resize_spi_buffers(size_t size);
+
+	std::vector<uint8_t> _spi_rx_buf;  /*!< buffer used for spi_put rx */
+	std::vector<uint8_t> _spi_tx_buf;  /*!< buffer used for spi_put tx */
 };
 #endif  // SRC_FLASHINTERFACE_HPP_
