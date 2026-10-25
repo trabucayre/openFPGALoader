@@ -194,11 +194,10 @@ void Anlogic::restore_flash_access_frequency()
 
 int Anlogic::spi_put(uint8_t cmd, const uint8_t *tx, uint8_t *rx, uint32_t len)
 {
-	int xfer_len = len + 1;
-	if (rx)
-		xfer_len++;
-	uint8_t jtx[xfer_len];
-	uint8_t jrx[xfer_len];
+	const uint32_t xfer_len = len + 1 + (rx ? 1 : 0);
+	resize_spi_buffers(xfer_len);
+	uint8_t *jtx = _spi_tx_buf.data();
+	uint8_t *jrx = _spi_rx_buf.data();
 
 	jtx[0] = AnlogicBitParser::reverseByte(cmd);
 	if (tx != NULL) {
@@ -215,31 +214,6 @@ int Anlogic::spi_put(uint8_t cmd, const uint8_t *tx, uint8_t *rx, uint32_t len)
 		for (uint32_t i=0; i < len; i++)
 			rx[i] = AnlogicBitParser::reverseByte(jrx[i+1]>>1)
 				| (jrx[i+2]&0x01);
-	}
-	return 0;
-}
-int Anlogic::spi_put(const uint8_t *tx, uint8_t *rx, uint32_t len)
-{
-	int xfer_len = len;
-	if (rx)
-		xfer_len++;
-	uint8_t jtx[xfer_len];
-	uint8_t jrx[xfer_len];
-
-	if (tx != NULL) {
-		for (uint32_t i = 0; i < len; i++)
-			jtx[i] = AnlogicBitParser::reverseByte(tx[i]);
-	}
-
-	/* write anlogic command before sending packet */
-	uint8_t op = 0x60;
-	_jtag->shiftDR(&op, NULL, 8);
-
-	_jtag->shiftDR(jtx, (rx == NULL)? NULL: jrx, 8*xfer_len);
-	if (rx != NULL) {
-		for (uint32_t i=0; i < len; i++)
-			rx[i] = AnlogicBitParser::reverseByte(jrx[i]>>1) |
-				(jrx[i+1]&0x01);
 	}
 	return 0;
 }

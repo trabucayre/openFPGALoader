@@ -481,12 +481,11 @@ bool Efinix::prepare_flash_access()
 int Efinix::spi_put(uint8_t cmd,
 			const uint8_t *tx, uint8_t *rx, uint32_t len)
 {
-	int kXferLen = len + 1 + ((rx == NULL) ? 0 : 1);
-	if (_xfer_buf.size() < static_cast<size_t>(kXferLen))
-		_xfer_buf.resize(kXferLen);
-	uint8_t *jtx = _xfer_buf.data();
+	const uint32_t kXferLen = len + 1 + (rx ? 1 : 0);
+	resize_spi_buffers(kXferLen);
+	uint8_t *jtx = _spi_tx_buf.data();
+	uint8_t *jrx = _spi_rx_buf.data();
 	jtx[0] = EfinixHexParser::reverseByte(cmd);
-	uint8_t jrx[kXferLen];
 	if (tx != NULL) {
 		for (uint32_t i=0; i < len; i++)
 			jtx[i+1] = EfinixHexParser::reverseByte(tx[i]);
@@ -502,32 +501,6 @@ int Efinix::spi_put(uint8_t cmd,
 	if (rx != NULL) {
 		for (uint32_t i=0; i < len; i++)
 			rx[i] = EfinixHexParser::reverseByte(jrx[i+1] >> 1) | (jrx[i+2] & 0x01);
-	}
-	return 0;
-}
-
-int Efinix::spi_put(const uint8_t *tx, uint8_t *rx, uint32_t len)
-{
-	int kXferLen = len + ((rx == NULL) ? 0 : 1);
-	if (_xfer_buf.size() < static_cast<size_t>(kXferLen))
-		_xfer_buf.resize(kXferLen);
-	uint8_t *jtx = _xfer_buf.data();
-	uint8_t jrx[kXferLen];
-	if (tx != NULL) {
-		for (uint32_t i=0; i < len; i++)
-			jtx[i] = EfinixHexParser::reverseByte(tx[i]);
-	}
-	/* addr BSCAN user1 */
-	_jtag->shiftIR(USER1, _irlen);
-	/* send first already stored cmd,
-	 * in the same time store each byte
-	 * to next
-	 */
-	_jtag->shiftDR(jtx, (rx == NULL)? NULL: jrx, 8*kXferLen);
-
-	if (rx != NULL) {
-		for (uint32_t i=0; i < len; i++)
-			rx[i] = EfinixHexParser::reverseByte(jrx[i] >> 1) | (jrx[i+1] & 0x01);
 	}
 	return 0;
 }
