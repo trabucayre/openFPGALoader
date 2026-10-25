@@ -1004,53 +1004,36 @@ int Gowin::spi_put(uint8_t cmd, const uint8_t *tx, uint8_t *rx, uint32_t len)
 	if (is_gw5a)
 		return spi_put_gw5a(cmd, tx, rx, len);
 
-	uint8_t jrx[len+1], jtx[len+1];
-	jtx[0] = cmd;
-	if (tx)
-		memcpy(jtx+1, tx, len);
-	else
-		memset(jtx+1, 0, len);
-	int ret = spi_put(jtx, (rx)? jrx : NULL, len+1);
-	if (rx)
-		memcpy(rx, jrx + 1, len);
-	return ret;
-}
+	const uint32_t xfer_len = len + 1 + ((is_gw2a && rx) ? 1 : 0);
 
-int Gowin::spi_put(const uint8_t *tx, uint8_t *rx, uint32_t len)
-{
-	if (is_gw5a) {
-		uint8_t jrx[len];
-		int ret = spi_put_gw5a(tx[0], (len > 1) ? &tx[1] : NULL,
-				(rx) ? jrx : NULL, len - 1);
-		// FIXME: first byte is never read (but in most call it's not an issue
-		if (rx) {
-			rx[0] = 0;
-			memcpy(&rx[1], jrx, len - 1);
-		}
-		return ret;
-	}
+	resize_spi_buffers(xfer_len);
+	uint8_t *jtx = _spi_tx_buf.data();
+	uint8_t *jrx = _spi_rx_buf.data();
+	memset(jtx, 0, xfer_len);
 
 	if (is_gw2a) {
-		uint8_t jtx[len];
-		uint8_t jrx[len];
-		if (rx)
-			len++;
+		jtx[0] = FsParser::reverseByte(cmd);
+
 		if (tx != NULL) {
 			for (uint32_t i = 0; i < len; i++)
-				jtx[i] = FsParser::reverseByte(tx[i]);
+				jtx[i + 1] = FsParser::reverseByte(tx[i]);
 		}
 		bool ret = send_command(0x16);
 		if (!ret)
 			return -1;
 		_jtag->set_state(Jtag::EXIT2_DR);
-		_jtag->shiftDR(jtx, (rx)? jrx:NULL, 8*len);
+		_jtag->shiftDR(jtx, (rx)? jrx : NULL, 8 * xfer_len);
 		if (rx) {
-			for (uint32_t i=0; i < len; i++) {
-				rx[i] = FsParser::reverseByte(jrx[i]>>1) |
-					(jrx[i+1]&0x01);
+			for (uint32_t i = 0; i < len; i++) {
+				rx[i] = FsParser::reverseByte(jrx[i + 1] >> 1) |
+					(jrx[i + 2] & 0x01);
 			}
 		}
 	} else {
+		jtx[0] = cmd;
+		if (tx)
+			memcpy(jtx + 1, tx, len);
+
 		/* set CS/SCK/DI low */
 		uint8_t t = _spi_msk | _spi_do;
 		t &= ~_spi_cs;
@@ -1058,29 +1041,34 @@ int Gowin::spi_put(const uint8_t *tx, uint8_t *rx, uint32_t len)
 		_jtag->flush();
 
 		/* send bit/bit full tx content (or set di to 0 when NULL) */
-		for (unsigned l = 0; l < len; ++l) {
+		for (uint32_t i = 0; i < xfer_len; ++i) {
 			if (rx)
-				rx[l] = 0;
+				jrx[i] = 0;
 			for (uint8_t b = 0, bm = 0x80; b < 8; ++b, bm >>= 1) {
-				uint8_t r;
+				uint8_t r = 0;
 				t = _spi_msk | _spi_do;
-				if (tx != NULL && tx[l] & bm)
+				if (jtx[i] & bm)
 					t |= _spi_di;
 				spi_gowin_write(&t, NULL, 8);
 				t |= _spi_sck;
 				spi_gowin_write(&t, (rx) ? &r : NULL, 8);
 				_jtag->flush();
 				/* if read reconstruct bytes */
-				if (rx && (r & _spi_do))
-					rx[l] |= bm;
+				if (r & _spi_do)
+					jrx[i] |= bm;
 			}
 		}
+
 		/* set CS and unset SCK (next xfer) */
 		t &= ~_spi_sck;
 		t |= _spi_cs;
 		spi_gowin_write(&t, NULL, 8);
 		_jtag->flush();
+
+		if (rx)
+			memcpy(rx, jrx + 1, len);
 	}
+
 	return 0;
 }
 
@@ -1282,12 +1270,15 @@ int Gowin::spi_put_gw5a(const uint8_t cmd, const uint8_t *tx, uint8_t *rx,
 		uint32_t len)
 {
 		uint32_t kLen = len + (rx ? 1 : 0);  // cppcheck/lint happy
+		resize_spi_buffers(kLen);
 		uint32_t bit_len = len * 8 + (rx ? 3 : 0);  // 3bits delay when read
-		uint8_t jtx[kLen], jrx[kLen];
 		uint8_t _cmd = FsParser::reverseByte(cmd);  // reverse cmd.
 		uint8_t curr_tdi = cmd & 0x01;
 
-		if (tx != NULL) {  // SPI: MSB, JTAG: LSB -> reverse Bytes
+		uint8_t *jtx = _spi_tx_buf.data();
+		uint8_t *jrx = _spi_rx_buf.data();
+
+		if (tx != NULL && len != 0) {  // SPI: MSB, JTAG: LSB -> reverse Bytes
 			for (uint32_t i = 0; i < len; i++)
 				jtx[i] = FsParser::reverseByte(tx[i]);
 			curr_tdi = tx[len-1] & 0x01;
