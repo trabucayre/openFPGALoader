@@ -727,10 +727,16 @@ void Xilinx::program(unsigned int offset, bool unprotect_flash)
 			}
 		}
 	} else {
-		if (_fpga_family == SPARTAN3_FAMILY)
+		if (_fpga_family == SPARTAN3_FAMILY) {
 			xc3s_flow_program(bit);
-		else
-			program_mem(bit);
+		} else {
+			try {
+				program_mem(bit);
+			} catch (std::exception &e) {
+				delete bit;
+				throw;
+			}
+		}
 	}
 
 	delete bit;
@@ -1090,6 +1096,7 @@ void Xilinx::program_mem(ConfigBitstreamParser *bitfile)
 
 		if (!done) {
 			read_register("STAT");
+			throw std::runtime_error("FPGA startup failed: DONE is low");
 		}
 	}
 }
