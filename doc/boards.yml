@@ -1055,7 +1055,7 @@
   URL: https://www.xilinx.com/products/boards-and-kits/vcu1525-a.html
   FPGA: Virtex UltraScale+ xcvu9p-fsgd2104
   Memory: OK
-  Flash: NT
+  Flash: OK
 
 - ID: xtrx
   Description: FairWaves XTRXPro
