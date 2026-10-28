@@ -1,5 +1,6 @@
 ## BPI Flash over JTAG constraints for xc7k480tffg1156
 ## Pin assignments from YPCB-00338-1P1 board
+# https://download.amd.com/adaptive-socs-and-fpgas/developer/adaptive-socs-and-fpgas/package-pinout-files/k7packages/xc7k480tffg1156pkg.txt
 
 set_property CFGBVS GND [current_design]
 set_property CONFIG_VOLTAGE 1.8 [current_design]
