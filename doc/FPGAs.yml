@@ -412,8 +412,15 @@ Xilinx:
 
   - Description: XC2C/XA2C (coolrunner II)
     Model:
+      - xc2c32
       - xc2c32a
+      - xc2c64
+      - xc2c64a
       - xa2c64a
+      - xc2c128
+      - xc2c256
+      - xc2c384
+      - xc2c512
     URL: https://www.xilinx.com/support/documentation/data_sheets/ds090.pdf
     Memory: TBD
     Flash: OK

@@ -40,11 +40,41 @@ static std::map <uint32_t, fpga_model> fpga_list = {
 	{0x05046093, {"xilinx", "xcf",      "xcf04s",    8}},
 
 	/* Xilinx XC2 */
-	{0x06e59093, {"xilinx", "xc2c",     "xc2c64a",   8}},
-	{0x06e5d093, {"xilinx", "xc2c",     "xc2c64a",   8}},
-	{0x06e5e093, {"xilinx", "xc2c",     "xc2c64a",   8}},
-	{0x06e1c093, {"xilinx", "xc2c",     "xc2c32a",   8}},
-	{0x16d4a093, {"xilinx", "xc2c",     "xc2c256",   8}},
+	{0x06c1b093, {"xilinx", "xc2c",     "xc2c32a",   8}}, /* QF32, also xc2c32 CP56 */
+	{0x06c1c093, {"xilinx", "xc2c",     "xc2c32",    8}}, /* VQ44 */
+	{0x06c1d093, {"xilinx", "xc2c",     "xc2c32",    8}}, /* PC44/PC64 */
+	{0x06e1b093, {"xilinx", "xc2c",     "xc2c32a",   8}}, /* CP56 */
+	{0x06e1c093, {"xilinx", "xc2c",     "xc2c32a",   8}}, /* VQ44 */
+	{0x06e1d093, {"xilinx", "xc2c",     "xc2c32a",   8}}, /* PC44/PC64 */
+	{0x86e1a093, {"xilinx", "xc2c",     "xc2c32a",   8}}, /* CV64 */
+	{0x06c5a093, {"xilinx", "xc2c",     "xc2c64",    8}}, /* PC44 */
+	{0x06c5b093, {"xilinx", "xc2c",     "xc2c64",    8}}, /* CP132 */
+	{0x06c5c093, {"xilinx", "xc2c",     "xc2c64",    8}}, /* VQ100 */
+	{0x06c5d093, {"xilinx", "xc2c",     "xc2c64",    8}}, /* CP56 */
+	{0x06c5e093, {"xilinx", "xc2c",     "xc2c64",    8}}, /* VQ44 */
+	{0x06e59093, {"xilinx", "xc2c",     "xc2c64a",   8}}, /* QF48 */
+	{0x06e5a093, {"xilinx", "xc2c",     "xc2c64a",   8}}, /* PC44 */
+	{0x06e5b093, {"xilinx", "xc2c",     "xc2c64a",   8}}, /* CP132 */
+	{0x06e5c093, {"xilinx", "xc2c",     "xc2c64a",   8}}, /* VQ100, CV64 */
+	{0x06e5d093, {"xilinx", "xc2c",     "xc2c64a",   8}}, /* CP56 */
+	{0x06e5e093, {"xilinx", "xc2c",     "xc2c64a",   8}}, /* VQ44 */
+	{0x06d8a093, {"xilinx", "xc2c",     "xc2c128",   8}}, /* VQ100 */
+	{0x06d8b093, {"xilinx", "xc2c",     "xc2c128",   8}}, /* CP132 */
+	{0x06d8c093, {"xilinx", "xc2c",     "xc2c128",   8}}, /* TQ144 */
+	{0x06d8e093, {"xilinx", "xc2c",     "xc2c128",   8}}, /* FT256 */
+	{0x06d4a093, {"xilinx", "xc2c",     "xc2c256",   8}}, /* VQ100 */
+	{0x06d4b093, {"xilinx", "xc2c",     "xc2c256",   8}}, /* CP132 */
+	{0x06d4c093, {"xilinx", "xc2c",     "xc2c256",   8}}, /* TQ144 */
+	{0x06d4d093, {"xilinx", "xc2c",     "xc2c256",   8}}, /* PQ208 */
+	{0x06d4e093, {"xilinx", "xc2c",     "xc2c256",   8}}, /* FT256 */
+	{0x06d5a093, {"xilinx", "xc2c",     "xc2c384",   8}}, /* FG324 */
+	{0x06d5b093, {"xilinx", "xc2c",     "xc2c384",   8}}, /* CP204 */
+	{0x06d5c093, {"xilinx", "xc2c",     "xc2c384",   8}}, /* TQ144 */
+	{0x06d5d093, {"xilinx", "xc2c",     "xc2c384",   8}}, /* PQ208 */
+	{0x06d5e093, {"xilinx", "xc2c",     "xc2c384",   8}}, /* FT256 */
+	{0x06d7a093, {"xilinx", "xc2c",     "xc2c512",   8}}, /* FG324 */
+	{0x06d7c093, {"xilinx", "xc2c",     "xc2c512",   8}}, /* PQ208 */
+	{0x06d7e093, {"xilinx", "xc2c",     "xc2c512",   8}}, /* FT256 */
 
 	/* Xilinx XC9 */
 	{0x09602093, {"xilinx", "xc9500xl", "xc9536xl",  8}},
