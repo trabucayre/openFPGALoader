@@ -87,6 +87,23 @@ static std::map <uint32_t, flash_t> flash_list = {
 		.quad_mask = (1 << 1),
 		.global_lock = false,
 	}},
+	{0x016017, {
+		/* https://www.infineon.com/assets/row/public/documents/10/49/infineon-s25fl064l-64-mbit-8-mbyte-3-datasheet-en.pdf */
+		.manufacturer = "spansion",
+		.model = "S25FL064L",
+		.nr_sector = 128,
+		.sector_erase = true,
+		.subsector_erase = true,
+		.has_extended = true,
+		.tb_otp = false,
+		.tb_offset = (1 << 5),
+		.tb_register = STATR,
+		.bp_len = 3,
+		.bp_offset = {(1 << 2), (1 << 3), (1 << 4), 0},
+		.quad_register = NONER,
+		.quad_mask = 0,
+		.global_lock = false,
+	}},
 	{0x012018, {
 		.manufacturer = "spansion",
 		.model = "S25FL128S",
