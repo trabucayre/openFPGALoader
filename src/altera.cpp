@@ -393,9 +393,9 @@ bool Altera::max10_program_ufm(const Altera::max10_mem_t *mem, uint32_t offset,
 	uint32_t end_addr = 0; // 32bit align
 	uint8_t erase_sectors_mask;
 
-	/* check CFM0 is not mentionned */
+	/* check CFM0 is not mentioned */
 	if (update_sectors & (1 << 4))
-		std::runtime_error("Error: CFM0 cant't be used to store User Binary");
+		throw std::runtime_error("Error: CFM0 can't be used to store User Binary");
 
 	/* First task: search for the first and the last sector to use */
 	sectors_mask_start_end_addr(mem, update_sectors,
@@ -1311,10 +1311,10 @@ int Altera::spi_put(uint8_t cmd, const uint8_t *tx, uint8_t *rx, uint32_t len)
 	/* +1 because send first cmd + len byte + 1 for rx due to a delay of
 	 * one bit
 	 */
-	int xfer_len = len + 1 + ((rx == NULL) ? 0 : 1);
-	std::vector<uint8_t> jtx, jrx;
-	jtx.resize(xfer_len);
-	jrx.resize(xfer_len);
+	const uint32_t xfer_len = len + 1 + (rx ? 1 : 0);
+	resize_spi_buffers(xfer_len);
+	uint8_t *jtx = _spi_tx_buf.data();
+	uint8_t *jrx = _spi_rx_buf.data();
 
 	if (tx != NULL) {
 		for (uint32_t i = 0; i < len; i++)
@@ -1322,7 +1322,7 @@ int Altera::spi_put(uint8_t cmd, const uint8_t *tx, uint8_t *rx, uint32_t len)
 	}
 
 	shiftVIR(RawParser::reverseByte(cmd));
-	shiftVDR(jtx.data(), (rx) ? jrx.data() : NULL, 8 * xfer_len);
+	shiftVDR(jtx, (rx) ? jrx : NULL, 8 * xfer_len);
 
 	if (rx) {
 		for (uint32_t i = 0; i < len; i++) {
@@ -1335,7 +1335,11 @@ int Altera::spi_put(uint8_t cmd, const uint8_t *tx, uint8_t *rx, uint32_t len)
 
 int Altera::spi_put(const uint8_t *tx, uint8_t *rx, uint32_t len)
 {
-	return spi_put(tx[0], &tx[1], rx, len-1);
+	if (len == 0)
+		return 0;
+	if (!tx)
+		return -1;
+	return spi_put(tx[0], tx + 1, rx, len-1);
 }
 
 int Altera::spi_wait(uint8_t cmd, uint8_t mask, uint8_t cond,

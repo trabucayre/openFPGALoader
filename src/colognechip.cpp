@@ -414,10 +414,10 @@ void CologneChip::programJTAG_flash(unsigned int offset, const uint8_t *data,
  */
 int CologneChip::spi_put(uint8_t cmd, const uint8_t *tx, uint8_t *rx, uint32_t len)
 {
-	int xfer_len = len + 1;
-	std::vector<uint8_t> jtx, jrx;
-	jtx.resize(xfer_len+2, 0);
-	jrx.resize(xfer_len+2, 0);
+	const uint32_t xfer_len = len + 1;
+	resize_spi_buffers(xfer_len + 2);
+	uint8_t *jtx = _spi_tx_buf.data();
+	uint8_t *jrx = _spi_rx_buf.data();
 
 	jtx[0] = ConfigBitstreamParser::reverseByte(cmd);
 
@@ -429,7 +429,7 @@ int CologneChip::spi_put(uint8_t cmd, const uint8_t *tx, uint8_t *rx, uint32_t l
 	_jtag->shiftIR(JTAG_SPI_BYPASS, 6, Jtag::SHIFT_DR);
 
 	int drlen = (rx == NULL) ? 8*xfer_len : 8*xfer_len+1;
-	_jtag->read_write(jtx.data(), (rx == NULL) ? NULL : jrx.data(), drlen, false);
+	_jtag->read_write(jtx, (rx == NULL) ? NULL : jrx, drlen, false);
 
 	int shift = _jtag->get_devices_list().size();
 
@@ -448,10 +448,12 @@ int CologneChip::spi_put(uint8_t cmd, const uint8_t *tx, uint8_t *rx, uint32_t l
  */
 int CologneChip::spi_put(const uint8_t *tx, uint8_t *rx, uint32_t len)
 {
-	int xfer_len = len;
-	std::vector<uint8_t> jtx, jrx;
-	jtx.resize(xfer_len+2, 0);
-	jrx.resize(xfer_len+2, 0);
+	if (len == 0)
+		return 0;
+	const uint32_t xfer_len = len;
+	resize_spi_buffers(xfer_len + 2);
+	uint8_t *jtx = _spi_tx_buf.data();
+	uint8_t *jrx = _spi_rx_buf.data();
 
 	if (tx != NULL) {
 		for (uint32_t i=0; i < len; i++)
@@ -459,7 +461,7 @@ int CologneChip::spi_put(const uint8_t *tx, uint8_t *rx, uint32_t len)
 	}
 
 	_jtag->shiftIR(JTAG_SPI_BYPASS, 6, Jtag::SELECT_DR_SCAN);
-	_jtag->shiftDR(jtx.data(), (rx == NULL)? NULL: jrx.data(), 8*xfer_len+1, Jtag::SELECT_DR_SCAN);
+	_jtag->shiftDR(jtx, (rx == NULL)? NULL: jrx, 8*xfer_len+1, Jtag::SELECT_DR_SCAN);
 
 	if (rx != NULL) {
 		for (uint32_t i=0; i < len; i++) {

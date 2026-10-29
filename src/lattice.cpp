@@ -1772,11 +1772,13 @@ uint16_t Lattice::getUFMStartPageFromJEDEC(JedParser *_jed, int id)
 
 int Lattice::spi_put(uint8_t cmd, const uint8_t *tx, uint8_t *rx, uint32_t len)
 {
-	const uint32_t xfer_len = len + 1 + ((rx != NULL) && ((_fpga_family == ECP3_FAMILY)) ? 1 : 0);
-	const uint32_t xfer_bit_len = (len + 1) * 8 + ((rx != NULL) && ((_fpga_family == ECP3_FAMILY)) ? 1 : 0);
-	std::vector<uint8_t> jtx, jrx;
-	jtx.resize(xfer_len, 0);
-	jrx.resize(xfer_len, 0);
+	const bool delayed_rx = rx && _fpga_family == ECP3_FAMILY;
+	const uint32_t xfer_len = len + 1 + (delayed_rx ? 1 : 0);
+	resize_spi_buffers(xfer_len);
+	const uint32_t xfer_bit_len = (len + 1) * 8 + (delayed_rx ? 1 : 0);
+
+	uint8_t *jtx = _spi_tx_buf.data();
+	uint8_t *jrx = _spi_rx_buf.data();
 
 	jtx[0] = LatticeBitParser::reverseByte(cmd);
 
@@ -1789,7 +1791,7 @@ int Lattice::spi_put(uint8_t cmd, const uint8_t *tx, uint8_t *rx, uint32_t len)
 	 * in the same time store each byte
 	 * to next
 	 */
-	_jtag->shiftDR(jtx.data(), (!rx)? NULL: jrx.data(), xfer_bit_len);
+	_jtag->shiftDR(jtx, (!rx)? NULL: jrx, xfer_bit_len);
 
 	if (rx) {
 		if (_fpga_family == ECP3_FAMILY) {
@@ -1809,19 +1811,21 @@ int Lattice::spi_put(const uint8_t *tx, uint8_t *rx, uint32_t len)
 {
 	if (len == 0)
 		return 0;
-	std::vector<uint8_t> jtx, jrx;
-	jtx.resize(len, 0);
-	jrx.resize(len, 0);
+	resize_spi_buffers(len);
+	uint8_t *jtx = _spi_tx_buf.data();
+	uint8_t *jrx = _spi_rx_buf.data();
 
 	if (tx)
 		for (uint32_t i = 0; i < len; ++i)
 			jtx[i] = LatticeBitParser::reverseByte(tx[i]);
+	else
+		memset(jtx, 0, len);
 
 	/* send first already stored cmd,
 	 * in the same time store each byte
 	 * to next
 	 */
-	_jtag->shiftDR(jtx.data(), (rx) ? jrx.data() : nullptr, 8 * len);
+	_jtag->shiftDR(jtx, (rx) ? jrx : nullptr, 8 * len);
 
 	if (rx) {
 		for (uint32_t i = 0; i < len; ++i)
