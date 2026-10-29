@@ -370,6 +370,13 @@
   Memory: OK
   Flash: NT
 
+- ID: de2
+  Description: Terasic DE2
+  URL: https://www.terasic.com.tw/cgi-bin/page/archive.pl?Language=English&No=30
+  FPGA: Cyclone II EP2C35F672C6
+  Memory: OK
+  Flash: NT
+
 - ID: de0nano
   Description: Terasic de0nano
   URL: https://www.terasic.com.tw/cgi-bin/page/archive.pl?No=593
