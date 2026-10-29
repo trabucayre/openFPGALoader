@@ -8,9 +8,8 @@
 #include <libusb.h>
 #include <stdio.h>
 #include <stdlib.h>
-#include <strings.h>
 #include <string.h>
-#include <unistd.h>
+#include "portability/unistd.hpp"
 
 #include <map>
 #include <stdexcept>
@@ -89,7 +88,7 @@ Jlink::~Jlink()
 }
 
 int Jlink::writeTMS(const uint8_t *tms, uint32_t len, bool flush_buffer,
-		__attribute__((unused)) const uint8_t tdi)
+		[[maybe_unused]] const uint8_t tdi)
 {
 	// empty buffer
 	// if asked flush
@@ -244,7 +243,8 @@ bool Jlink::ll_write(uint8_t *tdo)
 	if (_num_bits == 0)
 		return true;
 	uint32_t numbytes = (_num_bits + 7) >> 3;
-	uint8_t rx_buf[numbytes+2];
+	std::vector<uint8_t> rx_buf;
+	rx_buf.resize(numbytes+2, 0);
 	uint8_t status;
 	// 1. cmd + dummy + numbits + tms + tdi
 	_xfer_buf[0] = EMU_CMD_HW_JTAG3;
@@ -287,7 +287,7 @@ bool Jlink::ll_write(uint8_t *tdo)
 	}
 
 	// 2. read tdo + status
-	int ret = read_device(rx_buf, numbytes+1);
+	int ret = read_device(rx_buf.data(), numbytes+1);
 	if (ret < 0) {
 		printError("fails to read tdo");
 		return false;
@@ -305,7 +305,7 @@ bool Jlink::ll_write(uint8_t *tdo)
 	}
 
 	if (tdo) {
-		memcpy(tdo, rx_buf, numbytes);
+		memcpy(tdo, rx_buf.data(), numbytes);
 
 		if (_debug) {
 			printf("tdo       : ");
@@ -461,9 +461,10 @@ std::string Jlink::get_version()
 {
 	uint16_t length = 0;
 	cmd_read(EMU_CMD_VERSION, &length);
-	uint8_t version[length];
-	read_device(version, length);
-	return std::string(reinterpret_cast<char*>(version));
+	std::vector<uint8_t> version;
+	version.resize(length, 0);
+	read_device(version.data(), length);
+	return std::string(reinterpret_cast<const char*>(version.data()));
 }
 
 int Jlink::get_hw_version()

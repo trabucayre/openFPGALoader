@@ -8,7 +8,7 @@
 #include "svf_jtag.hpp"
 
 #include <stdexcept>
-#include <unistd.h>
+#include "portability/unistd.hpp"
 
 #include <algorithm>
 #include <iomanip>
@@ -47,8 +47,8 @@ static unsigned char *parse_hex(std::string const &in, size_t byte_length,
 {
 	unsigned char *txbuf = new unsigned char[byte_length];
 	char c;
-	ssize_t last_iter = in.size() - (2 * byte_length);
-	for (ssize_t i = (in.size() - 1), pos = 0; i >= last_iter; i--, pos++) {
+	ptrdiff_t last_iter = in.size() - (2 * byte_length);
+	for (ptrdiff_t i = (in.size() - 1), pos = 0; i >= last_iter; i--, pos++) {
 		if (i < 0) {
 			c = default_value ? 0x0f : 0x00;
 		} else {

@@ -6,12 +6,13 @@
 #include <libusb.h>
 #include <stdio.h>
 #include <string.h>
-#include <unistd.h>
 
 #include <iostream>
 #include <map>
 #include <string>
 #include <vector>
+
+#include "portability/unistd.hpp"
 
 #include "display.hpp"
 #ifdef USE_LIBFTDI
@@ -104,7 +105,7 @@ uint32_t UsbBlaster::getClkFreq()
 }
 
 int UsbBlaster::writeTMS(const uint8_t *tms, uint32_t len, bool flush_buffer,
-		__attribute__((unused)) const uint8_t tdi)
+		[[maybe_unused]] const uint8_t tdi)
 {
 	int ret;
 
