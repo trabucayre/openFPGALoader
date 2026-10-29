@@ -2046,13 +2046,13 @@ static constexpr uint8_t _gray_code[256] = {
 void Xilinx::xc2c_init(uint32_t idcode)
 {
 	_fpga_family = XC2C_FAMILY;
-	std::string model = fpga_list[idcode].model;
-	size_t underscore_pos = model.find_first_of('_', 0);
-	if (underscore_pos == model.npos) {
-		underscore_pos = model.length();
-	}
-	snprintf(_cpld_base_name, underscore_pos,
-			"%s", model.substr(0, underscore_pos).c_str());
+
+	const std::string model = fpga_list[idcode].model;
+	const size_t underscore_pos = model.find('_');
+	const std::string base_name = model.substr(0, underscore_pos);
+
+	snprintf(_cpld_base_name, sizeof(_cpld_base_name),
+			"%s", base_name.c_str());
 	switch ((idcode >> 16) & 0x3f) {
 	case 0x01: /* xc2c32 */
 	case 0x11: /* xc2c32a PC44 */
