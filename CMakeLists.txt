@@ -67,17 +67,15 @@ else()
 	set(ENABLE_LIBGPIOD OFF)
 endif()
 
-option(ENABLE_XILINX_PLATFORM_CABLE_USB "enable Xilinx Platform Cable USB (XPCU) support" ${ENABLE_CABLE_ALL})
+option(ENABLE_XILINX_PLATFORM_CABLE_USB   "enable Xilinx Platform Cable USB (XPCU) support" ${ENABLE_CABLE_ALL})
+option(ENABLE_XILINX_VIRTUAL_CABLE_CLIENT "enable Xilinx Virtual Cable (XVC) client support" ${ENABLE_CABLE_ALL})
+option(ENABLE_XILINX_VIRTUAL_CABLE_SERVER "enable Xilinx Virtual Cable (XVC) server support" ${ENABLE_CABLE_ALL})
 
-# XVC and RemoteBitbang are not available on Windows OS.
+# RemoteBitbang is not available on Windows OS.
 if (NOT ${CMAKE_SYSTEM_NAME} MATCHES "Windows")
 	option(ENABLE_REMOTEBITBANG               "enable remote bitbang driver"              ${ENABLE_CABLE_ALL})
-	option(ENABLE_XILINX_VIRTUAL_CABLE_CLIENT "enable Xilinx Virtual Cable (XVC) client support" ${ENABLE_CABLE_ALL})
-	option(ENABLE_XILINX_VIRTUAL_CABLE_SERVER "enable Xilinx Virtual Cable (XVC) server support" ${ENABLE_CABLE_ALL})
 else()
 	set(ENABLE_REMOTEBITBANG               OFF)
-	set(ENABLE_XILINX_VIRTUAL_CABLE_CLIENT OFF)
-	set(ENABLE_XILINX_VIRTUAL_CABLE_SERVER OFF)
 endif()
 
 ####################################################################################################

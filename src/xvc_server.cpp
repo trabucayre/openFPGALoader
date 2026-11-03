@@ -3,13 +3,22 @@
  * Copyright (C) 2022 Gwenhael Goavec-Merou <gwenhael.goavec-merou@trabucayre.com>
  */
 
-#include "xvc_server.hpp"
-
+#ifdef _WIN32
+#include <winsock2.h>
+#include <ws2tcpip.h>
+#else
 #include <arpa/inet.h>
 #include <sys/socket.h>
 #include <errno.h>
 #include <netinet/tcp.h>
 #include <unistd.h>
+#endif
+
+#ifdef interface
+#undef interface
+#endif
+
+#include "xvc_server.hpp"
 
 #include <cstring>
 #include <stdexcept>
@@ -27,7 +36,13 @@ XVC_server::XVC_server(int port, const cable_t & cable,
 	const std::string & serial, uint32_t clkHZ, int8_t verbose,
 	const std::string & ip_adr, const bool invert_read_edge,
 	const std::string & firmware_path):_verbose(verbose > 1),
-			_jtag(NULL), _port(port), _sock(-1),
+			_jtag(NULL), _port(port), _sock(
+#ifdef _WIN32
+			INVALID_SOCKET
+#else
+			-1
+#endif
+		), _winsock_started(false),
 			_is_stopped(false), _must_stop(false),
 			_buffer_size(1048576), _state(Jtag::RUN_TEST_IDLE)
 {
@@ -97,21 +112,36 @@ XVC_server::~XVC_server()
 bool XVC_server::open_connection()
 {
 	char hostname[256];
-	memset(&_sock_addr, '\0', sizeof(_sock_addr));
-	_sock_addr.sin_family = AF_INET;
-	_sock_addr.sin_port = htons(_port);
-	_sock_addr.sin_addr.s_addr = INADDR_ANY;
+	struct sockaddr_in sock_addr = {};
+	sock_addr.sin_family = AF_INET;
+	sock_addr.sin_port = htons(_port);
+	sock_addr.sin_addr.s_addr = INADDR_ANY;
+#ifdef _WIN32
+	WSADATA wsa_data;
+	if (WSAStartup(MAKEWORD(2, 2), &wsa_data) != 0) {
+		printError("Winsock initialization error");
+		return false;
+	}
+	_winsock_started = true;
+#endif
 
 	_sock = socket(AF_INET, SOCK_STREAM, IPPROTO_TCP);
-	if (_sock < 0) {
+	if (_sock ==
+#ifdef _WIN32
+		INVALID_SOCKET
+#else
+		-1
+#endif
+	) {
 		printError("Socket creation error");
 		return false;
 	}
 
 	int i = 1;
-	setsockopt(_sock, SOL_SOCKET, SO_REUSEADDR, &i, sizeof i);
+	setsockopt(_sock, SOL_SOCKET, SO_REUSEADDR,
+		reinterpret_cast<const char *>(&i), sizeof i);
 
-	if (::bind(_sock, (struct sockaddr*) &_sock_addr, sizeof(_sock_addr)) < 0) {
+	if (::bind(_sock, (struct sockaddr*) &sock_addr, sizeof(sock_addr)) < 0) {
 		printError("Socket bind error");
 		close(_sock);
 		return false;
@@ -140,16 +170,37 @@ bool XVC_server::open_connection()
 
 bool XVC_server::close_connection()
 {
-	if (_sock != -1)
+	if (_sock !=
+#ifdef _WIN32
+		INVALID_SOCKET
+#else
+		-1
+#endif
+	)
+	#ifdef _WIN32
+		closesocket(static_cast<SOCKET>(_sock));
+	#else
 		close(_sock);
-	_sock = -1;
+	#endif
+	_sock =
+#ifdef _WIN32
+		INVALID_SOCKET;
+#else
+		-1;
+#endif
+#ifdef _WIN32
+	if (_winsock_started) {
+		WSACleanup();
+		_winsock_started = false;
+	}
+#endif
 	return true;
 }
 
 void XVC_server::thread_listen()
 {
 	fd_set conn;
-	int maxfd = 0;
+	xvc_server_socket_t maxfd = 0;
 
 	FD_ZERO(&conn);
 	FD_SET(_sock, &conn);
@@ -159,7 +210,7 @@ void XVC_server::thread_listen()
 	try {
 		while (!_must_stop) {
 			fd_set read = conn, except = conn;
-			int fd;
+			xvc_server_socket_t fd;
 
 			struct timeval tv;
 			tv.tv_sec = 1;
@@ -172,14 +223,25 @@ void XVC_server::thread_listen()
 			for (fd = 0; fd <= maxfd; ++fd) {
 				if (FD_ISSET(fd, &read)) {
 					if (fd == _sock) {
-						int newfd;
-						socklen_t nsize = sizeof(_sock_addr);
+						xvc_server_socket_t newfd;
+#ifdef _WIN32
+						int nsize = sizeof(struct sockaddr_in);
+#else
+						socklen_t nsize = sizeof(struct sockaddr_in);
+#endif
+						struct sockaddr_in peer_addr = {};
 
-						newfd = accept(_sock, (struct sockaddr*) &_sock_addr,
+						newfd = accept(_sock, (struct sockaddr*) &peer_addr,
 							&nsize);
 
 						printf("connection accepted - fd %d\n", newfd);
-						if (newfd < 0) {
+						if (newfd ==
+#ifdef _WIN32
+							INVALID_SOCKET
+#else
+							-1
+#endif
+						) {
 							throw std::runtime_error("accept");
 						} else {
 							printInfo("setting TCP_NODELAY to 1\n");
@@ -197,7 +259,11 @@ void XVC_server::thread_listen()
 						int ret = handle_data(fd);
 						if (ret != 0) {
 							printInfo("connection closed - fd " + std::to_string(fd));
+							#ifdef _WIN32
+							closesocket(static_cast<SOCKET>(fd));
+							#else
 							close(fd);
+							#endif
 							FD_CLR(fd, &conn);
 							if (ret == 3)
 								throw std::runtime_error("communication failure");
@@ -205,7 +271,11 @@ void XVC_server::thread_listen()
 					}
 				} else if (FD_ISSET(fd, &except)) {
 					printWarn("connection aborted - fd " + std::to_string(fd));
+					#ifdef _WIN32
+					closesocket(static_cast<SOCKET>(fd));
+					#else
 					close(fd);
+					#endif
 					FD_CLR(fd, &conn);
 					if (fd == _sock)
 						break;
@@ -234,11 +304,16 @@ bool XVC_server::listen_loop()
 	return true;
 }
 
-int XVC_server::sread(int fd, void *target, int len)
+int XVC_server::sread(xvc_server_socket_t fd, void *target, int len)
 {
 	unsigned char *t = (unsigned char *)target;
 	while (len) {
-		int r = read(fd, t, len);
+		int r =
+#ifdef _WIN32
+			recv(static_cast<SOCKET>(fd), reinterpret_cast<char *>(t), len, 0);
+#else
+			read(fd, t, len);
+#endif
 		if (r == 0){  // connection closed
 			return 2;
 		} else if (r < 0) {
@@ -255,7 +330,7 @@ int XVC_server::sread(int fd, void *target, int len)
 	return 1;
 }
 
-int XVC_server::handle_data(int fd)
+int XVC_server::handle_data(xvc_server_socket_t fd)
 {
 	char xvcInfo[32];
 	int ret;
@@ -290,7 +365,7 @@ int XVC_server::handle_data(int fd)
 			if ((ret = sread(fd, cmd, 9)) != 1)
 				return ret;
 			memcpy(_result, cmd + 5, 4);
-			if (write(fd, _result, 4) != 4) {
+			if (send(fd, reinterpret_cast<const char *>(_result), 4, 0) != 4) {
 				printError("write");
 				return 1;
 			}
@@ -375,7 +450,7 @@ int XVC_server::handle_data(int fd)
 		}
 
 		/* send received TDO sequence */
-		if (send(fd, _result, nr_bytes, 0) != nr_bytes) {
+		if (send(fd, reinterpret_cast<const char *>(_result), nr_bytes, 0) != nr_bytes) {
 			printError("write");
 			return 1;
 		}
