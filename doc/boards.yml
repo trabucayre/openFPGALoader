@@ -1015,6 +1015,13 @@
   Memory: NA
   Flash: OK
 
+- ID: ulx5m_dfu
+  Description: Radiona ULX5M-GS DFU mode
+  URL: https://github.com/intergalaktik/ulx5m-gs
+  FPGA: Cologne Chip GateMate Series (GM1A1)
+  Memory: NA
+  Flash: OK
+
 - ID: vec_v6
   Description: Xilinx VCU118
   URL: https://vmm-srs.docs.cern.ch/
