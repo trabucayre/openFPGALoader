@@ -6,7 +6,7 @@
 #ifndef SRC_USBBLASTER_HPP_
 #define SRC_USBBLASTER_HPP_
 #ifdef USE_LIBFTDI
-#include <ftdi.h>
+#include "portability/ftdi.hpp"
 #endif
 #include <iostream>
 #include <string>

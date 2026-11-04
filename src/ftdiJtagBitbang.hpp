@@ -5,7 +5,7 @@
 
 #ifndef FTDIJTAGBITBANG_H
 #define FTDIJTAGBITBANG_H
-#include <ftdi.h>
+#include "portability/ftdi.hpp"
 #include <iostream>
 #include <string>
 #include <vector>

@@ -6,7 +6,7 @@
 
 #include "bpiFlash.hpp"
 
-#include <unistd.h>
+#include "portability/unistd.hpp"
 #include <cstring>
 #include <stdexcept>
 #include <vector>

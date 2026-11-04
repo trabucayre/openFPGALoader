@@ -5,7 +5,7 @@
 
 #include <libusb.h>
 #include <stdint.h>
-#include <unistd.h>
+#include "portability/unistd.hpp"
 
 #include <stdexcept>
 #include <string>

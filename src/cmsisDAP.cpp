@@ -13,9 +13,8 @@
 #endif
 #include <stdio.h>
 #include <stdlib.h>
-#include <strings.h>
 #include <string.h>
-#include <unistd.h>
+#include "portability/unistd.hpp"
 
 #include <iostream>
 #include <map>
@@ -702,7 +701,7 @@ int CmsisDAP::setClkFreq(uint32_t clkHZ)
  * tms states are written only if max or if flush_buffer set
  */
 int CmsisDAP::writeTMS(const uint8_t *tms, uint32_t len, bool flush_buffer,
-		__attribute__((unused)) const uint8_t tdi)
+		[[maybe_unused]] const uint8_t tdi)
 {
 	/* nothing to send
 	 * check if the buffer must be flushed
@@ -826,19 +825,20 @@ int CmsisDAP::writeJtagSequence(uint8_t tms, const uint8_t *tx, uint8_t *rx,
 	 */
 	if (end) {
 		byte_to_read++;   // residual (or 0) from previous iter + 1 Byte
-		uint8_t val[byte_to_read];
+		std::vector<uint8_t> val;
+		val.resize(byte_to_read, 0);
 		_buffer[0] = seq_num + 1;
 		_buffer[pos++] = ((rx) ? DAP_JTAG_SEQ_TDO_CAPTURE : 0) |
 								  DAP_JTAG_SEQ_TMS_SHIFT(0x01&(!tms)) |
 								  DAP_JTAG_SEQ_NB_TCK(1);
 		_buffer[pos++] = (tx[(real_len) >> 3] & (1 << (real_len & 0x07))) ? 1 : 0;
-		ret = xfer(DAP_JTAG_SEQUENCE, pos, (rx) ? val: NULL, byte_to_read);
+		ret = xfer(DAP_JTAG_SEQUENCE, pos, (rx) ? val.data(): NULL, byte_to_read);
 		if (ret <= 0) {
 			printError("writeTDI: failed to send last sequence");
 			return ret;
 		}
 		if (rx) {
-			memcpy(rx_ptr, val, byte_to_read-1);
+			memcpy(rx_ptr, val.data(), byte_to_read-1);
 			if (val[byte_to_read-1] & 0x01)
 				rx[real_len >> 3] |= 1 << ((real_len) & 0x07);
 			else
@@ -863,10 +863,10 @@ int CmsisDAP::writeTDI(const uint8_t *tx, uint8_t *rx, uint32_t len, bool end)
 int CmsisDAP::toggleClk(uint8_t tms, uint8_t tdi, uint32_t clk_len)
 {
 	const int byte_len = (clk_len + 7) / 8;
-	uint8_t tx[byte_len];
-	memset(tx, (tdi) ? 0xff : 0x00, byte_len);
+	std::vector<uint8_t> tx;
+	tx.resize(byte_len, (tdi) ? 0xff : 0x00);
 	/* use false as last param to maintain tms in the current state */
-	return writeJtagSequence(tms, tx, NULL, clk_len, false);
+	return writeJtagSequence(tms, tx.data(), NULL, clk_len, false);
 }
 
 /* flush buffer filled with TMS states
@@ -1119,8 +1119,9 @@ void CmsisDAP::display_info(uint8_t info, uint8_t type)
 						(buffer[3] << 8) | buffer[2];
 		printf("%u\n", val);
 	} else {
-		char val[ret];
-		memcpy(val, &buffer[2], ret);
-		printf("%s\n", val);
+		std::string val;
+		val.resize(ret, '\0');
+		memcpy(val.data(), &buffer[2], ret);
+		printf("%s\n", val.c_str());
 	}
 }

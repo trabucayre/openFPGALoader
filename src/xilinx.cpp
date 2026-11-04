@@ -6,7 +6,7 @@
 
 #define __STDC_FORMAT_MACROS
 #include <inttypes.h>
-#include <unistd.h>
+#include "portability/unistd.hpp"
 
 #include <cstring>
 #include <fstream>
@@ -954,7 +954,8 @@ void Xilinx::program_mem(ConfigBitstreamParser *bitfile)
 {
 	std::cout << "load program" << std::endl;
 	unsigned char *tx_buf;
-	unsigned char rx_buf[(_irlen >> 3) + 1];
+	std::vector<unsigned char> rx_buf;
+	rx_buf.resize((_irlen >> 3) + 1);
 
 	/*            comment                                TDI   TMS TCK
 	 * 1: On power-up, place a logic 1 on the TMS,
@@ -979,7 +980,7 @@ void Xilinx::program_mem(ConfigBitstreamParser *bitfile)
 	/* Poll INIT_B (bit 4 of IR capture) until config memory is cleared */
 	tx_buf = get_ircode(_ircode_map, "BYPASS");
 	do {
-		_jtag->shiftIR(tx_buf, rx_buf, _irlen);
+		_jtag->shiftIR(tx_buf, rx_buf.data(), _irlen);
 	} while (!(rx_buf[0] & 0x10));
 	/*
 	 * 8: Move into the RTI state.                        X     0   10,000(1)
@@ -1078,7 +1079,7 @@ void Xilinx::program_mem(ConfigBitstreamParser *bitfile)
 		*/
 		_jtag->go_test_logic_reset();
 		/* Some xc7s50 does not detect correct connected flash w/o this shift*/
-		_jtag->shiftIR(tx_buf, rx_buf, _irlen);
+		_jtag->shiftIR(tx_buf, rx_buf.data(), _irlen);
 		uint8_t ir_c = rx_buf[0] & 0x03;
 		uint8_t isc_done = ((rx_buf[0] >> 2) & 0x01);
 		uint8_t isc_ena  = ((rx_buf[0] >> 3) & 0x01);
@@ -2285,11 +2286,12 @@ int Xilinx::spi_put(uint8_t cmd,
 	if (_soj_is_v2)
 		return spi_put_v2(cmd, tx, rx, len);
 
-	int xfer_len = len + 1 + ((rx == NULL) ? 0 : 1);
-	uint8_t jtx[xfer_len];
+	const uint32_t xfer_len = len + 1 + (rx ? 1 : 0);
+	resize_spi_buffers(xfer_len);
+	uint8_t *jtx = _spi_tx_buf.data();
+	uint8_t *jrx = _spi_rx_buf.data();
 	jtx[0] = McsParser::reverseByte(cmd);
 	/* uint8_t jtx[xfer_len] = {McsParser::reverseByte(cmd)}; */
-	uint8_t jrx[xfer_len];
 	if (tx != NULL) {
 		for (uint32_t i=0; i < len; i++)
 			jtx[i+1] = McsParser::reverseByte(tx[i]);
@@ -2311,9 +2313,12 @@ int Xilinx::spi_put(uint8_t cmd,
 
 int Xilinx::spi_put(const uint8_t *tx, uint8_t *rx, uint32_t len)
 {
-	int xfer_len = len + ((rx == NULL) ? 0 : 1);
-	uint8_t jtx[xfer_len];
-	uint8_t jrx[xfer_len];
+	if (len == 0)
+		return 0;
+	const uint32_t xfer_len = len + (rx ? 1 : 0);
+	resize_spi_buffers(xfer_len);
+	uint8_t *jtx = _spi_tx_buf.data();
+	uint8_t *jrx = _spi_rx_buf.data();
 	if (tx != NULL) {
 		for (uint32_t i=0; i < len; i++)
 			jtx[i] = McsParser::reverseByte(tx[i]);
@@ -2390,10 +2395,12 @@ int Xilinx::spi_put_v2(uint8_t cmd, const uint8_t *tx, uint8_t *rx,
 		mode = 0x00;
 	}
 
+	resize_spi_buffers(kPktLen);
+
 	const uint32_t xfer_bit_len = (kPktLen - 1) * 8 + (rx ? 8 : 1);
 
-	uint8_t jrx[kPktLen];
-	uint8_t pkt[kPktLen];
+	uint8_t *pkt = _spi_tx_buf.data();
+	uint8_t *jrx = _spi_rx_buf.data();
 	uint32_t idx = 0;
 
 	pkt[idx++] = ((0x1f & real_len) << 3) | ((0x03 & mode) << 1) | 1;
@@ -2404,9 +2411,6 @@ int Xilinx::spi_put_v2(uint8_t cmd, const uint8_t *tx, uint8_t *rx,
 	if (tx) {
 		for (uint32_t i=0; i < len; i++)
 			pkt[idx++] = McsParser::reverseByte(tx[i]);
-	} else {
-		memset(&pkt[idx], 0, len);
-		idx += len;
 	}
 
 	/* addr BSCAN user1 */

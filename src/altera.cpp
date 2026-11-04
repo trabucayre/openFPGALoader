@@ -1311,9 +1311,10 @@ int Altera::spi_put(uint8_t cmd, const uint8_t *tx, uint8_t *rx, uint32_t len)
 	/* +1 because send first cmd + len byte + 1 for rx due to a delay of
 	 * one bit
 	 */
-	int xfer_len = len + 1 + ((rx == NULL) ? 0 : 1);
-	uint8_t jtx[xfer_len];
-	uint8_t jrx[xfer_len];
+	const uint32_t xfer_len = len + 1 + (rx ? 1 : 0);
+	resize_spi_buffers(xfer_len);
+	uint8_t *jtx = _spi_tx_buf.data();
+	uint8_t *jrx = _spi_rx_buf.data();
 
 	if (tx != NULL) {
 		for (uint32_t i = 0; i < len; i++)
@@ -1334,7 +1335,11 @@ int Altera::spi_put(uint8_t cmd, const uint8_t *tx, uint8_t *rx, uint32_t len)
 
 int Altera::spi_put(const uint8_t *tx, uint8_t *rx, uint32_t len)
 {
-	return spi_put(tx[0], &tx[1], rx, len-1);
+	if (len == 0)
+		return 0;
+	if (!tx)
+		return -1;
+	return spi_put(tx[0], tx + 1, rx, len-1);
 }
 
 int Altera::spi_wait(uint8_t cmd, uint8_t mask, uint8_t cond,

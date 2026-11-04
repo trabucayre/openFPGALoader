@@ -5,7 +5,6 @@
 
 #include <cstdio>
 #include <cstring>
-#include <unistd.h>
 
 #include <stdexcept>
 #include <string>
@@ -14,6 +13,7 @@
 #include "display.hpp"
 #include "fx2_ll.hpp"
 #include "xilinxPlatformCableUSB.hpp"
+#include "portability/unistd.hpp"
 
 #define XPCU_BREQUEST             0xB0
 #define XPCU_INITIALIZED_VID      0x03fd

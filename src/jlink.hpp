@@ -131,6 +131,7 @@ class Jlink: public JtagInterface {
 		};
 		
 		// Jlink configuration structure
+#pragma pack(push, 1)
 		struct jlink_cfg_t {
 			uint8_t usb_adr;
 			uint8_t reserved1[3];   // 0x01 - 0x03: 0xff
@@ -141,7 +142,8 @@ class Jlink: public JtagInterface {
 			uint8_t reserved3[8];   // 0x08 - 0x1F: 0xff
 			uint8_t mackaddr[6];    // MAC-Address (Only for J-Link Pro)
 			uint8_t reserved[202];  // MAC-Address (Only for J-Link Pro)
-		} __attribute__((__packed__));
+		};
+#pragma pack(pop)
 		typedef jlink_cfg_t jlink_cfg;
 
 		// JLink caps code

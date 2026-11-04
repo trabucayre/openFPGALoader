@@ -51,6 +51,7 @@ class DFU {
 		/**
 		 * \brief dfu descriptor structure (not provided by libusb
 		 */
+#pragma pack(push, 1)
 		struct dfu_desc {
 			uint8_t  bLength;
 			uint8_t  bDescriptorType;
@@ -58,7 +59,8 @@ class DFU {
 			uint16_t wDetachTimeOut;
 			uint16_t wTransferSize;
 			uint16_t bcdDFUVersion;
-		} __attribute__((__packed__));
+		};
+#pragma pack(pop)
 
 		struct dfu_dev {
 			uint16_t vid;
