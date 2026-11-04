@@ -1220,7 +1220,12 @@ int parse_opt(int argc, char **argv, struct arguments *args,
 				{"DTR", FT232RL_DTR},
 				{"DSR", FT232RL_DSR},
 				{"DCD", FT232RL_DCD},
-				{"RI" , FT232RL_RI}};
+				{"RI" , FT232RL_RI},
+				{"CBUS0", FT232RL_CBUS0},
+				{"CBUS1", FT232RL_CBUS1},
+				{"CBUS2", FT232RL_CBUS2},
+				{"CBUS3", FT232RL_CBUS3},
+			};
 
 			uint8_t *pin_fields[] = {
 				&pins_config->tdi_pin,
