@@ -509,13 +509,12 @@ Xilinx::Xilinx(Jtag *jtag, const std::string &filename,
 }
 Xilinx::~Xilinx() {}
 
-bool Xilinx::open_bitfile(const std::string &filename,
-	const std::string &extension, ConfigBitstreamParser **parser,
-	bool reverse)
+std::unique_ptr<ConfigBitstreamParser> Xilinx::open_bitfile(
+	const std::string &filename, const std::string &extension, bool reverse)
 {
-	printInfo("Open file " + filename + " ", false);
 	std::unique_ptr<ConfigBitstreamParser> bitstream;
 
+	printInfo("Open file " + filename + " ", false);
 	try {
 		if (extension == "bit") {
 			bitstream.reset(new BitParser(filename, reverse, _verbose));
@@ -525,72 +524,79 @@ bool Xilinx::open_bitfile(const std::string &filename,
 			bitstream.reset(new RawParser(filename, reverse));
 		}
 	} catch (const std::exception &e) {
+		printError("FAIL");
 		printError("Unable to open '" + filename + "': " + e.what());
-		return false;
+		return nullptr;
 	}
-
 	printSuccess("DONE");
 
 	printInfo("Parse file ", false);
 	if (bitstream->parse() == EXIT_FAILURE) {
+		printError("FAIL");
 		printError("Failed to parse bitstream '" + filename + "'");
-		return false;
+		return nullptr;
 	}
-
 	printSuccess("DONE");
 
-	/* Check whether the bitstream IDCODE matches the current target IDCODE. */
-	if (extension == "bit" || extension == "bin") {
-		printInfo("Check bitstream IDCODE ", false);
-		uint32_t bit_idcode = 0;
-		int ret = BitParser::get_idcode(bitstream->getData(),
-			bitstream->getLength() / 8, _model,  &bit_idcode, reverse);
+	/* for non .bit/.bin: check_idcode must be bypassed */
+	if (extension != "bit" && extension != "bin")
+		return bitstream;
 
+	/* For .bit/.bin: check if configuration data idcode
+	 * match the target device
+	 */
+	if (!check_idcode(bitstream.get(), extension, reverse))
+		return nullptr;
+
+	return bitstream;
+}
+
+bool Xilinx::check_idcode(ConfigBitstreamParser *bitstream,
+	const std::string &extension, bool reverse)
+{
+	printInfo("Check bitstream IDCODE ", false);
+
+	uint32_t bit_idcode = 0;
+	const int ret = BitParser::get_idcode(bitstream->getData(),
+		bitstream->getLength() / 8, _model, &bit_idcode, reverse);
+
+	switch (ret) {
+	case 0:
 		/* Compares IDCODEs between the target and the bitstream.
 		 * A mask is applied because some/most of IDCODE in part.hpp
 		 * have their revision bit set to 0
 		 */
-		if (ret == 0) {
-			if ((_idcode & 0x0fffffff) != (bit_idcode & 0x0fffffff)) {
-				printError("FAIL");
-				char mess[256];
-				snprintf(mess, sizeof(mess),
-					"mismatch between target's idcode and bitstream idcode\n"
-					"\tbitstream has 0x%08x hardware requires 0x%08x",
-					bit_idcode, _idcode);
-				printError(mess);
-				return false;
-			}
-			printSuccess("DONE");
-			*parser = bitstream.release();
+		if ((_idcode & 0x0fffffff) != (bit_idcode & 0x0fffffff)) {
+			char mess[256];
+			printError("FAIL");
+			snprintf(mess, sizeof(mess),
+				"mismatch between target's idcode and bitstream idcode\n"
+				"\tbitstream has 0x%08x hardware requires 0x%08x",
+				bit_idcode, _idcode);
+			printError(mess);
+			break;
+		}
+		printSuccess("DONE");
+		return true;
+	case -2:  // no sync word
+		/* This may be an arbitrary binary file */
+		if (_mode == Device::SPI_MODE && extension == "bin") {
+			printWarn("SKIP");
+			printWarn("IDCODE not found. Maybe an arbitrary binary file");
 			return true;
 		}
-		switch (ret) {
-			case -1:  // bad/corrupted file
-			case -3:  // no IDCODE
-				printError("FAIL");
-				printError("Error: Invalid bitstream. Please check file.");
-				break;
-			case -2:  // no sync word
-				/* This may be an arbitrary binary file */
-				if (_mode == Device::SPI_MODE && extension == "bin") {
-					printWarn("IDCODE not found. "
-						"Maybe an arbitrary binary file");
-					*parser = bitstream.release();
-					return true;
-				} else {
-					printError("FAIL");
-					printError("Error: Invalid bitstream. No IDCODE found");
-				}
-				break;
-			case -4:  // unsupported
-				printWarn("Not supported for current target");
-				*parser = bitstream.release();
-				return true;
-		}
-
+		printError("FAIL");
+		printError("Error: Invalid bitstream. No IDCODE found");
+		break;
+	case -4:  // unsupported family
+		printWarn("SKIP");
+		printWarn("IDCODE check not supported for current target");
+		return true;
+	default:  // -1: bad/corrupted file, -3: no IDCODE
+		printError("FAIL");
+		printError("Error: Invalid bitstream. Please check file.");
+		break;
 	}
-
 	return false;
 }
 
@@ -703,8 +709,8 @@ uint32_t Xilinx::idCode()
 
 void Xilinx::program(unsigned int offset, bool unprotect_flash)
 {
-	ConfigBitstreamParser *bit = nullptr;
-	ConfigBitstreamParser *secondary_bit = nullptr;
+	std::unique_ptr<ConfigBitstreamParser> bit;
+	std::unique_ptr<ConfigBitstreamParser> secondary_bit;
 	bool reverse = false;
 
 	/* nothing to do */
@@ -741,16 +747,18 @@ void Xilinx::program(unsigned int offset, bool unprotect_flash)
 	if (_file_extension == "pdi")
 		reverse = false;
 
-	if (_flash_chips & PRIMARY_FLASH)
-		if (!open_bitfile(_filename, _file_extension, &bit, reverse))
+	if (_flash_chips & PRIMARY_FLASH) {
+		bit = open_bitfile(_filename, _file_extension, reverse);
+		if (!bit)
 			throw std::runtime_error("Error: Failed to open " + _filename);
-	if (_flash_chips & SECONDARY_FLASH)
-		if (!open_bitfile(_secondary_filename, _secondary_file_extension,
-			&secondary_bit, reverse)) {
-			if (bit)
-				delete bit;
-			throw std::runtime_error("Error: Failed to open " + _filename);
-		}
+	}
+	if (_flash_chips & SECONDARY_FLASH) {
+		secondary_bit = open_bitfile(_secondary_filename,
+			_secondary_file_extension, reverse);
+		if (!secondary_bit)
+			throw std::runtime_error("Error: Failed to open " +
+				_secondary_filename);
+	}
 
 	if (_verbose) {
 		if (bit)
@@ -760,33 +768,32 @@ void Xilinx::program(unsigned int offset, bool unprotect_flash)
 	}
 
 	if (_fpga_family == XCF_FAMILY) {
-		xcf_program(bit);
-		delete bit;
+		xcf_program(bit.get());
 		return;
 	}
 
 	if (_mode == Device::SPI_MODE) {
 		/* Check for BPI flash boards */
 		if (_is_bpi_board) {
-			program_bpi(bit, offset);
+			program_bpi(bit.get(), offset);
 		} else {
 			if (_flash_chips & PRIMARY_FLASH) {
 				select_flash_chip(PRIMARY_FLASH);
-				program_spi(bit, _file_extension, offset, unprotect_flash);
+				program_spi(bit.get(), _file_extension, offset,
+					unprotect_flash);
 			}
 			if (_flash_chips & SECONDARY_FLASH) {
 				select_flash_chip(SECONDARY_FLASH);
-				program_spi(secondary_bit, _secondary_file_extension, offset, unprotect_flash);
+				program_spi(secondary_bit.get(), _secondary_file_extension,
+					offset, unprotect_flash);
 			}
 		}
 	} else {
 		if (_fpga_family == SPARTAN3_FAMILY)
-			xc3s_flow_program(bit);
+			xc3s_flow_program(bit.get());
 		else
-			program_mem(bit);
+			program_mem(bit.get());
 	}
-
-	delete bit;
 }
 
 bool Xilinx::post_flash_access()
@@ -843,14 +850,15 @@ bool Xilinx::load_bridge()
 	/* first: load spi over jtag */
 	try {
 		printInfo("Use spiOverJtag: " + bitname);
-		ConfigBitstreamParser *bridge;
-		if (!open_bitfile(bitname, ".bit", &bridge, false))
+		std::unique_ptr<ConfigBitstreamParser> bridge =
+			open_bitfile(bitname, "bit", true);
+		if (!bridge)
 			return false;
 
 		if (_fpga_family == SPARTAN3_FAMILY)
-			xc3s_flow_program(bridge);
+			xc3s_flow_program(bridge.get());
 		else
-			program_mem(bridge);
+			program_mem(bridge.get());
 	} catch (std::exception &e) {
 		printError(e.what());
 		throw std::runtime_error(e.what());
@@ -877,12 +885,13 @@ bool Xilinx::load_bpi_bridge()
 
 	/* Load BPI over JTAG bridge */
 	try {
-		printInfo("Use spiOverJtag: " + bitname);
-		ConfigBitstreamParser *bridge;
-		if (!open_bitfile(bitname, ".bit", &bridge, false))
+		printInfo("Use bpiOverJtag: " + bitname);
+		std::unique_ptr<ConfigBitstreamParser> bridge =
+			open_bitfile(bitname, "bit", true);
+		if (!bridge)
 			return false;
 
-		program_mem(bridge);
+		program_mem(bridge.get());
 	} catch (std::exception &e) {
 		printError(e.what());
 		throw std::runtime_error(e.what());

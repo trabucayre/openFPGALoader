@@ -212,17 +212,29 @@ class Xilinx: public Device, FlashInterface {
 		xilinx_family_t _fpga_family; /**< used to store current family */
 
 		/*!
-		 * \brief Instanciate a parser based on extension to
-		 * parse filename.
+		 * \brief Instanciate a parser based on extension, parse filename
+		 * and check the bitstream is suitable for the current target.
 		 * \param[in] filename: bitstream/binary file path
-		 * \param[in] extension: file extension/type
-		 * \param[out] parser: ConfigBitstreamParser sub-class instance
+		 * \param[in] extension: file extension/type (without leading dot)
 		 * \param[in] reverse: the parser must or not bit reversal
-		 * \return true if open and parse are success, false otherwise
+		 * \return the parser instance, nullptr when open, parse or IDCODE
+		 *         check has failed
 		 */
-		bool open_bitfile(const std::string &filename,
-			const std::string &extension, ConfigBitstreamParser **parser,
+		std::unique_ptr<ConfigBitstreamParser> open_bitfile(
+			const std::string &filename, const std::string &extension,
 			bool reverse);
+
+		/*!
+		 * \brief Compare the IDCODE embedded in the bitstream with the
+		 * IDCODE read from the device.
+		 * \param[in] bitstream: an already parsed bitstream
+		 * \param[in] extension: file extension/type (without leading dot)
+		 * \param[in] reverse: bits are reversed within each byte
+		 * \return false only when the bitstream can't be used with the
+		 *         current target
+		 */
+		bool check_idcode(ConfigBitstreamParser *bitstream,
+			const std::string &extension, bool reverse);
 
 		/*!
 		 * \brief xilinx ZynqMP Ultrascale+ specific initialization
