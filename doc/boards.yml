@@ -738,6 +738,14 @@
   Memory: OK
   Flash: OK
 
+- ID: picoevb
+  Description: RHS Research PicoEVB Rev D
+  URL: https://github.com/RHSResearchLLC/PicoEVB
+  FPGA: Artix xc7a50tcsg325
+  Memory: OK
+  Flash: OK
+  Constraints: PicoEVB
+
 - ID: pipistrello
   Description: Saanlima Pipistrello LX45
   URL: http://pipistrello.saanlima.com/index.php?title=Welcome_to_Pipistrello
