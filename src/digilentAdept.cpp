@@ -508,6 +508,11 @@ int DigilentAdept::writeTDI(const uint8_t *tx, uint8_t *rx, uint32_t len, bool e
 			tx_buff.data(), (oe ? rx_ptr : nullptr), &sent, &recvd);
 		if (ret < 0)
 			return -1;
+		/* only keep relevants bits: avoid MSB with garbage
+		 * mask (fy (1 << 6) - 1 = 0x40 - 1 = 0x3F = 0b00111111)
+		 */
+		if (rx)
+			*rx_ptr &= ((1 << bits) - 1);
 	}
 
 	/* 3. Send last bit with tms high only when end is true */
@@ -521,7 +526,7 @@ int DigilentAdept::writeTDI(const uint8_t *tx, uint8_t *rx, uint32_t len, bool e
 		if (rx) {
 			if (bits == 0)
 				*rx_ptr = 0;
-			*rx_ptr = (*rx_ptr & ~(1 << bits)) | ((last_rx & 0x01) << bits);
+			*rx_ptr |= ((last_rx & 0x01) << bits);
 		}
 	}
 
