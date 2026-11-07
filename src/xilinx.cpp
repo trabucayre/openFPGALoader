@@ -415,7 +415,7 @@ Xilinx::Xilinx(Jtag *jtag, const std::string &filename,
 		_fpga_family = KINTEXUSP_FAMILY;
 	} else if (family == "artixusp") {
 		_fpga_family = ARTIXUSP_FAMILY;
-	} else if (family == "spartanusp") {		
+	} else if (family == "spartanusp") {
 		if (_file_extension != "pdi") {
 			char mess[256];
 			snprintf(mess, 256, "Error: only volatile PDI programing for "
@@ -1041,8 +1041,8 @@ void Xilinx::program_mem(ConfigBitstreamParser *bitfile)
 	if (_file_extension == "pdi") {
 		_jtag->toggleClk(2000);
 		/*
-		* 17: For PDI devices, use the STATUS instruction 
-		*     to verify successful configuration.          
+		* 17: For PDI devices, use the STATUS instruction
+		*     to verify successful configuration.
 		*/
 		unsigned char tx_data[6]= {0x00, 0x00, 0x00, 0x00, 0x00, 0x00};
 		unsigned char rx_data[6];
@@ -1139,6 +1139,10 @@ static const std::map<std::string, std::list<reg_struct_t>> reg_content = {
 			{1, "Bottom ICAPE2 Port Enabled"}),
 		REG_ENTRY("EFUSE key",      31, 1,
 			{0, "Battery backed RAM"}, {1, "eFUSE"}),
+	}},
+	// UG470 Table 5-40
+	{"CTRL1", std::list<reg_struct_t>{
+		REG_ENTRY("Reserved",  0, 32),
 	}},
 	{"STAT", std::list<reg_struct_t>{
 		REG_ENTRY("CRC Error",       0, 1,
