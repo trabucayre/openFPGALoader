@@ -1,4 +1,4 @@
-BPI_XILINX_PARTS     := xc7k480tffg1156
+BPI_XILINX_PARTS     := xc7k480tffg1156 xc6vlx365tlff1156
 BPI_XILINX_BIT_FILES := $(addsuffix .bit.gz,$(addprefix bpiOverJtag_, $(BPI_XILINX_PARTS)))
 
 BIT_FILES := $(BPI_XILINX_BIT_FILES)
