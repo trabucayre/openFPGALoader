@@ -1311,8 +1311,7 @@ void Xilinx::displayRegister(const std::string reg_name, const uint32_t reg_val)
 	for (reg_struct_t r: regs) {
 		uint8_t offset = r.offset;
 		uint8_t size = r.size;
-		uint32_t mask = (1 << size) - 1;
-		uint32_t val = (reg_val >> offset) & mask;
+		uint32_t val = (size == 32) ? reg_val : ((reg_val >> offset) & ((1 << size) - 1));
 		std::stringstream ss, desc;
 		desc << r.description;
 		ss << std::setw(16) << std::left << r.description;
