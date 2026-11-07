@@ -3,16 +3,16 @@
  * Copyright (C) 2020 Gwenhael Goavec-Merou <gwenhael.goavec-merou@trabucayre.com>
  */
 
-#ifndef FTDIJTAGBITBANG_H
-#define FTDIJTAGBITBANG_H
+#ifndef SRC_FTDIJTAGBITBANG_HPP_
+#define SRC_FTDIJTAGBITBANG_HPP_
 #include <ftdi.h>
 #include <iostream>
 #include <string>
 #include <vector>
 
 #include "board.hpp"
-#include "jtagInterface.hpp"
 #include "ftdipp_mpsse.hpp"
+#include "jtagInterface.hpp"
 
 /*!
  * \file FtdiJtagBitBang.hpp
@@ -28,10 +28,11 @@ class FtdiJtagBitBang : public JtagInterface, private FTDIpp_MPSSE {
 		const std::string &serial, uint32_t clkHZ, int8_t verbose = 0);
 	virtual ~FtdiJtagBitBang();
 
-	int setClkFreq(uint32_t clkHZ) override;
+	int setClkFreq(uint32_t clkHz) override;
 
 	/* TMS */
-	int writeTMS(const uint8_t *tms, uint32_t len, bool flush_buffer, const uint8_t tdi = 1) override;
+	int writeTMS(const uint8_t *tms, uint32_t len, bool flush_buffer,
+		const uint8_t tdi = 1) override;
 
 	/* TDI */
 	int writeTDI(const uint8_t *tx, uint8_t *rx, uint32_t len, bool end) override;
@@ -58,6 +59,7 @@ class FtdiJtagBitBang : public JtagInterface, private FTDIpp_MPSSE {
 	uint8_t _tdo_pin; /*!< tdo pin: 1 << pin id */
 	uint8_t _tdi_pin; /*!< tdi pin: 1 << pin id */
 	uint8_t _curr_tms;
+	uint8_t _curr_tdi;
 	int _rx_size;
 };
-#endif
+#endif  // SRC_FTDIJTAGBITBANG_HPP_
