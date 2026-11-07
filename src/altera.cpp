@@ -10,6 +10,7 @@
 
 #include <map>
 #include <string>
+#include <vector>
 
 #include "common.hpp"
 #include "device.hpp"
@@ -49,6 +50,8 @@ Altera::Altera(Jtag *jtag, const std::string &filename,
 		_fpga_family = AGILEX3_FAMILY;
 	} else if (family == "agilex 5") {
 		_fpga_family = AGILEX5_FAMILY;
+	} else if (family == "cyclone II") {
+		_fpga_family = CYCLONE2_FAMILY;
 	} else {
 		_fpga_family = CYCLONE_MISC;  // FIXME
 	}
@@ -96,15 +99,36 @@ void Altera::reset()
 	_jtag->set_state(Jtag::TEST_LOGIC_RESET);
 }
 
+/* CHECK_STATUS register: length and position of CONF_DONE, taken from the
+ * SVF Quartus II 13.0sp1 writes (quartus_cpf -c design.sof design.svf).
+ * Devices not listed get the unchecked 864-bit shift used so far.
+ */
+struct check_status_t {
+	int length;
+	int conf_done_bit;
+};
+static const std::map<uint32_t, check_status_t> check_status_regs = {
+	{0x020b10dd, {597, 229}},   // EP2C5
+	{0x020b20dd, {597, 229}},   // EP2C8
+	{0x020b30dd, {597, 229}},   // EP2C15/EP2C20
+	{0x020b40dd, {1449, 562}},  // EP2C35
+	{0x020b50dd, {1449, 562}},  // EP2C50
+	{0x020b60dd, {1890, 718}},  // EP2C70
+};
+
 void Altera::programMem(RawParser &_bit)
 {
-	int byte_length = _bit.getLength()/8;
-	const uint8_t *data = _bit.getData();
+	programMem(_bit.getData(), _bit.getLength() / 8);
+}
 
+void Altera::programMem(const uint8_t *data, int byte_length)
+{
 	unsigned char cmd[2];
-	unsigned char tx[864/8], rx[864/8];
 
-	memset(tx, 0, 864/8);
+	const auto status_reg = check_status_regs.find(_idcode);
+	const bool check_conf_done = status_reg != check_status_regs.end();
+	const int status_len = check_conf_done ? status_reg->second.length : 864;
+	std::vector<uint8_t> tx((status_len + 7) / 8, 0), rx(tx.size(), 0);
 	/* enddr idle
 	 * endir irpause
 	 * state idle
@@ -150,8 +174,13 @@ void Altera::programMem(RawParser &_bit)
 	 *     MASK (00000000000000000000000000000000000000000000000000
 	 *         0000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000080000000000000000000000000000000000000000);
 	 */
-	_jtag->shiftDR(tx, rx, 864, Jtag::RUN_TEST_IDLE);
-	/* TBD -> something to check */
+	_jtag->shiftDR(tx.data(), rx.data(), status_len, Jtag::RUN_TEST_IDLE);
+	if (check_conf_done) {
+		const int bit = status_reg->second.conf_done_bit;
+		if (!((rx[bit / 8] >> (bit % 8)) & 0x01))
+			throw std::runtime_error("CONF_DONE is low: the device did not "
+				"accept the bitstream");
+	}
 	/* SIR 10 TDI (003); */
 	*reinterpret_cast<uint16_t *>(cmd) = 0x003;
 	_jtag->shiftIR(cmd, NULL, IRLENGTH, Jtag::PAUSE_IR);
@@ -170,6 +199,32 @@ void Altera::programMem(RawParser &_bit)
 	_jtag->toggleClk(1000000/_clk_period);
 	/* -> idle */
 	_jtag->set_state(Jtag::RUN_TEST_IDLE);
+}
+
+/* A Cyclone II .rbf is a passive serial image. Over JTAG the device wants
+ * the same data without the passive serial preamble (0x00-0x4b: 16 0xff,
+ * option words, 0x00, 32 0xff), padded with 54 0xff in front and 4 0x00
+ * behind. Shifted as is, the device never raises CONF_DONE. Layout checked
+ * against the SVF from Quartus II 13.0sp1 for EP2C5 to EP2C70.
+ */
+std::vector<uint8_t> Altera::cyclone2_jtag_stream(const uint8_t *rbf,
+		int length)
+{
+	const int ps_preamble = 0x4c, lead_ff = 54, trail_00 = 4;
+
+	bool preamble_ok = length > ps_preamble && rbf[0x2b] == 0x00;
+	for (int i = 0; preamble_ok && i < 0x10; i++)
+		preamble_ok = rbf[i] == 0xff;
+	for (int i = 0x2c; preamble_ok && i < ps_preamble; i++)
+		preamble_ok = rbf[i] == 0xff;
+	if (!preamble_ok)
+		throw std::runtime_error("not a Cyclone II .rbf: unexpected preamble");
+
+	const size_t body = static_cast<size_t>(length - ps_preamble);
+	std::vector<uint8_t> stream(lead_ff + body + trail_00, 0x00);
+	memset(stream.data(), 0xff, lead_ff);
+	memcpy(stream.data() + lead_ff, rbf + ps_preamble, body);
+	return stream;
 }
 
 bool Altera::post_flash_access()
@@ -267,7 +322,13 @@ void Altera::program(unsigned int offset, bool unprotect_flash)
 	if (_mode == Device::MEM_MODE) {
 		RawParser _bit(_filename, false);
 		_bit.parse();
-		programMem(_bit);
+		if (_fpga_family == CYCLONE2_FAMILY && _file_extension == "rbf") {
+			std::vector<uint8_t> stream = cyclone2_jtag_stream(_bit.getData(),
+				_bit.getLength() / 8);
+			programMem(stream.data(), stream.size());
+		} else {
+			programMem(_bit);
+		}
 	} else if (_mode == Device::SPI_MODE) {
 		// reverse only bitstream raw binaries data no
 		bool reverseOrder = false;
