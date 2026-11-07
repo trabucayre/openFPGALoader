@@ -159,6 +159,7 @@ if tool in ["ise", "vivado"]:
         "xc6slx150tfgg484" : "xc6s_t_fgg484",
         "xc6vlx130tff784"  : "xc6v_ff784",
         "xc7vx330tffg1157" : "xc7v_ffg1157",
+        "xc7vx690tffg1927" : "xc7v_ffg1927",
         "xcku040-ffva1156" : "xcku040_ffva1156",
         "xcku060-ffva1156" : "xcku060_ffva1156",
         "xcvu9p-flga2104"  : "xcvu9p_flga2104",
