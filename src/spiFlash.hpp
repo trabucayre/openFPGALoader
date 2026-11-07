@@ -180,6 +180,7 @@ class SPIFlash {
 		bool _unprotect; /**< allows to unprotect memory before write */
 		bool _must_relock;
 		uint8_t _status;
+		bool _addr_4b_mode; /**< 4-byte address mode: 4-byte address for all instructions */
 };
 
 #endif  // SRC_SPIFLASH_HPP_

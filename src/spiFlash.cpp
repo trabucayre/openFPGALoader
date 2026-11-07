@@ -87,11 +87,23 @@
 SPIFlash::SPIFlash(FlashInterface *spi, bool unprotect, int8_t verbose):
 	_spi(spi), _verbose(verbose), _jedec_id(0),
 	_flash_model(NULL), _unprotect(unprotect), _must_relock(false),
-	_status(0)
+	_status(0), _addr_4b_mode(false)
 {
 	reset();
 	power_up();
 	read_id();
+
+	/* A Micron flash larger than 16MB leaves reset in the address mode set
+	 * by its nonvolatile configuration register, and Intel Active Serial
+	 * configuration needs 4-byte address mode. In this mode every
+	 * instruction takes a 4-byte address: check flag status register bit 0.
+	 */
+	if (_flash_model && (_jedec_id >> 24) == 0x20 &&
+			_flash_model->nr_sector > 256) {
+		uint8_t fsr;
+		_spi->spi_put(FLASH_RFSR, NULL, &fsr, 1);
+		_addr_4b_mode = (fsr & 0x01) != 0;
+	}
 }
 
 int SPIFlash::bulk_erase(bool verbose, bool skip_bp_check)
@@ -154,9 +166,9 @@ int SPIFlash::sector_erase(int addr)
 	uint8_t tx[5];
 	uint32_t len = 0;
 
-	uint8_t cmd = (addr <= 0xffffff) ? FLASH_SE : FLASH_4SE;
+	uint8_t cmd = (addr <= 0xffffff || _addr_4b_mode) ? FLASH_SE : FLASH_4SE;
 
-	if (cmd == FLASH_4SE)
+	if (cmd == FLASH_4SE || _addr_4b_mode)
 		tx[len++] = static_cast<uint8_t>(0xff & (addr >> 24));
 	tx[len++] = static_cast<uint8_t>(0xff & (addr >> 16));
 	tx[len++] = static_cast<uint8_t>(0xff & (addr >>  8));
@@ -172,9 +184,9 @@ int SPIFlash::block32_erase(int addr)
 	uint8_t tx[5];
 	uint32_t len = 0;
 
-	uint8_t cmd = (addr <= 0xffffff) ? FLASH_BE32 : FLASH_4BE32;
+	uint8_t cmd = (addr <= 0xffffff || _addr_4b_mode) ? FLASH_BE32 : FLASH_4BE32;
 
-	if (cmd == FLASH_4BE32)
+	if (cmd == FLASH_4BE32 || _addr_4b_mode)
 		tx[len++] = static_cast<uint8_t>(0xff & (addr >> 24));
 	tx[len++] = static_cast<uint8_t>(0xff & (addr >> 16));
 	tx[len++] = static_cast<uint8_t>(0xff & (addr >>  8));
@@ -191,9 +203,9 @@ int SPIFlash::block64_erase(int addr)
 	uint8_t tx[5];
 	uint32_t len = 0;
 
-	uint8_t cmd = (addr <= 0xffffff) ? FLASH_BE64 : FLASH_4BE64;
+	uint8_t cmd = (addr <= 0xffffff || _addr_4b_mode) ? FLASH_BE64 : FLASH_4BE64;
 
-	if (cmd == FLASH_4BE64)
+	if (cmd == FLASH_4BE64 || _addr_4b_mode)
 		tx[len++] = static_cast<uint8_t>(0xff & (addr >> 24));
 	tx[len++] = static_cast<uint8_t>(0xff & (addr >> 16));
 	tx[len++] = static_cast<uint8_t>(0xff & (addr >>  8));
@@ -266,8 +278,8 @@ int SPIFlash::write_page(int addr, const uint8_t *data, int len)
 	uint8_t write_cmd;
 	uint32_t i = 0;
 
-	if (addr <= 0xffffff) {
-		addr_len = 3;
+	if (addr <= 0xffffff || _addr_4b_mode) {
+		addr_len = (_addr_4b_mode) ? 4 : 3;
 		write_cmd = FLASH_PP;
 	} else {
 		addr_len = 4;
@@ -276,7 +288,7 @@ int SPIFlash::write_page(int addr, const uint8_t *data, int len)
 
 	uint8_t tx[len+addr_len];
 
-	if (write_cmd == FLASH_4PP)
+	if (addr_len == 4)
 		tx[i++] = (uint8_t)(0xff & (addr >> 24));
 	tx[i++] = (uint8_t)(0xff & (addr >> 16));
 	tx[i++] = (uint8_t)(0xff & (addr >>  8));
@@ -297,8 +309,8 @@ int SPIFlash::read(int base_addr, uint8_t *data, int len)
 	uint8_t read_cmd;
 	uint32_t i = 0;
 
-	if (base_addr <= 0xffffff) {
-		addr_len = 3;
+	if (base_addr <= 0xffffff || _addr_4b_mode) {
+		addr_len = (_addr_4b_mode) ? 4 : 3;
 		read_cmd = FLASH_READ;
 	} else {
 		addr_len = 4;
@@ -308,7 +320,7 @@ int SPIFlash::read(int base_addr, uint8_t *data, int len)
 	uint8_t tx[len+addr_len];
 	uint8_t rx[len+addr_len];
 
-	if (read_cmd == FLASH_4READ)
+	if (addr_len == 4)
 		tx[i++] = (uint8_t)(0xff & (base_addr >> 24));
 	tx[i++] = (uint8_t)(0xff & (base_addr >> 16));
 	tx[i++] = (uint8_t)(0xff & (base_addr >>  8));
