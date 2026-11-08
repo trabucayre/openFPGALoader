@@ -204,8 +204,8 @@ int XilinxPlatformCableUSB::writeTDI(const uint8_t *tx, uint8_t *rx, uint32_t le
 	return len;
 }
 
-int XilinxPlatformCableUSB::toggleClk([[maybe_unused]] uint8_t tms,
-	[[maybe_unused]] uint8_t tdi, uint32_t clk_len)
+int XilinxPlatformCableUSB::toggleClk(uint8_t /*tms*/, uint8_t /*tdi*/,
+	uint32_t clk_len)
 {
 	for (uint32_t i = 0; i < clk_len; i++) {
 		if (storeBit(_curr_tdi, _curr_tms, 1, 0)) {
