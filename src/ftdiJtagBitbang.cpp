@@ -289,7 +289,7 @@ int FtdiJtagBitBang::write(uint8_t *tdo, int nb_bit)
 					"with error " + std::to_string(ret));
 				return ret;
 			} else if (ret == 0) {
-				if (++rd_len >= 100) {
+				if (++timeout >= 100) {
 					printError("FtdiJtagBitBang::write timeout");
 					return -1;
 				}
