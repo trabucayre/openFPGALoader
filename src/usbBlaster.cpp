@@ -6,12 +6,12 @@
 #include <libusb.h>
 #include <stdio.h>
 #include <string.h>
-#include <unistd.h>
 
+#include <cerrno>
+#include <chrono>
 #include <iostream>
-#include <map>
 #include <string>
-#include <vector>
+#include <thread>
 
 #include "display.hpp"
 #ifdef USE_LIBFTDI
@@ -28,26 +28,15 @@
 #define DO_BITBB (0 << 7)
 #define DEFAULT ((1<<2) | (1<<3) | (1 << 5))
 
-#define DEBUG 0
-
-#ifdef DEBUG
-#define display(...) \
-	do { \
-		if (_verbose) fprintf(stdout, __VA_ARGS__); \
-	}while(0)
-#else
-#define display(...) do {}while(0)
-#endif
-
 UsbBlaster::UsbBlaster(const cable_t &cable, const std::string &firmware_path,
 		int8_t verbose):
 			_verbose(verbose > 1), _nb_bit(0),
-			_curr_tms(0), _buffer_size(64),
+			_curr_tdi(0), _curr_tms(0), _buffer_size(64),
 			_passive_serial_mode(false)
 {
 	if (cable.pid == 0x6001 || cable.pid == 0x6002 || cable.pid == 0x6003)
 #ifdef ENABLE_USB_BLASTERI
-		ll_driver = new UsbBlasterI();
+		ll_driver = new UsbBlasterI(cable.pid);
 #else
 		throw std::runtime_error("usb-blasterI: Not build");
 #endif
@@ -66,31 +55,22 @@ UsbBlaster::UsbBlaster(const cable_t &cable, const std::string &firmware_path,
 
 	_in_buf = (unsigned char *)malloc(sizeof(unsigned char) * _buffer_size);
 
-	_nb_bit = 0;
 	memset(_in_buf, 0, _buffer_size);
-
-#ifdef ENABLE_USB_BLASTERI
-	/* Force flush internal FT245 internal buffer */
-	if (cable.pid == 0x6001) {
-		uint8_t val = DEFAULT | DO_WRITE | DO_BITBB | _tms_pin;
-		uint8_t tmp_buf[4096];
-		for (_nb_bit = 0; _nb_bit < 4096; _nb_bit += 2) {
-			tmp_buf[_nb_bit    ] = val;
-			tmp_buf[_nb_bit + 1] = val | _tck_pin;
-		}
-
-		ll_driver->write(tmp_buf, _nb_bit, NULL, 0);
-		_nb_bit = 0;
-	}
-#endif
 }
 
 UsbBlaster::~UsbBlaster()
 {
-	if (!_passive_serial_mode)
+	if (!_passive_serial_mode) {
+		if (_nb_bit + 1 > _buffer_size) {
+			if (flush() < 0)
+				printError("UsbBlaster DTOR: failed to flush before reset");
+		}
 		_in_buf[_nb_bit++] = 0;
-	flush();
+	}
+	if (flush() < 0)
+		printError("UsbBlaster DTOR: failed to flush");
 	free(_in_buf);
+	delete ll_driver;
 }
 
 int UsbBlaster::setClkFreq(uint32_t clkHZ)
@@ -104,7 +84,7 @@ uint32_t UsbBlaster::getClkFreq()
 }
 
 int UsbBlaster::writeTMS(const uint8_t *tms, uint32_t len, bool flush_buffer,
-		const uint8_t /*tdi*/)
+		const uint8_t tdi)
 {
 	int ret;
 
@@ -113,11 +93,11 @@ int UsbBlaster::writeTMS(const uint8_t *tms, uint32_t len, bool flush_buffer,
 	 */
 	if (len == 0) {
 		if (flush_buffer) {
-			ret = flush();
-			return ret;
+			return flush();
 		}
 		return 0;
 	}
+	_curr_tdi = tdi ? _tdi_pin : 0;
 
 	/* check for at least one bit space in buffer */
 	if (_nb_bit+2 > _buffer_size) {
@@ -129,7 +109,7 @@ int UsbBlaster::writeTMS(const uint8_t *tms, uint32_t len, bool flush_buffer,
 	/* fill buffer to reduce USB transaction */
 	for (uint32_t i = 0; i < len; i++) {
 		_curr_tms = ((tms[i >> 3] & (1 << (i & 0x07)))? _tms_pin : 0);
-		uint8_t val = DEFAULT | DO_WRITE | DO_BITBB | _tdi_pin | _curr_tms;
+		uint8_t val = DEFAULT | DO_WRITE | DO_BITBB | _curr_tdi | _curr_tms;
 		_in_buf[_nb_bit++] = val;
 		_in_buf[_nb_bit++] = val | _tck_pin;
 
@@ -139,7 +119,7 @@ int UsbBlaster::writeTMS(const uint8_t *tms, uint32_t len, bool flush_buffer,
 				return ret;
 		}
 	}
-	_in_buf[_nb_bit++] = DEFAULT | DO_WRITE | DO_BITBB | _curr_tms;
+	_in_buf[_nb_bit++] = DEFAULT | DO_WRITE | DO_BITBB | _curr_tdi | _curr_tms;
 
 	/* security check: try to flush buffer */
 	if (flush_buffer) {
@@ -151,35 +131,44 @@ int UsbBlaster::writeTMS(const uint8_t *tms, uint32_t len, bool flush_buffer,
 	return len;
 }
 
-#include "configBitstreamParser.hpp"
-
 int UsbBlaster::writeTDI(const uint8_t *tx, uint8_t *rx, uint32_t len, bool end)
 {
-	uint32_t real_len = (end) ? len -1 : len;
-	uint32_t nb_byte = real_len >> 3;
-	uint32_t nb_bit = (real_len & 0x07);
-	uint8_t mode = (rx != NULL)? DO_RDWR : DO_WRITE;
+	/* nothing to do */
+	if (len == 0)
+		return 0;
+	const uint32_t real_len = len - (end ? 1 : 0);
+	/* DO_SHIFT mode is only allowed when tms is low
+	 * otherwise everything must be written bit per bit
+	 */
+	uint32_t nb_byte = (_curr_tms == 0) ? real_len >> 3 : 0;
+	uint32_t nb_bit = (_curr_tms == 0) ? (real_len & 0x07) : real_len;
+	const uint8_t mode = (rx != NULL) ? DO_RDWR : DO_WRITE;
 
 	const uint8_t *tx_ptr = tx;
 	uint8_t *rx_ptr = rx;
+	int ret;
 
 	/* security: send residual
 	 * it's possible since all functions do a flush at the end
 	 * okay it's maybe less efficient
 	 */
-	_in_buf[_nb_bit++] = DEFAULT | DO_BITBB | DO_WRITE | _curr_tms;
-	flush();
+	_in_buf[_nb_bit++] = DEFAULT | DO_BITBB | DO_WRITE | _curr_tdi | _curr_tms;
+	if ((ret = flush()) < 0) {
+		printError("UsbBlaster::writeTDI: Failed to flush before write "
+			"with error " + std::to_string(ret));
+		return ret;
+	}
 
-	if (_curr_tms == 0 && nb_byte != 0) {
+	if (nb_byte != 0) {
 		uint8_t mask = DO_SHIFT | mode;
 
 		while (nb_byte != 0) {
 			uint32_t tx_len = nb_byte;
-			if (tx_len > 63)
-				tx_len = 63;
+			if (tx_len > static_cast<uint32_t>(_buffer_size) - 1)
+				tx_len = _buffer_size - 1;
 			/* if not enough space flush */
-			if (_nb_bit + tx_len + 1 > 64) {
-				int num_read = _nb_bit -1;
+			if (_nb_bit + tx_len + 1 > _buffer_size) {
+				const int num_read = _nb_bit -1;
 				if (writeByte((rx)? rx_ptr:NULL, num_read) < 0)
 					return -EXIT_FAILURE;
 				if (rx)
@@ -188,9 +177,10 @@ int UsbBlaster::writeTDI(const uint8_t *tx, uint8_t *rx, uint32_t len, bool end)
 			_in_buf[_nb_bit++] = mask | (tx_len & 0x3f);
 			if (tx) {
 				memcpy(&_in_buf[_nb_bit], tx_ptr, tx_len);
+				_curr_tdi = (tx_ptr[tx_len - 1] & 0x80) ? _tdi_pin : 0;
 				tx_ptr += tx_len;
 			} else {
-				memset(&_in_buf[_nb_bit], 0, tx_len);
+				memset(&_in_buf[_nb_bit], _curr_tdi ? 0xff : 0, tx_len);
 			}
 			_nb_bit += tx_len;
 
@@ -207,42 +197,66 @@ int UsbBlaster::writeTDI(const uint8_t *tx, uint8_t *rx, uint32_t len, bool end)
 	}
 
 	if (nb_bit != 0) {
-		uint8_t mask = DEFAULT | DO_BITBB;
-		if (_nb_bit + 2 > _buffer_size) {
-			int num_read = _nb_bit;
-			if (writeBit((rx)? rx_ptr:NULL, num_read/2) < 0)
-				return -EXIT_FAILURE;
-			if (rx)
-				rx_ptr += num_read;
-		}
-		for (uint32_t i = 0; i < nb_bit; i++) {
-			uint8_t val = 0;
-			if (tx)
-				val |= ((tx_ptr[i >> 3] & (1 << (i & 0x07)))? _tdi_pin : 0);
-			_in_buf[_nb_bit++] = mask | val;
-			_in_buf[_nb_bit++] = mask | mode | val | _tck_pin;
-		}
+		const uint8_t mask = DEFAULT | DO_BITBB | _curr_tms;
+		/* limit iters to a multiple of 8 with _buffer_size respect
+		 * this allows to have byte aligned when tms = 1 for
+		 * sake of simplicity (avoids rebuilding the rx buffer)
+		 */
+		const uint32_t max_bits = (_buffer_size / 2) & ~0x07;
+		uint32_t xfer_len = nb_bit;
+		/* Here the buffer is known as empty:
+		 * flushed at the beginning and nothing updated if
+		 * nb_byte = 0
+		 * cleaned by writeByte if nb_byte > 0
+		 */
+		while (xfer_len > 0) {
+			const uint32_t xfer = (xfer_len > max_bits) ? max_bits: xfer_len;
+			for (uint32_t i = 0; i < xfer; i++) {
+				if (tx) {
+					_curr_tdi =
+						(tx_ptr[i >> 3] & (1 << (i & 0x07))) ? _tdi_pin : 0;
+				}
+				_in_buf[_nb_bit++] = mask | _curr_tdi;
+				_in_buf[_nb_bit++] = mask | _curr_tdi | mode | _tck_pin;
+			}
 
-		int num_read = _nb_bit;
-		if (writeBit((rx)? rx_ptr:NULL, num_read/2) < 0)
-			return -EXIT_FAILURE;
-		if (rx)  // realign bits
-			*rx_ptr >>= (8 - nb_bit);
+			/* the buffer is filled as much as possible -> it's possible
+			 * to write it
+			 */
+			if (writeBit((rx)? rx_ptr : NULL, xfer) < 0)
+				return -EXIT_FAILURE;
+			xfer_len -= xfer;
+			/* Update rx/tx ptr */
+			if (rx)
+				rx_ptr += xfer >> 3;
+			if (tx)
+				tx_ptr += xfer >> 3;
+		}
+		/* reworks nb_bit with a value similar to when nb_byte > 0
+		 * ie keep bit index in the last Byte
+		 */
+		nb_bit &= 0x07;
+		/* realign bits when a Byte is partially read */
+		if (rx && nb_bit != 0)
+			*rx_ptr >>= 8 - nb_bit;
 	}
 
 	/* set TMS high */
 	if (end) {
 		_curr_tms = _tms_pin;
-		uint8_t mask = DEFAULT | DO_BITBB | _curr_tms;
-		if (tx && *tx_ptr & (1 << nb_bit))
-			mask |= _tdi_pin;
+		if (tx)
+			_curr_tdi = (*tx_ptr & (1 << nb_bit)) == 0 ? 0 : _tdi_pin;
+		const uint8_t mask = DEFAULT | DO_BITBB | _curr_tms | _curr_tdi;
 		_in_buf[_nb_bit++] = mask;
 		_in_buf[_nb_bit++] = mask | mode | _tck_pin;
 		uint8_t tmp = 0;
-		if (writeBit((rx)? &tmp:NULL, 1) < 0)
+		if (writeBit((rx)? &tmp : NULL, 1) < 0)
 			return -EXIT_FAILURE;
-		if (rx)
+		if (rx) {
+			if (nb_bit == 0)
+				*rx_ptr = 0;
 			*rx_ptr |= (tmp & 0x80) >> (7 - nb_bit);
+		}
 		_in_buf[_nb_bit++] = mask;
 		if (writeBit(NULL, 0) < 0)
 			return -EXIT_FAILURE;
@@ -251,8 +265,9 @@ int UsbBlaster::writeTDI(const uint8_t *tx, uint8_t *rx, uint32_t len, bool end)
 	return len;
 }
 
-int UsbBlaster::toggleClk(uint8_t tms, uint8_t tdi, uint32_t clk_len)
+int UsbBlaster::toggleClk(uint8_t /*tms*/, uint8_t /*tdi*/, uint32_t clk_len)
 {
+	int ret;
 	int xfer_len = clk_len;
 
 	int mask = DO_SHIFT | DO_WRITE;
@@ -260,20 +275,31 @@ int UsbBlaster::toggleClk(uint8_t tms, uint8_t tdi, uint32_t clk_len)
 	/* try to use shift mode but only when
 	 * xfer > 1Byte and tms is low
 	 */
-	if (tms == 0 && xfer_len >= 8) {
-		if (_nb_bit == 64)
-			flush();
-		_in_buf[_nb_bit++] = DEFAULT | DO_WRITE | DO_BITBB;
-		flush();
+	if (_curr_tms == 0 && xfer_len >= 8) {
+		if (_nb_bit == _buffer_size)
+			if ((ret = flush()) < 0) {
+				printError("UsbBlaster::toggleClk failed to flush "
+					"with error " + std::to_string(ret));
+				return ret;
+			}
+
+		_in_buf[_nb_bit++] = DEFAULT | DO_WRITE | DO_BITBB |
+			_curr_tdi | _curr_tms;
+		if ((ret = flush()) < 0) {
+			printError("UsbBlaster::toggleClk failed to flush "
+				"with error " + std::to_string(ret));
+			return ret;
+		}
+
 		/* fill a byte with all 1 or all 0 */
-		uint8_t content = (tdi)?0xff:0;
+		uint8_t content = (_curr_tdi) ? 0xff : 0;
 
 		while (xfer_len >= 8) {
 			uint32_t tx_len = (xfer_len >> 3);
-			if (tx_len > 63)
-				tx_len = 63;
+			if (tx_len > static_cast<uint32_t>(_buffer_size) - 1)
+				tx_len = _buffer_size - 1;
 			/* if not enough space flush */
-			if (_nb_bit + tx_len + 1 > 64)
+			if (_nb_bit + tx_len + 1 > _buffer_size)
 				if (flush() < 0)
 					return -EXIT_FAILURE;
 			_in_buf[_nb_bit++] = mask | static_cast<uint8_t>(tx_len);
@@ -283,7 +309,7 @@ int UsbBlaster::toggleClk(uint8_t tms, uint8_t tdi, uint32_t clk_len)
 		}
 	}
 
-	mask = DEFAULT | DO_BITBB | DO_WRITE | ((tms) ? _tms_pin : 0) | ((tdi) ? _tdi_pin : 0);
+	mask = DEFAULT | DO_BITBB | DO_WRITE | _curr_tms | _curr_tdi;
 	while (xfer_len > 0) {
 		if (_nb_bit + 2 > _buffer_size)
 			if (flush() < 0)
@@ -295,10 +321,18 @@ int UsbBlaster::toggleClk(uint8_t tms, uint8_t tdi, uint32_t clk_len)
 	}
 
 	/* flush */
-	if (_nb_bit == 64)
-		flush();
+	if (_nb_bit == _buffer_size)
+		if ((ret = flush()) < 0) {
+			printError("UsbBlaster::toggleClk failed to force flush "
+				"with error " + std::to_string(ret));
+			return ret;
+		}
 	_in_buf[_nb_bit++] = mask;
-	flush();
+	if ((ret = flush()) < 0) {
+		printError("UsbBlaster::toggleClk failed for the final flush "
+			"with error " + std::to_string(ret));
+		return ret;
+	}
 
 	return clk_len;
 }
@@ -395,7 +429,7 @@ void UsbBlaster::programPassiveSerial(const uint8_t *data, uint32_t length)
 	try {
 		if (setPassiveSerialPins(false, false, false) != 1)
 			throw std::runtime_error("Failed to assert nCONFIG");
-		usleep(5);
+		std::this_thread::sleep_for(std::chrono::microseconds(5));
 
 		if (setPassiveSerialPins(false, true, false) != 1)
 			throw std::runtime_error("Failed to release nCONFIG");
@@ -403,7 +437,7 @@ void UsbBlaster::programPassiveSerial(const uint8_t *data, uint32_t length)
 		/*
 		 * nSTATUS is not available. Assume device will be ready after a small delay.
 		 */
-		usleep(2000);
+		std::this_thread::sleep_for(std::chrono::microseconds(2000));
 		if (readConfDone())
 			throw std::runtime_error("CONF_DONE did not clear after nCONFIG");
 
@@ -411,7 +445,8 @@ void UsbBlaster::programPassiveSerial(const uint8_t *data, uint32_t length)
 			throw std::runtime_error("Failed to write passive serial data");
 
 		if (!readConfDone())
-			throw std::runtime_error("CONF_DONE is low after passive serial programming");
+			throw std::runtime_error("CONF_DONE is low after passive serial "
+				"programming");
 
 		/* Complete device initialization after CONF_DONE is asserted. */
 		if (clockPassiveSerial(10) != 10)
@@ -473,14 +508,14 @@ int UsbBlaster::write(bool read, int rd_len)
  * USB Blash I specific implementation
  */
 
-UsbBlasterI::UsbBlasterI()
+UsbBlasterI::UsbBlasterI(uint16_t pid)
 {
 	int ret;
 	_ftdi = ftdi_new();
 	if (_ftdi == NULL)
 		throw std::runtime_error("open_device: failed to initialize ftdi");
 
-	 ret = ftdi_usb_open(_ftdi, 0x09fb, 0x6001);
+	 ret = ftdi_usb_open(_ftdi, 0x09fb, pid);
 	if (ret < 0) {
 		fprintf(stderr, "unable to open ftdi device: %d (%s)\n",
 			ret, ftdi_get_error_string(_ftdi));
@@ -492,6 +527,7 @@ UsbBlasterI::UsbBlasterI()
 	if (ret < 0) {
 		fprintf(stderr, "Error reset: %d (%s)\n",
 			ret, ftdi_get_error_string(_ftdi));
+		ftdi_usb_close(_ftdi);
 		ftdi_free(_ftdi);
 		throw std::exception();
 	}
@@ -500,13 +536,38 @@ UsbBlasterI::UsbBlasterI()
 	if (ret < 0) {
 		fprintf(stderr, "Error set latency timer: %d (%s)\n",
 			ret, ftdi_get_error_string(_ftdi));
+		ftdi_usb_close(_ftdi);
 		ftdi_free(_ftdi);
 		throw std::exception();
 	}
+
+	/* Force flush internal FT245 internal buffer */
+	uint8_t val = DEFAULT | DO_WRITE | DO_BITBB | (1 << 1);  // tms=1
+	uint8_t tmp_buf[4096];
+	for (uint32_t nb_bit = 0; nb_bit < 4096; nb_bit += 2) {
+		tmp_buf[nb_bit    ] = val;
+		tmp_buf[nb_bit + 1] = val | (1 << 0);  // tck set
+	}
+
+	ret = ftdi_write_data(_ftdi, tmp_buf, 4096);
+	if (ret != 4096)
+		printWarn("UsbBlaster: failed to flush FT245 internal queue");
+
+	/* drop bytes left in read FIFO at power-up */
+	int n;
+	for (n = 0; n < 200; n++) {
+		ret = ftdi_read_data(_ftdi, tmp_buf, 4096);
+		if (ret <= 0)
+			break;
+	}
+	if (ret < 0 || n == 200)
+		printWarn("UsbBlaster: failed to flush FT245 FIFO");
 }
 
 UsbBlasterI::~UsbBlasterI()
 {
+	ftdi_usb_close(_ftdi);
+	ftdi_free(_ftdi);
 }
 
 int UsbBlasterI::setClkFreq(uint32_t clkHZ)
@@ -518,7 +579,7 @@ int UsbBlasterI::setClkFreq(uint32_t clkHZ)
 
 uint32_t UsbBlasterI::getClkFreq()
 {
-	return 24e6;
+	return static_cast<uint32_t>(24e6);
 }
 
 int UsbBlasterI::write(uint8_t *wr_buf, int wr_len,
@@ -534,7 +595,7 @@ int UsbBlasterI::write(uint8_t *wr_buf, int wr_len,
 
 	if (rd_buf) {
 		int timeout = 100;
-		uint8_t byte_read = 0;
+		int byte_read = 0;
 		while (byte_read < rd_len && timeout != 0) {
 			timeout--;
 			ret = ftdi_read_data(_ftdi, rd_buf + byte_read, rd_len - byte_read);
@@ -545,13 +606,16 @@ int UsbBlasterI::write(uint8_t *wr_buf, int wr_len,
 			byte_read += ret;
 		}
 
-		if (timeout == 0) {
+		/* compares to byte_read: both may be true at the same time
+		 * avoid an error is this situation
+		 */
+		if (byte_read < rd_len) {
 			printError("Error: timeout " + std::to_string(byte_read) +
 				" " + std::to_string(rd_len));
 			for (int i=0; i < byte_read; i++)
 				printf("%02x ", rd_buf[i]);
 			printf("\n");
-			return 0;
+			return -ETIME;
 		}
 	}
 	return ret;
@@ -566,7 +630,7 @@ int UsbBlasterI::write(uint8_t *wr_buf, int wr_len,
 UsbBlasterII::UsbBlasterII(const std::string &firmware_path)
 {
 	std::string fpath;
-	uint8_t buf[5];
+	uint8_t buf[6];
 	if (firmware_path.empty() && strlen(BLASTERII_DIR) == 0) {
 		printError("missing FX2 firmware");
 		printError("use --probe-firmware with something");
@@ -580,8 +644,10 @@ UsbBlasterII::UsbBlasterII(const std::string &firmware_path)
 		fpath = firmware_path;
 	fx2 = new FX2_ll(0x09fb, 0x6810, 0x09fb, 0x6010, fpath);
 	if (!fx2->read_ctrl(0x94, 0, buf, 5, 0x0000)) {
+		delete fx2;
 		throw std::runtime_error("Unable to read firmware version.");
 	}
+	buf[5] = '\0';
 	printInfo("USB-Blaster II firmware version: " + std::string((char *)buf));
 }
 
@@ -599,7 +665,7 @@ int UsbBlasterII::setClkFreq(uint32_t clkHZ)
 
 uint32_t UsbBlasterII::getClkFreq()
 {
-	return 24e6;
+	return static_cast<uint32_t>(24e6);
 }
 
 int UsbBlasterII::write(uint8_t *wr_buf, int wr_len,
@@ -622,7 +688,7 @@ int UsbBlasterII::write(uint8_t *wr_buf, int wr_len,
 		}
 
 		int timeout = 100;
-		uint8_t byte_read = 0;
+		int byte_read = 0;
 		while (byte_read < rd_len && timeout != 0) {
 			timeout--;
 			ret = fx2->read(8, rd_buf + byte_read, rd_len - byte_read);
@@ -639,7 +705,7 @@ int UsbBlasterII::write(uint8_t *wr_buf, int wr_len,
 			for (int i=0; i < byte_read; i++)
 				printf("%02x ", rd_buf[i]);
 			printf("\n");
-			return 0;
+			return -ETIME;
 		}
 	}
 	return ret;
