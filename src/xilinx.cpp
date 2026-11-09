@@ -908,10 +908,12 @@ float Xilinx::get_spiOverJtag_version()
 	uint32_t idcode = _jtag->get_target_device_id();
 
 	/* Select the correct device and its associated USER4 register */
-	if (fpga_list[idcode].family == "virtexusp" & fpga_list[idcode].model == "xcvu7p") {
+	if (fpga_list[idcode].family == "virtexusp" &&
+			fpga_list[idcode].model == "xcvu7p") {
 		_jtag->shiftIR(get_ircode(_ircode_map, "USER4"), NULL, _irlen);
 	}
-	else if (fpga_list[idcode].family == "virtexusp" & fpga_list[idcode].model == "xcvu9p") {
+	else if (fpga_list[idcode].family == "virtexusp" &&
+			fpga_list[idcode].model == "xcvu9p") {
         	_jtag->shiftIR(get_ircode(_ircode_map, "USER4"), NULL, _irlen);
 	}
 	else {
