@@ -30,19 +30,18 @@
 #include "cable.hpp"
 #include "display.hpp"
 
+#ifndef _WIN32
+#define SOCKET_ERROR   (-1)
+#define INVALID_SOCKET (-1)
+#endif
 
 XVC_server::XVC_server(int port, const cable_t & cable,
 	const jtag_pins_conf_t * pin_conf, std::string dev,
 	const std::string & serial, uint32_t clkHZ, int8_t verbose,
 	const std::string & ip_adr, const bool invert_read_edge,
 	const std::string & firmware_path):_verbose(verbose > 1),
-			_jtag(NULL), _port(port), _sock(
-#ifdef _WIN32
-			INVALID_SOCKET
-#else
-			-1
-#endif
-		), _winsock_started(false),
+			_jtag(NULL), _port(port), _sock(INVALID_SOCKET),
+			_winsock_started(false),
 			_is_stopped(false), _must_stop(false),
 			_buffer_size(1048576), _state(Jtag::RUN_TEST_IDLE)
 {
@@ -126,13 +125,7 @@ bool XVC_server::open_connection()
 #endif
 
 	_sock = socket(AF_INET, SOCK_STREAM, IPPROTO_TCP);
-	if (_sock ==
-#ifdef _WIN32
-		INVALID_SOCKET
-#else
-		-1
-#endif
-	) {
+	if (_sock == INVALID_SOCKET) {
 		printError("Socket creation error");
 		return false;
 	}
@@ -143,19 +136,19 @@ bool XVC_server::open_connection()
 
 	if (::bind(_sock, (struct sockaddr*) &sock_addr, sizeof(sock_addr)) < 0) {
 		printError("Socket bind error");
-		close(_sock);
+		close_connection();
 		return false;
 	}
 
 	if (listen(_sock, 1) < 0) {
 		printError("Socket listen error");
-		close(_sock);
+		close_connection();
 		return false;
 	}
 
 	if (gethostname(hostname, sizeof(hostname)) != 0) {
 		printError("hostname lookup");
-		close(_sock);
+		close_connection();
 		return false;
 	}
 
@@ -170,24 +163,14 @@ bool XVC_server::open_connection()
 
 bool XVC_server::close_connection()
 {
-	if (_sock !=
+	if (_sock != INVALID_SOCKET) {
 #ifdef _WIN32
-		INVALID_SOCKET
-#else
-		-1
-#endif
-	)
-	#ifdef _WIN32
 		closesocket(static_cast<SOCKET>(_sock));
-	#else
-		close(_sock);
-	#endif
-	_sock =
-#ifdef _WIN32
-		INVALID_SOCKET;
 #else
-		-1;
+		close(_sock);
 #endif
+		_sock = INVALID_SOCKET;
+	}
 #ifdef _WIN32
 	if (_winsock_started) {
 		WSACleanup();
@@ -234,16 +217,11 @@ void XVC_server::thread_listen()
 						newfd = accept(_sock, (struct sockaddr*) &peer_addr,
 							&nsize);
 
-						printf("connection accepted - fd %d\n", newfd);
-						if (newfd ==
-#ifdef _WIN32
-							INVALID_SOCKET
-#else
-							-1
-#endif
-						) {
+						if (newfd == INVALID_SOCKET) {
 							throw std::runtime_error("accept");
 						} else {
+							printInfo("connection accepted - fd " +
+								std::to_string(newfd));
 							printInfo("setting TCP_NODELAY to 1\n");
 							int flag = 1;
 							int optResult = setsockopt(newfd, IPPROTO_TCP,
@@ -259,11 +237,11 @@ void XVC_server::thread_listen()
 						int ret = handle_data(fd);
 						if (ret != 0) {
 							printInfo("connection closed - fd " + std::to_string(fd));
-							#ifdef _WIN32
+#ifdef _WIN32
 							closesocket(static_cast<SOCKET>(fd));
-							#else
+#else
 							close(fd);
-							#endif
+#endif
 							FD_CLR(fd, &conn);
 							if (ret == 3)
 								throw std::runtime_error("communication failure");
@@ -271,11 +249,11 @@ void XVC_server::thread_listen()
 					}
 				} else if (FD_ISSET(fd, &except)) {
 					printWarn("connection aborted - fd " + std::to_string(fd));
-					#ifdef _WIN32
+#ifdef _WIN32
 					closesocket(static_cast<SOCKET>(fd));
-					#else
+#else
 					close(fd);
-					#endif
+#endif
 					FD_CLR(fd, &conn);
 					if (fd == _sock)
 						break;
@@ -318,8 +296,13 @@ int XVC_server::sread(xvc_server_socket_t fd, void *target, int len)
 			return 2;
 		} else if (r < 0) {
 			char err[256];
+#ifdef _WIN32
+			snprintf(err, 256, "Read error (%d) WSA error %d\n", r,
+				WSAGetLastError());
+#else
 			snprintf(err, 256, "Read error (%d) %d %s\n", r,
 				errno, strerror(errno));
+#endif
 			printError(err);
 			return 3;
 		}

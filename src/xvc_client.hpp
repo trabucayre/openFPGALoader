@@ -97,11 +97,10 @@ class XVC_client: public JtagInterface {
 		 */
 		bool open_connection(const std::string &ip_addr);
 
-#ifdef _WIN32
-		bool open_connection_windows(const std::string &ip_addr);
-#else
-		bool open_connection_posix(const std::string &ip_addr);
-#endif
+		/*!
+		 * \brief close a TCP socket if open
+		 */
+		void close_connection();
 
 		/*!
 		 * \brief sent instruction followed by tx buffer and read answer

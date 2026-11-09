@@ -29,12 +29,16 @@
 
 #include "display.hpp"
 
+#ifndef _WIN32
+#define SOCKET_ERROR   (-1)
+#define INVALID_SOCKET (-1)
+#endif
 
 XVC_client::XVC_client(const std::string &ip_addr, int port,
 		uint32_t clkHz, int8_t verbose):
 	_verbose(verbose > 0), _xfer_buf(NULL), _tms(NULL), _tditdo(NULL),
-	_num_bits(0), _last_tms(0), _last_tdi(0), _buffer_size(0), _sock(0),
-	_port(port)
+	_num_bits(0), _last_tms(0), _last_tdi(0), _buffer_size(0),
+	_sock(INVALID_SOCKET), _port(port)
 {
 	if (!open_connection(ip_addr))
 		throw std::runtime_error("connection failure");
@@ -87,12 +91,7 @@ XVC_client::~XVC_client()
 	if (_tditdo)
 		free(_tditdo);
 	// close socket
-#ifdef _WIN32
-	closesocket(static_cast<SOCKET>(_sock));
-	WSACleanup();
-#else
-	close(_sock);
-#endif
+	close_connection();
 }
 
 int XVC_client::writeTMS(const uint8_t *tms, uint32_t len, bool flush_buffer,
@@ -234,21 +233,12 @@ int XVC_client::setClkFreq(uint32_t clkHz)
 bool XVC_client::open_connection(const std::string &ip_addr)
 {
 #ifdef _WIN32
-	return open_connection_windows(ip_addr);
-#else
-	return open_connection_posix(ip_addr);
-#endif
-}
-
-#ifdef _WIN32
-bool XVC_client::open_connection_windows(const std::string &ip_addr)
-{
 	WSADATA wsa_data;
 	if (WSAStartup(MAKEWORD(2, 2), &wsa_data) != 0) {
 		printError("Winsock initialization error");
 		return false;
 	}
-
+#endif
 	struct sockaddr_in addr = {};
 	addr.sin_family = AF_INET;
 	addr.sin_port = htons(_port);
@@ -257,42 +247,33 @@ bool XVC_client::open_connection_windows(const std::string &ip_addr)
 	_sock = socket(AF_INET, SOCK_STREAM, IPPROTO_TCP);
 	if (_sock == INVALID_SOCKET) {
 		printError("Socket creation error");
-		WSACleanup();
+		close_connection();
 		return false;
 	}
 
 	if (connect(_sock, (struct sockaddr *)&addr, sizeof(addr)) == SOCKET_ERROR) {
 		printError("Connection error");
-		closesocket(static_cast<SOCKET>(_sock));
-		WSACleanup();
+		close_connection();
 		return false;
 	}
 
 	return true;
 }
-#else
-bool XVC_client::open_connection_posix(const std::string &ip_addr)
+
+void XVC_client::close_connection()
 {
-	struct sockaddr_in addr = {};
-	addr.sin_family = AF_INET;
-	addr.sin_port = htons(_port);
-	addr.sin_addr.s_addr = inet_addr(ip_addr.c_str());
-
-	_sock = socket(AF_INET, SOCK_STREAM, IPPROTO_TCP);
-	if (_sock == -1) {
-		printError("Socket creation error");
-		return false;
-	}
-
-	if (connect(_sock, (struct sockaddr *)&addr, sizeof(addr)) == -1) {
-		printError("Connection error");
+	if (_sock != INVALID_SOCKET) {
+#ifdef _WIN32
+		closesocket(static_cast<SOCKET>(_sock));
+#else
 		close(_sock);
-		return false;
-	}
-
-	return true;
-}
 #endif
+		_sock = INVALID_SOCKET;
+	}
+#ifdef _WIN32
+	WSACleanup();
+#endif
+}
 
 static
 int sendall(xvc_socket_t sock, const void* raw, size_t cnt, int flags)
