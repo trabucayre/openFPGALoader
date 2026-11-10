@@ -134,6 +134,9 @@ class SPIFlash {
 		uint16_t readVolatileCfgReg();
 		bool set_quad_bit(bool set_quad);
 
+		bool enter_4Byte_addr_mode();
+		bool exit_4Byte_addr_mode();
+
 	protected:
 		/*!
 		 * \brief retrieve TB (Top/Bottom) bit from one register

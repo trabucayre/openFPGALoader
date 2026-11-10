@@ -84,6 +84,10 @@
 /* Global Block Protection unlock */
 #define FLASH_ULBPR 0x98
 
+/* Micron N25Q with memory > 16MB */
+#define EN4BYTEADDR 0xB7
+#define EX4BYTEADDR 0xE9
+
 SPIFlash::SPIFlash(FlashInterface *spi, bool unprotect, int8_t verbose):
 	_spi(spi), _verbose(verbose), _jedec_id(0),
 	_flash_model(NULL), _unprotect(unprotect), _must_relock(false),
@@ -166,9 +170,9 @@ int SPIFlash::sector_erase(int addr)
 	uint8_t tx[5];
 	uint32_t len = 0;
 
-	uint8_t cmd = (addr <= 0xffffff || _addr_4b_mode) ? FLASH_SE : FLASH_4SE;
+	uint8_t cmd = (addr <= 0xffffff) ? FLASH_SE : FLASH_4SE;
 
-	if (cmd == FLASH_4SE || _addr_4b_mode)
+	if (cmd == FLASH_4SE)
 		tx[len++] = static_cast<uint8_t>(0xff & (addr >> 24));
 	tx[len++] = static_cast<uint8_t>(0xff & (addr >> 16));
 	tx[len++] = static_cast<uint8_t>(0xff & (addr >>  8));
@@ -184,9 +188,9 @@ int SPIFlash::block32_erase(int addr)
 	uint8_t tx[5];
 	uint32_t len = 0;
 
-	uint8_t cmd = (addr <= 0xffffff || _addr_4b_mode) ? FLASH_BE32 : FLASH_4BE32;
+	uint8_t cmd = (addr <= 0xffffff) ? FLASH_BE32 : FLASH_4BE32;
 
-	if (cmd == FLASH_4BE32 || _addr_4b_mode)
+	if (cmd == FLASH_4BE32)
 		tx[len++] = static_cast<uint8_t>(0xff & (addr >> 24));
 	tx[len++] = static_cast<uint8_t>(0xff & (addr >> 16));
 	tx[len++] = static_cast<uint8_t>(0xff & (addr >>  8));
@@ -203,9 +207,9 @@ int SPIFlash::block64_erase(int addr)
 	uint8_t tx[5];
 	uint32_t len = 0;
 
-	uint8_t cmd = (addr <= 0xffffff || _addr_4b_mode) ? FLASH_BE64 : FLASH_4BE64;
+	uint8_t cmd = (addr <= 0xffffff) ? FLASH_BE64 : FLASH_4BE64;
 
-	if (cmd == FLASH_4BE64 || _addr_4b_mode)
+	if (cmd == FLASH_4BE64)
 		tx[len++] = static_cast<uint8_t>(0xff & (addr >> 24));
 	tx[len++] = static_cast<uint8_t>(0xff & (addr >> 16));
 	tx[len++] = static_cast<uint8_t>(0xff & (addr >>  8));
@@ -278,8 +282,8 @@ int SPIFlash::write_page(int addr, const uint8_t *data, int len)
 	uint8_t write_cmd;
 	uint32_t i = 0;
 
-	if (addr <= 0xffffff || _addr_4b_mode) {
-		addr_len = (_addr_4b_mode) ? 4 : 3;
+	if (addr <= 0xffffff) {
+		addr_len = 3;
 		write_cmd = FLASH_PP;
 	} else {
 		addr_len = 4;
@@ -288,7 +292,7 @@ int SPIFlash::write_page(int addr, const uint8_t *data, int len)
 
 	uint8_t tx[len+addr_len];
 
-	if (addr_len == 4)
+	if (write_cmd == FLASH_4PP)
 		tx[i++] = (uint8_t)(0xff & (addr >> 24));
 	tx[i++] = (uint8_t)(0xff & (addr >> 16));
 	tx[i++] = (uint8_t)(0xff & (addr >>  8));
@@ -309,8 +313,8 @@ int SPIFlash::read(int base_addr, uint8_t *data, int len)
 	uint8_t read_cmd;
 	uint32_t i = 0;
 
-	if (base_addr <= 0xffffff || _addr_4b_mode) {
-		addr_len = (_addr_4b_mode) ? 4 : 3;
+	if (base_addr <= 0xffffff) {
+		addr_len = 3;
 		read_cmd = FLASH_READ;
 	} else {
 		addr_len = 4;
@@ -320,7 +324,7 @@ int SPIFlash::read(int base_addr, uint8_t *data, int len)
 	uint8_t tx[len+addr_len];
 	uint8_t rx[len+addr_len];
 
-	if (addr_len == 4)
+	if (read_cmd == FLASH_4READ)
 		tx[i++] = (uint8_t)(0xff & (base_addr >> 24));
 	tx[i++] = (uint8_t)(0xff & (base_addr >> 16));
 	tx[i++] = (uint8_t)(0xff & (base_addr >>  8));
@@ -343,6 +347,14 @@ bool SPIFlash::dump(const std::string &filename, const int &base_addr,
 	/* segfault with buffer > 1M */
 	if (rd_burst > 0x100000)
 		rd_burst = 0x100000;
+
+	/* For Micron N25Q with memory > 16MB */
+	if (_addr_4b_mode) {
+		if (!exit_4Byte_addr_mode()) {
+			printError("SpiFlash: failed to exit 4 Byte Address Mode");
+			return false;
+		}
+	}
 
 	std::string data;
 	data.resize(rd_burst);
@@ -376,6 +388,14 @@ bool SPIFlash::dump(const std::string &filename, const int &base_addr,
 
 	fclose(fd);
 
+	/* For Micron N25Q with memory > 16MB */
+	if (_addr_4b_mode) {
+		if (!enter_4Byte_addr_mode()) {
+			printError("SpiFlash: failed to enter 4 Byte Address Mode");
+			return false;
+		}
+	}
+
 	return true;
 }
 
@@ -387,6 +407,14 @@ bool SPIFlash::prepare_flash(const int base_addr, const int len)
 			read_id();
 		} catch(std::exception &e) {
 			printError(e.what());
+			return false;
+		}
+	}
+
+	/* For Micron N25Q with memory > 16MB */
+	if (_addr_4b_mode) {
+		if (!exit_4Byte_addr_mode()) {
+			printError("SpiFlash: failed to exit 4 Byte Address Mode");
 			return false;
 		}
 	}
@@ -533,6 +561,17 @@ bool SPIFlash::erase_and_prog(const std::vector<FlashDataSection> &sections, boo
 		if (_verbose > 0)
 			display_status_reg(read_status_reg());
 	}
+
+	/* For Micron N25Q re-enter 4Byte addr mode
+	 * when required
+	 */
+	if (_addr_4b_mode) {
+		if (!enter_4Byte_addr_mode()) {
+			printError("SPIFlash: Failed to enter 4Byte Address mode");
+			return false;
+		}
+	}
+
 	return true;
 }
 
@@ -565,6 +604,16 @@ int SPIFlash::erase_and_prog(int base_addr, const uint8_t *data, int len)
 		if (_verbose > 0)
 			display_status_reg(read_status_reg());
 	}
+
+	/* For Micron N25Q re-enter 4Byte addr mode
+	 * when required
+	 */
+	if (_addr_4b_mode) {
+		if (!enter_4Byte_addr_mode()) {
+			printError("SPIFlash: Failed to enter 4Byte Address mode");
+			return false;
+		}
+	}
 	return 0;
 }
 
@@ -575,6 +624,14 @@ bool SPIFlash::verify(const int &base_addr, const uint8_t *data,
 		rd_burst = len;
 		if (rd_burst > 65536)
 			rd_burst = 65536;
+	}
+
+	/* For Micron N25Q with memory > 16MB */
+	if (_addr_4b_mode) {
+		if (!exit_4Byte_addr_mode()) {
+			printError("SpiFlash: failed to exit 4 Byte Address Mode");
+			return false;
+		}
 	}
 
 	printInfo("Verifying write (May take time)");
@@ -605,6 +662,14 @@ bool SPIFlash::verify(const int &base_addr, const uint8_t *data,
 	}
 
 	progress.done();
+
+	/* For Micron N25Q with memory > 16MB */
+	if (_addr_4b_mode) {
+		if (!enter_4Byte_addr_mode()) {
+			printError("SpiFlash: failed to enter 4 Byte Address Mode");
+			return false;
+		}
+	}
 
 	return true;
 }
@@ -1223,5 +1288,21 @@ bool SPIFlash::global_unlock()
 		if (rx2[i] != 0)
 			return false;
 	}
+	return true;
+}
+
+bool SPIFlash::enter_4Byte_addr_mode()
+{
+	if (write_enable() != 0)
+		return false;
+	_spi->spi_put(EN4BYTEADDR, NULL, NULL, 0);
+	return true;
+}
+
+bool SPIFlash::exit_4Byte_addr_mode()
+{
+	if (write_enable() != 0)
+		return false;
+	_spi->spi_put(EX4BYTEADDR, NULL, NULL, 0);
 	return true;
 }
