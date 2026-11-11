@@ -162,12 +162,14 @@ if tool in ["ise", "vivado"]:
         "xcku040-ffva1156" : "xcku040_ffva1156",
         "xcku060-ffva1156" : "xcku060_ffva1156",
         "xcvu9p-flga2104"  : "xcvu9p_flga2104",
+        "xcvu9p-fsgd2104"  : "xcvu9p_fsgd2104",
         "xcvu37p-fsvh2892" : "xcvu37p_fsvh2892",
         "xcvu7p-flvb2104"  : "xcvu7p_flvb2104",
         "xcku3p-ffva676"   : "xcku3p_ffva676",
         "xcku3p-ffvb676"   : "xcku3p_ffvb676",
         "xcku5p-ffvb676"   : "xcku5p_ffvb676",
         "xcau7p-sbvc484"   : "xcau7p_sbvc484",
+        "xcau10p-sbvb484"  : "xcau10p_sbvb484",
         "xcau10p-ffvb676"  : "xcau10p_ffvb676",
         "xcau15p-ffvb676"  : "xcau15p_ffvb676",
     }.get(part, pkg_name)
@@ -213,7 +215,7 @@ if tool in ["ise", "vivado"]:
         if family in ["Artix", "Spartan 7"]:
             tool_options = {"part": f"{device}{pkg}-1"}
         elif family == "Xilinx UltraScale":
-            if part in ["xcvu9p-flga2104", "xcku5p-ffvb676"]:
+            if part in ["xcvu9p-flga2104", "xcvu9p-fsgd2104", "xcku5p-ffvb676"]:
                 tool_options = {"part": part + "-1-e"}
                 parameters["secondaryflash"] = {
                     "datatype": "int",
@@ -237,7 +239,7 @@ if tool in ["ise", "vivado"]:
                     "description" : "secondary flash",
                     "default"     : 1,
                 }
-            elif part in ["xcau10p-ffvb676", "xcau7p-sbvc484"]:
+            elif part in ["xcau10p-ffvb676", "xcau10p-sbvb484", "xcau7p-sbvc484"]:
                 tool_options = {"part": part + "-1-e"}
             elif part == "xcau15p-ffvb676":
                 tool_options = {"part": part + "-2-e"}

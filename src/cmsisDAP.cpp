@@ -314,7 +314,8 @@ bool CmsisDAP::applyQuirk()
 }
 
 #ifdef ENABLE_CMSISDAP_V1
-bool CmsisDAP::initWithHID(const cable_t &cable, int index, int8_t verbose){
+bool CmsisDAP::initWithHID(const cable_t &cable, int index, int8_t /*verbose*/)
+{
 		std::vector<struct hid_device_info *> dev_found;
 
 	/* only hid support */
@@ -429,7 +430,8 @@ void disp_error_info(const std::string &mess, bool disp_as_info)
 		printError(mess);
 }
 
-bool CmsisDAP::initWithBulk(const cable_t &cable, int8_t verbose, bool err_as_info)
+bool CmsisDAP::initWithBulk(const cable_t &cable, int8_t /*verbose*/,
+	bool err_as_info)
 {
 	if (libusb_init(&_ctx) != 0) {
 		disp_error_info("cmsisDAP v2: libusb init failed", err_as_info);
@@ -495,13 +497,6 @@ bool CmsisDAP::initWithBulk(const cable_t &cable, int8_t verbose, bool err_as_in
 	_pkt_sz = dev.packet_size;
 	_ep_out = dev.ep_out;
 	_ep_in = dev.ep_in;
-
-	if (!libusb_dev_mem_alloc(_usb_dev, _pkt_sz)) {
-		libusb_close(_usb_dev);
-		libusb_exit(_ctx);
-		disp_error_info("cmsisDAP: failed to alloc DMA memory for device", err_as_info);
-		return false;
-	}
 
 	return true;
 }
@@ -709,7 +704,7 @@ int CmsisDAP::setClkFreq(uint32_t clkHZ)
  * tms states are written only if max or if flush_buffer set
  */
 int CmsisDAP::writeTMS(const uint8_t *tms, uint32_t len, bool flush_buffer,
-		__attribute__((unused)) const uint8_t tdi)
+		const uint8_t /*tdi*/)
 {
 	/* nothing to send
 	 * check if the buffer must be flushed

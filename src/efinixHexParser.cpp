@@ -11,9 +11,10 @@
 #include "efinixHexParser.hpp"
 
 
-EfinixHexParser::EfinixHexParser(const std::string &filename):
+EfinixHexParser::EfinixHexParser(const std::string &filename,
+		bool reverseOrder):
 		ConfigBitstreamParser(filename, ConfigBitstreamParser::ASCII_MODE,
-		false)
+		false), _reverseOrder(reverseOrder)
 {}
 
 int EfinixHexParser::parseHeader()
@@ -68,7 +69,9 @@ int EfinixHexParser::parse()
 	std::istringstream lineStream(_raw_data);
 
 	while (std::getline(lineStream, buffer, '\n')) {
-		_bit_data.push_back(std::stol(buffer, nullptr, 16));
+		const uint8_t val = std::stol(buffer, nullptr, 16);
+		_bit_data.push_back(_reverseOrder ? reverseByte(val) :
+			val);
 	}
 	_bit_length = _bit_data.size() * 8;
 

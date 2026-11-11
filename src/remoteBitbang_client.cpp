@@ -134,8 +134,8 @@ int RemoteBitbang_client::writeTDI(const uint8_t *tx, uint8_t *rx, uint32_t len,
 }
 
 // toggle clk with constant TDI and TMS.
-int RemoteBitbang_client::toggleClk([[maybe_unused]] uint8_t tms,
-	[[maybe_unused]] uint8_t tdi, uint32_t clk_len)
+int RemoteBitbang_client::toggleClk(uint8_t /*tms*/,
+	uint8_t /*tdi*/, uint32_t clk_len)
 {
 	// nothing to do
 	if (clk_len == 0)

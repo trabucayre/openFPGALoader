@@ -34,7 +34,7 @@
 
 LibgpiodJtagBitbang::LibgpiodJtagBitbang(
 		const jtag_pins_conf_t *pin_conf,
-		const std::string &dev, __attribute__((unused)) uint32_t clkHZ,
+		const std::string &dev, uint32_t /*clkHz*/,
 		int8_t verbose):_verbose(verbose>1)
 {
 	_tck_pin = pin_conf->tck_pin;
@@ -253,7 +253,7 @@ int LibgpiodJtagBitbang::read_tdo()
 #endif
 }
 
-int LibgpiodJtagBitbang::setClkFreq(__attribute__((unused)) uint32_t clkHZ)
+int LibgpiodJtagBitbang::setClkFreq(uint32_t /*clkHz*/)
 {
 	// FIXME: The assumption is that calling the gpiod_line_set_value
 	// routine will limit the clock frequency to lower than what is specified.
@@ -262,8 +262,7 @@ int LibgpiodJtagBitbang::setClkFreq(__attribute__((unused)) uint32_t clkHZ)
 }
 
 int LibgpiodJtagBitbang::writeTMS(const uint8_t *tms_buf, uint32_t len,
-		__attribute__((unused)) bool flush_buffer,
-		__attribute__((unused)) uint8_t tdi)
+		bool /*flush_buffer*/, uint8_t /*tdi*/)
 {
 	if (len == 0) // nothing -> stop
 		return len;

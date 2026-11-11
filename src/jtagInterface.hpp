@@ -92,6 +92,20 @@ class JtagInterface {
 	virtual int get_buffer_size() = 0;
 
 	/*!
+	 * \brief let a caller ask for a preferred bulk-transfer size (in bits)
+	 *        before splitting a large shiftDR/writeTDI() into fixed-size
+	 *        chunks; adapters that don't care simply don't override this,
+	 *        in which case the caller's own default is returned unchanged
+	 * \param[in] default_bits: the chunk size (in bits) the caller would
+	 *            use if the adapter has no opinion
+	 * \return the chunk size (in bits) the caller should use
+	 */
+	virtual uint32_t preferred_xfer_bits(uint32_t default_bits)
+	{
+		return default_bits;
+	}
+
+	/*!
 	 * \brief return status of internal buffer
 	 * \return true when internal buffer is full
 	 */
