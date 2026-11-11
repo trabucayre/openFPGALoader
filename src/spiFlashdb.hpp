@@ -833,6 +833,25 @@ static std::map <uint32_t, flash_t> flash_list = {
 		.quad_mask = 0,
 		.global_lock = false,
 	}},
+	{0xef6018, {
+		/* https://www.winbond.com/resource-files/W25Q128JW_RevI%2005262026%20Plus.pdf
+		 * Winbond W25Q128JW-IQ/JQ (1.8V), 128 Mbit / 16 MiB
+		 */
+		.manufacturer = "Winbond",
+		.model = "W25Q128JW",
+		.nr_sector = 256,
+		.sector_erase = true,
+		.subsector_erase = true,
+		.has_extended = false,
+		.tb_otp = false,
+		.tb_offset = (1 << 5),  // TB (SR1 S5)
+		.tb_register = STATR,
+		.bp_len = 3,
+		.bp_offset = {(1 << 2), (1 << 3), (1 << 4), 0},
+		.quad_register = CONFR,
+		.quad_mask = (1 << 1),  // QE = SR2 S9 = bit1 of byte read by RDSR-2 (0x35)
+		.global_lock = false,
+	}},
 	{0xef6019, {
 		/* Winbond W25Q25PW (1.8V), 256 Mbit / 32 MiB. Requires 4-byte addressing. */
 		.manufacturer = "Winbond",
@@ -846,6 +865,25 @@ static std::map <uint32_t, flash_t> flash_list = {
 		.tb_register = STATR,
 		.bp_len = 4,
 		.bp_offset = {(1 << 2), (1 << 3), (1 << 4), (1 << 5)},
+		.quad_register = CONFR,
+		.quad_mask = (1 << 1),  // QE = SR2 S9 = bit1 of byte read by RDSR-2 (0x35)
+		.global_lock = false,
+	}},
+	{0xef8018, {
+		/* https://www.winbond.com/resource-files/W25Q128JW_RevI%2005262026%20Plus.pdf
+		 * Winbond W25Q128JW-IM/JM (1.8V), 128 Mbit / 16 MiB
+		 */
+		.manufacturer = "Winbond",
+		.model = "W25Q128JW",
+		.nr_sector = 256,
+		.sector_erase = true,
+		.subsector_erase = true,
+		.has_extended = false,
+		.tb_otp = false,
+		.tb_offset = (1 << 5),  // TB (SR1 S5)
+		.tb_register = STATR,
+		.bp_len = 3,
+		.bp_offset = {(1 << 2), (1 << 3), (1 << 4), 0},
 		.quad_register = CONFR,
 		.quad_mask = (1 << 1),  // QE = SR2 S9 = bit1 of byte read by RDSR-2 (0x35)
 		.global_lock = false,
