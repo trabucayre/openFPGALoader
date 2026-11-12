@@ -7,7 +7,6 @@
 
 #include <cstdint>
 #include <cstdio>
-#include <cstring>
 #include <stdexcept>
 #include <vector>
 
@@ -68,7 +67,8 @@ GowinGWU2x::GowinGWU2x(cable_t *cable, uint32_t clkHz, int8_t verbose):
 	ret = libusb_claim_interface(_dev, 0);
 	if (ret < 0) {
 		char mess[256];
-		snprintf(mess, 256, "Error claiming interface with error %s", libusb_error_name(ret));
+		snprintf(mess, 256, "Error claiming interface with error %s",
+			libusb_error_name(ret));
 		throw std::runtime_error(mess);
 	}
 
@@ -146,10 +146,10 @@ int GowinGWU2x::writeTMS(const uint8_t *tms, uint32_t len, bool flush_buffer,
  */
 int GowinGWU2x::writeTDI(const uint8_t *tx, uint8_t *rx, uint32_t len, bool end)
 {
-	const uint32_t real_len = len - (end ? 1 : 0);  // if end: last bit is sent with TMS
-	const uint32_t byte_len = real_len >> 3;   // convert bit len to byte len (floor)
+	const uint32_t real_len = len - (end ? 1 : 0);  // end: last bit with TMS
+	const uint32_t byte_len = real_len >> 3;   // convert len bit to byte floor
 	const uint32_t bit_len = real_len & 0x07;  // extract remaining bits
-	uint8_t *tx_ptr = (uint8_t *)tx;
+	const uint8_t *tx_ptr = tx;
 	uint8_t *rx_ptr = rx;
 
 	/* if the buffer is not empty, some tms bits are present
@@ -166,7 +166,8 @@ int GowinGWU2x::writeTDI(const uint8_t *tx, uint8_t *rx, uint32_t len, bool end)
 		for (uint32_t pos = 0; pos < byte_len; pos += xfer_len) {
 			if (pos + 256 > byte_len)
 				xfer_len = byte_len - pos;
-			_xfer_buf[_xfer_pos++] = (rx) ? GWU2X_TDI_LSB_BYTE_RDWR : GWU2X_TDI_LSB_BYTE_WRO;
+			_xfer_buf[_xfer_pos++] =
+				(rx) ? GWU2X_TDI_LSB_BYTE_RDWR : GWU2X_TDI_LSB_BYTE_WRO;
 			_xfer_buf[_xfer_pos++] = xfer_len - 1;
 			memcpy(&_xfer_buf[_xfer_pos], tx_ptr, xfer_len);
 			_xfer_pos += xfer_len;
@@ -193,7 +194,8 @@ int GowinGWU2x::writeTDI(const uint8_t *tx, uint8_t *rx, uint32_t len, bool end)
 		 * the buffer read must be correctly aligned according to bit_len
 		 */
 		if (!store_seq(GWU2X_TDI_LSB_BIT_WRO + (rx != nullptr),
-			static_cast<uint8_t>(bit_len - 1), *tx_ptr, !postponed_read && rx != nullptr))
+				static_cast<uint8_t>(bit_len - 1), *tx_ptr,
+				!postponed_read && rx != nullptr))
 			return -1;
 		// When not end, flush buffer
 		// NOTE: with a more clever global system why not
@@ -235,7 +237,7 @@ int GowinGWU2x::writeTDI(const uint8_t *tx, uint8_t *rx, uint32_t len, bool end)
 	return static_cast<int>(len);
 }
 
-int GowinGWU2x::toggleClk(uint8_t tms, uint8_t tdi, uint32_t clk_len)
+int GowinGWU2x::toggleClk(uint8_t /*tms*/, uint8_t /*tdi*/, uint32_t clk_len)
 {
 	/* Gowin GWU2X has a specific command to produces
 	 * a sequence sequence to up to 65536 cycles
@@ -244,8 +246,8 @@ int GowinGWU2x::toggleClk(uint8_t tms, uint8_t tdi, uint32_t clk_len)
 	/* No need to check/flush buffer will be done by store_seq */
 	uint32_t len = 0;
 	if (_verbose)
-		printf("toggleClk : %02x %02x %u\n", tms, tdi, clk_len);
-	
+		printf("toggleClk : %u\n", clk_len);
+
 	for (uint32_t length = clk_len; length > 0; length -= len) {
 		len = ((length > 65536) ? 65536 : length) - 1;
 		if (!store_seq(GWU2X_TCK,
@@ -322,7 +324,8 @@ bool GowinGWU2x::xfer(uint8_t *rx, uint16_t rx_len, const uint16_t timeout)
 		return true;
 	uint8_t *rx_ptr = rx;
 	uint32_t dummy;
-	ret = libusb_bulk_transfer(_dev, 0x83, (uint8_t*)&dummy, 4, &actual_length, timeout);
+	ret = libusb_bulk_transfer(_dev, 0x83, reinterpret_cast<uint8_t*>(&dummy),
+		4, &actual_length, timeout);
 	if (_verbose)
 		printf("ret: %d %u %d\n", ret, dummy, actual_length);
 	do {
@@ -356,10 +359,11 @@ int GowinGWU2x::setClkFreq(uint32_t freqHz)
 	}
 	const uint16_t div = static_cast<uint16_t>(60e6 / freqHz);
 	const int real_freq = static_cast<int>(60e6 / div);
-	printInfo("User requested: " + std::to_string(freqHz) + " real frequency is "
-		+ std::to_string(real_freq));
-	_xfer_buf[_xfer_pos++] = GWU2X_SET_FREQ_FAST + ((freqHz < 240e3) ? 1 : 0);
-	_xfer_buf[_xfer_pos++] = static_cast<uint8_t>(div - ((freqHz < 240e3) ? 256 : 0));
+	printInfo("User requested: " + std::to_string(freqHz) +
+		" real frequency is " + std::to_string(real_freq));
+	const bool inf_240khz = (freqHz < 240e3);
+	_xfer_buf[_xfer_pos++] = GWU2X_SET_FREQ_FAST + (inf_240khz ? 1 : 0);
+	_xfer_buf[_xfer_pos++] = static_cast<uint8_t>(div - (inf_240khz ? 256 : 0));
 	if (!xfer(nullptr, 0, 1000))
 		return -1;
 	_clkHZ = real_freq;
