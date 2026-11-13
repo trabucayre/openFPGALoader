@@ -55,6 +55,7 @@ option(ENABLE_GOWIN_GWU2X      "enable Gowin GWU2X interface"                 ${
 option(ENABLE_SVF_JTAG         "enable SVF support"                           ${ENABLE_CABLE_ALL})
 option(ENABLE_USB_BLASTERI     "enable Altera USB Blaster I support"          ${ENABLE_CABLE_ALL})
 option(ENABLE_USB_BLASTERII    "enable Altera USB Blaster II support"         ${ENABLE_CABLE_ALL})
+option(ENABLE_DIGILENT_ADEPT   "enable Digilent Adept cable (requires libUSB)" ${ENABLE_CABLE_ALL})
 
 set(BLASTERII_PATH           "" CACHE STRING "usbBlasterII firmware directory")
 set(ISE_PATH "/opt/Xilinx/14.7" CACHE STRING "ise root directory (default: /opt/Xilinx/14.7)")
@@ -123,7 +124,7 @@ endif(ENABLE_FTDI_BASED_CABLE OR ENABLE_USB_BLASTERI OR ENABLE_XILINX_VIRTUAL_CA
 # Only adds libusb as dependency when a cable need this library
 if (ENABLE_DFU OR ENABLE_ANLOGIC_CABLE OR ENABLE_CH347 OR ENABLE_DIRTYJTAG
 		OR ENABLE_ESP_USB OR ENABLE_JLINK OR ENABLE_GOWIN_GWU2X OR USE_FX2_LL OR ENABLE_USB_SCAN
-		OR ENABLE_CMSISDAP_V2)
+		OR ENABLE_CMSISDAP_V2 OR ENABLE_DIGILENT_ADEPT)
 	set(USE_LIBUSB ON)
 endif()
 
@@ -540,6 +541,13 @@ endif()
 if (ENABLE_CH347)
 list(APPEND OPENFPGALOADER_SOURCE  src/ch347jtag.cpp)
 list(APPEND OPENFPGALOADER_HEADERS src/ch347jtag.hpp)
+endif()
+
+# Digilent Adept
+if (ENABLE_DIGILENT_ADEPT)
+list(APPEND OPENFPGALOADER_SOURCE  src/digilentAdept.cpp)
+list(APPEND OPENFPGALOADER_HEADERS src/digilentAdept.hpp)
+add_definitions(-DENABLE_DIGILENT_ADEPT)
 endif()
 
 # dirtyJtag
