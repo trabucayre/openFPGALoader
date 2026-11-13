@@ -52,39 +52,44 @@ XilinxPlatformCableUSB::XilinxPlatformCableUSB(const uint16_t vid,
 		_buffer_bit_size((_buffer_size / 2 * 4) - 1)
 {
 	std::string firmware_file;
-	/* firmare path must be known:
-	 * 1/ provided by user
-	 * 2/ from Vivado install directory
-	 * 3/ from ISE install directory
-	 */
-	if (firmware_path.empty() && strlen(ISE_DIR) == 0 && strlen(VIVADO_DIR) == 0) {
-		printError("missing FX2 firmware");
-		printError("use --probe-firmware with something");
-		printError("like /opt/Xilinx/14.7/ISE_DS/ISE/bin/lin64/xusb_xp2.hex for ISE");
-		printError("or   /opt/Xilinx/Vivado/VERSION/data/xicom/xusb_xp2.hex for Vivado");
-		printError("Or use -DISE_DIR=/opt/Xilinx/14.7 / -DVIVADO_DIR=/opt/Xilinx/Vivado/VERSION at build time");
-		throw std::runtime_error("xilinxPlatformCableUSB: missing firmware");
-	}
+	if (pid != 0x0013) {
+		/* firmare path must be known:
+		 * 1/ provided by user
+		 * 2/ from Vivado install directory
+		 * 3/ from ISE install directory
+		 */
+		if (firmware_path.empty() && strlen(ISE_DIR) == 0 && strlen(VIVADO_DIR) == 0) {
+			printError("missing FX2 firmware");
+			printError("use --probe-firmware with something");
+			printError("like /opt/Xilinx/14.7/ISE_DS/ISE/bin/lin64/xusb_xp2.hex for ISE");
+			printError("or   /opt/Xilinx/Vivado/VERSION/data/xicom/xusb_xp2.hex for Vivado");
+			printError("Or use -DISE_DIR=/opt/Xilinx/14.7 / -DVIVADO_DIR=/opt/Xilinx/Vivado/VERSION at build time");
+			throw std::runtime_error("xilinxPlatformCableUSB: missing firmware");
+		}
 
-	/* Extract firmware according to possibilities */
-	if (!firmware_path.empty())
-		firmware_file = firmware_path;
-	else if (strlen(VIVADO_DIR) > 0)
-		firmware_file = VIVADO_DIR "/data/xicom/";
-	else if (strlen(ISE_DIR) > 0)
-		firmware_file = ISE_DIR "/ISE_DS/ISE/bin/lin64/";
+		/* Extract firmware according to possibilities */
+		if (!firmware_path.empty())
+			firmware_file = firmware_path;
+		else if (strlen(VIVADO_DIR) > 0)
+			firmware_file = VIVADO_DIR "/data/xicom/";
+		else if (strlen(ISE_DIR) > 0)
+			firmware_file = ISE_DIR "/ISE_DS/ISE/bin/lin64/";
 
-	if (firmware_path.empty()) {
-		if (pid == 0x0d)
-			firmware_file += "xusb_emb.hex";
-		else
-			firmware_file += "xusb_xp2.hex";
+		if (firmware_path.empty()) {
+			if (pid == 0x0d)
+				firmware_file += "xusb_emb.hex";
+			else
+				firmware_file += "xusb_xp2.hex";
+		}
+		printInfo("firmware_file : " + firmware_file);
 	}
-	printInfo("firmware_file : " + firmware_file);
 
 	try {
-		fx2 = std::make_unique<FX2_ll>(vid, pid, XPCU_INITIALIZED_VID,
-				XPCU_INITIALIZED_PID, firmware_file);
+		if (pid == 0x0013)
+			fx2 = std::make_unique<FX2_ll>(0, 0, vid, pid, firmware_file);
+		else
+			fx2 = std::make_unique<FX2_ll>(vid, pid, XPCU_INITIALIZED_VID,
+					XPCU_INITIALIZED_PID, firmware_file);
 	} catch (std::exception &e) {
 		printError(e.what());
 		throw std::runtime_error("lowlevel init failed");
