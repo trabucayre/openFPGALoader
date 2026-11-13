@@ -40,39 +40,56 @@
 
 Jlink::Jlink(uint32_t clkHz, int8_t verbose, int vid = VID, int pid = PID):_base_freq(0), _min_div(0),
 	jlink_write_ep(-1), jlink_read_ep(-1), jlink_interface(-1),
+	jlink_handle(nullptr), jlink_ctx(nullptr),
 	_verbose(verbose > 0), _debug(verbose > 1), _quiet(verbose < 0),
 	_num_bits(0), _last_tms(0), _last_tdi(0),
 	_hw_type(0), _major(0), _minor(0), _revision(0)
 {
 	// init libusb context
 	if (libusb_init(&jlink_ctx) < 0)
-		throw std::runtime_error("libusb init failed\n");
+		throw std::runtime_error("libusb init failed");
 
 	// search for all compatible devices
 	if (!jlink_scan_usb(vid,pid)) {
 		if (_verbose)
 			printf("vid:pid %04x:%04x\n", vid, pid);
+		cleanup();
 		throw std::runtime_error("can't find compatible device");
 	}
 
 	// get device capacity
-	if (!get_caps())
+	if (!get_caps()) {
+		cleanup();
 		throw std::runtime_error("can't read device CAPS");
+	}
 
 	// get hw version
-	if (get_hw_version() < 0)
+	if (get_hw_version() < 0) {
+		cleanup();
 		throw std::runtime_error("can't read hw version");
+	}
 
-	get_speeds();
+	if (!get_speeds()) {
+		cleanup();
+		throw std::runtime_error("can't get allowed speeds");
+	}
 
 	// configure device in JTAG mode
-	set_interface(0);
+	if (!set_interface(0)) {
+		cleanup();
+		throw std::runtime_error("can't set interface 0");
+	}
 
 	// configure JTAG TCK frequency
-	setClkFreq(clkHz);
+	if (setClkFreq(clkHz) <= 0) {
+		cleanup();
+		throw std::runtime_error("can't set TCK frequency");
+	}
 
-	if (!set_ks_power(true))
+	if (!set_ks_power(true)) {
+		cleanup();
 		throw std::runtime_error("can't set KS power");
+	}
 }
 
 Jlink::~Jlink()
@@ -80,46 +97,66 @@ Jlink::~Jlink()
 	// flush buffers before quit
 	if (_num_bits != 0)
 		flush();
-	// release interface
-	libusb_release_interface(jlink_handle, jlink_interface);
-	// close device
-	libusb_close(jlink_handle);
-	// context cleanup
-	libusb_exit(jlink_ctx);
+	cleanup();
+}
+
+void Jlink::cleanup()
+{
+	if (jlink_handle) {
+		// release interface
+		if (jlink_interface != -1)
+			libusb_release_interface(jlink_handle, jlink_interface);
+		// close device
+		libusb_close(jlink_handle);
+		jlink_handle = nullptr;
+	}
+
+	if (jlink_ctx) {
+		// context cleanup
+		libusb_exit(jlink_ctx);
+		jlink_ctx = nullptr;
+	}
 }
 
 int Jlink::writeTMS(const uint8_t *tms, uint32_t len, bool flush_buffer,
-		const uint8_t /*tdi*/)
+		const uint8_t tdi)
 {
 	// empty buffer
 	// if asked flush
 	if (len == 0)
 		return ((flush_buffer) ? flush() : 0);
 
+	_last_tdi = tdi;
+
 	for (uint32_t pos = 0; pos < len; pos++) {
 		// buffer full -> write
 		if (_num_bits == BUF_SIZE * 8) {
 			// write
-			ll_write(NULL);
-			_num_bits = 0;
+			if (!ll_write(NULL)) {
+				printError("Jlink: fails to write buffer in writeTMS");
+				return -1;
+			}
 		}
+
+		const uint32_t offset = _num_bits >> 3;
+		const uint8_t set_bit = (1 << (_num_bits & 0x07));
 
 		_last_tms = (tms[pos >> 3] & (1 << (pos & 0x07))) ? 1 : 0;
 
 		if (_last_tms)
-			_tms[(_num_bits >> 3)] |= (1 << (_num_bits & 0x07));
+			_tms[offset] |= set_bit;
 		else
-			_tms[(_num_bits >> 3)] &= ~(1 << (_num_bits & 0x07));
+			_tms[offset] &= ~set_bit;
 		if (_last_tdi)
-			_tdi[(_num_bits >> 3)] |= (1 << (_num_bits & 0x07));
+			_tdi[offset] |= set_bit;
 		else
-			_tdi[(_num_bits >> 3)] &= ~(1 << (_num_bits & 0x07));
+			_tdi[offset] &= ~set_bit;
 		_num_bits++;
 	}
 
 	// flush where it's asked or if the buffer is full
 	if (flush_buffer || _num_bits == BUF_SIZE * 8)
-		return flush();
+		return flush() ? len : -1;
 	return len;
 }
 
@@ -128,7 +165,10 @@ int Jlink::writeTDI(const uint8_t *tx, uint8_t *rx, uint32_t len, bool end)
 	if (len == 0)  // nothing to do
 		return 0;
 	if (_num_bits != 0)  // flush buffer to simplify next step
-		flush();
+		if (!flush()) {
+			printError("Jlink: Failed to flush in writeTDI");
+			return -1;
+		}
 
 	uint32_t xfer_len = BUF_SIZE * 8;  // default to buffer capacity
 	uint8_t tms = (_last_tms) ? 0xff : 0x00;  // set tms byte
@@ -151,35 +191,40 @@ int Jlink::writeTDI(const uint8_t *tx, uint8_t *rx, uint32_t len, bool end)
 			uint16_t idx = _num_bits - 1;
 			_tms[(idx >> 3)] |= (1 << (idx & 0x07));
 		}
-		ll_write((rx) ? rx_ptr : NULL);  // write
+		if (!ll_write((rx) ? rx_ptr : NULL)) {  // write
+			printError("Jlink: Failed to write buffer in writeTDI");
+			return -1;
+		}
 
 		tx_ptr += tt;
 		if (rx)
 			rx_ptr += tt;
 	}
 
+	// save last TDI state sent
+	_last_tdi = (tx) ? (tx[(len-1) >> 3] >> ((len -1) & 0x07)) & 0x01 : 0;
+
 	return len;
 }
 
 // toggle clk with constant TDI and TMS. More or less same idea as writeTDI
-int Jlink::toggleClk(uint8_t tms, uint8_t tdi, uint32_t clk_len)
+int Jlink::toggleClk(uint8_t /*tms*/, uint8_t /*tdi*/, uint32_t clk_len)
 {
 	// nothing to do
 	if (clk_len == 0)
 		return 0;
-	if (_num_bits != 0)
-		flush();
 
-	_last_tms = tms;
-	_last_tdi = tdi;
-	uint8_t curr_tms = (tms) ? 0xff: 0x00;
-	uint8_t curr_tdi = (tdi) ? 0xff: 0x00;
+	uint8_t curr_tms = (_last_tms) ? 0xff: 0x00;
+	uint8_t curr_tdi = (_last_tdi) ? 0xff: 0x00;
 
 	uint32_t len = clk_len;
 
 	// flush buffer before starting
 	if (_num_bits != 0)
-		flush();
+		if (!flush()) {
+			printError("Jlink: Failed to flush in toggleClk");
+			return -1;
+		}
 
 	memset(_tdi, curr_tdi, BUF_SIZE);
 	memset(_tms, curr_tms, BUF_SIZE);
@@ -188,7 +233,10 @@ int Jlink::toggleClk(uint8_t tms, uint8_t tdi, uint32_t clk_len)
 		if (len < _num_bits)
 			_num_bits = len;
 		len -= _num_bits;
-		ll_write(NULL);
+		if (!ll_write(NULL)) {
+			printError("Jlink: Failed to write buffer in toggleClk");
+			return -1;
+		}
 	} while (len > 0);
 
 	return clk_len;
@@ -202,12 +250,27 @@ int Jlink::flush()
 bool Jlink::writeTMSTDI(const uint8_t *tms, const uint8_t *tdi, uint8_t *tdo,
 		uint32_t numbits)
 {
+	/* Nothing to do ? */
+	if (numbits == 0)
+		return true;
+
 	// use pointer to access all vectors
 	const uint8_t *tms_ptr = tms;
 	const uint8_t *tdi_ptr = tdi;
 	uint8_t *tdo_ptr = tdo;
 
 	uint32_t xfer_len = 0;
+
+	/* Not really required since this method is used by XVC
+	 * but stores last tms / tdi before numbits modifications
+	 * the most secure is to effective store at the end but
+	 * if something fails there is no way to know where
+	 */
+	const uint32_t last_pos = numbits - 1;
+	const uint32_t off = last_pos >> 3;
+	const uint8_t shift = static_cast<uint8_t>(last_pos & 0x07);
+	_last_tms = (tms[off] >> shift) & 0x01;
+	_last_tdi = (tdi[off] >> shift) & 0x01;
 
 	while (numbits > 0) {
 		// if bits to send are greater than internal buffer
@@ -217,7 +280,7 @@ bool Jlink::writeTMSTDI(const uint8_t *tms, const uint8_t *tdi, uint8_t *tdo,
 		else  // or direct xfer
 			xfer_len = numbits;
 		// convert size in Byte
-		uint16_t numbytes = (xfer_len + 7) >> 8;
+		uint16_t numbytes = (xfer_len + 7) >> 3;
 
 		// copy buffers to internals
 		memcpy(_tms, tms_ptr, numbytes);
@@ -244,7 +307,6 @@ bool Jlink::ll_write(uint8_t *tdo)
 	if (_num_bits == 0)
 		return true;
 	uint32_t numbytes = (_num_bits + 7) >> 3;
-	uint8_t rx_buf[numbytes+2];
 	uint8_t status;
 	// 1. cmd + dummy + numbits + tms + tdi
 	_xfer_buf[0] = EMU_CMD_HW_JTAG3;
@@ -283,29 +345,30 @@ bool Jlink::ll_write(uint8_t *tdo)
 
 	if (!write_device(_xfer_buf, 4 + (2 * numbytes))) {
 		printError("fails to send buffer");
-		throw std::runtime_error("fails to send buffer");
+		return false;
 	}
 
 	// 2. read tdo + status
-	int ret = read_device(rx_buf, numbytes+1);
-	if (ret < 0) {
+	int ret = read_device(_xfer_buf, numbytes+1);
+	if (ret < 0 || static_cast<uint32_t>(ret) < numbytes) {
 		printError("fails to read tdo");
 		return false;
 	}
 
 	// 3. read status
 	if ((uint32_t)ret == numbytes) {
-		printError("read status");
-		if (!read_device(&status, 1)) {
-			printError("fails to read status\n");
+		if (_debug)
+			printInfo("read status");
+		if (read_device(&status, 1) != 1) {
+			printError("fails to read status");
 			return false;
 		}
 	} else {
-		status = rx_buf[numbytes];
+		status = _xfer_buf[numbytes];
 	}
 
 	if (tdo) {
-		memcpy(tdo, rx_buf, numbytes);
+		memcpy(tdo, _xfer_buf, numbytes);
 
 		if (_debug) {
 			printf("tdo       : ");
@@ -412,15 +475,18 @@ int Jlink::read_device(uint8_t *buf, uint32_t size)
 			tries--;
 		} else {
 			char toto[256];
-			snprintf(toto, sizeof(toto), "Error read length %d %d %u %s %s\n",
-					ret, actual_length, size, libusb_error_name(ret),
+			snprintf(toto, sizeof(toto), "Jlink: read_device error "
+					"%d %d %u %s %s", ret, actual_length, size,
+					libusb_error_name(ret),
 					libusb_strerror(static_cast<libusb_error>(ret)));
+			printError(toto);
 			return ret;
 		}
 	} while (recv < size && tries != 0);
 
 	if (tries == 0)
-		printError("fail");
+		printError("Jlink: read_device timeout: " + std::to_string(recv) +
+			" instead of " + std::to_string(size));
 
 	return recv;
 }
@@ -442,15 +508,18 @@ bool Jlink::write_device(const uint8_t *buf, uint32_t size)
 		} else if (ret == LIBUSB_ERROR_TIMEOUT) {
 			tries--;
 		} else {
-			printf("Error write %d\n", ret);
-			printf("%s %s\n", libusb_error_name(ret),
-					libusb_strerror(static_cast<libusb_error>(ret)));
+			char err[256];
+			snprintf(err, 256, "Jlink: error in write_device: %d %s %s", ret,
+				libusb_error_name(ret),
+				libusb_strerror(static_cast<libusb_error>(ret)));
+			printError(err);
 			return false;
 		}
 	} while (tries > 0 && rest_size > 0);
 
 	if (tries == 0 && rest_size != 0) {
-		printf("error\n");
+		printError("Jlink: write_device timeout: " + std::to_string(recv) +
+			" instead of " + std::to_string(size));
 		return false;
 	}
 
@@ -460,10 +529,14 @@ bool Jlink::write_device(const uint8_t *buf, uint32_t size)
 std::string Jlink::get_version()
 {
 	uint16_t length = 0;
-	cmd_read(EMU_CMD_VERSION, &length);
-	uint8_t version[length];
-	read_device(version, length);
-	return std::string(reinterpret_cast<char*>(version));
+	if (!cmd_read(EMU_CMD_VERSION, &length))
+		return "";
+	if (length == 0)
+		return "";
+	std::string version(length, '\0');
+	if (read_device(reinterpret_cast<uint8_t *>(&version[0]), length) < 0)
+		return "";
+	return version;
 }
 
 int Jlink::get_hw_version()
@@ -494,11 +567,21 @@ int Jlink::get_hw_version()
 	return version;
 }
 
-void Jlink::get_speeds()
+bool Jlink::get_speeds()
 {
-	cmd_read(EMU_CMD_GET_SPEEDS, _xfer_buf, 6);
+	if (!cmd_read(EMU_CMD_GET_SPEEDS, _xfer_buf, 6)) {
+		printError("Jlink: Failed to get speeds from device");
+		return false;
+	}
 	_base_freq = CONV_32B(_xfer_buf);
 	_min_div = CONV_16B((&_xfer_buf[4]));
+
+	if (_min_div == 0 || _base_freq == 0) {
+		printError("Jlink: get_speeds invalid parameters: basefreq: " +
+			std::to_string(_base_freq) + " min div: " +
+			std::to_string(_min_div));
+		return false;
+	}
 
 	if (_debug) {
 		for (int i = 0; i < 6; i++)
@@ -508,6 +591,7 @@ void Jlink::get_speeds()
 		printf("%02x %04x\n", _base_freq, _min_div);
 		printf("%u %u\n", _base_freq, _min_div);
 	}
+	return true;
 }
 
 int Jlink::setClkFreq(uint32_t clkHz)
@@ -520,12 +604,21 @@ int Jlink::setClkFreq(uint32_t clkHz)
 		clkHz = max_freq;
 	}
 
-	if (!cmd_write(EMU_CMD_SET_SPEED, static_cast<uint16_t>(clkHz / 1000))) {
+	uint32_t clkkHz = clkHz / 1000;
+	if (clkkHz == 0) {
+		printWarn("Jlink: freq too low, set to 1kHz");
+		clkkHz = 1;
+	} else if (clkkHz > 0xfffe) { // avoid adaptive clocking
+		printWarn("Jlink: freq too high, set to max: avoid adaptive clocking");
+		clkkHz = 0xfffe;
+	}
+
+	if (!cmd_write(EMU_CMD_SET_SPEED, static_cast<uint16_t>(clkkHz))) {
 		printError("setClkFreq: fail to configure frequency");
 		return -EXIT_FAILURE;
 	}
 
-	_clkHZ = clkHz;
+	_clkHZ = clkkHz * 1000;
 	return _clkHZ;
 }
 
@@ -592,8 +685,14 @@ bool Jlink::set_interface(uint8_t interface)
 {
 	uint8_t buf[2] = {EMU_CMD_SELECT_IF, interface};
 	uint8_t res[4];
-	write_device(buf, 2);
-	read_device(res, 4);
+	if (!write_device(buf, 2)) {
+		printError("Jlink: fails to set interface");
+		return false;
+	}
+	if (read_device(res, 4) != 4) {
+		printError("Jlink: fails to read set interface answer");
+		return false;
+	}
 	if (_debug) {
 		printf("set interface: ");
 		for (int i = 0; i < 4; i++)
@@ -603,10 +702,14 @@ bool Jlink::set_interface(uint8_t interface)
 	return true;
 }
 
-void Jlink::read_config()
+bool Jlink::read_config()
 {
 	jlink_cfg_t cfg;
-	cmd_read(EMU_CMD_READ_CONFIG, reinterpret_cast<uint8_t*>(&cfg), 256);
+	if (!cmd_read(EMU_CMD_READ_CONFIG, reinterpret_cast<uint8_t*>(&cfg),
+		256)) {
+		printError("Jlink: fails to read configuration");
+		return false;
+	}
 
 	if (_verbose) {
 		printf("usb_adr   : %02x\n", cfg.usb_adr);
@@ -621,6 +724,8 @@ void Jlink::read_config()
 		}
 		printf("\n");
 	}
+
+	return true;
 }
 
 bool Jlink::jlink_search_interface(libusb_device *dev,
@@ -630,6 +735,7 @@ bool Jlink::jlink_search_interface(libusb_device *dev,
 	bool found = false;
 	*interface_idx = -1;
 	*config_idx = -1;
+	*alt_idx = -1;
 	/* 1. iterate on all interface */
 	for (int cfg_idx = 0; cfg_idx < desc->bNumConfigurations; cfg_idx++) {
 		struct libusb_config_descriptor *cfg;
@@ -650,6 +756,7 @@ bool Jlink::jlink_search_interface(libusb_device *dev,
 				if (intfClass == 0xff && intfSubClass == 0xff) {
 					if (found) {
 						printError("too many compatible interface");
+						libusb_free_config_descriptor(cfg);
 						return false;
 					}
 					found = true;
@@ -663,7 +770,7 @@ bool Jlink::jlink_search_interface(libusb_device *dev,
 		}
 		libusb_free_config_descriptor(cfg);
 	}
-	return true;
+	return found;
 }
 
 bool Jlink::jlink_scan_usb(int vid, int pid)
