@@ -12,12 +12,8 @@
 #include <stdio.h>
 #include <string.h>
 
-#include <iostream>
-#include <map>
-#include <vector>
 #include <string>
 #include <stdexcept>
-
 
 #include "display.hpp"
 
@@ -35,7 +31,7 @@
 LibgpiodJtagBitbang::LibgpiodJtagBitbang(
 		const jtag_pins_conf_t *pin_conf,
 		const std::string &dev, uint32_t /*clkHz*/,
-		int8_t verbose):_verbose(verbose>1)
+		int8_t verbose):_verbose(verbose > 1)
 {
 	_tck_pin = pin_conf->tck_pin;
 	_tms_pin = pin_conf->tms_pin;
@@ -46,11 +42,13 @@ LibgpiodJtagBitbang::LibgpiodJtagBitbang(
 	if (chip_dev.empty())
 		chip_dev = "/dev/gpiochip0";
 
-	display("libgpiod jtag bitbang driver, dev=%s, tck_pin=%d, tms_pin=%d, tdi_pin=%d, tdo_pin=%d\n",
+	display("libgpiod jtag bitbang driver, dev=%s, tck_pin=%d, tms_pin=%d, "
+		"tdi_pin=%d, tdo_pin=%d\n",
 		chip_dev.c_str(), _tck_pin, _tms_pin, _tdi_pin, _tdo_pin);
 
 	if (chip_dev.length() < 14 || chip_dev.substr(0, 13) != "/dev/gpiochip") {
-		display("Invalid gpio chip %s, should be /dev/gpiochipX\n", chip_dev.c_str());
+		display("Invalid gpio chip %s, should be /dev/gpiochipX\n",
+			chip_dev.c_str());
 		throw std::runtime_error("Invalid gpio chip\n");
 	}
 
@@ -72,8 +70,10 @@ LibgpiodJtagBitbang::LibgpiodJtagBitbang(
 
 		for (uint32_t j = i + 1; j < sizeof(pins) / sizeof(pins[0]); j++) {
 			if (pins[i] == pins[j]) {
-				display("Two or more pins are assigned to the same pin number %d\n", pins[i]);
-				throw std::runtime_error("Two or more pins are assigned to the same pin number\n");
+				display("Two or more pins are assigned to the same pin "
+					"number %d\n", pins[i]);
+				throw std::runtime_error("Two or more pins are assigned to "
+					"the same pin number\n");
 			}
 		}
 	}
@@ -116,7 +116,11 @@ LibgpiodJtagBitbang::LibgpiodJtagBitbang(
 		_chip, _out_req_cfg, _out_line_cfg);
 
 	/* set default values for all GPIOs */
-	enum gpiod_line_value val[3] = {GPIOD_LINE_VALUE_INACTIVE, _curr_tdi, _curr_tms};
+	enum gpiod_line_value val[3] = {
+		GPIOD_LINE_VALUE_INACTIVE,
+		_curr_tdi,
+		_curr_tms
+	};
 	gpiod_line_request_set_values_subset(_out_request, 3, _out_pins, val);
 #else
 	_curr_tdi = 0;
@@ -262,38 +266,43 @@ int LibgpiodJtagBitbang::setClkFreq(uint32_t /*clkHz*/)
 }
 
 int LibgpiodJtagBitbang::writeTMS(const uint8_t *tms_buf, uint32_t len,
-		bool /*flush_buffer*/, uint8_t /*tdi*/)
+		bool /*flush_buffer*/, uint8_t tdi)
 {
-	if (len == 0) // nothing -> stop
+	if (len == 0)  // nothing -> stop
 		return len;
+#ifdef GPIOD_APIV2
+	const gpiod_line_value new_tdi = (tdi) ? GPIOD_LINE_VALUE_ACTIVE :
+		GPIOD_LINE_VALUE_INACTIVE;
+#endif
 
 	for (uint32_t i = 0; i < len; i++) {
 #ifdef GPIOD_APIV2
 		gpiod_line_value tms = ((tms_buf[i >> 3] & (1 << (i & 7))) ?
 				GPIOD_LINE_VALUE_ACTIVE : GPIOD_LINE_VALUE_INACTIVE);
-		update_pins(tms, _curr_tdi);
+		update_pins(tms, new_tdi);
 #else
 		int tms = ((tms_buf[i >> 3] & (1 << (i & 7))) ? 1 : 0);
 
-		update_pins(0, tms, 0);
-		update_pins(1, tms, 0);
+		update_pins(0, tms, tdi);
+		update_pins(1, tms, tdi);
 #endif
 	}
 
 	return len;
 }
 
-int LibgpiodJtagBitbang::writeTDI(const uint8_t *tx, uint8_t *rx, uint32_t len, bool end)
+int LibgpiodJtagBitbang::writeTDI(const uint8_t *tx, uint8_t *rx, uint32_t len,
+	bool end)
 {
 #ifdef GPIOD_APIV2
-	gpiod_line_value tdi = GPIOD_LINE_VALUE_INACTIVE;
+	gpiod_line_value tdi = _curr_tdi;
 #else
 	int tms = _curr_tms;
 	int tdi = _curr_tdi;
 #endif
 
 	if (rx)
-		memset(rx, 0, len / 8);
+		memset(rx, 0, (len + 7) / 8);
 
 	for (uint32_t i = 0; i < len; i++) {
 #ifdef GPIOD_APIV2
@@ -328,30 +337,35 @@ int LibgpiodJtagBitbang::writeTDI(const uint8_t *tx, uint8_t *rx, uint32_t len, 
 	return len;
 }
 
-int LibgpiodJtagBitbang::toggleClk(uint8_t tms, uint8_t tdi, uint32_t clk_len)
+int LibgpiodJtagBitbang::toggleClk(uint8_t /*tms*/, uint8_t /*tdi*/,
+	uint32_t clk_len)
 {
 	for (uint32_t i = 0; i < clk_len; i++) {
 #ifdef GPIOD_APIV2
-		gpiod_line_request_set_value(_out_request, _tck_pin, GPIOD_LINE_VALUE_INACTIVE);
-		gpiod_line_request_set_value(_out_request, _tck_pin, GPIOD_LINE_VALUE_ACTIVE);
+		gpiod_line_request_set_value(_out_request, _tck_pin,
+			GPIOD_LINE_VALUE_INACTIVE);
+		gpiod_line_request_set_value(_out_request, _tck_pin,
+			GPIOD_LINE_VALUE_ACTIVE);
 #else
-		update_pins(0, tms, tdi);
-		update_pins(1, tms, tdi);
+		update_pins(0, _curr_tms, _curr_tdi);
+		update_pins(1, _curr_tms, _curr_tdi);
 #endif
 	}
 
 	return clk_len;
 }
 
-bool LibgpiodJtagBitbang::writeTMSTDI(const uint8_t *tms, const uint8_t *tdi, uint8_t *tdo,
-				      uint32_t len)
+bool LibgpiodJtagBitbang::writeTMSTDI(const uint8_t *tms, const uint8_t *tdi,
+		uint8_t *tdo, uint32_t len)
 {
-	memset(tdo, 0, (len+7) / 8);
+	memset(tdo, 0, (len + 7) / 8);
 
 	for (uint32_t i = 0; i < len; i++) {
 #ifdef GPIOD_APIV2
-		gpiod_line_value tdix = (tdi[i >> 3] & (1 << (i & 7))) ? GPIOD_LINE_VALUE_ACTIVE : GPIOD_LINE_VALUE_INACTIVE;
-		gpiod_line_value tmsx = (tms[i >> 3] & (1 << (i & 7))) ? GPIOD_LINE_VALUE_ACTIVE : GPIOD_LINE_VALUE_INACTIVE;
+		gpiod_line_value tdix = (tdi[i >> 3] & (1 << (i & 7))) ?
+			GPIOD_LINE_VALUE_ACTIVE : GPIOD_LINE_VALUE_INACTIVE;
+		gpiod_line_value tmsx = (tms[i >> 3] & (1 << (i & 7))) ?
+			GPIOD_LINE_VALUE_ACTIVE : GPIOD_LINE_VALUE_INACTIVE;
 		update_pins(tmsx, tdix);
 #else
 		int tdix = (tdi[i >> 3] & (1 << (i & 7))) ? 1 : 0;
