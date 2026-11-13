@@ -41,7 +41,7 @@ std::string LatticeBitParser::fmtIdcode(uint32_t id)
 
 int LatticeBitParser::parseHeader()
 {
-	int currPos = 0;
+	uint32_t currPos = 0;
 
 	if (_raw_data.empty()) {
 		printError("LatticeBitParser: empty bitstream");
