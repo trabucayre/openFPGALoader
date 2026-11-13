@@ -137,7 +137,6 @@ CmsisDAP::CmsisDAP(const cable_t &cable, int index, uint32_t clkHZ, int8_t verbo
 	if (!_ll_buffer)
 		throw std::runtime_error("internal buffer allocation failed");
 	_buffer = _ll_buffer+2;
-	char t[256];
 #ifdef ENABLE_CMSISDAP_V2
 #ifdef ENABLE_CMSISDAP_V1
 	const bool err_as_info = true;
