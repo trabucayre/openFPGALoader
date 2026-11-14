@@ -30,14 +30,16 @@ XVC_client::XVC_client(const std::string &ip_addr, int port,
 		uint32_t clkHz, int8_t verbose):
 	_verbose(verbose > 0), _xfer_buf(NULL), _tms(NULL), _tditdo(NULL),
 	_num_bits(0), _last_tms(0), _last_tdi(0), _buffer_size(0),
-	_preferred_xfer_bits(0), _sock(0), _port(port)
+	_preferred_xfer_bits(0), _sock(-1), _port(port)
 {
 	if (!open_connection(ip_addr))
 		throw std::runtime_error("connection failure");
 
 	uint8_t buffer[2048];
-	if (xfer_pkt("getinfo:", NULL, 0, buffer, 2048) <= 0)
+	if (xfer_pkt("getinfo:", NULL, 0, buffer, 2048) <= 0) {
+		cleanup();
 		throw std::runtime_error("can't read info");
+	}
 
 	std::regex r("[_:]");
 	std::string rep((const char *)buffer);
@@ -45,8 +47,10 @@ XVC_client::XVC_client(const std::string &ip_addr, int port,
 	std::sregex_token_iterator start{ rep.begin(), rep.end(), r, -1 }, end;
 	std::vector<std::string> toto(start, end);
 
-	if (toto.size() != 3)
+	if (toto.size() != 3) {
+		cleanup();
 		throw std::runtime_error("wrong getinfo: answer");
+	}
 
 	_server_name = std::move(toto[0]);
 	_server_vers = std::move(toto[1]);
@@ -58,8 +62,10 @@ XVC_client::XVC_client(const std::string &ip_addr, int port,
 	_tms = reinterpret_cast<uint8_t *>(malloc(sizeof(uint8_t) * _buffer_size));
 	_tditdo = reinterpret_cast<uint8_t *>(malloc(sizeof(uint8_t) *
 				_buffer_size));
-	if (!_xfer_buf || !_tms || !_tditdo)
+	if (!_xfer_buf || !_tms || !_tditdo) {
+		cleanup();
 		throw std::runtime_error("buffer allocation failure");
+	}
 
 	char disp[2048];
 	snprintf(disp, sizeof(disp), "detected %s version %s packet size %u",
@@ -67,10 +73,18 @@ XVC_client::XVC_client(const std::string &ip_addr, int port,
 
 	printInfo(disp);
 
-	setClkFreq(clkHz);
+	if (setClkFreq(clkHz) == -EXIT_FAILURE) {
+		cleanup();
+		throw std::runtime_error("Failed to set clk frequency");
+	}
 }
 
 XVC_client::~XVC_client()
+{
+	cleanup();
+}
+
+void XVC_client::cleanup()
 {
 	// flush buffers before quit
 	if (_num_bits != 0)
@@ -84,16 +98,19 @@ XVC_client::~XVC_client()
 	if (_tditdo)
 		free(_tditdo);
 	// close socket
-	close(_sock);
+	if (_sock != -1)
+		close(_sock);
 }
 
 int XVC_client::writeTMS(const uint8_t *tms, uint32_t len, bool flush_buffer,
-		const uint8_t /*tdi*/)
+		const uint8_t tdi)
 {
 	// empty buffer
 	// if asked flush
 	if (len == 0)
 		return ((flush_buffer) ? flush() : 0);
+
+	_last_tdi = tdi;
 
 	for (uint32_t pos = 0; pos < len; pos++) {
 		// buffer full -> write
@@ -105,15 +122,17 @@ int XVC_client::writeTMS(const uint8_t *tms, uint32_t len, bool flush_buffer,
 		}
 
 		_last_tms = (tms[pos >> 3] & (1 << (pos & 0x07))) ? 1 : 0;
+		const uint32_t offset = _num_bits >> 3;
+		const uint8_t set_bit = (1 << (_num_bits & 0x07));
 
 		if (_last_tms)
-			_tms[(_num_bits >> 3)] |= (1 << (_num_bits & 0x07));
+			_tms[offset] |= set_bit;
 		else
-			_tms[(_num_bits >> 3)] &= ~(1 << (_num_bits & 0x07));
+			_tms[offset] &= ~set_bit;
 		if (_last_tdi)
-			_tditdo[(_num_bits >> 3)] |= (1 << (_num_bits & 0x07));
+			_tditdo[offset] |= set_bit;
 		else
-			_tditdo[(_num_bits >> 3)] &= ~(1 << (_num_bits & 0x07));
+			_tditdo[offset] &= ~set_bit;
 		_num_bits++;
 	}
 
@@ -155,23 +174,22 @@ int XVC_client::writeTDI(const uint8_t *tx, uint8_t *rx, uint32_t len, bool end)
 		if (rx)
 			rx_ptr += tt;
 	}
+	/* Save last tdi state for futur use */
+	const uint32_t last = len - 1;
+	_last_tdi = (tx[last >> 3] >> (last & 0x07)) & 1;
 
 	return len;
 }
 
 // toggle clk with constant TDI and TMS. More or less same idea as writeTDI
-int XVC_client::toggleClk(uint8_t tms, uint8_t tdi, uint32_t clk_len)
+int XVC_client::toggleClk(uint8_t /*tms*/, uint8_t /*tdi*/, uint32_t clk_len)
 {
 	// nothing to do
 	if (clk_len == 0)
 		return 0;
-	if (_num_bits != 0)
-		flush();
 
-	_last_tms = tms;
-	_last_tdi = tdi;
-	uint8_t curr_tms = (tms) ? 0xff: 0x00;
-	uint8_t curr_tdi = (tdi) ? 0xff: 0x00;
+	const uint8_t curr_tms = (_last_tms) ? 0xff: 0x00;
+	const uint8_t curr_tdi = (_last_tdi) ? 0xff: 0x00;
 
 	uint32_t len = clk_len;
 
@@ -202,7 +220,7 @@ int XVC_client::flush()
 int XVC_client::setClkFreq(uint32_t clkHz)
 {
 	double clk_periodf = (1e9 / clkHz);
-	uint32_t clk_period = (uint32_t)floor(clk_periodf);
+	uint32_t clk_period = static_cast<uint32_t>(floor(clk_periodf));
 
 	_xfer_buf[0] = static_cast<uint8_t>((clk_period >>  0) & 0xff);
 	_xfer_buf[1] = static_cast<uint8_t>((clk_period >>  8) & 0xff);
@@ -252,20 +270,20 @@ int sendall(int sock, const void* raw, size_t cnt, int flags)
 	size_t remaining = cnt;
 	while (remaining) {
 		ssize_t ret = send(sock, buf, remaining, flags);
-		if (ret==0) // should not happen on Linux for a TCP socket
+		if (ret == 0)  // should not happen on Linux for a TCP socket
 			throw std::logic_error("platform TCP send() returns zero?!?");
 		if (ret < 0)
 			return ret;
 		buf += ret;
 		remaining -= ret;
 	}
-	return cnt; // success
+	return cnt;  // success
 }
 
 static
 ssize_t recvall(int sock, void* raw, size_t cnt, int flags)
 {
-	char *buf = (char*)raw;
+	char *buf = reinterpret_cast<char*>(raw);
 	size_t remaining = cnt;
 	while (remaining) {
 		ssize_t ret = recv(sock, buf, remaining, flags);

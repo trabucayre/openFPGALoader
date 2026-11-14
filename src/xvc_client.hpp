@@ -43,7 +43,8 @@ class XVC_client: public JtagInterface {
 		 * \param[in] flush_buffer: force buffer to be send or not
 		 * \return <= 0 if something wrong, len otherwise
 		 */
-		int writeTMS(const uint8_t *tms, uint32_t len, bool flush_buffer, const uint8_t tdi = 1) override;
+		int writeTMS(const uint8_t *tms, uint32_t len, bool flush_buffer,
+			const uint8_t tdi = 1) override;
 
 		/*!
 		 * \brief write and read len bits with optional tms set to 1 if end
@@ -53,12 +54,14 @@ class XVC_client: public JtagInterface {
 		 * \param[in] end: if true tms is set to one with the last tdi bit
 		 * \return <= 0 if something wrong, len otherwise
 		 */
-		int writeTDI(const uint8_t *tx, uint8_t *rx, uint32_t len, bool end) override;
+		int writeTDI(const uint8_t *tx, uint8_t *rx, uint32_t len,
+			bool end) override;
 
 		/*!
-		 * \brief send a serie of clock cycle with constant TMS and TDI
-		 * \param[in] tms: tms state
-		 * \param[in] tdi: tdi state
+		 * \brief send a serie of clock cycle with maintains of TMS and TDI
+		 *   previous states
+		 * \param[in] tms: tms state (unused)
+		 * \param[in] tdi: tdi state (unused)
 		 * \param[in] clk_len: number of clock cycle
 		 * \return <= 0 if something wrong, clk_len otherwise
 		 */
@@ -104,6 +107,11 @@ class XVC_client: public JtagInterface {
 		bool open_connection(const std::string &ip_addr);
 
 		/*!
+		 * \brief cleanup/free resources uses
+		 */
+		void cleanup();
+
+		/*!
 		 * \brief sent instruction followed by tx buffer and read answer
 		 * \param[in] instr: ascii instruction
 		 * \param[in] tx: data buffer to send
@@ -134,8 +142,8 @@ class XVC_client: public JtagInterface {
 		uint32_t _last_tdi; /*!< last known TDI state */
 
 		uint32_t _buffer_size;
-		uint32_t _preferred_xfer_bits; /*!< _buffer_size*8, computed once
-						  in ctor once negotiated */
+		uint32_t _preferred_xfer_bits; /*!< _buffer_size*8, computed once */
+						  /* in ctor once negotiated */
 		std::string _server_name;
 		std::string _server_vers;
 		int _sock;
