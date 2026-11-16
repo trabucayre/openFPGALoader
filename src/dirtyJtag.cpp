@@ -16,7 +16,6 @@
 #include "dirtyJtag.hpp"
 #include "display.hpp"
 
-
 #define DIRTYJTAG_VID 0x1209
 #define DIRTYJTAG_PID 0xC0CA
 
@@ -60,27 +59,28 @@ enum dirtyJtagSig {
 	SIG_SRST = (1 << 6)
 };
 
-DirtyJtag::DirtyJtag(uint32_t clkHz, int8_t verbose, uint16_t vid, uint16_t pid):
-			_verbose(verbose),
-			dev_handle(NULL), usb_ctx(NULL), _tdi(0), _tms(0), _version(0)
+DirtyJtag::DirtyJtag(uint32_t clkHz, int8_t verbose, uint16_t vid, uint16_t pid,
+			uint8_t bus_addr, uint8_t dev_addr, const std::string &serial):
+			libusb_ll(0, 0, verbose), dev_handle(NULL), _tdi(0), _tms(0),
+			_version(0)
 {
 	int ret;
 
-	if (libusb_init(&usb_ctx) < 0)
-		throw std::runtime_error("DirtyJtag: libusb init failed");
+	int found = get_devices_list(vid, pid, bus_addr, dev_addr, serial, false);
+	if (found < 1)
+		throw std::runtime_error("dirtyJtag: No device found");
+	if (found > 1)
+		throw std::runtime_error("Too many devices");
 
-	dev_handle = libusb_open_device_with_vid_pid(usb_ctx, vid, pid);
-	if (!dev_handle) {
-		libusb_exit(usb_ctx);
+	struct libusb_device *dev = usb_dev_list()[0];
+
+	if (libusb_open(dev, &dev_handle) < 0)
 		throw std::runtime_error("DirtyJtag: fails to open device");
-	}
 
 	ret = libusb_claim_interface(dev_handle, DIRTYJTAG_INTF);
 	if (ret) {
 		libusb_close(dev_handle);
 		dev_handle = NULL;
-		libusb_exit(usb_ctx);
-		usb_ctx = NULL;
 		throw std::runtime_error("DirtyJtag: libusb error while claiming interface");
 	}
 
@@ -101,10 +101,6 @@ void DirtyJtag::close_usb()
 		libusb_release_interface(dev_handle, DIRTYJTAG_INTF);
 		libusb_close(dev_handle);
 		dev_handle = NULL;
-	}
-	if (usb_ctx) {
-		libusb_exit(usb_ctx);
-		usb_ctx = NULL;
 	}
 }
 

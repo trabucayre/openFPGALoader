@@ -145,7 +145,8 @@ Jtag::Jtag(const cable_t &cable,
 		break;
 	case MODE_DIRTYJTAG:
 #ifdef ENABLE_DIRTYJTAG
-		_jtag = new DirtyJtag(clkHZ, verbose, cable.vid, cable.pid);
+		_jtag = new DirtyJtag(clkHZ, verbose, cable.vid, cable.pid,
+			cable.bus_addr, cable.device_addr, serial);
 #else
 		std::cerr << "Jtag: support for dirtyJtag cable was not enabled at compile time" << std::endl;
 		throw std::exception();
