@@ -14,7 +14,7 @@
 #include "jtagInterface.hpp"
 
 #define XPCU_DEFAULT_VID 0x03fd
-#define XPCU_DEFAULT_PID 0x0013
+#define XPCU_DEFAULT_PID 0x0008
 
 /*!
  * \file xilinxPlatformCableUSB.hpp
