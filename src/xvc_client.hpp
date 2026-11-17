@@ -6,7 +6,16 @@
 #ifndef SRC_XVC_CLIENT_HPP_
 #define SRC_XVC_CLIENT_HPP_
 
+#include <cstddef>
+#include <cstdint>
 #include <string>
+
+#ifdef _WIN32
+using xvc_socket_t = std::uintptr_t;
+#else
+using xvc_socket_t = int;
+#endif
+using xvc_ssize_t = std::ptrdiff_t;
 
 #include "jtagInterface.hpp"
 
@@ -107,6 +116,11 @@ class XVC_client: public JtagInterface {
 		bool open_connection(const std::string &ip_addr);
 
 		/*!
+		 * \brief close a TCP socket if open
+		 */
+		void close_connection();
+
+		/*!
 		 * \brief cleanup/free resources uses
 		 */
 		void cleanup();
@@ -121,7 +135,7 @@ class XVC_client: public JtagInterface {
 		 * \param[in] rx_exact: block until exactly rx_size bytes received
 		 * \return -1 when error, 0 when disconnected or tx_size/rx_size
 		 */
-		ssize_t xfer_pkt(const std::string &instr,
+		xvc_ssize_t xfer_pkt(const std::string &instr,
 				const uint8_t *tx, uint32_t tx_size,
 				uint8_t *rx, uint32_t rx_size, bool rx_exact = false);
 
@@ -146,7 +160,7 @@ class XVC_client: public JtagInterface {
 						  /* in ctor once negotiated */
 		std::string _server_name;
 		std::string _server_vers;
-		int _sock;
+		xvc_socket_t _sock;
 		int _port;                /*!< target port */
 };
 #endif  // SRC_XVC_CLIENT_HPP_

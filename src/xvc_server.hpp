@@ -10,12 +10,17 @@
 #ifndef SRC_XVC_SERVER_HPP_
 #define SRC_XVC_SERVER_HPP_
 
-#include <netinet/in.h>
-
+#include <cstdint>
 #include <string>
 #include <thread>
 
 #include "jtag.hpp"
+
+#ifdef _WIN32
+using xvc_server_socket_t = std::uintptr_t;
+#else
+using xvc_server_socket_t = int;
+#endif
 
 class XVC_server {
 	public:
@@ -64,7 +69,7 @@ class XVC_server {
 		 * \return 2 when connection is closed, 1 when transactions fails,
 		 *         0 otherwise
 		 */
-		int handle_data(int fd);
+		int handle_data(xvc_server_socket_t fd);
 		/*!
 		 * \brief read len bytes from client
 		 * \param fd: socket descriptor
@@ -72,13 +77,13 @@ class XVC_server {
 		 * \param len: number of bytes to read
 		 * \return 3 when failure, 2 when connection closed, 1 otherwise
 		 */
-		int sread(int fd, void *target, int len);
+		int sread(xvc_server_socket_t fd, void *target, int len);
 
 	    int _verbose;          /*!< verbose level */
 		JtagInterface *_jtag;  /*!< jtag interface */
 		int _port;             /*!< network port */
-		int _sock;             /*!< server socket descriptor */
-		struct sockaddr_in _sock_addr;
+		xvc_server_socket_t _sock; /*!< server socket descriptor */
+		bool _winsock_started;
 		std::thread *_thread;  /*!< connection thread */
 		volatile bool _is_stopped;      /*!< true when thread is stopped */
 		volatile bool _must_stop;       /*!< true to stop thread */

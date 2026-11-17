@@ -5,15 +5,19 @@
 
 #include "xvc_client.hpp"
 
+#ifdef _WIN32
+#include <ws2tcpip.h>
+#else
 #include <arpa/inet.h>
 #include <netinet/in.h>
 #include <sys/types.h>
 #include <sys/socket.h>
+#include <unistd.h>
+#endif
 #include <stdio.h>
 #include <stdlib.h>
 #include <strings.h>
 #include <string.h>
-#include <unistd.h>
 #include <math.h>
 
 #include <map>
@@ -25,12 +29,16 @@
 
 #include "display.hpp"
 
+#ifndef _WIN32
+#define SOCKET_ERROR   (-1)
+#define INVALID_SOCKET (-1)
+#endif
 
 XVC_client::XVC_client(const std::string &ip_addr, int port,
 		uint32_t clkHz, int8_t verbose):
 	_verbose(verbose > 0), _xfer_buf(NULL), _tms(NULL), _tditdo(NULL),
 	_num_bits(0), _last_tms(0), _last_tdi(0), _buffer_size(0),
-	_preferred_xfer_bits(0), _sock(-1), _port(port)
+	_preferred_xfer_bits(0), _sock(INVALID_SOCKET), _port(port)
 {
 	if (!open_connection(ip_addr))
 		throw std::runtime_error("connection failure");
@@ -98,8 +106,7 @@ void XVC_client::cleanup()
 	if (_tditdo)
 		free(_tditdo);
 	// close socket
-	if (_sock != -1)
-		close(_sock);
+	close_connection();
 }
 
 int XVC_client::writeTMS(const uint8_t *tms, uint32_t len, bool flush_buffer,
@@ -243,34 +250,63 @@ int XVC_client::setClkFreq(uint32_t clkHz)
 
 bool XVC_client::open_connection(const std::string &ip_addr)
 {
-	struct sockaddr_in addr;
+#ifdef _WIN32
+	WSADATA wsa_data;
+	if (WSAStartup(MAKEWORD(2, 2), &wsa_data) != 0) {
+		printError("Winsock initialization error");
+		return false;
+	}
+#endif
+	struct sockaddr_in addr = {};
 	addr.sin_family = AF_INET;
 	addr.sin_port = htons(_port);
 	addr.sin_addr.s_addr = inet_addr(ip_addr.c_str());
 
 	_sock = socket(AF_INET, SOCK_STREAM, IPPROTO_TCP);
-	if (_sock == -1) {
+	if (_sock == INVALID_SOCKET) {
 		printError("Socket creation error");
+		close_connection();
 		return false;
 	}
 
-	if (connect(_sock, (struct sockaddr *)&addr, sizeof(addr)) == -1) {
+	if (connect(_sock, (struct sockaddr *)&addr, sizeof(addr)) == SOCKET_ERROR) {
 		printError("Connection error");
-		close(_sock);
+		close_connection();
 		return false;
 	}
 
 	return true;
 }
 
+void XVC_client::close_connection()
+{
+	if (_sock != INVALID_SOCKET) {
+#ifdef _WIN32
+		closesocket(static_cast<SOCKET>(_sock));
+#else
+		close(_sock);
+#endif
+		_sock = INVALID_SOCKET;
+	}
+#ifdef _WIN32
+	WSACleanup();
+#endif
+}
+
 static
-int sendall(int sock, const void* raw, size_t cnt, int flags)
+int sendall(xvc_socket_t sock, const void* raw, size_t cnt, int flags)
 {
 	const char *buf = (const char*)raw;
 	size_t remaining = cnt;
 	while (remaining) {
-		ssize_t ret = send(sock, buf, remaining, flags);
-		if (ret == 0)  // should not happen on Linux for a TCP socket
+		xvc_ssize_t ret = send(
+#ifdef _WIN32
+			static_cast<SOCKET>(sock),
+#else
+			sock,
+#endif
+			buf, remaining, flags);
+		if (ret==0) // should not happen on Linux for a TCP socket
 			throw std::logic_error("platform TCP send() returns zero?!?");
 		if (ret < 0)
 			return ret;
@@ -281,12 +317,18 @@ int sendall(int sock, const void* raw, size_t cnt, int flags)
 }
 
 static
-ssize_t recvall(int sock, void* raw, size_t cnt, int flags)
+xvc_ssize_t recvall(xvc_socket_t sock, void* raw, size_t cnt, int flags)
 {
 	char *buf = reinterpret_cast<char*>(raw);
 	size_t remaining = cnt;
 	while (remaining) {
-		ssize_t ret = recv(sock, buf, remaining, flags);
+		xvc_ssize_t ret = recv(
+#ifdef _WIN32
+			static_cast<SOCKET>(sock),
+#else
+			sock,
+#endif
+			buf, remaining, flags);
 		if (ret < 0)
 			return ret;
 		if (ret == 0)  // peer closed the connection mid-reply
@@ -297,11 +339,11 @@ ssize_t recvall(int sock, void* raw, size_t cnt, int flags)
 	return cnt - remaining;
 }
 
-ssize_t XVC_client::xfer_pkt(const std::string &instr,
+xvc_ssize_t XVC_client::xfer_pkt(const std::string &instr,
 		const uint8_t *tx, uint32_t tx_size,
 		uint8_t *rx, uint32_t rx_size, bool rx_exact)
 {
-	ssize_t len = tx_size;
+	xvc_ssize_t len = tx_size;
 	std::vector<uint8_t> buffer(instr.size() + ((tx) ? tx_size : 0));
 	memcpy(buffer.data(), instr.c_str(), instr.size());
 	if (tx)
@@ -316,7 +358,7 @@ ssize_t XVC_client::xfer_pkt(const std::string &instr,
 		if (rx_exact) {
 			len = recvall(_sock, rx, rx_size, 0);
 		} else {
-			len = recv(_sock, rx, rx_size, 0);
+			len = recv(_sock, reinterpret_cast<char *>(rx), rx_size, 0);
 		}
 		if (len < 0) {
 			printError("Receive error");
