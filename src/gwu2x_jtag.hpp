@@ -29,7 +29,8 @@ class GowinGWU2x: public JtagInterface, private libusb_ll
 	 * \param len: number of bit to send
 	 * \return number of bit send/received
 	 */
-	int writeTMS(const uint8_t *tms, uint32_t len, bool flush_buffer, const uint8_t tdi = 1) override;
+	int writeTMS(const uint8_t *tms, uint32_t len, bool flush_buffer,
+		const uint8_t tdi = 1) override;
 
 	/*!
 	 * \brief send TDI bits (mainly in shift DR/IR state)

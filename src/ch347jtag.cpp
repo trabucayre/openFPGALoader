@@ -55,7 +55,8 @@ int CH347Jtag::usb_xfer(unsigned wlen, unsigned rlen, unsigned *ract, bool defer
 {
 	int actual_length = 0;
 	if (_verbose) {
-		fprintf(stderr, "usb_xfer: deferred: %ld\n", obuf - _obuf);
+		fprintf(stderr, "usb_xfer: deferred: %d\n",
+			static_cast<int>(obuf - _obuf));
 	}
 	if (defer && !rlen && obuf - _obuf + wlen < (MAX_BUFFER - 12)) {
 		obuf += wlen;
@@ -302,8 +303,7 @@ int CH347Jtag::writeTMS(const uint8_t *tms, uint32_t len, bool flush_buffer,
 	return len;
 }
 
-int CH347Jtag::toggleClk(__attribute__((unused)) uint8_t tms,
-	__attribute__((unused)) uint8_t tdi, uint32_t len)
+int CH347Jtag::toggleClk(uint8_t /*tms*/, uint8_t /*tdi*/, uint32_t len)
 {
 	const uint8_t bits = _tms | _tdi;
 

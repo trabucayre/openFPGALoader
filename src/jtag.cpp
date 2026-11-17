@@ -95,11 +95,15 @@
  *           - envoyer le dernier avec 0x4B ou 0x6B
  */
 
-Jtag::Jtag(const cable_t &cable, const jtag_pins_conf_t *pin_conf,
-			const std::string &dev,
-			const std::string &serial, uint32_t clkHZ, int8_t verbose,
-			const std::string &ip_adr, int port,
-			const bool invert_read_edge, const std::string &firmware_path,
+Jtag::Jtag(const cable_t &cable,
+			[[maybe_unused]] const jtag_pins_conf_t *pin_conf,
+			[[maybe_unused]] const std::string &dev,
+			[[maybe_unused]] const std::string &serial,
+			uint32_t clkHZ, int8_t verbose,
+			[[maybe_unused]] const std::string &ip_adr,
+			[[maybe_unused]] int port,
+			[[maybe_unused]] const bool invert_read_edge,
+			[[maybe_unused]] const std::string &firmware_path,
 			const std::map<uint32_t, misc_device> &user_misc_devs):
 			_verbose(verbose > 1),
 			_state(RUN_TEST_IDLE),

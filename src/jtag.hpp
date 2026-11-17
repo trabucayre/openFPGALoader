@@ -138,6 +138,9 @@ class Jtag {
 	void set_state(tapState_t newState, const uint8_t tdi = 1);
 	int flushTMS(bool flush_buffer = false);
 	void flush() {flushTMS(); _jtag->flush();}
+	uint32_t preferred_xfer_bits(uint32_t default_bits) {
+		return _jtag->preferred_xfer_bits(default_bits);
+	}
 	void setTMS(unsigned char tms);
 
 	const char *getStateName(tapState_t s);

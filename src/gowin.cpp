@@ -438,7 +438,8 @@ void Gowin::checkCRC()
 	try {
 		std::string hdr = _fs->getHeaderVal("CheckSum");
 		if (!hdr.empty()) {
-			if (ucode == strtol(hdr.c_str(), NULL, 16))
+			if (ucode == static_cast<uint32_t>(
+					strtoul(hdr.c_str(), NULL, 16)))
 				goto success;
 		}
 	} catch (std::exception &e) {}

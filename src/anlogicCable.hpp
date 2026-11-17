@@ -19,22 +19,26 @@
 
 class AnlogicCable : public JtagInterface {
  public:
-	AnlogicCable(uint32_t clkHZ);
+	explicit AnlogicCable(uint32_t clkHZ);
+	AnlogicCable(const AnlogicCable &) = delete;
+	AnlogicCable &operator=(const AnlogicCable &) = delete;
 	virtual ~AnlogicCable();
 
-	int setClkFreq(uint32_t clkHZ) override;
+	int setClkFreq(uint32_t clkHz) override;
 
 	/* TMS */
-	int writeTMS(const uint8_t *tms, uint32_t len, bool flush_buffer, const uint8_t tdi = 1) override;
+	int writeTMS(const uint8_t *tms, uint32_t len, bool flush_buffer,
+		const uint8_t tdi = 1) override;
 	/* TDI */
-	int writeTDI(const uint8_t *tx, uint8_t *rx, uint32_t len, bool end) override;
+	int writeTDI(const uint8_t *tx, uint8_t *rx, uint32_t len,
+		bool end) override;
 	/* clk */
 	int toggleClk(uint8_t tms, uint8_t tdi, uint32_t clk_len) override;
 
 	/*!
 	 * \brief return internal buffer size (in byte).
-	 * \return _buffer_size divided by 2 (two byte for clk) and divided by 8 (one
-	 * state == one byte)
+	 * \return _buffer_size divided by 2 (two byte for clk) and divided by
+	 * 8 (one state == one byte)
 	 */
 	int get_buffer_size() override { return 0;}
 
@@ -45,7 +49,13 @@ class AnlogicCable : public JtagInterface {
  private:
 	int write(uint8_t *in_buf, uint8_t *out_buf, int len, int rd_len);
 
+	/* \brief cleanup USB resources
+	 */
+	void cleanup();
+
 	libusb_device_handle *dev_handle;
 	libusb_context *usb_ctx;
+	uint8_t _curr_tdi;  /* current/latests tdi written */
+	uint8_t _curr_tms;  /* current/latests tms written */
 };
 #endif  // SRC_ANLOGICCABLE_HPP_

@@ -64,7 +64,7 @@ class Jlink: public JtagInterface {
 		 * \param[out] tdo: tdo buffer
 		 * \param[in] numbits: tms/tdi/tdo buffer size (in bit)
 		 */
-		virtual bool writeTMSTDI(const uint8_t *tms, const uint8_t *tdi,
+		bool writeTMSTDI(const uint8_t *tms, const uint8_t *tdi,
 				uint8_t *tdo, uint32_t numbits) override;
 
 		/*!
@@ -90,11 +90,11 @@ class Jlink: public JtagInterface {
 
 		// JLINK specifics methods
 		std::string get_version();
-		void get_speeds();
+		bool get_speeds();
 		bool set_speed(uint16_t freqHz);
 		bool get_caps();
 		bool set_ks_power(bool val);
-		void read_config();
+		bool read_config();
 		int get_hw_version();
 		bool get_result();
 		bool max_mem_block(uint32_t *max_mem);
@@ -138,9 +138,9 @@ class Jlink: public JtagInterface {
 			uint8_t reserved2[24];  // 0x08 - 0x1F: 0xff
 			uint32_t ip_address;    // IP-Address (Only for J-Link Pro)
 			uint32_t subnetmask;    // subnetmask (Only for J-Link Pro)
-			uint8_t reserved3[8];   // 0x08 - 0x1F: 0xff
+			uint8_t reserved3[8];   // 0x28 - 0x2F: 0xff
 			uint8_t mackaddr[6];    // MAC-Address (Only for J-Link Pro)
-			uint8_t reserved[202];  // MAC-Address (Only for J-Link Pro)
+			uint8_t reserved[202];  // 0x36 - 0xFF: 0xff
 		} __attribute__((__packed__));
 		typedef jlink_cfg_t jlink_cfg;
 
@@ -190,6 +190,13 @@ class Jlink: public JtagInterface {
 			"EMU_CAP_RAWTRACE",
 			"Reserved"
 		};
+
+		/*!
+		 * \brief performs a cleanup around usb context and device handle
+		 * 	avoids to let some things partially init/pending when CTOR
+		 * 	throws exception
+		 */
+		void cleanup();
 
 		/*!
 		 * \brief lowlevel write: EMU_CMD_HW_JTAGx implementation
@@ -285,7 +292,7 @@ class Jlink: public JtagInterface {
 		} jlink_devices_t;
 
 		uint32_t _base_freq; /*!< JLink interface frequency */
-		uint16_t _min_div;   /*!> dividor applied to base freq */
+		uint16_t _min_div;   /*!< dividor applied to base freq */
 
 		int jlink_write_ep;  /*!< jlink write endpoint */
 		int jlink_read_ep;   /*!< jlink read endpoint */
@@ -301,7 +308,7 @@ class Jlink: public JtagInterface {
 		// each jlink's buffer have 2K Byte
 		// enough to send full jtag write
 		// buffers must be independent
-		uint8_t _xfer_buf[(2048*2) + 4]; /*!> internal buffer */
+		uint8_t _xfer_buf[(2048*2) + 4]; /*!< internal buffer */
 		uint8_t _tms[2048]; /*!< TMS buffer */
 		uint8_t _tdi[2048]; /*!< TDI buffer */
 		uint32_t _num_bits; /*!< number of bits stored */

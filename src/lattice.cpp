@@ -380,6 +380,7 @@ bool Lattice::program_mem()
 	 */
 	/*flag to understand if we refreshed or not*/
 	bool was_refreshed;
+	(void)was_refreshed;
 	switch (_fpga_family) {
 		case NEXUS_FAMILY:
 			//if (!checkStatus(0, REG_STATUS_PRV_CNF_CHK_MASK)) {

@@ -52,7 +52,8 @@ class XVC_client: public JtagInterface {
 		 * \param[in] flush_buffer: force buffer to be send or not
 		 * \return <= 0 if something wrong, len otherwise
 		 */
-		int writeTMS(const uint8_t *tms, uint32_t len, bool flush_buffer, const uint8_t tdi = 1) override;
+		int writeTMS(const uint8_t *tms, uint32_t len, bool flush_buffer,
+			const uint8_t tdi = 1) override;
 
 		/*!
 		 * \brief write and read len bits with optional tms set to 1 if end
@@ -62,12 +63,14 @@ class XVC_client: public JtagInterface {
 		 * \param[in] end: if true tms is set to one with the last tdi bit
 		 * \return <= 0 if something wrong, len otherwise
 		 */
-		int writeTDI(const uint8_t *tx, uint8_t *rx, uint32_t len, bool end) override;
+		int writeTDI(const uint8_t *tx, uint8_t *rx, uint32_t len,
+			bool end) override;
 
 		/*!
-		 * \brief send a serie of clock cycle with constant TMS and TDI
-		 * \param[in] tms: tms state
-		 * \param[in] tdi: tdi state
+		 * \brief send a serie of clock cycle with maintains of TMS and TDI
+		 *   previous states
+		 * \param[in] tms: tms state (unused)
+		 * \param[in] tdi: tdi state (unused)
 		 * \param[in] clk_len: number of clock cycle
 		 * \return <= 0 if something wrong, clk_len otherwise
 		 */
@@ -79,10 +82,25 @@ class XVC_client: public JtagInterface {
 		 */
 		int flush() override;
 
-		/*
-		 * unused
+		/*!
+		 * \brief return the TDI/TMS buffer size negotiated with the
+		 *        XVC server via getinfo (in byte)
 		 */
-		int get_buffer_size() override { return 2048;}
+		int get_buffer_size() override { return _buffer_size;}
+
+		/*!
+		 * \brief let callers (e.g. Efinix::programJTAG) chunk large
+		 *        writeTDI() bursts by the server's negotiated buffer
+		 *        size instead of a small caller-side default, so a
+		 *        single writeTDI() call maps to a single XVC "shift:"
+		 *        command instead of many small ones
+		 */
+		uint32_t preferred_xfer_bits(uint32_t default_bits) override
+		{
+			return (_preferred_xfer_bits > default_bits) ?
+				_preferred_xfer_bits : default_bits;
+		}
+
 		bool isFull() override { return false;}
 
 		std::string server_name() {return _server_name;}
@@ -101,6 +119,11 @@ class XVC_client: public JtagInterface {
 		 * \brief close a TCP socket if open
 		 */
 		void close_connection();
+
+		/*!
+		 * \brief cleanup/free resources uses
+		 */
+		void cleanup();
 
 		/*!
 		 * \brief sent instruction followed by tx buffer and read answer
@@ -133,6 +156,8 @@ class XVC_client: public JtagInterface {
 		uint32_t _last_tdi; /*!< last known TDI state */
 
 		uint32_t _buffer_size;
+		uint32_t _preferred_xfer_bits; /*!< _buffer_size*8, computed once */
+						  /* in ctor once negotiated */
 		std::string _server_name;
 		std::string _server_vers;
 		xvc_socket_t _sock;

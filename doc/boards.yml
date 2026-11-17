@@ -738,6 +738,14 @@
   Memory: OK
   Flash: OK
 
+- ID: picoevb
+  Description: RHS Research PicoEVB Rev D
+  URL: https://github.com/RHSResearchLLC/PicoEVB
+  FPGA: Artix xc7a50tcsg325
+  Memory: OK
+  Flash: OK
+  Constraints: PicoEVB
+
 - ID: pipistrello
   Description: Saanlima Pipistrello LX45
   URL: http://pipistrello.saanlima.com/index.php?title=Welcome_to_Pipistrello
@@ -1015,6 +1023,13 @@
   Memory: NA
   Flash: OK
 
+- ID: ulx5m_dfu
+  Description: Radiona ULX5M-GS DFU mode
+  URL: https://github.com/intergalaktik/ulx5m-gs
+  FPGA: Cologne Chip GateMate Series (GM1A1)
+  Memory: NA
+  Flash: OK
+
 - ID: vec_v6
   Description: Xilinx VCU118
   URL: https://vmm-srs.docs.cern.ch/
@@ -1055,7 +1070,7 @@
   URL: https://www.xilinx.com/products/boards-and-kits/vcu1525-a.html
   FPGA: Virtex UltraScale+ xcvu9p-fsgd2104
   Memory: OK
-  Flash: NT
+  Flash: OK
 
 - ID: xtrx
   Description: FairWaves XTRXPro

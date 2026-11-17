@@ -107,6 +107,7 @@ class UsbBlaster : public JtagInterface {
 	uint8_t _tms_pin; /*!< tms pin: 1 << pin id */
 	uint8_t _tdi_pin; /*!< tdi pin: 1 << pin id */
 	int _nb_bit;
+	uint8_t _curr_tdi;
 	uint8_t _curr_tms;
 	uint16_t _buffer_size;
 	bool _passive_serial_mode;
@@ -121,7 +122,7 @@ class UsbBlaster : public JtagInterface {
  */
 class UsbBlasterI: public UsbBlaster_ll {
 	public:
-		UsbBlasterI();
+		UsbBlasterI(uint16_t pid);
 		virtual ~UsbBlasterI();
 
 		int setClkFreq(uint32_t clkHZ) override;

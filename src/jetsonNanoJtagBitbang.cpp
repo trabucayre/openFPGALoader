@@ -57,10 +57,9 @@
 #define GPIO_SET_BIT(REG, BIT) 		REG |= 1UL << BIT
 #define GPIO_CLEAR_BIT(REG, BIT) 	REG &= ~(1UL << BIT)
 
-JetsonNanoJtagBitbang::JetsonNanoJtagBitbang(
-		const jtag_pins_conf_t *pin_conf,
-		const std::string &dev, __attribute__((unused)) uint32_t clkHZ,
-		int8_t verbose):_verbose(verbose>1);
+JetsonNanoJtagBitbang::JetsonNanoJtagBitbang(const jtag_pins_conf_t *pin_conf,
+		const std::string &dev, uint32_t /*clkHz*/,
+		int8_t verbose):_verbose(verbose>1)
 {
 	uint32_t tms_port_reg, tck_port_reg, tdi_port_reg, tdo_port_reg;
 
@@ -200,7 +199,7 @@ int JetsonNanoJtagBitbang::read_tdo()
 	return (_tdo_port->IN>>_tdo_pin) & 0x01;
 }
 
-int JetsonNanoJtagBitbang::setClkFreq(__attribute__((unused)) uint32_t clkHZ)
+int JetsonNanoJtagBitbang::setClkFreq(uint32_t /*clkHz*/)
 {
 	// FIXME: The assumption is that calling the gpiod_line_set_value
 	// routine will limit the clock frequency to lower than what is specified.
@@ -208,9 +207,8 @@ int JetsonNanoJtagBitbang::setClkFreq(__attribute__((unused)) uint32_t clkHZ)
 	return 0;
 }
 
-int JetsonNanoJtagBitbang::writeTMS(uint8_t *tms_buf, uint32_t len,
-		__attribute__((unused)) bool flush_buffer,
-		__attribute__((unused)) const uint8_t tdi)
+int JetsonNanoJtagBitbang::writeTMS(const uint8_t *tms_buf, uint32_t len,
+		bool /*flush_buffer*/, const uint8_t /*tdi*/)
 {
 	int tms;
 
@@ -229,7 +227,8 @@ int JetsonNanoJtagBitbang::writeTMS(uint8_t *tms_buf, uint32_t len,
 	return len;
 }
 
-int JetsonNanoJtagBitbang::writeTDI(uint8_t *tx, uint8_t *rx, uint32_t len, bool end)
+int JetsonNanoJtagBitbang::writeTDI(const uint8_t *tx, uint8_t *rx,
+		uint32_t len, bool end)
 {
 	int tms = _curr_tms;
 	int tdi = _curr_tdi;

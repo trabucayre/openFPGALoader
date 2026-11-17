@@ -415,7 +415,7 @@ Xilinx::Xilinx(Jtag *jtag, const std::string &filename,
 		_fpga_family = KINTEXUSP_FAMILY;
 	} else if (family == "artixusp") {
 		_fpga_family = ARTIXUSP_FAMILY;
-	} else if (family == "spartanusp") {		
+	} else if (family == "spartanusp") {
 		if (_file_extension != "pdi") {
 			char mess[256];
 			snprintf(mess, 256, "Error: only volatile PDI programing for "
@@ -908,10 +908,12 @@ float Xilinx::get_spiOverJtag_version()
 	uint32_t idcode = _jtag->get_target_device_id();
 
 	/* Select the correct device and its associated USER4 register */
-	if (fpga_list[idcode].family == "virtexusp" & fpga_list[idcode].model == "xcvu7p") {
+	if (fpga_list[idcode].family == "virtexusp" &&
+			fpga_list[idcode].model == "xcvu7p") {
 		_jtag->shiftIR(get_ircode(_ircode_map, "USER4"), NULL, _irlen);
 	}
-	else if (fpga_list[idcode].family == "virtexusp" & fpga_list[idcode].model == "xcvu9p") {
+	else if (fpga_list[idcode].family == "virtexusp" &&
+			fpga_list[idcode].model == "xcvu9p") {
         	_jtag->shiftIR(get_ircode(_ircode_map, "USER4"), NULL, _irlen);
 	}
 	else {
@@ -1041,8 +1043,8 @@ void Xilinx::program_mem(ConfigBitstreamParser *bitfile)
 	if (_file_extension == "pdi") {
 		_jtag->toggleClk(2000);
 		/*
-		* 17: For PDI devices, use the STATUS instruction 
-		*     to verify successful configuration.          
+		* 17: For PDI devices, use the STATUS instruction
+		*     to verify successful configuration.
 		*/
 		unsigned char tx_data[6]= {0x00, 0x00, 0x00, 0x00, 0x00, 0x00};
 		unsigned char rx_data[6];
@@ -1139,6 +1141,10 @@ static const std::map<std::string, std::list<reg_struct_t>> reg_content = {
 			{1, "Bottom ICAPE2 Port Enabled"}),
 		REG_ENTRY("EFUSE key",      31, 1,
 			{0, "Battery backed RAM"}, {1, "eFUSE"}),
+	}},
+	// UG470 Table 5-40
+	{"CTRL1", std::list<reg_struct_t>{
+		REG_ENTRY("Reserved",  0, 32),
 	}},
 	{"STAT", std::list<reg_struct_t>{
 		REG_ENTRY("CRC Error",       0, 1,
@@ -1307,8 +1313,7 @@ void Xilinx::displayRegister(const std::string reg_name, const uint32_t reg_val)
 	for (reg_struct_t r: regs) {
 		uint8_t offset = r.offset;
 		uint8_t size = r.size;
-		uint32_t mask = (1 << size) - 1;
-		uint32_t val = (reg_val >> offset) & mask;
+		uint32_t val = (size == 32) ? reg_val : ((reg_val >> offset) & ((1 << size) - 1));
 		std::stringstream ss, desc;
 		desc << r.description;
 		ss << std::setw(16) << std::left << r.description;
@@ -2046,13 +2051,13 @@ static constexpr uint8_t _gray_code[256] = {
 void Xilinx::xc2c_init(uint32_t idcode)
 {
 	_fpga_family = XC2C_FAMILY;
-	std::string model = fpga_list[idcode].model;
-	size_t underscore_pos = model.find_first_of('_', 0);
-	if (underscore_pos == model.npos) {
-		underscore_pos = model.length();
-	}
-	snprintf(_cpld_base_name, underscore_pos,
-			"%s", model.substr(0, underscore_pos).c_str());
+
+	const std::string model = fpga_list[idcode].model;
+	const size_t underscore_pos = model.find('_');
+	const std::string base_name = model.substr(0, underscore_pos);
+
+	snprintf(_cpld_base_name, sizeof(_cpld_base_name),
+			"%s", base_name.c_str());
 	switch ((idcode >> 16) & 0x3f) {
 	case 0x01: /* xc2c32 */
 	case 0x11: /* xc2c32a PC44 */

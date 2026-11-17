@@ -178,8 +178,7 @@ int DirtyJtag::setClkFreq(uint32_t clkHz)
 }
 
 int DirtyJtag::writeTMS(const uint8_t *tms, uint32_t len,
-		__attribute__((unused)) bool flush_buffer,
-		const uint8_t tdi)
+		bool /*flush_buffer*/, const uint8_t tdi)
 {
 	int actual_length;
 
@@ -222,8 +221,7 @@ int DirtyJtag::writeTMS(const uint8_t *tms, uint32_t len,
 	return len;
 }
 
-int DirtyJtag::toggleClk(__attribute__((unused)) uint8_t tms,
-	__attribute__((unused)) uint8_t tdi, uint32_t clk_len)
+int DirtyJtag::toggleClk(uint8_t /*tms*/, uint8_t /*tdi*/, uint32_t clk_len)
 {
 	int actual_length;
 	uint8_t buf[] = {CMD_CLK,
@@ -236,7 +234,7 @@ int DirtyJtag::toggleClk(__attribute__((unused)) uint8_t tms,
 		int ret = libusb_bulk_transfer(dev_handle, DIRTYJTAG_WRITE_EP,
 				buf, 4, &actual_length, DIRTYJTAG_TIMEOUT);
 		if (ret < 0) {
-			std::cerr << "toggleClk: usb bulk write failed " << ret << std::endl;
+			std::cerr << "toggleClk: usb bulk write failed " << ret << "\n";
 			return -EXIT_FAILURE;
 		}
 		clk_len -= buf[2];
