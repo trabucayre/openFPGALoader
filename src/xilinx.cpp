@@ -475,7 +475,15 @@ Xilinx::Xilinx(Jtag *jtag, const std::string &filename,
 	}
 
 	if (read_xadc) {
-		if (_fpga_family == ARTIX_FAMILY || _fpga_family == KINTEXUS_FAMILY) {
+		if (_fpga_family == ARTIX_FAMILY || _fpga_family == KINTEX_FAMILY ||
+			_fpga_family == KINTEXUS_FAMILY ||
+			_fpga_family == KINTEXUSP_FAMILY) {
+			const bool is_kintexusp = _fpga_family == KINTEXUSP_FAMILY;
+			const double temp_scale = is_kintexusp ? 509.314  // ref: UG580
+				: 503.975; // ref: UG480 XACC
+			const double temp_offset = is_kintexusp ? 280.23  // ref: UG580
+				: 273.15; // ref: UG480 XACC
+
 			// calibrate XADC
 			Xilinx::xadc_single(8);
 
@@ -486,9 +494,12 @@ Xilinx::Xilinx(Jtag *jtag, const std::string &filename,
 			for (int i = 0; i < TEMP_MEAS; i++) {
 				v += Xilinx::xadc_single(XADC_TEMP);
 			}
-			double temp = ((v/(double)TEMP_MEAS) * 503.975)/(1 << 16) - 273.15;
-			double max_temp = (Xilinx::xadc_single(XADC_TEMP_MAX) * 503.975)/(1 << 16) - 273.15;
-			double min_temp = (Xilinx::xadc_single(XADC_TEMP_MIN) * 503.975)/(1 << 16) - 273.15;
+			double temp = ((v/(double)TEMP_MEAS) * temp_scale)/(1 << 16) -
+				temp_offset;
+			double max_temp = (Xilinx::xadc_single(XADC_TEMP_MAX) *
+				temp_scale)/(1 << 16) - temp_offset;
+			double min_temp = (Xilinx::xadc_single(XADC_TEMP_MIN) *
+				temp_scale)/(1 << 16) - temp_offset;
 
 			unsigned int channel_values[32];
 			for (int ch = 0; ch < MAX_CHANNEL; ch++) {
@@ -503,13 +514,19 @@ Xilinx::Xilinx(Jtag *jtag, const std::string &filename,
 				channel_values[ch] = v;
 			}
 
-			double vccint = (Xilinx::xadc_single(XADC_VCCINT)>>4)/4096.0 * 3.0; // ref: UG480
-			double vccintmax = (Xilinx::xadc_single(XADC_VCCINT + XADC_VCC_MAXOFFSET)>>4)/4096.0 * 3.0; // ref: UG480
-			double vccintmin = (Xilinx::xadc_single(XADC_VCCINT + XADC_VCC_MINOFFSET)>>4)/4096.0 * 3.0; // ref: UG480
+			double vccint = (Xilinx::xadc_single(XADC_VCCINT)>>4)/4096.0 *
+				3.0; // ref: UG480
+			double vccintmax = (Xilinx::xadc_single(XADC_VCCINT +
+				XADC_VCC_MAXOFFSET)>>4)/4096.0 * 3.0; // ref: UG480
+			double vccintmin = (Xilinx::xadc_single(XADC_VCCINT +
+				XADC_VCC_MINOFFSET)>>4)/4096.0 * 3.0; // ref: UG480
 
-			double vccaux = (Xilinx::xadc_single(XADC_VCCAUX)>>4)/4096.0 * 3.0; // ref: UG480
-			double vccauxmax = (Xilinx::xadc_single(XADC_VCCAUX + XADC_VCC_MAXOFFSET)>>4)/4096.0 * 3.0; // ref: UG480
-			double vccauxmin = (Xilinx::xadc_single(XADC_VCCAUX + XADC_VCC_MINOFFSET)>>4)/4096.0 * 3.0; // ref: UG480
+			double vccaux = (Xilinx::xadc_single(XADC_VCCAUX)>>4)/4096.0 *
+				3.0; // ref: UG480
+			double vccauxmax = (Xilinx::xadc_single(XADC_VCCAUX +
+				XADC_VCC_MAXOFFSET)>>4)/4096.0 * 3.0; // ref: UG480
+			double vccauxmin = (Xilinx::xadc_single(XADC_VCCAUX +
+				XADC_VCC_MINOFFSET)>>4)/4096.0 * 3.0; // ref: UG480
 
 			/* output as JSON dict */
 			std::cout << "{";
@@ -530,7 +547,9 @@ Xilinx::Xilinx(Jtag *jtag, const std::string &filename,
 			std::cout << "   \"minvccaux\": " << vccauxmin << ", " << std::endl;
 			std::cout << "}" << std::endl;
 		} else {
-			throw std::runtime_error("Error: read_xadc only supported for Artix 7");
+			throw std::runtime_error(
+				"Error: read_xadc only supported for Artix 7 / Kintex 7 / "
+				"Kintex UltraScale / Kintex UltraScale+ devices");
 		}
 	}
 }
