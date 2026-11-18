@@ -227,7 +227,7 @@ int SPIFlash::sectors_erase(int base_addr, int size)
 	if (!sector_rdy)
 		step = 0x1000;
 
-	printf("start addr: %08x, end_addr: %08x\n", base_addr, (base_addr + size + 0xffff) & ~0xffff);
+	printf("start addr: %08x, end_addr: %08x\n", base_addr, end_addr);
 
 	for (int addr = start_addr; addr < end_addr; addr += step) {
 		if (write_enable() == -1) {
