@@ -134,6 +134,9 @@ class SPIFlash {
 		uint16_t readVolatileCfgReg();
 		bool set_quad_bit(bool set_quad);
 
+		bool enter_4Byte_addr_mode();
+		bool exit_4Byte_addr_mode();
+
 	protected:
 		/*!
 		 * \brief retrieve TB (Top/Bottom) bit from one register
@@ -180,6 +183,7 @@ class SPIFlash {
 		bool _unprotect; /**< allows to unprotect memory before write */
 		bool _must_relock;
 		uint8_t _status;
+		bool _addr_4b_mode; /**< 4-byte address mode: 4-byte address for all instructions */
 };
 
 #endif  // SRC_SPIFLASH_HPP_
