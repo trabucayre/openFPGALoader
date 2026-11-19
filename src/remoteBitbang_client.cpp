@@ -12,7 +12,7 @@
 #include <sys/socket.h>
 #include <stdio.h>
 #include <stdlib.h>
-#include <strings.h>
+#include <cstring>
 #include <string.h>
 #include <unistd.h>
 #include <math.h>

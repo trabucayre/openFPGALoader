@@ -11,9 +11,9 @@
 #include <stdlib.h>
 #include <stdint.h>
 #include <string.h>
-#include <strings.h>
 
 #include <algorithm>
+#include <cstring>
 #include <fstream>
 #include <iostream>
 #include <iterator>

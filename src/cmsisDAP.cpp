@@ -4,7 +4,6 @@
  */
 
 #include <cstdint>
-#include <cstring>
 #ifdef ENABLE_CMSISDAP_V1
 #include <hidapi.h>
 #endif
@@ -13,10 +12,10 @@
 #endif
 #include <stdio.h>
 #include <stdlib.h>
-#include <strings.h>
 #include <string.h>
 #include <unistd.h>
 
+#include <cstring>
 #include <iostream>
 #include <map>
 #include <stdexcept>

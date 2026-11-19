@@ -7,12 +7,12 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-#include <strings.h>
 #include <unistd.h>
 
 #include <iostream>
 #include <stdexcept>
 
+#include <cstring>
 #include "display.hpp"
 #include "fsparser.hpp"
 #include "gowin.hpp"
