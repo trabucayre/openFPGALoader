@@ -278,8 +278,8 @@ int main(int argc, char **argv)
 
 	if (!args.usb_serial_num.empty()) {
 		if (cable.type != MODE_FTDI_SERIAL && cable.type != MODE_FTDI_BITBANG &&
-			cable.type != MODE_ESP){
-			printError("Error: usb-serial-num param is for FTDI and esp32s3 cables.");
+			cable.type != MODE_ESP && cable.type != MODE_DIRTYJTAG){
+			printError("Error: usb-serial-num param is for FTDI, esp32s3 and dirtyJtag cables.");
 			return EXIT_FAILURE;
 		}
 	}
@@ -963,7 +963,7 @@ int parse_opt(int argc, char **argv, struct arguments *args,
 			("busdev-num",
 				"select a probe by it bus and device number (bus_num:device_addr)",
 				cxxopts::value<std::vector<std::string>>(bus_dev_num))
-			("usb-serial-num", "USB iSerial (FTDI chip serial number or ESP32 iSerialNumber substring)",
+			("usb-serial-num", "USB iSerial (FTDI chip or DirtyJTAG serial number, or ESP32 iSerialNumber substring)",
 				cxxopts::value<std::string>(args->usb_serial_num))
 			("ftdi-serial", "FTDI chip serial number (Deprecated)",
 				cxxopts::value<std::string>(ftdi_serial))

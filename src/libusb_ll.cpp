@@ -131,8 +131,15 @@ int libusb_ll::get_devices_list(const int vid, const int pid,
 		 * when unknown ignores the device
 		 */
 		std::string probe_type = get_probe_type(desc.idVendor, desc.idProduct);
-		if (probe_type.empty())
-			continue;
+		if (probe_type.empty()) {
+			/* When VID/PID or bus/dev addr are user provided
+			 * the device may be not listed / customized
+			 * -> uses unknown instead of ignoring them
+			 */
+			if (!vid_pid_filter && !bus_dev_filter)
+				continue;
+			probe_type = "unknown";
+		}
 
 		/* No informations requested nor serial provided
 		 * => store the current device and check the next one

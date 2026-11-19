@@ -8,7 +8,10 @@
 
 #include <libusb.h>
 
+#include <string>
+
 #include "jtagInterface.hpp"
+#include "libusb_ll.hpp"
 
 /*!
  * \file dirtyJtag.hpp
@@ -16,9 +19,11 @@
  * \brief concrete class between jtag implementation and DirtyJTAG probe
  * \author Gwenhael Goavec-Merou
  */
-class DirtyJtag : public JtagInterface {
+class DirtyJtag : public JtagInterface, private libusb_ll {
  public:
-	DirtyJtag(uint32_t clkHz, int8_t verbose, uint16_t vid = 0x1209, uint16_t pid = 0xC0CA);
+	DirtyJtag(uint32_t clkHz, int8_t verbose, uint16_t vid = 0x1209, uint16_t pid = 0xC0CA,
+			uint8_t bus_addr = 0, uint8_t dev_addr = 0,
+			const std::string &serial = "");
 	virtual ~DirtyJtag();
 
 	int setClkFreq(uint32_t clkHz) override;
@@ -70,8 +75,6 @@ class DirtyJtag : public JtagInterface {
 	bool gpio_clear(uint8_t gpio);
 
  private:
-	int8_t _verbose;
-
 	int sendBitBang(uint8_t mask, uint8_t val, uint8_t *read, bool last);
 	bool getVersion();
 	bool _set_gpio_level(uint8_t gpio, uint8_t val);
@@ -79,7 +82,6 @@ class DirtyJtag : public JtagInterface {
 	/* USB */
 	void close_usb();
 	libusb_device_handle *dev_handle;
-	libusb_context *usb_ctx;
 
 	uint8_t _tdi;
 	uint8_t _tms;
