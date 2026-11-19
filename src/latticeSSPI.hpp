@@ -7,6 +7,7 @@
 #define SRC_LATTICESSPI_HPP_
 
 #include <string>
+#include <vector>
 
 #include "device.hpp"
 #include "ftdispi.hpp"
@@ -37,9 +38,18 @@ class LatticeSSPI: public Device {
 			return ((readStatusReg() & mask) == val) ? true : false;
 		}
 
+		/*!
+		 * \brief compares spi_xx_buf size with parameters, growth capacity
+		 *    when buffers are too small
+		 * \param[in] size: requested min size
+		 */
+		void resize_spi_buffers(size_t size);
+
 		bool cmd_class_a(uint8_t cmd, uint8_t *rx, uint32_t len);
 		bool cmd_class_c(uint8_t cmd);
 		uint32_t char_array_to_word(const uint8_t *in);
 		FtdiSpi *_spi;
+		std::vector<uint8_t> _spi_rx_buf;  /*!< buffer used for spi rx */
+		std::vector<uint8_t> _spi_tx_buf;  /*!< buffer used for spi tx */
 };
 #endif  // SRC_LATTICESSPI_HPP_

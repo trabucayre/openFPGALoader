@@ -6,15 +6,16 @@
 #include "latticeSSPI.hpp"
 
 #include <string.h>
-#include <unistd.h>
 
 #define __STDC_FORMAT_MACROS
+#include <chrono>
 #include <cinttypes>
 #include <iomanip>
 #include <iostream>
 #include <list>
 #include <sstream>
 #include <string>
+#include <thread>
 
 #include "device.hpp"
 #include "ftdispi.hpp"
@@ -44,7 +45,8 @@
 LatticeSSPI::LatticeSSPI(FtdiSpi *spi, const std::string &filename,
 			const std::string &file_type,
 			const int8_t verbose):
-	Device(NULL, filename, file_type, false, verbose), _spi(spi)
+	Device(NULL, filename, file_type, false, verbose), _spi(spi),
+	_spi_rx_buf(256+4+4, 0), _spi_tx_buf(256+4+4, 0)
 {
 	_spi->setMode(0);
 }
@@ -97,8 +99,11 @@ bool LatticeSSPI::cmd_class_a(uint8_t cmd, uint8_t *rx, uint32_t len)
 {
 	const uint32_t xferByteLen = (len + 7) / 8;
 	const uint32_t kBytetLen = xferByteLen + 3;  // Convert bits to bytes after adding dummy
-	uint8_t lrx[kBytetLen];
-	uint8_t ltx[kBytetLen];
+	resize_spi_buffers(kBytetLen);
+
+	uint8_t *ltx = _spi_tx_buf.data();
+	uint8_t *lrx = _spi_rx_buf.data();
+
 	memset(ltx, 0x00, kBytetLen);
 
 	_spi->spi_put(cmd, ltx, lrx, kBytetLen);
@@ -203,7 +208,7 @@ bool LatticeSSPI::program_mem()
 	 * no bitstream is present on the SPI FLASH
 	 */
 	cmd_class_c(0x79);
-	usleep(8000);
+	std::this_thread::sleep_for(std::chrono::microseconds(8000));
 
 	/* ISC Enable 0xC6 */
 	printInfo("Enable configuration: ", false);
@@ -257,7 +262,7 @@ bool LatticeSSPI::program_mem()
 	_spi->setCs();
 	_spi->setCSmode(FtdiSpi::SPI_CS_AUTO);
 
-	usleep(1000);
+	std::this_thread::sleep_for(std::chrono::microseconds(1000));
 
 	/* disable configuration mode */
 	printInfo("Disable configuration: ", false);
@@ -368,4 +373,12 @@ void LatticeSSPI::displayReadReg(uint32_t dev)
 
 		printInfo(ss.str());
 	}
+}
+
+void LatticeSSPI::resize_spi_buffers(size_t size)
+{
+    if (_spi_rx_buf.size() < size) {
+        _spi_rx_buf.resize(size);
+        _spi_tx_buf.resize(size);
+    }
 }
