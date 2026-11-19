@@ -7,7 +7,6 @@
 #include <stdexcept>
 #include <string>
 #include <stdint.h>
-#include <strings.h>
 #include <unistd.h>
 
 #ifdef HAS_ZLIB
@@ -21,6 +20,8 @@
 #include <zlib.h>
 #endif
 #endif
+
+#include <cstring>
 
 #include "display.hpp"
 

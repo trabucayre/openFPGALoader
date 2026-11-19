@@ -5,11 +5,10 @@
 
 #include "latticeSSPI.hpp"
 
-#include <string.h>
-
 #define __STDC_FORMAT_MACROS
 #include <chrono>
 #include <cinttypes>
+#include <cstring>
 #include <iomanip>
 #include <iostream>
 #include <list>

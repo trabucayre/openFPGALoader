@@ -16,7 +16,7 @@
 #endif
 #include <stdio.h>
 #include <stdlib.h>
-#include <strings.h>
+#include <cstring>
 #include <string.h>
 #include <math.h>
 
