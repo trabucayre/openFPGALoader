@@ -301,7 +301,13 @@ int FsParser::parse()
 			l.reserve(payload_len * 8);
 			for (size_t i = 0; i < payload_len; i += 8) {
 				uint8_t c = bitToVal((const char *)&line[i], 8);
-				if (c == _8Zero)
+				/* The vendor tool never uses 0x00 as a key: when fewer
+				 * than three byte values are unused, it writes 0x00 for
+				 * the keys it could not assign, and 0x00 stays literal.
+				 */
+				if (c == 0x00)
+					l += line.substr(i, 8);
+				else if (c == _8Zero)
 					l += std::string(8*8, '0');
 				else if (c == _4Zero)
 					l += std::string(4*8, '0');
