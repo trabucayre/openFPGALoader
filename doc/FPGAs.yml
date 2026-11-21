@@ -440,6 +440,7 @@ Xilinx:
   - Description: Zynq7000
     Model:
       - xc7z010
+      - xc7z015
       - xc7z020
     URL: https://www.xilinx.com/products/silicon-devices/soc/zynq-7000.html
     Memory: OK
