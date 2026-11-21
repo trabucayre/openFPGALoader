@@ -233,8 +233,16 @@ Intel/Altera (Old Boards)
 
 .. NOTE::
 
-  * Cyclone II (FPGA) (Tested OK: EP2C5T144C8N)
+  * Cyclone II (FPGA) (Tested OK: EP2C5T144C8N, EP2C35F672C6)
   * Max II (CPLD) (Tested OK: EPM240T100C5N)
+
+Cyclone II also loads an uncompressed ``rbf`` into SRAM.
+openFPGALoader converts it to the JTAG stream Quartus' SVF uses, and fails if
+CONF_DONE is low afterwards:
+
+.. code-block:: bash
+
+    openFPGALoader -c usb-blaster project_name.rbf
 
 Loading a Serial Vector Format (.svf)
 -------------------------------------

@@ -7,6 +7,7 @@
 #define SRC_ALTERA_HPP_
 
 #include <string>
+#include <vector>
 
 #include "device.hpp"
 #include "jtag.hpp"
@@ -27,6 +28,7 @@ class Altera: public Device, FlashInterface {
 		~Altera();
 
 		void programMem(RawParser &_bit);
+		void programMem(const uint8_t *data, int byte_length);
 		void program(unsigned int offset, bool unprotect_flash) override;
 		/*!
 		 * \brief read len Byte starting at base_addr and store
@@ -93,9 +95,16 @@ class Altera: public Device, FlashInterface {
 			STRATIXV_FAMILY  = 4,
 			AGILEX3_FAMILY   = 5,
 			AGILEX5_FAMILY   = 6,
+			CYCLONE2_FAMILY  = 7,
 			CYCLONE_MISC     = 10, // Fixme: idcode shared
 			UNKNOWN_FAMILY   = 999
 		};
+
+		/**************************/
+		/*   cyclone II specific  */
+		/**************************/
+		std::vector<uint8_t> cyclone2_jtag_stream(const uint8_t *rbf,
+			int length);
 
 		/**************************/
 		/*     agilex specific    */
