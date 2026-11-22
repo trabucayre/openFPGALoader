@@ -382,6 +382,13 @@ Xilinx:
     Memory: OK
     Flash: OK
 
+  - Description: Spartan 3A/3AN
+    Model:
+      - xc3s700an
+    URL: https://www.xilinx.com/products/silicon-devices/fpga/spartan-3a.html
+    Memory: OK
+    Flash: TBD
+
   - Description: Spartan 6
     Model:
       - xc6slx9
