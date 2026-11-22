@@ -124,10 +124,20 @@ XilinxPlatformCableUSB::XilinxPlatformCableUSB(const uint16_t vid,
 			fx2 = std::make_unique<FX2_ll>(0, 0, vid, pid, "");
 		else
 			fx2 = std::make_unique<FX2_ll>(vid, pid, XPCU_INITIALIZED_VID,
-					XPCU_INITIALIZED_PID, firmware_file);
+					XPCU_INITIALIZED_PID, firmware_file, 3);
 	} catch (std::exception &e) {
 		printError(e.what());
 		throw std::runtime_error("lowlevel init failed");
+	}
+
+	/* after an upload, the device may still be at the uninitialized IDs
+	 * (clone cables that run the firmware without re-enumerating): make
+	 * sure the XPCU firmware really answers before going on
+	 */
+	if (!preloaded) {
+		uint8_t ver[2];
+		if (!fx2->read_ctrl(XPCU_BREQUEST, XPCU_CMD_GET_VERSION, ver, 2))
+			throw std::runtime_error("xilinxPlatformCableUSB: firmware not running after upload");
 	}
 
 	fx2->set_interface_alt_setting(0, 1);

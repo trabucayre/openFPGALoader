@@ -26,9 +26,16 @@ class FX2_ll {
 		 * \param[in] vid: vendor ID for initialized device
 		 * \param[in] pid: product ID for initialized device
 		 * \param[in] firmware_path: firmware to load
+		 * \param[in] no_reenum_fallback_s: when non-zero and the device has
+		 *            not re-enumerated as vid:pid after this many seconds
+		 *            following a firmware upload, but is still present as
+		 *            uninit_vid:uninit_pid, open it there (for cables whose
+		 *            firmware runs without re-enumerating). The caller must
+		 *            then check that the firmware actually answers.
 		 */
 		FX2_ll(uint16_t uninit_vid, uint16_t uninit_pid,
-				uint16_t vid, uint16_t pid, const std::string &firmware_path);
+				uint16_t vid, uint16_t pid, const std::string &firmware_path,
+				unsigned int no_reenum_fallback_s = 0);
 		~FX2_ll();
 
 		/*!
