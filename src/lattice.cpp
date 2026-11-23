@@ -161,6 +161,12 @@
 /* Nexus */
 #define REG_NEXUS_STATUS_BSE_ERR_MASK (0x0f << 24)
 
+#include <chrono>
+/* MachXO2 transparent (background) programming, set by --xo2-transparent (main.cpp) */
+bool g_ofl_xo2_transparent = false;
+/* read-only probe of the configuration interface, set by --xo2-probe (main.cpp) */
+bool g_ofl_xo2_probe = false;
+
 Lattice::Lattice(Jtag *jtag, const std::string filename, const std::string &file_type,
 	Device::prog_type_t prg_type, std::string flash_sector, bool verify, int8_t verbose, bool skip_load_bridge, bool skip_reset):
 		Device(jtag, filename, file_type, verify, verbose),
@@ -794,6 +800,241 @@ bool Lattice::program_intFlash(ConfigBitstreamParser *_cbp)
 	return true;
 }
 
+/* MachXO2 transparent (background) programming of the Configuration Flash and UFM (TN-02155 5.8, flash flow):
+ * ISC_ENABLE_X (0x74, 08 00 00) puts the configuration logic in transparent mode and leaves the device in user mode;
+ * the design keeps running. Erase CF/UFM (not the feature row), program, optionally verify, program DONE, then
+ * ISC_DISABLE. The new image is loaded by a later REFRESH (0x79), see Lattice::reset(). */
+bool Lattice::program_intFlash_transparent(JedParser &jed)
+{
+	uint16_t ufm_start = 0;
+	uint8_t eraseMode = FLASH_ERASE_CFG;
+	std::vector<std::string> ufm_data, cfg_data, ebr_data;
+
+	/* trace (with -v): status register and elapsed time after each step */
+	auto t0 = std::chrono::steady_clock::now();
+	auto trace = [&](const char *what) {
+		if (!_verbose)
+			return;
+		/* 32-bit LSC_READ_STATUS (0x3C), read raw (readStatusReg() sign-extends bit 31) */
+		uint8_t tx1[4] = {0, 0, 0, 0}, rx1[4] = {0, 0, 0, 0};
+		wr_rd(READ_STATUS_REGISTER, tx1, 4, rx1, 4);
+		_jtag->set_state(Jtag::RUN_TEST_IDLE);
+		_jtag->toggleClk(1000);
+		uint32_t st = rx1[0] | (rx1[1] << 8) | (rx1[2] << 16) | ((uint32_t)rx1[3] << 24);
+		long ms = (long)std::chrono::duration_cast<std::chrono::milliseconds>(
+				std::chrono::steady_clock::now() - t0).count();
+		char m[256];
+		snprintf(m, sizeof(m), "[trace +%5ldms] %-24s status=%08x DONE=%d ISC_EN=%d BUSY=%d FAIL=%d cnf=%d",
+			ms, what, st, (int)((st >> 8) & 1), (int)((st >> 9) & 1), (int)((st >> 12) & 1),
+			(int)((st >> 13) & 1), (int)((st >> 23) & 7));
+		printInfo(m);
+	};
+
+	for (size_t i = 0; i < jed.nb_section(); i++) {
+		std::string note = jed.noteForSection(i);
+		if (note == "TAG DATA") {
+			eraseMode |= FLASH_ERASE_UFM;
+			ufm_data = jed.data_for_section(i);
+			ufm_start = getUFMStartPageFromJEDEC(&jed, i);
+			if (ufm_start > 2045) {
+				printError("UFM section detected in JEDEC file, but "
+					"calculated flash start address was out of bounds");
+				return false;
+			}
+		} else if (note == "END CONFIG DATA") {
+			continue;
+		} else if (note == "EBR_INIT DATA") {
+			ebr_data = jed.data_for_section(i);
+		} else {
+			cfg_data = jed.data_for_section(i);
+		}
+	}
+
+	trace("before enable");
+	/* bypass, then ISC_ENABLE_X: transparent mode, the device stays in user mode */
+	wr_rd(0xff, NULL, 0, NULL, 0);
+	printInfo("Enable transparent configuration: ", false);
+	/* operand: ONE byte 0x08 (as OFL's offline ISC_ENABLE). TN-02155 writes "08 00 00", but the register keeps the
+	 * last 8 bits shifted, so 3 bytes leave 0x00 in it: status 00080f11 instead of 00080f19, flash reads return ff
+	 * and erase/program are ignored (board 1, 2026-11-23). */
+	uint8_t en[1] = {0x08};
+	wr_rd(ISC_ENABLE_TRANSPARENT, en, 1, NULL, 0);
+	_jtag->set_state(Jtag::RUN_TEST_IDLE);
+	_jtag->toggleClk(1000);
+	if (!pollBusyFlag()) {
+		printError("FAIL");
+		displayReadReg(readStatusReg());
+		return false;
+	}
+	printSuccess("DONE");
+	trace("after ISC_ENABLE_X");
+
+	/* the feature row is not touched in transparent mode: say so if the file differs from the device */
+	if (jed.featuresRow() != readFeaturesRow() || jed.feabits() != readFeabits())
+		printWarn("feature row / feabits of the file differ from the device: not written in transparent mode");
+
+	/* ISC ERASE: CF (+UFM), not the feature row */
+	printInfo("Flash erase (CF/UFM): ", false);
+	if (flashErase(eraseMode) == false) {
+		printError("FAIL");
+		return false;
+	}
+	printSuccess("DONE");
+	trace("after erase");
+
+	/* LSC_INIT_ADDRESS, program the configuration flash, EBR init */
+	wr_rd(0x46, NULL, 0, NULL, 0);
+	_jtag->set_state(Jtag::RUN_TEST_IDLE);
+	_jtag->toggleClk(1000);
+	trace("after init address");
+	if (false == flashProg(0, "data", cfg_data))
+		return false;
+	trace("after program data");
+	if (ebr_data.size()) {
+		if (false == flashProg(0, "EBR", ebr_data))
+			return false;
+		trace("after program EBR");
+	}
+	if (_verify) {
+		bool vok = Verify(cfg_data);
+		trace("after verify");
+		if (vok == false)
+			return false;
+	}
+
+	if ((eraseMode & FLASH_ERASE_UFM) != 0) {
+		uint8_t tx[4] = {
+			static_cast<uint8_t>(ufm_start & 0xff),
+			static_cast<uint8_t>((ufm_start >> 8) & 0xff),
+			0,
+			0x40
+		};
+		wr_rd(LSC_WRITE_ADDRESS, tx, 4, NULL, 0);
+		_jtag->set_state(Jtag::RUN_TEST_IDLE);
+		_jtag->toggleClk(1000);
+		if (false == flashProg(0, "UFM", ufm_data))
+			return false;
+	}
+
+	wr_rd(0x46, NULL, 0, NULL, 0);
+	_jtag->set_state(Jtag::RUN_TEST_IDLE);
+	_jtag->toggleClk(1000);
+
+	printInfo("Write program Done: ", false);
+	if (writeProgramDone() == false) {
+		printError("FAIL");
+		return false;
+	}
+	printSuccess("DONE");
+	trace("after program done");
+
+	wr_rd(0xff, NULL, 0, NULL, 0);
+	printInfo("Disable configuration: ", false);
+	if (!DisableISC()) {
+		printError("FAIL");
+		return false;
+	}
+	printSuccess("DONE");
+	trace("after ISC_DISABLE");
+	printInfo("Transparent write finished: the design was not stopped; --reset (REFRESH) loads the new image");
+	return true;
+}
+
+/* --xo2-probe: read-only look at the configuration interface in user mode. Reads IDCODE, status and busy, enters
+ * transparent mode (0x74) with a 1-byte and with a 3-byte operand, reads again, leaves with ISC_DISABLE + BYPASS.
+ * Bounded polls. No erase, no program. */
+bool Lattice::xo2_probe()
+{
+	auto raw = [&](const char *what, uint8_t cmd, int len) {
+		uint8_t tx[8] = {0, 0, 0, 0, 0, 0, 0, 0}, rx[8] = {0, 0, 0, 0, 0, 0, 0, 0};
+		wr_rd(cmd, tx, len, rx, len);
+		_jtag->set_state(Jtag::RUN_TEST_IDLE);
+		_jtag->toggleClk(1000);
+		char m[200];
+		int n = snprintf(m, sizeof(m), "[probe] %-34s cmd %02x ->", what, cmd);
+		for (int i = len - 1; i >= 0; i--)
+			n += snprintf(m + n, sizeof(m) - n, " %02x", rx[i]);
+		printInfo(m);
+	};
+	auto busy = [&](const char *what) {
+		uint8_t first = 0, last = 0;
+		int i;
+		for (i = 0; i < 200; i++) {
+			uint8_t rx = 0;
+			wr_rd(READ_BUSY_FLAG, NULL, 0, &rx, 1);
+			_jtag->set_state(Jtag::RUN_TEST_IDLE);
+			_jtag->toggleClk(1000);
+			if (i == 0)
+				first = rx;
+			last = rx;
+			if (rx == 0)
+				break;
+		}
+		char m[200];
+		snprintf(m, sizeof(m), "[probe] %-34s busy first %02x last %02x after %d reads", what, first, last,
+			(i < 200) ? i + 1 : 200);
+		printInfo(m);
+	};
+	auto enter = [&](const char *what, int oplen) {
+		uint8_t en[3] = {0x08, 0x00, 0x00};
+		wr_rd(0xff, NULL, 0, NULL, 0);
+		wr_rd(ISC_ENABLE_TRANSPARENT, en, oplen, NULL, 0);
+		_jtag->set_state(Jtag::RUN_TEST_IDLE);
+		_jtag->toggleClk(1000);
+		printInfo(std::string("[probe] sent ") + what);
+	};
+	auto leave = [&]() {
+		wr_rd(ISC_DISABLE, NULL, 0, NULL, 0);
+		_jtag->set_state(Jtag::RUN_TEST_IDLE);
+		_jtag->toggleClk(1000);
+		wr_rd(0xff, NULL, 0, NULL, 0);
+		_jtag->set_state(Jtag::RUN_TEST_IDLE);
+		_jtag->toggleClk(1000);
+		printInfo("[probe] sent ISC_DISABLE + BYPASS");
+	};
+	auto rows = [&](const char *what, int n) {
+		/* LSC_INIT_ADDRESS, then LSC_READ_INCR_NV 16 bytes per row (as Verify() does) */
+		wr_rd(RESET_CFG_ADDR, NULL, 0, NULL, 0);
+		_jtag->set_state(Jtag::RUN_TEST_IDLE);
+		_jtag->toggleClk(1000);
+		uint8_t ir = REG_CFG_FLASH;
+		_jtag->shiftIR(&ir, NULL, 8, Jtag::PAUSE_IR);
+		uint8_t tx[16], rx[16];
+		memset(tx, 0, 16);
+		for (int r = 0; r < n; r++) {
+			memset(rx, 0, 16);
+			_jtag->set_state(Jtag::RUN_TEST_IDLE);
+			_jtag->toggleClk(2);
+			_jtag->shiftDR(tx, rx, 16 * 8, Jtag::PAUSE_DR);
+			char m[200];
+			int k = snprintf(m, sizeof(m), "[probe] %s row %d:", what, r);
+			for (int i = 0; i < 16; i++)
+				k += snprintf(m + k, sizeof(m) - k, " %02x", rx[i]);
+			printInfo(m);
+		}
+		_jtag->set_state(Jtag::RUN_TEST_IDLE);
+		_jtag->toggleClk(1000);
+	};
+	raw("IDCODE (user mode)", 0xE0, 4);
+	raw("status (user mode)", READ_STATUS_REGISTER, 4);
+	busy("busy (user mode)");
+	enter("ISC_ENABLE_X 0x74, 1-byte operand 08", 1);
+	busy("busy after 0x74 / 1 byte");
+	raw("status after 0x74 / 1 byte", READ_STATUS_REGISTER, 4);
+	raw("IDCODE after 0x74 / 1 byte", 0xE0, 4);
+	rows("CFG flash", 8);
+	raw("status after flash read", READ_STATUS_REGISTER, 4);
+	leave();
+	raw("status after disable", READ_STATUS_REGISTER, 4);
+	enter("ISC_ENABLE_X 0x74, 3-byte operand 08 00 00", 3);
+	busy("busy after 0x74 / 3 bytes");
+	raw("status after 0x74 / 3 bytes", READ_STATUS_REGISTER, 4);
+	leave();
+	raw("status at the end", READ_STATUS_REGISTER, 4);
+	raw("IDCODE at the end", 0xE0, 4);
+	return true;
+}
+
 bool Lattice::prepare_flash_access()
 {
 	if (_skip_load_bridge) {
@@ -877,7 +1118,16 @@ void Lattice::reset()
 	if (_fpga_family == ECP5_FAMILY || _fpga_family == ECP3_FAMILY
 			|| _fpga_family == NEXUS_FAMILY)
 		post_flash_access();
-	else
+	else if (_fpga_family == MACHXO2_FAMILY) {
+		/* REFRESH (0x79): load the flash image into SRAM; with dual boot it waits for the SPI flash */
+		printInfo("Refresh: ", false);
+		if (loadConfiguration()) {
+			printSuccess("DONE");
+		} else {
+			printError("FAIL");
+			displayReadReg(readStatusReg());
+		}
+	} else
 		printError("Lattice Reset only tested on ECP5 Family.");
 }
 
@@ -1023,6 +1273,13 @@ bool Lattice::program_flash(unsigned int offset, bool unprotect_flash)
 		}
 		if (_verbose)
 			_jed.displayHeader();
+
+		if (g_ofl_xo2_probe && _fpga_family == MACHXO2_FAMILY)
+			return xo2_probe();
+		if (g_ofl_xo2_transparent && _fpga_family == MACHXO2_FAMILY) {
+			/* transparent mode: no SRAM clear, the design keeps running */
+			return program_intFlash_transparent(_jed);
+		}
 
 		/* clear current SRAM content */
 		clearSRAM();

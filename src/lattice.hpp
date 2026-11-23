@@ -94,6 +94,8 @@ class Lattice: public Device, FlashInterface {
 		int get_statusreg_size();
 
 		bool program_intFlash(ConfigBitstreamParser *_cbp);
+		bool program_intFlash_transparent(JedParser &jed);
+		bool xo2_probe();
 		bool program_extFlash(unsigned int offset, bool unprotect_flash);
 		bool wr_rd(uint8_t cmd, uint8_t *tx, int tx_len,
 				uint8_t *rx, int rx_len, bool verbose = false);
