@@ -232,18 +232,21 @@ int SPIFlash::sectors_erase(int base_addr, int size)
 			sector_rdy = false;
 	}
 	int ret = 0;
-	int start_addr = base_addr;
-	/* compute end_addr to be multiple of 4Kb */
+	/* align start_addr down and end_addr up to the erase granularity
+	 * (4Kb with subsector erase, 64Kb otherwise) */
+	int start_addr = base_addr & ~0xfff;
 	int end_addr = (base_addr + size + 0xfff) & ~0xfff;
-	if (!subsector_rdy)
+	if (!subsector_rdy) {
+		start_addr = base_addr & ~0xffff;
 		end_addr = (base_addr + size + 0xffff) & ~0xffff;
+	}
 	ProgressBar progress("Erasing", end_addr, 50, _verbose < 0);
 	/* start with block size (64Kb) */
 	int step = 0x10000;
 	if (!sector_rdy)
 		step = 0x1000;
 
-	printf("start addr: %08x, end_addr: %08x\n", base_addr, end_addr);
+	printf("start addr: %08x, end_addr: %08x\n", start_addr, end_addr);
 
 	for (int addr = start_addr; addr < end_addr; addr += step) {
 		if (write_enable() == -1) {
@@ -251,12 +254,15 @@ int SPIFlash::sectors_erase(int base_addr, int size)
 			break;
 		}
 
-		/* if block erase + addr end out of end_addr -> use sector_erase (4Kb) */
-		if (!sector_rdy || (addr + step > end_addr && subsector_rdy)) {
+		/* use block erase (64Kb) only when addr is 64Kb aligned and the
+		 * whole block is inside the range, otherwise sector_erase (4Kb) */
+		if (sector_rdy && ((addr & 0xffff) == 0) &&
+				(addr + 0x10000 <= end_addr || !subsector_rdy)) {
+			step = 0x10000;
+			ret = block64_erase(addr);
+		} else {
 			step = 0x1000;
 			ret = sector_erase(addr);
-		} else {
-			ret = block64_erase(addr);
 		}
 
 		if (ret == -1) {
