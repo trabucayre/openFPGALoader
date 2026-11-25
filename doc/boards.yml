@@ -134,14 +134,14 @@
 
 - ID: antmicro_ddr4_tester
   Description: Antmicro Data Center DRAM Tester
-  URL: https://opensource.antmicro.com/projects/data-center-dram-tester
+  URL: https://opensource.antmicro.com/projects/rdimm-ddr4-tester
   FPGA: Kintex7 xc7k160t
   Memory: OK
   Flash: OK
 
 - ID: antmicro_ddr5_tester
   Description: Antmicro DDR5 Tester
-  URL: https://opensource.antmicro.com/projects/ddr5-tester
+  URL: https://opensource.antmicro.com/projects/rdimm-ddr5-tester
   FPGA: Kintex7 xc7k160t
   Memory: OK
   Flash: OK
