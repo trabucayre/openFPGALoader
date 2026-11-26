@@ -189,13 +189,18 @@ bool ConfigBitstreamParser::decompress_bitstream(std::string source, std::string
 	strm.next_in = Z_NULL;
 	ret = inflateInit2(&strm, 15+16);
 	if (ret != Z_OK)
-		return ret;
+		return false;
 
 	uint32_t pos = source.size();
 	uint32_t xfer = CHUNK;
 
 	/* decompress until deflate stream ends or end of file */
 	do {
+		/* input exhausted but stream not finished: truncated file */
+		if (pos == 0) {
+			(void)inflateEnd(&strm);
+			return false;
+		}
 		/* if buffer has a size < CHUNK */
 		if (pos < CHUNK)
 			xfer = pos;
@@ -215,7 +220,7 @@ bool ConfigBitstreamParser::decompress_bitstream(std::string source, std::string
 			have = CHUNK - strm.avail_out;  // compute data size
 											// after uncompress
 			dest->append((const char*)out, have);  // store
-		} while (strm.avail_in != 0);
+		} while (strm.avail_in != 0 && ret != Z_STREAM_END);
 		in += xfer;  // update input buffer position
 		pos -= xfer;  // update len to decompress
 
