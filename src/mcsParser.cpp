@@ -73,7 +73,7 @@ int McsParser::parse()
 		/* line can't be empty */
 		if (line_len == 0) {
 			printError("Error: file corrupted: empty line");
-			return false;
+			return EXIT_FAILURE;
 		}
 
 		if (str[0] != ':') {
