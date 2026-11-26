@@ -89,7 +89,7 @@ void JedParser::buildDataArray(const std::string &content, struct jed_data &jed)
 	fuselist += content;
 	for (size_t i = 0; i < content.size(); i+=8) {
 		uint8_t data = 0;
-		for (int ii = 0; ii < 8; ii++) {
+		for (size_t ii = 0; ii < 8 && (i + ii) < content.size(); ii++) {
 			uint8_t val = (content[i+ii] == '1'?1:0);
 			data |= val << ii;
 		}
