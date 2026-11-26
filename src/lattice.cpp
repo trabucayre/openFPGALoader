@@ -161,11 +161,14 @@
 /* Nexus */
 #define REG_NEXUS_STATUS_BSE_ERR_MASK (0x0f << 24)
 
-Lattice::Lattice(Jtag *jtag, const std::string filename, const std::string &file_type,
-	Device::prog_type_t prg_type, std::string flash_sector, bool verify, int8_t verbose, bool skip_load_bridge, bool skip_reset):
-		Device(jtag, filename, file_type, verify, verbose),
-		FlashInterface(filename, verbose, 0, verify, skip_load_bridge, skip_reset),
-		_fpga_family(UNKNOWN_FAMILY), _flash_sector(LATTICE_FLASH_UNDEFINED)
+Lattice::Lattice(Jtag *jtag, const std::string filename, const std::string
+	&file_type, Device::prog_type_t prg_type, std::string flash_sector,
+	bool verify, int8_t verbose, bool skip_load_bridge, bool skip_reset,
+	bool transparent_mode): Device(jtag, filename, file_type, verify, verbose),
+		FlashInterface(filename, verbose, 0, verify, skip_load_bridge,
+			skip_reset),
+		_fpga_family(UNKNOWN_FAMILY), _flash_sector(LATTICE_FLASH_UNDEFINED),
+		_transparent_mode(transparent_mode)
 {
 	if (prg_type == Device::RD_FLASH) {
 		_mode = READ_MODE;
@@ -645,19 +648,6 @@ bool Lattice::program_intFlash(ConfigBitstreamParser *_cbp)
 	uint8_t eraseMode = 0;
 	std::vector<std::string> ufm_data, cfg_data, ebr_data;
 
-	/* bypass */
-	wr_rd(0xff, NULL, 0, NULL, 0);
-	/* ISC Enable 0xC6 followed by
-	 * 0x08 (Enable nVCM/Flash Normal mode */
-	printInfo("Enable configuration: ", false);
-	if (!EnableISC(0x08)) {
-		printError("FAIL");
-		displayReadReg(readStatusReg());
-		return false;
-	} else {
-		printSuccess("DONE");
-	}
-
 	//  If file is a jed -> classic approach for
 	//  all machXO
 	if (_file_extension == "jed") {
@@ -690,15 +680,37 @@ bool Lattice::program_intFlash(ConfigBitstreamParser *_cbp)
 		featuresRow = _jed->featuresRow();
 		feabits = _jed->feabits();
 	} else {  // bit file: adapts
+		if (_transparent_mode) {
+			printError("Transparent mode may be used only with jed files");
+			return false;
+		}
 		LatticeBitParser *_bit = reinterpret_cast<LatticeBitParser *>(_cbp);
 		cfg_data = _bit->getDataArray();
 		featuresRow = 0;
 		feabits = 0x460;
 	}
 
+	/* bypass */
+	wr_rd(0xff, NULL, 0, NULL, 0);
+	/* ISC Enable 0xC6 followed by
+	 * 0x08 (Enable nVCM/Flash Normal mode */
+	printInfo("Enable configuration: ", false);
+	if (!EnableISC(0x08)) {
+		printError("FAIL");
+		displayReadReg(readStatusReg());
+		return false;
+	} else {
+		printSuccess("DONE");
+	}
+
 	eraseMode |= FLASH_ERASE_CFG;
-	if (featuresRow != readFeaturesRow() || feabits != readFeabits())
-		eraseMode |= FLASH_ERASE_FEATURE;
+	if (featuresRow != readFeaturesRow() || feabits != readFeabits()) {
+		if (_transparent_mode)
+			printWarn("feature row / feabits of the file differ from the "
+				"device: not written in transparent mode");
+		else
+			eraseMode |= FLASH_ERASE_FEATURE;
+	}
 
 	/* ISC ERASE */
 	printInfo("Flash erase: ", false);
@@ -1085,7 +1097,7 @@ void Lattice::program(unsigned int offset, bool unprotect_flash)
  */
 bool Lattice::EnableISC(uint8_t flash_mode)
 {
-	uint8_t cmd = ISC_ENABLE;
+	uint8_t cmd = (_transparent_mode) ? ISC_ENABLE_TRANSPARENT : ISC_ENABLE;
 
 	if (_fpga_family == ECP3_FAMILY) {
 		wr_rd(ECP3_ISC_ENABLE, NULL, 0, NULL, 0);

@@ -78,7 +78,7 @@ openFPGALoader -- a program to flash FPGA
   -d, --device arg              device to use (/dev/ttyUSBx)
       --detect                  detect FPGA, add -f to show connected flash
       --dfu                     DFU mode
-      --passive-serial          USB-Blaster passive serial mode      
+      --passive-serial          USB-Blaster passive serial mode
       --dump-flash              Dump flash mode
       --bulk-erase              Bulk erase flash
       --enable-quad             Enable quad mode for SPI Flash
@@ -119,6 +119,8 @@ openFPGALoader -- a program to flash FPGA
       --skip-reset              skip resetting the device when in write-flash
                                 mode
       --spi                     SPI mode (only for FTDI in serial mode)
+      --transparent-mode        Flash in Transparent mode (Currently only for
+                                MachXO2)
       --unprotect-flash         Unprotect flash blocks
   -v, --verbose                 Produce verbose output
       --verbose-level arg       verbose level -1: quiet, 0: normal,

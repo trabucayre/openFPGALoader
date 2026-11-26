@@ -23,7 +23,8 @@ class Lattice: public Device, FlashInterface {
 	public:
 		Lattice(Jtag *jtag, std::string filename, const std::string &file_type,
 			Device::prog_type_t prg_type, std::string flash_sector, bool verify,
-			int8_t verbose, bool skip_load_bridge, bool skip_reset);
+			int8_t verbose, bool skip_load_bridge, bool skip_reset,
+			bool transparent_mode);
 		uint32_t idCode() override;
 		int userCode();
 		bool write_userCode(uint32_t usercode);
@@ -162,5 +163,7 @@ class Lattice: public Device, FlashInterface {
 		bool program_intFlash_MachXO3D(JedParser& _jed);
 		bool program_fea_MachXO3D();
 		bool program_pubkey_MachXO3D();
+
+		bool _transparent_mode;  /**< write flash in transparent mode */
 };
 #endif  // SRC_LATTICE_HPP_

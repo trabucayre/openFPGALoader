@@ -77,6 +77,7 @@ struct arguments {
 	int8_t verbose;
 	bool force_terminal_mode;
 	bool reset, detect, detect_flash, verify, scan_usb;
+	bool transparent_mode;
 	unsigned int offset;
 	std::string bit_file;
 	std::string secondary_bit_file;
@@ -159,6 +160,8 @@ int main(int argc, char **argv)
 			0,          false,
 			//reset, detect, detect_flash, verify, scan_usb
 			false,   false,  false,        false,  false,
+			// transparent_mode
+			false,
 			0, "", "", "", "-", "", -1,
 			-1, 0, false, "-", false, false, false, false, Device::PRG_NONE, false,
 			/* spi dfu   passive_serial file_type fpga_part bridge_path probe_firmware */
@@ -592,7 +595,8 @@ int main(int argc, char **argv)
 		} else if (fab == "lattice") {
 #ifdef ENABLE_LATTICE_SUPPORT
 			fpga = new Lattice(jtag, args.bit_file, args.file_type,
-				args.prg_type, args.flash_sector, args.verify, args.verbose, args.skip_load_bridge, args.skip_reset);
+				args.prg_type, args.flash_sector, args.verify, args.verbose,
+				args.skip_load_bridge, args.skip_reset, args.transparent_mode);
 #else
 			printError("Support for Lattice FPGAs was not enabled at compile time");
 			delete(jtag);
@@ -1038,6 +1042,8 @@ int parse_opt(int argc, char **argv, struct arguments *args,
 				cxxopts::value<bool>(args->skip_reset))
 			("spi",   "SPI mode (only for FTDI in serial mode)",
 				cxxopts::value<bool>(args->spi))
+			("transparent-mode", "Flash in Transparent mode (Currently only for MachXO2)",
+				cxxopts::value<bool>(args->transparent_mode))
 			("unprotect-flash",   "Unprotect flash blocks",
 				cxxopts::value<bool>(args->unprotect_flash))
 			("v,verbose", "Produce verbose output", cxxopts::value<bool>(verbose))
