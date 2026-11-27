@@ -11,6 +11,8 @@
 #include <string>
 #include <vector>
 
+#include <libusb.h>
+
 #include "display.hpp"
 #include "fx2_ll.hpp"
 #include "xilinxPlatformCableUSB.hpp"
@@ -43,6 +45,33 @@
 #define TDI_IDX       (1 << TDI_OFFSET)
 #define TMS_IDX       (1 << TMS_OFFSET)
 
+/* Some cables (e.g. DLC10 / Waveshare clones) boot XPCU firmware from their
+ * own EEPROM yet keep enumerating with the "uninitialized" PID (0x0013).
+ * Uploading firmware to them is acknowledged but ignored, and the device
+ * never re-enumerates as 03fd:0008.
+ * Probe with the XPCU GET_VERSION vendor request: a bare FX2 (CPU held in
+ * reset, only the core's 0xA0 loader active) cannot answer it, so a reply
+ * means the firmware is already running.
+ */
+static bool xpcu_firmware_running(uint16_t vid, uint16_t pid)
+{
+	libusb_context *ctx;
+	if (libusb_init(&ctx) < 0)
+		return false;
+	bool running = false;
+	libusb_device_handle *h = libusb_open_device_with_vid_pid(ctx, vid, pid);
+	if (h) {
+		uint8_t buf[2];
+		int ret = libusb_control_transfer(h,
+				LIBUSB_REQUEST_TYPE_VENDOR | LIBUSB_ENDPOINT_IN,
+				XPCU_BREQUEST, XPCU_CMD_GET_VERSION, 0, buf, 2, 100);
+		running = (ret == 2);
+		libusb_close(h);
+	}
+	libusb_exit(ctx);
+	return running;
+}
+
 XilinxPlatformCableUSB::XilinxPlatformCableUSB(const uint16_t vid,
 	const uint16_t pid,
 	uint32_t clkHz,
@@ -52,12 +81,16 @@ XilinxPlatformCableUSB::XilinxPlatformCableUSB(const uint16_t vid,
 		_buffer_bit_size((_buffer_size / 2 * 4) - 1)
 {
 	std::string firmware_file;
+	const bool preloaded = (vid != XPCU_INITIALIZED_VID ||
+			pid != XPCU_INITIALIZED_PID) && xpcu_firmware_running(vid, pid);
+
 	/* firmare path must be known:
 	 * 1/ provided by user
 	 * 2/ from Vivado install directory
 	 * 3/ from ISE install directory
+	 * (unless the firmware is already running)
 	 */
-	if (firmware_path.empty() && strlen(ISE_DIR) == 0 && strlen(VIVADO_DIR) == 0) {
+	if (!preloaded && firmware_path.empty() && strlen(ISE_DIR) == 0 && strlen(VIVADO_DIR) == 0) {
 		printError("missing FX2 firmware");
 		printError("use --probe-firmware with something");
 		printError("like /opt/Xilinx/14.7/ISE_DS/ISE/bin/lin64/xusb_xp2.hex for ISE");
@@ -66,28 +99,45 @@ XilinxPlatformCableUSB::XilinxPlatformCableUSB(const uint16_t vid,
 		throw std::runtime_error("xilinxPlatformCableUSB: missing firmware");
 	}
 
-	/* Extract firmware according to possibilities */
-	if (!firmware_path.empty())
-		firmware_file = firmware_path;
-	else if (strlen(VIVADO_DIR) > 0)
-		firmware_file = VIVADO_DIR "/data/xicom/";
-	else if (strlen(ISE_DIR) > 0)
-		firmware_file = ISE_DIR "/ISE_DS/ISE/bin/lin64/";
+	if (preloaded) {
+		printInfo("XPCU firmware already running: skipping firmware upload");
+	} else {
+		/* Extract firmware according to possibilities */
+		if (!firmware_path.empty())
+			firmware_file = firmware_path;
+		else if (strlen(VIVADO_DIR) > 0)
+			firmware_file = VIVADO_DIR "/data/xicom/";
+		else if (strlen(ISE_DIR) > 0)
+			firmware_file = ISE_DIR "/ISE_DS/ISE/bin/lin64/";
 
-	if (firmware_path.empty()) {
-		if (pid == 0x0d)
-			firmware_file += "xusb_emb.hex";
-		else
-			firmware_file += "xusb_xp2.hex";
+		if (firmware_path.empty()) {
+			if (pid == 0x0d)
+				firmware_file += "xusb_emb.hex";
+			else
+				firmware_file += "xusb_xp2.hex";
+		}
+		printInfo("firmware_file : " + firmware_file);
 	}
-	printInfo("firmware_file : " + firmware_file);
 
 	try {
-		fx2 = std::make_unique<FX2_ll>(vid, pid, XPCU_INITIALIZED_VID,
-				XPCU_INITIALIZED_PID, firmware_file);
+		if (preloaded)
+			fx2 = std::make_unique<FX2_ll>(0, 0, vid, pid, "");
+		else
+			fx2 = std::make_unique<FX2_ll>(vid, pid, XPCU_INITIALIZED_VID,
+					XPCU_INITIALIZED_PID, firmware_file, 3);
 	} catch (std::exception &e) {
 		printError(e.what());
 		throw std::runtime_error("lowlevel init failed");
+	}
+
+	/* after an upload, the device may still be at the uninitialized IDs
+	 * (clone cables that run the firmware without re-enumerating): make
+	 * sure the XPCU firmware really answers before going on
+	 */
+	if (!preloaded) {
+		uint8_t ver[2];
+		if (!fx2->read_ctrl(XPCU_BREQUEST, XPCU_CMD_GET_VERSION, ver, 2))
+			throw std::runtime_error("xilinxPlatformCableUSB: firmware not running after upload");
 	}
 
 	fx2->set_interface_alt_setting(0, 1);

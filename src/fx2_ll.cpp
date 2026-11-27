@@ -21,7 +21,8 @@
 #define FX2_GCR_CPUCS_8051_RES (1 << 0)
 
 FX2_ll::FX2_ll(uint16_t uninit_vid, uint16_t uninit_pid,
-		uint16_t vid, uint16_t pid, const std::string &firmware_path)
+		uint16_t vid, uint16_t pid, const std::string &firmware_path,
+		unsigned int no_reenum_fallback_s)
 {
 	int ret;
 	bool reenum = false;
@@ -61,6 +62,14 @@ FX2_ll::FX2_ll(uint16_t uninit_vid, uint16_t uninit_pid,
 	do {
 		dev_handle = libusb_open_device_with_vid_pid(usb_ctx,
 				vid, pid);
+		/* some cables run the uploaded firmware but keep the
+		 * uninitialized IDs: once a real re-enumeration would have
+		 * happened, fall back to the device that is still there
+		 */
+		if (!dev_handle && reenum && no_reenum_fallback_s > 0 &&
+				100 - timeout >= static_cast<int>(no_reenum_fallback_s))
+			dev_handle = libusb_open_device_with_vid_pid(usb_ctx,
+					uninit_vid, uninit_pid);
 		timeout--;
 		progress.display(100-timeout);
 		if (!dev_handle)
