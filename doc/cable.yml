@@ -81,6 +81,12 @@ digilent:
     Description: FT2232 JTAG / UART cable
 
 
+digilent_adept:
+
+  - Name: digilent adept cable
+    Description: Digilent AT90USB JTAG / EPP cable.
+
+
 digilent_b:
 
   - Name: digilent cable
