@@ -56,17 +56,30 @@ int IhexParser::parse()
 		uint32_t addr, loc_addr;
 
 		/* if '\r' is present -> drop */
-		if (str.back() == '\r')
+		if (!str.empty() && str.back() == '\r')
 			str.pop_back();
 
+		if (str.empty()) {
+			printError("Error: file corrupted: empty line");
+			return EXIT_FAILURE;
+		}
 		if (str[0] == '#')  // comment
 			continue;
 		if (str[0] != ':') {
 			printError("Error: a line must start with ':'");
 			return EXIT_FAILURE;
 		}
+		/* a record needs at least len, addr and type fields plus checksum */
+		if (str.size() < DATA_BASE + 2) {
+			printError("Error: line too short");
+			return EXIT_FAILURE;
+		}
 		/* len */
 		sscanf((char *)&str[LEN_BASE], "%2hx", &byteLen);
+		if (str.size() < DATA_BASE + byteLen * 2 + 2) {
+			printError("Error: line too short for its data length");
+			return EXIT_FAILURE;
+		}
 		/* address */
 		sscanf((char *)&str[ADDR_BASE], "%4x", &addr);
 		/* type */
