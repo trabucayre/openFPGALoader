@@ -11,6 +11,7 @@ Intel/Altera
   * CYC1000
   * C10LP-RefKit
   * DE0
+  * DE2
   * de0nano
   * DE23-Lite
 
@@ -51,7 +52,7 @@ file load:
     # or
     openFPGALoader -b boardname project_name.rbf
 
-with ``boardname`` = ``de0``, ``cyc1000``, ``c10lp-refkit``, ``de0nano``, ``de0nanoSoc``, ``de23lite`` or ``qmtechCycloneV``.
+with ``boardname`` = ``de0``, ``de2``, ``cyc1000``, ``c10lp-refkit``, ``de0nano``, ``de0nanoSoc``, ``de23lite`` or ``qmtechCycloneV``.
 
 .. NOTE::
   Agilex 3 and Agilex 5 devices, including the DE23-Lite, must use an
