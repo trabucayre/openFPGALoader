@@ -320,7 +320,7 @@ int JedParser::parse()
 		case 'E':
 			/* feature row and feabits are two lines */
 			if (lines.size() < 2) {
-				std::cerr << "Error: incomplete 'E' field" << std::endl;
+				printError("Error: incomplete 'E' field");
 				return EXIT_FAILURE;
 			}
 			parseEField(lines);
