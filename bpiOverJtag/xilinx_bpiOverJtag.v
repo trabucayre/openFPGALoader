@@ -8,9 +8,13 @@ module bpiOverJtag (
 	/* BPI Flash interface */
 	output wire [25:1] bpi_addr,
 	inout  wire [15:0] bpi_dq,
+	/* BPI and SPI flash chip select (active Low). */
 	output wire        bpi_ce_n,
+	/* BPI flash output enable (active Low). */
 	output wire        bpi_oe_n,
+	/* BPI flash write enable (active Low). */
 	output wire        bpi_we_n,
+	/* BPI Flash address valid output (active Low). */
 	output wire        bpi_adv_n
 );
 
@@ -48,7 +52,13 @@ module bpiOverJtag (
 	);
 
 	/* BSCANE2 for main data interface (USER1) */
+`ifdef virtex6
+	BSCAN_VIRTEX6 #(
+`elsif spartan6
+	BSCAN_SPARTAN6 #(
+`else
 	BSCANE2 #(
+`endif
 		.JTAG_CHAIN(1)
 	) bscane2_inst (
 		.CAPTURE(capture),
@@ -65,7 +75,13 @@ module bpiOverJtag (
 	);
 
 	/* BSCANE2 for version interface (USER4) */
+`ifdef virtex6
+	BSCAN_VIRTEX6 #(
+`elsif spartan6
+	BSCAN_SPARTAN6 #(
+`else
 	BSCANE2 #(
+`endif
 		.JTAG_CHAIN(4)
 	) bscane2_version (
 		.CAPTURE(ver_cap),
