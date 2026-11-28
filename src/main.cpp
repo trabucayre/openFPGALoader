@@ -4,6 +4,9 @@
  */
 
 #include <string.h>
+
+extern bool g_ofl_xo2_transparent;
+extern bool g_ofl_xo2_probe;
 #include <unistd.h>
 
 #include <fstream>
@@ -1034,6 +1037,10 @@ int parse_opt(int argc, char **argv, struct arguments *args,
 				cxxopts::value<bool>(args->scan_usb))
 			("skip-load-bridge", "skip writing bridge to SRAM when in write-flash mode",
 				cxxopts::value<bool>(args->skip_load_bridge))
+			("xo2-transparent", "MachXO2: write a .jed to the internal flash in transparent (background) mode, the running design is not stopped (use --reset afterwards to REFRESH)",
+				cxxopts::value<bool>(g_ofl_xo2_transparent))
+			("xo2-probe", "MachXO2: read-only probe of the configuration interface in user mode (give any .jed; nothing is erased or written)",
+				cxxopts::value<bool>(g_ofl_xo2_probe))
 			("skip-reset", "skip resetting the device when in write-flash mode",
 				cxxopts::value<bool>(args->skip_reset))
 			("spi",   "SPI mode (only for FTDI in serial mode)",
