@@ -69,14 +69,15 @@ int IhexParser::parse()
 			printError("Error: a line must start with ':'");
 			return EXIT_FAILURE;
 		}
+		const size_t line_len = str.size();
 		/* a record needs at least len, addr and type fields plus checksum */
-		if (str.size() < DATA_BASE + 2) {
+		if (line_len < DATA_BASE + 2) {
 			printError("Error: line too short");
 			return EXIT_FAILURE;
 		}
 		/* len */
 		sscanf((char *)&str[LEN_BASE], "%2hx", &byteLen);
-		if (str.size() < DATA_BASE + byteLen * 2 + 2) {
+		if (line_len < DATA_BASE + byteLen * 2 + 2) {
 			printError("Error: line too short for its data length");
 			return EXIT_FAILURE;
 		}
